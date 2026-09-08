@@ -36,6 +36,10 @@ import {
    text:#F3F1EC  dim:#8D8E93  gold:#E4A64C  teal:#47BFAE  coral:#E2694F
 --------------------------------------------------------- */
 
+// Backend proxy (USDA FoodData Central search + Open Food Facts barcode lookup).
+// See backend/README.md — run it locally with `npm run dev` on port 3001.
+const API_BASE = "http://localhost:3001";
+
 const COLORS = {
   bg: "#121214",
   surface: "#1B1C1F",
@@ -144,6 +148,13 @@ const STR = {
     foodCatDrink: "Drinks",
     foodCatDish: "Dishes",
     noResults: "No food found — try a different search.",
+    searchLoading: "Searching …",
+    searchTypeMore: "Type at least 2 characters.",
+    serverError: "Can't reach the server — is `npm run dev` running in the backend folder?",
+    approxLabel: "Note",
+    barcodeLoading: "Looking up product …",
+    barcodeNotFound: "No product found for this barcode.",
+    scanAgain: "Scan again",
     // Exercise library
     libSearchPlaceholder: "Search exercises",
     muscleAll: "All",
@@ -277,6 +288,13 @@ const STR = {
     foodCatDrink: "Getränke",
     foodCatDish: "Gerichte",
     noResults: "Kein Lebensmittel gefunden — andere Suche versuchen.",
+    searchLoading: "Suche läuft …",
+    searchTypeMore: "Mindestens 2 Zeichen eingeben.",
+    serverError: "Server nicht erreichbar — läuft npm run dev im backend-Ordner?",
+    approxLabel: "Hinweis",
+    barcodeLoading: "Produkt wird gesucht …",
+    barcodeNotFound: "Kein Produkt zu diesem Barcode gefunden.",
+    scanAgain: "Erneut scannen",
     // Exercise library
     libSearchPlaceholder: "Übungen suchen",
     muscleAll: "Alle",
@@ -1283,25 +1301,47 @@ function WorkoutSummary({ t, onDone }) {
 
 function FoodSearchScreen({ t, onAdd, onOpenBarcode }) {
   const [query, setQuery] = useState("");
-  const [cat, setCat] = useState("all");
   const [selected, setSelected] = useState(null);
   const [grams, setGrams] = useState(100);
   const [toast, setToast] = useState(null);
 
-  const categories = [
-    { key: "all", label: t.foodCatAll },
-    { key: "protein", label: t.foodCatProtein },
-    { key: "carb", label: t.foodCatCarb },
-    { key: "legume", label: t.foodCatLegume },
-    { key: "fat", label: t.foodCatFat },
-    { key: "veg", label: t.foodCatVeg },
-    { key: "fruit", label: t.foodCatFruit },
-    { key: "dairy", label: t.foodCatDairy },
-    { key: "drink", label: t.foodCatDrink },
-    { key: "dish", label: t.foodCatDish },
-  ];
+  // Live text search against the backend proxy (USDA FoodData Central).
+  // The category chips are hidden for now: the API has no category field,
+  // so this is a plain text search — see backend/README.md.
+  const [results, setResults] = useState([]);
+  const [status, setStatus] = useState("tooShort"); // tooShort | loading | ok | error
 
-  const results = FOOD_DB.filter((f) => (cat === "all" || f.category === cat) && f.name.toLowerCase().includes(query.toLowerCase()));
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setStatus("tooShort");
+      return;
+    }
+    setStatus("loading");
+    const controller = new AbortController();
+    const debounce = setTimeout(() => {
+      fetch(`${API_BASE}/api/food/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then((data) => {
+          setResults(Array.isArray(data.results) ? data.results : []);
+          setStatus("ok");
+        })
+        .catch((err) => {
+          if (err.name === "AbortError") return;
+          setResults([]);
+          setStatus("error");
+        });
+    }, 300);
+    return () => {
+      clearTimeout(debounce);
+      controller.abort();
+    };
+  }, [query]);
+
   const scaled = selected ? scale(selected.per100, grams) : null;
 
   const confirmAdd = () => {
@@ -1320,27 +1360,27 @@ function FoodSearchScreen({ t, onAdd, onOpenBarcode }) {
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
           </div>
 
-          <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto", paddingBottom: 2 }}>
-            {categories.map((c) => (
-              <Chip key={c.key} label={c.label} active={cat === c.key} onClick={() => setCat(c.key)} />
-            ))}
-          </div>
-
           <div onClick={onOpenBarcode} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 16, cursor: "pointer" }}>
             <Barcode size={16} color={COLORS.gold} />
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.scanBarcode}</span>
           </div>
 
-          {results.length === 0 ? (
+          {status === "loading" ? (
+            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.searchLoading}</div>
+          ) : status === "error" ? (
+            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.serverError}</div>
+          ) : status === "tooShort" ? (
+            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.searchTypeMore}</div>
+          ) : results.length === 0 ? (
             <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.noResults}</div>
           ) : (
             <Card style={{ padding: 4, maxHeight: 380, overflowY: "auto" }}>
               {results.map((f, i) => (
                 <div
-                  key={f.key}
+                  key={f.fdcId ?? i}
                   onClick={() => {
                     setSelected(f);
-                    setGrams(f.defaultGrams);
+                    setGrams(100);
                   }}
                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? `1px solid ${COLORS.border}` : "none", cursor: "pointer" }}
                 >
@@ -1366,9 +1406,14 @@ function FoodSearchScreen({ t, onAdd, onOpenBarcode }) {
               <X size={18} color={COLORS.dim} />
             </div>
           </div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 20 }}>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: selected.note ? 8 : 20 }}>
             {selected.per100.kcal} kcal {t.per100g}
           </div>
+          {selected.note && (
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginBottom: 20, lineHeight: 1.45 }}>
+              {t.approxLabel}: {selected.note}
+            </div>
+          )}
 
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 8 }}>{t.amount}</div>
           <div style={{ marginBottom: 20 }}>
@@ -1404,10 +1449,33 @@ function FoodSearchScreen({ t, onAdd, onOpenBarcode }) {
   );
 }
 
+// Fixed demo barcode for "Simulate scan" — Nutella (Open Food Facts).
+const BARCODE_DEMO = "3017624010701";
+
 function BarcodeScanScreen({ t, onAdd, onDone }) {
   const [found, setFound] = useState(null);
-  const product = FOOD_DB.find((f) => f.key === "yogurt");
-  const scaled = found ? scale(found.per100, found.defaultGrams) : null;
+  const [status, setStatus] = useState("idle"); // idle | loading | notFound | error
+  const grams = 100;
+  const scaled = found ? scale(found.per100, grams) : null;
+
+  const simulateScan = () => {
+    setStatus("loading");
+    fetch(`${API_BASE}/api/food/barcode/${BARCODE_DEMO}`)
+      .then((res) => {
+        if (res.status === 404) return { notFound: true };
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (data.notFound || !data.result) {
+          setStatus("notFound");
+          return;
+        }
+        setFound(data.result);
+        setStatus("ok");
+      })
+      .catch(() => setStatus("error"));
+  };
 
   return (
     <div style={{ padding: "10px 20px 24px" }}>
@@ -1424,20 +1492,18 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
         ))}
       </div>
 
-      {!found ? (
-        <button onClick={() => setFound(product)} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-          {t.simulateScan}
-        </button>
-      ) : (
+      {status === "loading" ? (
+        <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8 }}>{t.barcodeLoading}</div>
+      ) : found ? (
         <Card>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 6 }}>{t.foundProduct}</div>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{found.name}</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 16 }}>
-            {scaled.kcal} kcal · {found.defaultGrams} g
+            {scaled.kcal} kcal · {grams} g
           </div>
           <button
             onClick={() => {
-              onAdd({ name: found.name, kcal: scaled.kcal, grams: found.defaultGrams });
+              onAdd({ name: found.name, kcal: scaled.kcal, grams });
               onDone();
             }}
             style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
@@ -1445,6 +1511,17 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
             {t.addItem}
           </button>
         </Card>
+      ) : (
+        <>
+          {(status === "error" || status === "notFound") && (
+            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginBottom: 14 }}>
+              {status === "error" ? t.serverError : t.barcodeNotFound}
+            </div>
+          )}
+          <button onClick={simulateScan} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            {status === "idle" ? t.simulateScan : t.scanAgain}
+          </button>
+        </>
       )}
     </div>
   );
