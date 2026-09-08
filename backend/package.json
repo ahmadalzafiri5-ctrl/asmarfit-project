@@ -1,0 +1,17 @@
+{
+  "name": "asmarfit-backend",
+  "version": "1.0.0",
+  "description": "Backend proxy for AsmarFit — combines Open Food Facts (barcode) and USDA FoodData Central (search) behind one clean API, with caching.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "node-cache": "^5.1.2"
+  }
+}
