@@ -11,6 +11,35 @@ app.use(cors());
 const PORT = process.env.PORT || 3001;
 const USDA_API_KEY = process.env.USDA_API_KEY;
 
+// Open Food Facts asks integrators to send an identifying User-Agent.
+const OFF_USER_AGENT = "AsmarFit/1.0 (food API proxy; dev)";
+
+// Open Food Facts category tags (from `categories_tags`) that mark a product
+// as a sports/protein supplement rather than a regular food. Matched as a
+// lowercase substring, so the singular form also catches the plural tag
+// (e.g. "protein-powder" ⊂ "en:protein-powders").
+const SUPPLEMENT_CATEGORY_HINTS = [
+  "protein-powder",
+  "whey-protein",
+  "protein-bar",
+  "dietary-supplement",
+  "bodybuilding-supplement",
+  "food-supplement",
+  "sports-nutrition",
+  "proteinpulver",
+  "proteinriegel",
+];
+
+function looksLikeSupplement(product) {
+  const tags = Array.isArray(product.categories_tags)
+    ? product.categories_tags
+    : typeof product.categories === "string"
+      ? product.categories.split(",")
+      : [];
+  const haystack = tags.join(" ").toLowerCase();
+  return SUPPLEMENT_CATEGORY_HINTS.some((hint) => haystack.includes(hint));
+}
+
 // Cache results for 6 hours — both APIs ask integrators to avoid hammering them,
 // and the same "banana" or "3017624010701" search happens constantly across users.
 const cache = new NodeCache({ stdTTL: 60 * 60 * 6 });
@@ -62,6 +91,9 @@ function normalizeUsdaFood(food) {
     brand: food.brandOwner || null,
     dataType: food.dataType,
     per100,
+    // Supplement tagging is derived from Open Food Facts category tags only —
+    // USDA has no comparable field, so USDA hits are never flagged.
+    isSupplement: false,
     note:
       food.dataType === "Branded" && food.servingSize
         ? `Reported per ${food.servingSize}${food.servingSizeUnit || ""} serving on the label — treat as approximate per 100 g.`
@@ -70,7 +102,9 @@ function normalizeUsdaFood(food) {
 }
 
 /**
- * Normalizes an Open Food Facts product into the same shape.
+ * Normalizes an Open Food Facts product (barcode lookup or text search) into
+ * the same shape. `isSupplement` is true when the product's category tags mark
+ * it as a protein/sports supplement, so the frontend can highlight it later.
  */
 function normalizeOffProduct(product) {
   const n = product.nutriments || {};
@@ -78,7 +112,8 @@ function normalizeOffProduct(product) {
     source: "openfoodfacts",
     barcode: product.code,
     name: product.product_name || product.generic_name || "Unknown product",
-    brand: product.brands || null,
+    // `brands` is a comma string on the barcode API but an array on the search API.
+    brand: Array.isArray(product.brands) ? product.brands.join(", ") || null : product.brands || null,
     imageUrl: product.image_front_small_url || product.image_url || null,
     per100: {
       kcal: Math.round(n["energy-kcal_100g"] ?? n["energy-kcal"] ?? 0),
@@ -86,8 +121,82 @@ function normalizeOffProduct(product) {
       carbs: Math.round((n["carbohydrates_100g"] ?? 0) * 10) / 10,
       fat: Math.round((n["fat_100g"] ?? 0) * 10) / 10,
     },
+    isSupplement: looksLikeSupplement(product),
     nutriScore: product.nutrition_grades || null,
+    note: null,
   };
+}
+
+/**
+ * USDA FoodData Central text search. Resolves to { results, error } instead of
+ * throwing, so one source being down doesn't take the whole endpoint with it.
+ */
+async function searchUsda(query) {
+  try {
+    const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
+    url.searchParams.set("query", query);
+    url.searchParams.set("api_key", USDA_API_KEY);
+    url.searchParams.set("pageSize", "20");
+    // Prefer well-curated data first; branded foods still show up further down.
+    url.searchParams.set("dataType", "Foundation,SR Legacy,Survey (FNDDS),Branded");
+
+    const r = await fetch(url);
+    if (!r.ok) return { results: [], error: `USDA API returned ${r.status}` };
+    const data = await r.json();
+    return { results: (data.foods || []).map(normalizeUsdaFood), error: null };
+  } catch (err) {
+    console.error("USDA search failed:", err.message);
+    return { results: [], error: "Failed to reach USDA FoodData Central" };
+  }
+}
+
+/**
+ * Open Food Facts text search via the dedicated search service
+ * (search.openfoodfacts.org). Good coverage of branded products and supplements
+ * that USDA lacks, and far more tolerant of load than the legacy CGI endpoint.
+ * Same { results, error } contract.
+ */
+async function searchOpenFoodFacts(query) {
+  try {
+    const url = new URL("https://search.openfoodfacts.org/search");
+    url.searchParams.set("q", query);
+    url.searchParams.set("page_size", "24");
+    url.searchParams.set(
+      "fields",
+      "code,product_name,generic_name,brands,nutriments,categories_tags,categories,nutrition_grades,image_front_small_url,image_url"
+    );
+
+    const r = await fetch(url, { headers: { "User-Agent": OFF_USER_AGENT } });
+    if (!r.ok) return { results: [], error: `Open Food Facts returned ${r.status}` };
+    const data = await r.json();
+    const results = (data.hits || [])
+      .map(normalizeOffProduct)
+      // Free-text OFF results include entries with no usable name or no nutrition
+      // data at all — drop those so the list stays useful (name + kcal).
+      .filter((p) => p.name && p.name !== "Unknown product" && p.per100.kcal > 0);
+    return { results, error: null };
+  } catch (err) {
+    console.error("Open Food Facts search failed:", err.message);
+    return { results: [], error: "Failed to reach Open Food Facts" };
+  }
+}
+
+/**
+ * Merges the two sources: USDA first (curated basics), then Open Food Facts
+ * (branded products & supplements), de-duplicated on name + brand, capped so
+ * the response stays a reasonable size.
+ */
+function mergeSearchResults(usdaResults, offResults) {
+  const seen = new Set();
+  const keyOf = (r) => `${(r.name || "").toLowerCase().trim()}|${(r.brand || "").toLowerCase().trim()}`;
+  const merged = [];
+  for (const item of [...usdaResults, ...offResults]) {
+    const key = keyOf(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+  }
+  return merged.slice(0, 40);
 }
 
 /* ---------- GET /api/food/search?q=banana ---------- */
@@ -100,27 +209,17 @@ app.get("/api/food/search", async (req, res) => {
   const cached = cache.get(cacheKey);
   if (cached) return res.json({ cached: true, results: cached });
 
-  try {
-    const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
-    url.searchParams.set("query", query);
-    url.searchParams.set("api_key", USDA_API_KEY);
-    url.searchParams.set("pageSize", "20");
-    // Prefer well-curated data first; branded foods still show up further down.
-    url.searchParams.set("dataType", "Foundation,SR Legacy,Survey (FNDDS),Branded");
+  const [usda, off] = await Promise.all([searchUsda(query), searchOpenFoodFacts(query)]);
 
-    const usdaRes = await fetch(url);
-    if (!usdaRes.ok) {
-      return res.status(usdaRes.status).json({ error: `USDA API returned ${usdaRes.status}` });
-    }
-    const data = await usdaRes.json();
-    const results = (data.foods || []).map(normalizeUsdaFood);
-
-    cache.set(cacheKey, results);
-    res.json({ cached: false, results });
-  } catch (err) {
-    console.error(err);
-    res.status(502).json({ error: "Failed to reach USDA FoodData Central" });
+  // Only fail the request if BOTH sources are unusable; otherwise return
+  // whatever came back.
+  if (usda.error && off.error) {
+    return res.status(502).json({ error: `${usda.error}; ${off.error}` });
   }
+
+  const results = mergeSearchResults(usda.results, off.results);
+  cache.set(cacheKey, results);
+  res.json({ cached: false, results });
 });
 
 /* ---------- GET /api/food/barcode/:code ---------- */
