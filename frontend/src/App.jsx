@@ -37,8 +37,10 @@ import {
 --------------------------------------------------------- */
 
 // Backend proxy (USDA FoodData Central search + Open Food Facts barcode lookup).
-// See backend/README.md — run it locally with `npm run dev` on port 3001.
-const API_BASE = "http://localhost:3001";
+// See backend/README.md. URL comes from VITE_API_BASE_URL (see .env /
+// .env.production) so the Android build points at the hosted backend instead
+// of localhost, which a phone can't reach. Falls back to local dev default.
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 const COLORS = {
   bg: "#121214",
