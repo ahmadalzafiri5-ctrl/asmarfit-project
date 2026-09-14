@@ -199,25 +199,69 @@ function mergeSearchResults(usdaResults, offResults) {
   return merged.slice(0, 40);
 }
 
-/* ---------- GET /api/food/search?q=banana ---------- */
+/**
+ * Translates a German search term to English via MyMemory (free, no API key).
+ * USDA only understands English food names, so a German query needs this
+ * before being sent there. Never throws — on any failure (or a low-confidence
+ * match) it just falls back to the original text, so a flaky translation
+ * service degrades USDA relevance instead of breaking the search.
+ */
+async function translateDeToEn(text) {
+  const cacheKey = `translate:de-en:${text.toLowerCase()}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const url = new URL("https://api.mymemory.translated.net/get");
+    url.searchParams.set("q", text);
+    url.searchParams.set("langpair", "de|en");
+    const r = await fetch(url);
+    if (!r.ok) return text;
+    const data = await r.json();
+    const translated = data?.responseData?.translatedText;
+    if (typeof translated !== "string" || !translated.trim()) return text;
+    cache.set(cacheKey, translated, 60 * 60 * 24); // translations don't go stale — cache a day
+    return translated;
+  } catch (err) {
+    console.error("Translation failed, using original query:", err.message);
+    return text;
+  }
+}
+
+/* ---------- GET /api/food/search?q=banana&lang=de ---------- */
 app.get("/api/food/search", async (req, res) => {
   const query = (req.query.q || "").trim();
+  // Language of the app UI (DE/EN toggle), not the query's own language.
+  // Determines both the USDA search term and whether Open Food Facts runs
+  // at all: en → USDA already returns English, no need for OFF's mixed-
+  // language text search; de → OFF is a good source for German products,
+  // but USDA needs the term translated first since it only understands
+  // English food names.
+  const lang = req.query.lang === "de" ? "de" : "en";
   if (!query) return res.status(400).json({ error: "Missing ?q= search term" });
   if (!USDA_API_KEY) return res.status(500).json({ error: "Server is missing USDA_API_KEY" });
 
-  const cacheKey = `search:${query.toLowerCase()}`;
+  const cacheKey = `search:${lang}:${query.toLowerCase()}`;
   const cached = cache.get(cacheKey);
   if (cached) return res.json({ cached: true, results: cached });
 
-  const [usda, off] = await Promise.all([searchUsda(query), searchOpenFoodFacts(query)]);
-
-  // Only fail the request if BOTH sources are unusable; otherwise return
-  // whatever came back.
-  if (usda.error && off.error) {
-    return res.status(502).json({ error: `${usda.error}; ${off.error}` });
-  }
+  const usdaQuery = lang === "de" ? await translateDeToEn(query) : query;
+  const [usda, off] = await Promise.all([
+    searchUsda(usdaQuery),
+    lang === "de" ? searchOpenFoodFacts(query) : Promise.resolve({ results: [], error: null }),
+  ]);
 
   const results = mergeSearchResults(usda.results, off.results);
+
+  // Only fail (and skip caching) when there's nothing to show AND a source
+  // actually errored — never when a source came back genuinely empty, and
+  // never just because OFF was intentionally skipped for lang=en (its
+  // `error` is null in that case, not truthy, so this only fires on a real
+  // failure).
+  if (results.length === 0 && (usda.error || off.error)) {
+    return res.status(502).json({ error: usda.error || off.error });
+  }
+
   cache.set(cacheKey, results);
   res.json({ cached: false, results });
 });

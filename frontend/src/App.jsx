@@ -1309,7 +1309,7 @@ function WorkoutSummary({ t, onDone }) {
 
 /* ---------------- Food flow ---------------- */
 
-function FoodSearchScreen({ t, onAdd, onOpenBarcode }) {
+function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [grams, setGrams] = useState(100);
@@ -1331,7 +1331,7 @@ function FoodSearchScreen({ t, onAdd, onOpenBarcode }) {
     setStatus("loading");
     const controller = new AbortController();
     const debounce = setTimeout(() => {
-      fetch(`${API_BASE}/api/food/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+      fetch(`${API_BASE}/api/food/search?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}`, { signal: controller.signal })
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json();
@@ -1350,7 +1350,7 @@ function FoodSearchScreen({ t, onAdd, onOpenBarcode }) {
       clearTimeout(debounce);
       controller.abort();
     };
-  }, [query]);
+  }, [query, lang]);
 
   const scaled = selected ? scale(selected.per100, grams) : null;
 
@@ -1888,7 +1888,7 @@ export default function AsmarFitApp() {
     topTitle = t.workoutDone;
     showBack = () => setOverlay(null);
   } else if (overlay === "foodSearch") {
-    content = <FoodSearchScreen t={t} onAdd={addFoodItem} onOpenBarcode={() => setOverlay("barcode")} />;
+    content = <FoodSearchScreen t={t} lang={lang} onAdd={addFoodItem} onOpenBarcode={() => setOverlay("barcode")} />;
     topTitle = t.foodSearchTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "barcode") {
