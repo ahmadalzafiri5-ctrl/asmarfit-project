@@ -1397,7 +1397,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode }) {
                   <div>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{f.name}</div>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
-                      {f.per100.kcal} kcal {t.per100g} · P {f.per100.protein}g · C {f.per100.carbs}g · F {f.per100.fat}g
+                      {f.per100.kcal} kcal {t.per100g}
                     </div>
                   </div>
                   <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(228,166,76,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
