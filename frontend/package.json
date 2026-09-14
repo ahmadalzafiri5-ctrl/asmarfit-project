@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^8.2.1",
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "lucide-react": "^0.436.0",

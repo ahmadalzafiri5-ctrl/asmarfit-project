@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { Capacitor } from "@capacitor/core";
+import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 import {
   Home,
   UtensilsCrossed,
@@ -156,6 +158,9 @@ const STR = {
     approxLabel: "Note",
     barcodeLoading: "Looking up product …",
     barcodeNotFound: "No product found for this barcode.",
+    barcodeScanning: "Opening camera …",
+    barcodeUnsupported: "This device has no camera for scanning.",
+    barcodeModuleInstalling: "Preparing the scanner — try again in a moment.",
     scanAgain: "Scan again",
     // Exercise library
     libSearchPlaceholder: "Search exercises",
@@ -296,6 +301,9 @@ const STR = {
     approxLabel: "Hinweis",
     barcodeLoading: "Produkt wird gesucht …",
     barcodeNotFound: "Kein Produkt zu diesem Barcode gefunden.",
+    barcodeScanning: "Kamera wird geöffnet …",
+    barcodeUnsupported: "Dieses Gerät hat keine Kamera zum Scannen.",
+    barcodeModuleInstalling: "Scanner wird vorbereitet — gleich nochmal versuchen.",
     scanAgain: "Erneut scannen",
     // Exercise library
     libSearchPlaceholder: "Übungen suchen",
@@ -1454,15 +1462,21 @@ function FoodSearchScreen({ t, onAdd, onOpenBarcode }) {
 // Fixed demo barcode for "Simulate scan" — Nutella (Open Food Facts).
 const BARCODE_DEMO = "3017624010701";
 
+// Real camera scanning only runs on the native Android app (Capacitor). The
+// web dev server has no access to Google's ML Kit scanner module, so it keeps
+// the old fixed-barcode simulation for local testing.
+const IS_NATIVE_APP = Capacitor.isNativePlatform();
+
 function BarcodeScanScreen({ t, onAdd, onDone }) {
   const [found, setFound] = useState(null);
-  const [status, setStatus] = useState("idle"); // idle | loading | notFound | error
+  // idle | scanning | loading | notFound | error | unsupported | moduleInstalling
+  const [status, setStatus] = useState("idle");
   const grams = 100;
   const scaled = found ? scale(found.per100, grams) : null;
 
-  const simulateScan = () => {
+  const lookupBarcode = (code) => {
     setStatus("loading");
-    fetch(`${API_BASE}/api/food/barcode/${BARCODE_DEMO}`)
+    fetch(`${API_BASE}/api/food/barcode/${code}`)
       .then((res) => {
         if (res.status === 404) return { notFound: true };
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1479,6 +1493,50 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
       .catch(() => setStatus("error"));
   };
 
+  const simulateScan = () => lookupBarcode(BARCODE_DEMO);
+
+  // Opens Google ML Kit's ready-made full-screen scanner (no custom camera
+  // preview needed, and per the plugin docs this convenience method needs no
+  // camera permission prompt on Android — Play Services handles it).
+  const scanReal = async () => {
+    setStatus("scanning");
+    try {
+      const { supported } = await BarcodeScanner.isSupported();
+      if (!supported) {
+        setStatus("unsupported");
+        return;
+      }
+      const { available } = await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable();
+      if (!available) {
+        // Kicks off a background download of the on-device scanner model;
+        // finishes async, so just ask the user to try again shortly.
+        await BarcodeScanner.installGoogleBarcodeScannerModule();
+        setStatus("moduleInstalling");
+        return;
+      }
+      const { barcodes } = await BarcodeScanner.scan({
+        formats: [BarcodeFormat.Ean13, BarcodeFormat.Ean8, BarcodeFormat.UpcA, BarcodeFormat.UpcE, BarcodeFormat.Code128],
+      });
+      const code = barcodes[0]?.rawValue;
+      if (!code) {
+        // User backed out of the camera view without scanning anything.
+        setStatus("idle");
+        return;
+      }
+      lookupBarcode(code);
+    } catch (err) {
+      setStatus("error");
+    }
+  };
+
+  const startScan = IS_NATIVE_APP ? scanReal : simulateScan;
+  const errorText = {
+    error: t.serverError,
+    notFound: t.barcodeNotFound,
+    unsupported: t.barcodeUnsupported,
+    moduleInstalling: t.barcodeModuleInstalling,
+  }[status];
+
   return (
     <div style={{ padding: "10px 20px 24px" }}>
       <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginTop: 0, marginBottom: 16 }}>{t.barcodeHint}</p>
@@ -1494,7 +1552,9 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
         ))}
       </div>
 
-      {status === "loading" ? (
+      {status === "scanning" ? (
+        <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8 }}>{t.barcodeScanning}</div>
+      ) : status === "loading" ? (
         <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8 }}>{t.barcodeLoading}</div>
       ) : found ? (
         <Card>
@@ -1515,13 +1575,17 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
         </Card>
       ) : (
         <>
-          {(status === "error" || status === "notFound") && (
+          {errorText && (
             <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginBottom: 14 }}>
-              {status === "error" ? t.serverError : t.barcodeNotFound}
+              {errorText}
             </div>
           )}
-          <button onClick={simulateScan} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-            {status === "idle" ? t.simulateScan : t.scanAgain}
+          <button onClick={startScan} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            {status === "idle"
+              ? IS_NATIVE_APP
+                ? t.scanBarcode
+                : t.simulateScan
+              : t.scanAgain}
           </button>
         </>
       )}
