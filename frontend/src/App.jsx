@@ -136,7 +136,6 @@ const STR = {
     addedToast: "Added",
     barcodeTitle: "Scan barcode",
     barcodeHint: "Align the barcode inside the frame",
-    simulateScan: "Simulate scan",
     foundProduct: "Product found",
     addItem: "Add",
     per100g: "per 100 g",
@@ -161,6 +160,7 @@ const STR = {
     barcodeScanning: "Opening camera …",
     barcodeUnsupported: "This device has no camera for scanning.",
     barcodeModuleInstalling: "Preparing the scanner — try again in a moment.",
+    barcodeWebOnly: "Barcode scanning is only available in the Android app.",
     scanAgain: "Scan again",
     // Exercise library
     libSearchPlaceholder: "Search exercises",
@@ -279,7 +279,6 @@ const STR = {
     addedToast: "Hinzugefügt",
     barcodeTitle: "Barcode scannen",
     barcodeHint: "Barcode im Rahmen ausrichten",
-    simulateScan: "Scan simulieren",
     foundProduct: "Produkt gefunden",
     addItem: "Hinzufügen",
     per100g: "pro 100 g",
@@ -304,6 +303,7 @@ const STR = {
     barcodeScanning: "Kamera wird geöffnet …",
     barcodeUnsupported: "Dieses Gerät hat keine Kamera zum Scannen.",
     barcodeModuleInstalling: "Scanner wird vorbereitet — gleich nochmal versuchen.",
+    barcodeWebOnly: "Barcode-Scan ist nur in der Android-App verfügbar.",
     scanAgain: "Erneut scannen",
     // Exercise library
     libSearchPlaceholder: "Übungen suchen",
@@ -1459,12 +1459,9 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode }) {
   );
 }
 
-// Fixed demo barcode for "Simulate scan" — Nutella (Open Food Facts).
-const BARCODE_DEMO = "3017624010701";
-
-// Real camera scanning only runs on the native Android app (Capacitor). The
-// web dev server has no access to Google's ML Kit scanner module, so it keeps
-// the old fixed-barcode simulation for local testing.
+// Real camera scanning only runs on the native Android app (Capacitor) — the
+// PC browser has no access to Google's ML Kit scanner module, so it shows a
+// hint instead of a scan button rather than faking a result.
 const IS_NATIVE_APP = Capacitor.isNativePlatform();
 
 function BarcodeScanScreen({ t, onAdd, onDone }) {
@@ -1492,8 +1489,6 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
       })
       .catch(() => setStatus("error"));
   };
-
-  const simulateScan = () => lookupBarcode(BARCODE_DEMO);
 
   // Opens Google ML Kit's ready-made full-screen scanner (no custom camera
   // preview needed, and per the plugin docs this convenience method needs no
@@ -1529,7 +1524,6 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
     }
   };
 
-  const startScan = IS_NATIVE_APP ? scanReal : simulateScan;
   const errorText = {
     error: t.serverError,
     notFound: t.barcodeNotFound,
@@ -1552,7 +1546,9 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
         ))}
       </div>
 
-      {status === "scanning" ? (
+      {!IS_NATIVE_APP ? (
+        <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8 }}>{t.barcodeWebOnly}</div>
+      ) : status === "scanning" ? (
         <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8 }}>{t.barcodeScanning}</div>
       ) : status === "loading" ? (
         <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8 }}>{t.barcodeLoading}</div>
@@ -1580,12 +1576,8 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
               {errorText}
             </div>
           )}
-          <button onClick={startScan} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-            {status === "idle"
-              ? IS_NATIVE_APP
-                ? t.scanBarcode
-                : t.simulateScan
-              : t.scanAgain}
+          <button onClick={scanReal} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            {status === "idle" ? t.scanBarcode : t.scanAgain}
           </button>
         </>
       )}
