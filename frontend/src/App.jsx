@@ -112,8 +112,15 @@ const STR = {
     obWeight: "Current weight (kg)",
     obHeight: "Height (cm)",
     obTarget: "Target weight (kg)",
+    obVisionTitle: "A quick reflection",
+    obVisionSub: "Optional, but it helps to write it down.",
+    obVision3Months: "How do you see yourself in 3 months?",
+    obVision3MonthsPlaceholder: "e.g. Stronger, more energy, 5 kg lighter …",
+    obVisionWhy: "Why is this important to you?",
+    obVisionWhyPlaceholder: "e.g. For my health, to feel more confident …",
     obConfirmTitle: "You're all set",
     obConfirmSub: "Your personal daily target:",
+    obYourVision: "Your vision",
     obFinish: "Enter AsmarFit",
     back: "Back",
     next: "Continue",
@@ -255,8 +262,15 @@ const STR = {
     obWeight: "Aktuelles Gewicht (kg)",
     obHeight: "Größe (cm)",
     obTarget: "Zielgewicht (kg)",
+    obVisionTitle: "Eine kurze Reflexion",
+    obVisionSub: "Optional, aber Aufschreiben hilft beim Dranbleiben.",
+    obVision3Months: "Wie siehst du dich in 3 Monaten?",
+    obVision3MonthsPlaceholder: "z. B. Stärker, mehr Energie, 5 kg leichter …",
+    obVisionWhy: "Warum ist dir das wichtig?",
+    obVisionWhyPlaceholder: "z. B. Für meine Gesundheit, um mich wohler zu fühlen …",
     obConfirmTitle: "Alles bereit",
     obConfirmSub: "Dein persönliches Tagesziel:",
+    obYourVision: "Deine Vision",
     obFinish: "AsmarFit öffnen",
     back: "Zurück",
     next: "Weiter",
@@ -681,6 +695,8 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const [weight, setWeight] = useState("84");
   const [height, setHeight] = useState("180");
   const [target, setTarget] = useState("80");
+  const [vision3Months, setVision3Months] = useState("");
+  const [visionWhy, setVisionWhy] = useState("");
 
   const kcalGoal = useMemo(() => {
     const base = 2200;
@@ -703,7 +719,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
       {step > 0 && (
         <div style={{ display: "flex", gap: 6, margin: "22px 0 4px" }}>
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} style={{ height: 3, borderRadius: 2, flex: 1, background: i <= step ? COLORS.gold : COLORS.border }} />
           ))}
         </div>
@@ -760,6 +776,31 @@ function Onboarding({ t, lang, setLang, onFinish }) {
         )}
 
         {step === 3 && (
+          <div>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obVisionTitle}</h2>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obVisionSub}</p>
+
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.obVision3Months}</div>
+            <textarea
+              value={vision3Months}
+              onChange={(e) => setVision3Months(e.target.value)}
+              placeholder={t.obVision3MonthsPlaceholder}
+              rows={3}
+              style={{ width: "100%", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 14, color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none", resize: "none", marginBottom: 18 }}
+            />
+
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.obVisionWhy}</div>
+            <textarea
+              value={visionWhy}
+              onChange={(e) => setVisionWhy(e.target.value)}
+              placeholder={t.obVisionWhyPlaceholder}
+              rows={3}
+              style={{ width: "100%", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 14, color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none", resize: "none" }}
+            />
+          </div>
+        )}
+
+        {step === 4 && (
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(228,166,76,0.14)", margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Check size={28} color={COLORS.gold} />
@@ -770,6 +811,23 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               {kcalGoal}
               <span style={{ fontSize: 15, color: COLORS.dim, fontWeight: 500 }}> kcal</span>
             </div>
+            {(vision3Months.trim() || visionWhy.trim()) && (
+              <div style={{ textAlign: "left", background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 16, marginTop: 24 }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.obYourVision}</div>
+                {vision3Months.trim() && (
+                  <div style={{ marginBottom: visionWhy.trim() ? 12 : 0 }}>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginBottom: 3 }}>{t.obVision3Months}</div>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{vision3Months}</div>
+                  </div>
+                )}
+                {visionWhy.trim() && (
+                  <div>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginBottom: 3 }}>{t.obVisionWhy}</div>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{visionWhy}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -782,10 +840,10 @@ function Onboarding({ t, lang, setLang, onFinish }) {
         )}
         <button
           disabled={step === 1 && !goal}
-          onClick={() => (step === 3 ? onFinish() : setStep(step + 1))}
+          onClick={() => (step === 4 ? onFinish() : setStep(step + 1))}
           style={{ flex: 1, background: step === 1 && !goal ? COLORS.raised : COLORS.gold, color: step === 1 && !goal ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: step === 1 && !goal ? "default" : "pointer" }}
         >
-          {step === 0 ? t.obStart : step === 3 ? t.obFinish : t.next}
+          {step === 0 ? t.obStart : step === 4 ? t.obFinish : t.next}
         </button>
       </div>
     </div>
