@@ -336,6 +336,13 @@ const STR = {
     cheatTip: "Enjoy it guilt-free — one cheat doesn't undo your progress.",
     cheatNext: "Next",
     myMealsPick: "Add to:",
+    backupTitle: "Back up my data",
+    backupExport: "Save as file",
+    backupCopy: "Copy to clipboard",
+    backupCopied: "Copied!",
+    backupImport: "Restore from file",
+    backupImported: "Data restored",
+    backupBad: "This file is not a valid ASFIT backup.",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -666,6 +673,13 @@ const STR = {
     cheatTip: "Genieß es ohne schlechtes Gewissen — ein Cheat macht deinen Fortschritt nicht kaputt.",
     cheatNext: "Nächster",
     myMealsPick: "Hinzufügen zu:",
+    backupTitle: "Meine Daten sichern",
+    backupExport: "Als Datei speichern",
+    backupCopy: "In Zwischenablage kopieren",
+    backupCopied: "Kopiert!",
+    backupImport: "Aus Datei wiederherstellen",
+    backupImported: "Daten wiederhergestellt",
+    backupBad: "Diese Datei ist keine gültige ASFIT-Sicherung.",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -2952,6 +2966,12 @@ function usePersistedDaily(key, init) {
     try {
       const raw = JSON.parse(localStorage.getItem("asfit." + key));
       if (raw && raw.d === todayStamp()) return raw.v;
+      if (raw && raw.d) {
+        // Archive the previous day so history is never lost.
+        const daily = JSON.parse(localStorage.getItem("asfit.daily") || "{}");
+        daily[raw.d] = { ...(daily[raw.d] || {}), [key]: raw.v };
+        localStorage.setItem("asfit.daily", JSON.stringify(daily));
+      }
     } catch {
       /* storage unavailable */
     }
@@ -4051,6 +4071,69 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
 
 /* ---------------- Settings ---------------- */
 
+function BackupCard({ t }) {
+  const [msg, setMsg] = useState(null);
+  const fileRef = useRef(null);
+  const collect = () => {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("asfit.")) data[k] = localStorage.getItem(k);
+    }
+    return JSON.stringify({ app: "asfit", version: 1, exportedAt: new Date().toISOString(), data });
+  };
+  const flash = (m) => {
+    setMsg(m);
+    setTimeout(() => setMsg(null), 2500);
+  };
+  const exportFile = () => {
+    const blob = new Blob([collect()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "asfit-backup-" + new Date().toLocaleDateString("sv") + ".json";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(collect());
+      flash(t.backupCopied);
+    } catch {
+      flash(t.serverError);
+    }
+  };
+  const onImport = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (parsed.app !== "asfit" || typeof parsed.data !== "object") throw new Error("bad");
+      Object.entries(parsed.data).forEach(([k, v]) => {
+        if (k.startsWith("asfit.") && typeof v === "string") localStorage.setItem(k, v);
+      });
+      flash(t.backupImported);
+      setTimeout(() => window.location.reload(), 700);
+    } catch {
+      flash(t.backupBad);
+    }
+  };
+  const btn = { flex: 1, background: COLORS.raised, border: "1px solid " + COLORS.border, color: COLORS.gold, borderRadius: 10, padding: "10px 6px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12, cursor: "pointer" };
+  return (
+    <div style={{ padding: "13px 4px", borderTop: "1px solid " + COLORS.border }}>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, marginBottom: 10 }}>{t.backupTitle}</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        <button onClick={exportFile} style={btn}>{t.backupExport}</button>
+        <button onClick={copy} style={btn}>{t.backupCopy}</button>
+      </div>
+      <button onClick={() => fileRef.current && fileRef.current.click()} style={{ ...btn, width: "100%", flex: "none" }}>{t.backupImport}</button>
+      <input ref={fileRef} type="file" accept="application/json,.json" onChange={onImport} style={{ display: "none" }} />
+      {msg && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.gold, marginTop: 8 }}>{msg}</div>}
+    </div>
+  );
+}
+
 function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, onReplayOnboarding, onOpenPrivacy, onOpenAssistant }) {
   return (
     <div style={{ padding: "0 20px 24px" }}>
@@ -4101,6 +4184,7 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
         <BookOpen size={16} color={COLORS.dim} />
         <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.settingsPrivacy}</span>
       </div>
+      <BackupCard t={t} />
       <div onClick={onReplayOnboarding} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: `1px solid ${COLORS.border}` }}>
         <RotateCcw size={16} color={COLORS.dim} />
         <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.replayOnboarding}</span>
@@ -4132,12 +4216,12 @@ export default function AsmarFitApp() {
   const [overlay, setOverlay] = useState(null);
   const [libraryReturnTo, setLibraryReturnTo] = useState("main");
   const [activeMealKey, setActiveMealKey] = useState("snacks");
-  const [planName, setPlanName] = useState(null);
+  const [planName, setPlanName] = usePersisted("planName", null);
   const [units, setUnits] = usePersisted("units", "kg");
   const [reminders, setReminders] = usePersisted("reminders", { food: true, weigh: true, train: false });
 
-  const [pbName, setPbName] = useState("");
-  const [pbDays, setPbDays] = useState([]);
+  const [pbName, setPbName] = usePersisted("pbName", "");
+  const [pbDays, setPbDays] = usePersisted("pbDays", []);
   const [pbSelectedDay, setPbSelectedDay] = useState(null);
 
   const [notesFilter, setNotesFilter] = useState(0);
