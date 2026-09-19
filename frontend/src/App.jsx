@@ -27,6 +27,7 @@ import {
   LogOut,
   Barcode,
   Trash2,
+  Star,
   RotateCcw,
   Equal,
   X,
@@ -295,6 +296,43 @@ const STR = {
     exerciseMaxReps: "Most reps",
     exerciseChart: "Progress",
     cardioLongest: "Longest",
+    motivationTitle: "Not this time — keep going!",
+    motivationClose: "I'll be back stronger",
+    motivations: ["No new record today, but you showed up. That counts more than perfect.","Plateaus are normal. Sleep, food and patience are what break them.","Every best result had weaker days before it. Try again tomorrow!","Small tweak: one more rep, a bit less rest, or a better night's sleep — progress has many forms."],
+    recordRewardNow: "Reward for this record (optional)",
+    recordBest: "Your best",
+    recipesMine: "Mine",
+    recipeCreateOwn: "Create own recipe",
+    recipeCreateAi: "Create with AI",
+    recipeAiPrompt: "What do you feel like? e.g. high-protein dinner, 600 kcal, no dairy",
+    recipeAiGo: "Generate recipe",
+    recipeAiBusy: "Cooking up a recipe …",
+    recipeFormName: "Recipe name",
+    recipeIngredientsHint: "Ingredients — one per line",
+    recipeSave: "Save recipe",
+    recipeDelete: "Delete recipe",
+    recipeCancel: "Cancel",
+    myMealsButton: "My meals & snacks",
+    myMealsTitle: "My meals",
+    myMealsHint: "Save what you eat often — then add it with one tap.",
+    myMealName: "Name (e.g. my oat bowl)",
+    myMealSave: "Save",
+    myMealsEmpty: "Nothing saved yet.",
+    saveMine: "Save to my meals",
+    cheatTitle: "Cheat meal / cheat day",
+    cheatNextNone: "Plan your next cheat meal or cheat day",
+    cheatMeal: "Cheat meal",
+    cheatDay: "Cheat day",
+    cheatDate: "Date",
+    cheatNote: "Note (e.g. pizza night)",
+    cheatAdd: "Plan it",
+    cheatToday: "Today",
+    cheatTomorrow: "Tomorrow",
+    cheatIn: "in",
+    cheatDays: "days",
+    cheatPast: "Past",
+    cheatTip: "Enjoy it guilt-free — one cheat doesn't undo your progress.",
+    cheatNext: "Next",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -585,6 +623,43 @@ const STR = {
     exerciseMaxReps: "Meiste Wdh.",
     exerciseChart: "Fortschritt",
     cardioLongest: "Längste",
+    motivationTitle: "Diesmal nicht — bleib dran!",
+    motivationClose: "Ich komme stärker zurück",
+    motivations: ["Heute kein neuer Rekord, aber du warst da. Das zählt mehr als perfekt.","Plateaus gehören dazu. Schlaf, Essen und Geduld holen dich raus.","Jede Bestleistung hatte vorher schwächere Tage. Morgen neuer Versuch!","Kleiner Tipp: eine Wiederholung mehr, etwas kürzere Pause oder eine bessere Nacht — Fortschritt hat viele Formen."],
+    recordRewardNow: "Belohnung für diesen Rekord (optional)",
+    recordBest: "Dein Bestwert",
+    recipesMine: "Meine",
+    recipeCreateOwn: "Eigenes Rezept erstellen",
+    recipeCreateAi: "Mit KI erstellen",
+    recipeAiPrompt: "Worauf hast du Lust? z. B. proteinreiches Abendessen, 600 kcal, ohne Milch",
+    recipeAiGo: "Rezept erstellen",
+    recipeAiBusy: "Rezept wird erstellt …",
+    recipeFormName: "Rezeptname",
+    recipeIngredientsHint: "Zutaten — eine pro Zeile",
+    recipeSave: "Rezept speichern",
+    recipeDelete: "Rezept löschen",
+    recipeCancel: "Abbrechen",
+    myMealsButton: "Meine Gerichte & Snacks",
+    myMealsTitle: "Meine Gerichte",
+    myMealsHint: "Speichere, was du oft isst — dann fügst du es mit einem Tipp hinzu.",
+    myMealName: "Name (z. B. mein Haferbowl)",
+    myMealSave: "Speichern",
+    myMealsEmpty: "Noch nichts gespeichert.",
+    saveMine: "In Meine Gerichte speichern",
+    cheatTitle: "Cheat Meal / Cheat Day",
+    cheatNextNone: "Plane dein nächstes Cheat Meal oder deinen Cheat Day",
+    cheatMeal: "Cheat Meal",
+    cheatDay: "Cheat Day",
+    cheatDate: "Datum",
+    cheatNote: "Notiz (z. B. Pizza-Abend)",
+    cheatAdd: "Eintragen",
+    cheatToday: "Heute",
+    cheatTomorrow: "Morgen",
+    cheatIn: "in",
+    cheatDays: "Tagen",
+    cheatPast: "Vorbei",
+    cheatTip: "Genieß es ohne schlechtes Gewissen — ein Cheat macht deinen Fortschritt nicht kaputt.",
+    cheatNext: "Nächster",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -1887,7 +1962,9 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch, onOpenRecipes }) {
+function NutritionScreen({ t, meals, macroTargets, myMeals, cheats, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal }) {
+  const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
+  const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
   const mealDefs = [
     { key: "breakfast", label: t.breakfast },
     { key: "lunch", label: t.lunch },
@@ -1913,6 +1990,21 @@ function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch, onOpenRecip
         <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.recipesButton}</span>
       </div>
 
+      <div onClick={onOpenMyMeals} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
+        <Star size={16} color={COLORS.gold} />
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.myMealsButton}</span>
+      </div>
+
+      <div onClick={onOpenCheats} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
+        <span style={{ fontSize: 22 }}>🍕</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.cheatTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
+            {nextCheat ? (nextCheat.type === "day" ? t.cheatDay : t.cheatMeal) + " · " + (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : t.cheatNextNone}
+          </div>
+        </div>
+      </div>
+
       {mealDefs.map((m) => {
         const items = meals[m.key];
         const kcal = items.reduce((s, it) => s + it.kcal, 0);
@@ -1929,7 +2021,12 @@ function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch, onOpenRecip
                     {it.name}
                     {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}g</span> : null}
                   </span>
-                  <span style={{ color: COLORS.dim }}>{it.kcal} kcal</span>
+                  <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>
+                    {it.kcal} kcal
+                    <span onClick={() => onSaveMyMeal(it)} title={t.saveMine} style={{ marginLeft: 10, cursor: "pointer", color: COLORS.gold, fontSize: 16 }}>
+                      {myMeals.some((x) => x.name === it.name) ? "★" : "☆"}
+                    </span>
+                  </span>
                 </div>
               ))}
               <div onClick={() => onOpenFoodSearch(m.key)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 0", color: COLORS.gold, fontFamily: "Inter, sans-serif", fontSize: 13, cursor: "pointer" }}>
@@ -2418,6 +2515,25 @@ function WorkoutSession({ t, lang, onFinish }) {
 
 function Celebration({ t, data, onClose }) {
   if (!data) return null;
+  if (data.kind === "motivation") {
+    return (
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
+          <div style={{ width: 84, height: 84, borderRadius: "50%", background: "rgba(226,105,79,0.14)", margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Frown size={46} color={COLORS.coral} />
+          </div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 800, color: COLORS.text, marginBottom: 8 }}>{t.motivationTitle}</div>
+          {data.lines.map((l, i) => (
+            <div key={i} style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.dim, marginBottom: 4 }}>{l}</div>
+          ))}
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, lineHeight: 1.5, marginTop: 10 }}>{data.message}</div>
+          <button onClick={onClose} style={{ width: "100%", marginTop: 20, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
+            {t.motivationClose}
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
@@ -2528,14 +2644,15 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
             </div>
             {r.reward ? <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8 }}>🎁 {r.reward}</div> : null}
             {pts.length >= 2 && <LineChart points={pts} color={COLORS.gold} unit={r.unit} height={120} />}
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <input value={inputs["rw" + r.id] || ""} onChange={(e) => setInputs({ ...inputs, ["rw" + r.id]: e.target.value })} placeholder={t.recordRewardNow} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginTop: 10 }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
               <input type="number" inputMode="decimal" value={inputs[r.id] || ""} onChange={(e) => setInputs({ ...inputs, [r.id]: e.target.value })} placeholder={t.recordNewValue + " (" + r.unit + ")"} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
               <button
                 onClick={() => {
                   const v = parseFloat(String(inputs[r.id] || "").replace(",", "."));
                   if (v > 0) {
-                    onUpdate(r.id, v);
-                    setInputs({ ...inputs, [r.id]: "" });
+                    onUpdate(r.id, v, (inputs["rw" + r.id] || "").trim());
+                    setInputs({ ...inputs, [r.id]: "", ["rw" + r.id]: "" });
                   }
                 }}
                 style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
@@ -2578,6 +2695,18 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
 
       {summary?.burnedKcal > 0 && <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.coral, marginBottom: 18 }}>≈ {summary.burnedKcal} {t.kcalBurnedLabel}</div>}
 
+      {summary?.motivation && (
+        <Card style={{ textAlign: "left", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Frown size={28} color={COLORS.coral} style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text, marginBottom: 3 }}>{t.motivationTitle}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, lineHeight: 1.45 }}>{summary.motivation}</div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {prExercises.length > 0 && (
         <Card style={{ textAlign: "left", marginBottom: 20 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.newRecords}</div>
@@ -2599,7 +2728,7 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
 
 /* ---------------- Food flow ---------------- */
 
-function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto }) {
+function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals = [], onOpenMyMeals }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [grams, setGrams] = useState(100);
@@ -2675,7 +2804,37 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto }) {
           ) : status === "error" ? (
             <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.serverError}</div>
           ) : status === "tooShort" ? (
-            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.searchTypeMore}</div>
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>★ {t.myMealsTitle}</span>
+                <span onClick={onOpenMyMeals} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>+ {t.myMealSave}</span>
+              </div>
+              {myMeals.length === 0 ? (
+                <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 12 }}>{t.searchTypeMore}</div>
+              ) : (
+                <Card style={{ padding: 4, maxHeight: 300, overflowY: "auto" }}>
+                  {myMeals.map((m, i) => (
+                    <div
+                      key={m.id}
+                      onClick={() => {
+                        onAdd({ name: m.name, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
+                        setToast(m.name);
+                        setTimeout(() => setToast(null), 1400);
+                      }}
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < myMeals.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}
+                    >
+                      <div>
+                        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{m.name}</div>
+                        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{m.kcal} kcal</div>
+                      </div>
+                      <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Plus size={15} color={COLORS.gold} />
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+              )}
+            </>
           ) : results.length === 0 ? (
             <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.noResults}</div>
           ) : (
@@ -2758,6 +2917,49 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto }) {
 // PC browser has no access to Google's ML Kit scanner module, so it shows a
 // hint instead of a scan button rather than faking a result.
 const IS_NATIVE_APP = Capacitor.isNativePlatform();
+
+function usePersisted(key, init) {
+  const [v, setV] = useState(() => {
+    try {
+      const raw = localStorage.getItem("asfit." + key);
+      if (raw !== null) return JSON.parse(raw);
+    } catch {
+      /* storage unavailable */
+    }
+    return init;
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("asfit." + key, JSON.stringify(v));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [key, v]);
+  return [v, setV];
+}
+
+const todayStamp = () => new Date().toLocaleDateString("sv");
+
+// Daily values (meals, water, steps) reset when the date changes.
+function usePersistedDaily(key, init) {
+  const [v, setV] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("asfit." + key));
+      if (raw && raw.d === todayStamp()) return raw.v;
+    } catch {
+      /* storage unavailable */
+    }
+    return init;
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("asfit." + key, JSON.stringify({ d: todayStamp(), v }));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [key, v]);
+  return [v, setV];
+}
 
 function BarcodeScanScreen({ t, onAdd, onDone }) {
   const [found, setFound] = useState(null);
@@ -3188,20 +3390,136 @@ function StepsCard({ t, steps, source, weightKg, goal, onSaveGoal, onConnect, on
 
 /* ---------------- Recipes ---------------- */
 
-function RecipesScreen({ t, lang, onAdd, onDone }) {
+function MyMealsScreen({ t, myMeals, onSave, onDelete }) {
+  const [f, setF] = useState({ name: "", kcal: "", protein: "", carbs: "", fat: "" });
+  const num = (v) => Math.max(0, Math.round(parseFloat(String(v).replace(",", ".")) || 0));
+  const save = () => {
+    if (!f.name.trim() || !(num(f.kcal) > 0)) return;
+    onSave({ name: f.name.trim(), kcal: num(f.kcal), protein: num(f.protein), carbs: num(f.carbs), fat: num(f.fat) });
+    setF({ name: "", kcal: "", protein: "", carbs: "", fat: "" });
+  };
+  const field = (k, label) => (
+    <input type="number" inputMode="decimal" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} placeholder={label} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+  );
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginBottom: 12 }}>{t.myMealsHint}</div>
+      <Card style={{ marginBottom: 16 }}>
+        <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={t.myMealName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          {field("kcal", "kcal")}
+          {field("protein", t.protein + " g")}
+        </div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          {field("carbs", t.carbs + " g")}
+          {field("fat", t.fat + " g")}
+        </div>
+        <button onClick={save} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          {t.myMealSave}
+        </button>
+      </Card>
+      <Card style={{ padding: 4 }}>
+        {myMeals.length === 0 ? (
+          <div style={{ padding: 12, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.myMealsEmpty}</div>
+        ) : (
+          myMeals.map((m, i) => (
+            <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < myMeals.length - 1 ? "1px solid " + COLORS.border : "none" }}>
+              <div>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{m.name}</div>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
+                  {m.kcal} kcal · {m.protein}g P · {m.carbs}g C · {m.fat}g F
+                </div>
+              </div>
+              <div onClick={() => onDelete(m.id)} style={{ cursor: "pointer", padding: 6 }}>
+                <Trash2 size={16} color={COLORS.dim} />
+              </div>
+            </div>
+          ))
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function CheatScreen({ t, cheats, onAdd, onDelete }) {
+  const [type, setType] = useState("meal");
+  const [date, setDate] = useState("");
+  const [note, setNote] = useState("");
+  const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
+  const rows = cheats
+    .map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) }))
+    .sort((a, b) => (a.diff >= 0 && b.diff >= 0 ? a.diff - b.diff : b.diff - a.diff));
+  const upcoming = rows.filter((r) => r.diff >= 0);
+  const past = rows.filter((r) => r.diff < 0).slice(0, 5);
+  const label = (r) => (r.diff === 0 ? t.cheatToday : r.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + r.diff + " " + t.cheatDays);
+  const add = () => {
+    if (!date) return;
+    onAdd({ id: Date.now(), type, date, note: note.trim() });
+    setDate("");
+    setNote("");
+  };
+  const row = (r, dim) => (
+    <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: "1px solid " + COLORS.border, opacity: dim ? 0.55 : 1 }}>
+      <div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>
+          {r.type === "day" ? "🍕 " + t.cheatDay : "🍔 " + t.cheatMeal}
+          {r.note ? <span style={{ color: COLORS.dim }}> · {r.note}</span> : null}
+        </div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
+          {new Date(r.date + "T00:00").toLocaleDateString()} · {dim ? t.cheatPast : label(r)}
+        </div>
+      </div>
+      <div onClick={() => onDelete(r.id)} style={{ cursor: "pointer", padding: 6 }}>
+        <Trash2 size={16} color={COLORS.dim} />
+      </div>
+    </div>
+  );
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginBottom: 12 }}>{t.cheatTip}</div>
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <Chip label={t.cheatMeal} active={type === "meal"} onClick={() => setType("meal")} />
+          <Chip label={t.cheatDay} active={type === "day"} onClick={() => setType("day")} />
+        </div>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.cheatNote} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />
+        <button onClick={add} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          {t.cheatAdd}
+        </button>
+      </Card>
+      {(upcoming.length > 0 || past.length > 0) && (
+        <Card style={{ padding: 0 }}>
+          {upcoming.map((r) => row(r, false))}
+          {past.map((r) => row(r, true))}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecipe, onDeleteRecipe }) {
   const [cat, setCat] = useState("all");
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
+  const [mode, setMode] = useState("list"); // list | form
+  const emptyForm = { name: "", category: "lunch", kcal: "", protein: "", carbs: "", fat: "", ingredients: "" };
+  const [form, setForm] = useState(emptyForm);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
   const categories = [
     { key: "all", label: t.foodCatAll },
+    { key: "mine", label: t.recipesMine },
     { key: "breakfast", label: t.breakfast },
     { key: "lunch", label: t.lunch },
     { key: "dinner", label: t.dinner },
     { key: "snacks", label: t.snacks },
   ];
 
-  const results = RECIPES.filter((r) => cat === "all" || r.category === cat);
+  const allRecipes = [...customRecipes, ...RECIPES];
+  const results = allRecipes.filter((r) => cat === "all" || (cat === "mine" ? r.custom : r.category === cat));
 
   const confirmAdd = () => {
     const name = lang === "de" ? selected.nameDe : selected.name;
@@ -3211,24 +3529,118 @@ function RecipesScreen({ t, lang, onAdd, onDone }) {
     setTimeout(() => setToast(null), 1400);
   };
 
+  const num = (v) => Math.max(0, Math.round(parseFloat(String(v).replace(",", ".")) || 0));
+
+  const generate = async () => {
+    const wish = aiPrompt.trim();
+    if (!wish || aiBusy) return;
+    setAiBusy(true);
+    setAiError(null);
+    try {
+      const res = await fetch(API_BASE + "/api/recipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: wish, lang }),
+      });
+      if (res.status === 503) setAiError(t.assistantNotConfigured);
+      else if (!res.ok) setAiError(t.assistantError);
+      else {
+        const r = await res.json();
+        setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n") });
+      }
+    } catch {
+      setAiError(t.serverError);
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const saveForm = () => {
+    const ingredients = form.ingredients.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (!form.name.trim() || ingredients.length === 0) return;
+    onSaveRecipe({
+      key: "c" + Date.now(),
+      name: form.name.trim(),
+      nameDe: form.name.trim(),
+      category: form.category,
+      kcal: num(form.kcal),
+      protein: num(form.protein),
+      carbs: num(form.carbs),
+      fat: num(form.fat),
+      ingredients,
+      ingredientsDe: ingredients,
+      custom: true,
+    });
+    setForm(emptyForm);
+    setAiPrompt("");
+    setMode("list");
+    setCat("mine");
+  };
+
+  const smallInput = (k, label) => (
+    <input type="number" inputMode="decimal" value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} placeholder={label} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+  );
+
   return (
     <div style={{ padding: "0 20px 24px", position: "relative" }}>
-      {!selected ? (
+      {mode === "form" && !selected ? (
         <>
+          <Card style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>✨ {t.recipeCreateAi}</div>
+            <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder={t.recipeAiPrompt} rows={2} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 8, fontFamily: "Inter, sans-serif" }} />
+            <button onClick={generate} disabled={aiBusy || !aiPrompt.trim()} style={{ width: "100%", background: aiBusy || !aiPrompt.trim() ? COLORS.raised : COLORS.gold, color: aiBusy || !aiPrompt.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: aiBusy ? "default" : "pointer" }}>
+              {aiBusy ? t.recipeAiBusy : t.recipeAiGo}
+            </button>
+            {aiError && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginTop: 8 }}>{aiError}</div>}
+          </Card>
+
+          <Card>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t.recipeFormName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
+            <div style={{ display: "flex", gap: 8, marginBottom: 8, overflowX: "auto" }}>
+              {categories.filter((c) => c.key !== "all" && c.key !== "mine").map((c) => (
+                <Chip key={c.key} label={c.label} active={form.category === c.key} onClick={() => setForm({ ...form, category: c.key })} />
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              {smallInput("kcal", "kcal")}
+              {smallInput("protein", t.protein + " g")}
+            </div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              {smallInput("carbs", t.carbs + " g")}
+              {smallInput("fat", t.fat + " g")}
+            </div>
+            <textarea value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder={t.recipeIngredientsHint} rows={5} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
+            <button onClick={saveForm} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              {t.recipeSave}
+            </button>
+            <div onClick={() => setMode("list")} style={{ textAlign: "center", marginTop: 12, fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.dim, cursor: "pointer" }}>{t.recipeCancel}</div>
+          </Card>
+        </>
+      ) : !selected ? (
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+            <button onClick={() => setMode("form")} style={{ flex: 1, background: "rgba(0,191,143,0.12)", border: "1px solid " + COLORS.gold, color: COLORS.gold, borderRadius: 12, padding: "10px 8px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
+              ✨ {t.recipeCreateAi}
+            </button>
+            <button onClick={() => setMode("form")} style={{ flex: 1, background: COLORS.raised, border: "1px solid " + COLORS.border, color: COLORS.gold, borderRadius: 12, padding: "10px 8px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
+              + {t.recipeCreateOwn}
+            </button>
+          </div>
           <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto", paddingBottom: 2 }}>
             {categories.map((c) => (
               <Chip key={c.key} label={c.label} active={cat === c.key} onClick={() => setCat(c.key)} />
             ))}
           </div>
           <Card style={{ padding: 4, maxHeight: 480, overflowY: "auto" }}>
+            {results.length === 0 && <div style={{ padding: 12, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.noResults}</div>}
             {results.map((r, i) => (
               <div
                 key={r.key}
                 onClick={() => setSelected(r)}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? `1px solid ${COLORS.border}` : "none", cursor: "pointer" }}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}
               >
                 <div>
-                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{lang === "de" ? r.nameDe : r.name}</div>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{r.custom ? "★ " : ""}{lang === "de" ? r.nameDe : r.name}</div>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
                     {r.kcal} kcal {t.perServing}
                   </div>
@@ -3256,9 +3668,9 @@ function RecipesScreen({ t, lang, onAdd, onDone }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 22 }}>
             {[
               { label: "kcal", val: selected.kcal, color: COLORS.text },
-              { label: t.protein, val: `${selected.protein}g`, color: COLORS.teal },
-              { label: t.carbs, val: `${selected.carbs}g`, color: COLORS.gold },
-              { label: t.fat, val: `${selected.fat}g`, color: COLORS.coral },
+              { label: t.protein, val: selected.protein + "g", color: COLORS.teal },
+              { label: t.carbs, val: selected.carbs + "g", color: COLORS.gold },
+              { label: t.fat, val: selected.fat + "g", color: COLORS.coral },
             ].map((s, i) => (
               <div key={i} style={{ background: COLORS.raised, borderRadius: 12, padding: "10px 4px", textAlign: "center" }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: s.color }}>{s.val}</div>
@@ -3280,6 +3692,17 @@ function RecipesScreen({ t, lang, onAdd, onDone }) {
           <button onClick={confirmAdd} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             {t.logRecipe}
           </button>
+          {selected.custom && (
+            <div
+              onClick={() => {
+                onDeleteRecipe(selected.key);
+                setSelected(null);
+              }}
+              style={{ textAlign: "center", marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.coral, cursor: "pointer" }}
+            >
+              {t.recipeDelete}
+            </div>
+          )}
         </Card>
         <Card style={{ marginTop: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
@@ -3307,8 +3730,7 @@ function RecipesScreen({ t, lang, onAdd, onDone }) {
   );
 }
 
-/* ---------------- Exercise library ---------------- */
-
+/* ---------------- Exercise library */
 function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests = {}, workoutHistory = [], onQuickLog }) {
   const [query, setQuery] = useState("");
   const [muscle, setMuscle] = useState("all");
@@ -3660,28 +4082,28 @@ function StatusBarClock() {
 }
 
 export default function AsmarFitApp() {
-  const [onboarded, setOnboarded] = useState(false);
+  const [onboarded, setOnboarded] = usePersisted("onboarded", false);
   const [tab, setTab] = useState("home");
-  const [lang, setLang] = useState("de");
+  const [lang, setLang] = usePersisted("lang", "de");
   const [overlay, setOverlay] = useState(null);
   const [libraryReturnTo, setLibraryReturnTo] = useState("main");
   const [activeMealKey, setActiveMealKey] = useState("snacks");
   const [planName, setPlanName] = useState(null);
-  const [units, setUnits] = useState("kg");
-  const [reminders, setReminders] = useState({ food: true, weigh: true, train: false });
+  const [units, setUnits] = usePersisted("units", "kg");
+  const [reminders, setReminders] = usePersisted("reminders", { food: true, weigh: true, train: false });
 
   const [pbName, setPbName] = useState("");
   const [pbDays, setPbDays] = useState([]);
   const [pbSelectedDay, setPbSelectedDay] = useState(null);
 
   const [notesFilter, setNotesFilter] = useState(0);
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = usePersisted("notes", []);
 
-  const [meals, setMeals] = useState({ breakfast: [], lunch: [], dinner: [], snacks: [] });
+  const [meals, setMeals] = usePersistedDaily("meals", { breakfast: [], lunch: [], dinner: [], snacks: [] });
 
   // Real user data, populated once onboarding finishes — no seeded demo
   // values, so every screen starts from an honest empty state.
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = usePersisted("profile", {
     name: "",
     weight: null,
     height: null,
@@ -3692,16 +4114,19 @@ export default function AsmarFitApp() {
     vision3Months: "",
     visionWhy: "",
   });
-  const [weightLog, setWeightLog] = useState([]);
-  const [workoutHistory, setWorkoutHistory] = useState([]);
-  const [personalBests, setPersonalBests] = useState({});
+  const [weightLog, setWeightLog] = usePersisted("weightLog", []);
+  const [workoutHistory, setWorkoutHistory] = usePersisted("workoutHistory", []);
+  const [personalBests, setPersonalBests] = usePersisted("personalBests", {});
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
-  const [cardioBests, setCardioBests] = useState({});
-  const [customRecords, setCustomRecords] = useState([]);
+  const [cardioBests, setCardioBests] = usePersisted("cardioBests", {});
+  const [customRecords, setCustomRecords] = usePersisted("customRecords", []);
+  const [myMeals, setMyMeals] = usePersisted("myMeals", []);
+  const [customRecipes, setCustomRecipes] = usePersisted("customRecipes", []);
+  const [cheats, setCheats] = usePersisted("cheats", []);
   const [celebrate, setCelebrate] = useState(null);
-  const [waterMl, setWaterMl] = useState(0);
-  const [steps, setSteps] = useState(0);
-  const [stepsGoal, setStepsGoal] = useState(10000);
+  const [waterMl, setWaterMl] = usePersistedDaily("water", 0);
+  const [steps, setSteps] = usePersistedDaily("steps", 0);
+  const [stepsGoal, setStepsGoal] = usePersisted("stepsGoal", 10000);
   // connect = native, not authorised yet | health = auto from Health Connect
   // manual = typed in (web) | unavailable = native but no Health Connect
   const [stepsSource, setStepsSource] = useState(IS_NATIVE_APP ? "connect" : "manual");
@@ -3758,6 +4183,7 @@ export default function AsmarFitApp() {
       }
     }
     setPersonalBests(updatedBests);
+    const hadPrior = summary.setLog.some((x) => (personalBests[x.exerciseKey] || 0) > 0) || (summary.cardio || []).some((c) => (cardioBests[c.exerciseKey] || 0) > 0);
     const updatedCardio = { ...cardioBests };
     for (const c of summary.cardio || []) {
       if (c.minutes > (updatedCardio[c.exerciseKey] || 0)) {
@@ -3768,14 +4194,17 @@ export default function AsmarFitApp() {
       }
     }
     setCardioBests(updatedCardio);
+    const stagnated = hadPrior && newBests.length === 0;
     const w = profile.weight || 70;
     const strengthMinutes = summary.setLog.length * 2.5; // ~2.5 min per set incl. rest
     const cardioKcal = (summary.cardio || []).reduce((sum, c) => sum + burnKcal(CARDIO_MET[c.exerciseKey] || 6, w, c.minutes), 0);
     const burnedKcal = burnKcal(MET_STRENGTH, w, strengthMinutes) + cardioKcal;
     setWorkoutHistory((h) => [...h, { id: Date.now(), dateISO: new Date().toISOString(), durationSec: summary.durationSec, volumeKg: summary.volumeKg, sets: summary.setLog, cardio: summary.cardio || [], burnedKcal }]);
     if (showSummary) {
-      setLastWorkoutSummary({ durationSec: summary.durationSec, volumeKg: summary.volumeKg, newBests, burnedKcal });
+      setLastWorkoutSummary({ durationSec: summary.durationSec, volumeKg: summary.volumeKg, newBests, burnedKcal, motivation: stagnated ? t.motivations[Math.floor(Math.random() * t.motivations.length)] : null });
       setOverlay("workoutSummary");
+    } else if (stagnated) {
+      setCelebrate({ kind: "motivation", lines: [], message: t.motivations[Math.floor(Math.random() * t.motivations.length)] });
     } else if (newBests.length) {
       setCelebrate({
         lines: newBests.map((b) => {
@@ -3791,13 +4220,21 @@ export default function AsmarFitApp() {
     setCustomRecords((r) => [...r, { id: Date.now(), name, unit, lower, reward, best: value, history: [{ value, dateISO: new Date().toISOString() }] }]);
   };
 
-  const updateCustomRecord = (id, value) => {
+  const pickMotivation = () => t.motivations[Math.floor(Math.random() * t.motivations.length)];
+
+  const updateCustomRecord = (id, value, reward) => {
     const rec = customRecords.find((r) => r.id === id);
     if (!rec) return;
     const better = rec.lower ? value < rec.best : value > rec.best;
-    setCustomRecords((all) => all.map((r) => (r.id === id ? { ...r, best: better ? value : r.best, history: [...r.history, { value, dateISO: new Date().toISOString() }] } : r)));
-    if (better) setCelebrate({ lines: [rec.name + ": " + value + " " + rec.unit], reward: rec.reward });
+    const newReward = reward || rec.reward || "";
+    setCustomRecords((all) => all.map((r) => (r.id === id ? { ...r, best: better ? value : r.best, reward: better ? newReward : r.reward, history: [...r.history, { value, dateISO: new Date().toISOString() }] } : r)));
+    if (better) setCelebrate({ lines: [rec.name + ": " + value + " " + rec.unit], reward: newReward });
+    else setCelebrate({ kind: "motivation", lines: [rec.name + ": " + value + " " + rec.unit, t.recordBest + ": " + rec.best + " " + rec.unit], message: pickMotivation() });
   };
+
+  const addMyMeal = (m) => setMyMeals((l) => (l.some((x) => x.name === m.name) ? l : [...l, { id: Date.now() + Math.random(), name: m.name, kcal: m.kcal, protein: m.protein || 0, carbs: m.carbs || 0, fat: m.fat || 0 }]));
+  const saveRecipe = (r) => setCustomRecipes((l) => [r, ...l]);
+  const deleteRecipe = (key) => setCustomRecipes((l) => l.filter((r) => r.key !== key));
 
   const addFoodItem = (food) => {
     setMeals((m) => ({ ...m, [activeMealKey]: [...m[activeMealKey], food] }));
@@ -3831,7 +4268,7 @@ export default function AsmarFitApp() {
     topTitle = t.workoutDone;
     showBack = () => setOverlay(null);
   } else if (overlay === "foodSearch") {
-    content = <FoodSearchScreen t={t} lang={lang} onAdd={addFoodItem} onOpenBarcode={() => setOverlay("barcode")} onOpenPhoto={() => setOverlay("photo")} />;
+    content = <FoodSearchScreen t={t} lang={lang} onAdd={addFoodItem} onOpenBarcode={() => setOverlay("barcode")} onOpenPhoto={() => setOverlay("photo")} myMeals={myMeals} onOpenMyMeals={() => setOverlay("myMeals")} />;
     topTitle = t.foodSearchTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "barcode") {
@@ -3843,8 +4280,16 @@ export default function AsmarFitApp() {
     topTitle = t.photoTitle;
     showBack = () => setOverlay("foodSearch");
   } else if (overlay === "recipes") {
-    content = <RecipesScreen t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} />;
+    content = <RecipesScreen t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} customRecipes={customRecipes} onSaveRecipe={saveRecipe} onDeleteRecipe={deleteRecipe} />;
     topTitle = t.recipesTitle;
+    showBack = () => setOverlay(null);
+  } else if (overlay === "myMeals") {
+    content = <MyMealsScreen t={t} myMeals={myMeals} onSave={addMyMeal} onDelete={(id) => setMyMeals((l) => l.filter((x) => x.id !== id))} />;
+    topTitle = t.myMealsTitle;
+    showBack = () => setOverlay(null);
+  } else if (overlay === "cheats") {
+    content = <CheatScreen t={t} cheats={cheats} onAdd={(c) => setCheats((l) => [...l, c])} onDelete={(id) => setCheats((l) => l.filter((x) => x.id !== id))} />;
+    topTitle = t.cheatTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "records") {
     content = <RecordsScreen t={t} lang={lang} personalBests={personalBests} cardioBests={cardioBests} workoutHistory={workoutHistory} customRecords={customRecords} onCreate={createCustomRecord} onUpdate={updateCustomRecord} />;
@@ -3970,6 +4415,11 @@ export default function AsmarFitApp() {
             setActiveMealKey("snacks");
             setOverlay("recipes");
           }}
+          myMeals={myMeals}
+          cheats={cheats}
+          onOpenMyMeals={() => setOverlay("myMeals")}
+          onOpenCheats={() => setOverlay("cheats")}
+          onSaveMyMeal={addMyMeal}
         />
       ),
       training: (

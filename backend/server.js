@@ -391,6 +391,52 @@ app.get("/api/food/barcode/:code", async (req, res) => {
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+app.post("/api/recipe", async (req, res) => {
+  if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
+
+  const now = Date.now();
+  const hits = (assistantHits.get(req.ip) || []).filter((ts) => now - ts < 60_000);
+  if (hits.length >= 15) return res.status(429).json({ error: "rate_limited" });
+  assistantHits.set(req.ip, [...hits, now]);
+
+  const lang = req.body?.lang === "en" ? "English" : "German";
+  const wish = typeof req.body?.prompt === "string" ? req.body.prompt.trim().slice(0, 500) : "";
+  if (!wish) return res.status(400).json({ error: "Expected a prompt" });
+
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: ASSISTANT_MODEL,
+        max_tokens: 700,
+        system:
+          "You create one simple recipe for a nutrition tracking app. Reply with ONLY a JSON object, no other text, in this exact shape: " +
+          '{"name": string, "category": "breakfast"|"lunch"|"dinner"|"snacks", "kcal": number, "protein": number, "carbs": number, "fat": number, "ingredients": [string]} ' +
+          "Nutrition values are per one serving (whole numbers, grams for macros). Ingredients include concrete amounts (e.g. '200 ml milk'). Use " + lang + " for name and ingredients. Estimates are fine.",
+        messages: [{ role: "user", content: wish }],
+      }),
+    });
+    if (!r.ok) {
+      console.error("Anthropic API returned", r.status);
+      return res.status(502).json({ error: "upstream_error" });
+    }
+    const data = await r.json();
+    const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join(" ");
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) return res.status(502).json({ error: "bad_format" });
+    const raw = JSON.parse(m[0]);
+    const num = (v) => Math.max(0, Math.round(Number(v) || 0));
+    const category = ["breakfast", "lunch", "dinner", "snacks"].includes(raw.category) ? raw.category : "lunch";
+    const ingredients = Array.isArray(raw.ingredients) ? raw.ingredients.map((x) => String(x).slice(0, 120)).slice(0, 25) : [];
+    if (!raw.name || ingredients.length === 0) return res.status(502).json({ error: "bad_format" });
+    res.json({ name: String(raw.name).slice(0, 80), category, kcal: num(raw.kcal), protein: num(raw.protein), carbs: num(raw.carbs), fat: num(raw.fat), ingredients });
+  } catch (err) {
+    console.error("Recipe request failed:", err.message);
+    res.status(502).json({ error: "upstream_error" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`AsmarFit food API running on http://localhost:${PORT}`);
   console.log(`  GET /api/food/search?q=banana`);
