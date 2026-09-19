@@ -7,6 +7,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
+app.use(express.json({ limit: "50kb" }));
 
 const PORT = process.env.PORT || 3001;
 const USDA_API_KEY = process.env.USDA_API_KEY;
@@ -235,6 +236,58 @@ app.get("/api/food/search", async (req, res) => {
 
   cache.set(cacheKey, results);
   res.json({ cached: false, results });
+});
+
+/* ---------- POST /api/assistant ---------- */
+// In-app support / fitness assistant. Needs ANTHROPIC_API_KEY on the server;
+// the key never reaches the app. Simple per-IP rate limit to cap cost.
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const ASSISTANT_MODEL = process.env.ASSISTANT_MODEL || "claude-haiku-4-5-20251001";
+const assistantHits = new Map();
+
+app.post("/api/assistant", async (req, res) => {
+  if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
+
+  const now = Date.now();
+  const hits = (assistantHits.get(req.ip) || []).filter((ts) => now - ts < 60_000);
+  if (hits.length >= 15) return res.status(429).json({ error: "rate_limited" });
+  assistantHits.set(req.ip, [...hits, now]);
+
+  const lang = req.body?.lang === "en" ? "English" : "German";
+  const messages = (Array.isArray(req.body?.messages) ? req.body.messages : [])
+    .slice(-10)
+    .filter((m) => (m?.role === "user" || m?.role === "assistant") && typeof m.content === "string" && m.content.trim())
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
+  if (messages.length === 0 || messages[messages.length - 1].role !== "user") {
+    return res.status(400).json({ error: "Expected a final user message" });
+  }
+
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: ASSISTANT_MODEL,
+        max_tokens: 600,
+        system:
+          "You are the assistant inside ASFIT, a fitness and nutrition tracking app (food logging with barcode scan and search, recipes, workouts with self-entered weights, progress charts, water tracking, notes with mood). " +
+          "Help with training, nutrition, motivation and how to use the app. Be friendly, concrete and brief (max ~150 words). " +
+          "You are not a doctor: for medical problems, injuries, eating disorders or medication, recommend a professional. " +
+          "Reply in " + lang + ".",
+        messages,
+      }),
+    });
+    if (!r.ok) {
+      console.error("Anthropic API returned", r.status);
+      return res.status(502).json({ error: "upstream_error" });
+    }
+    const data = await r.json();
+    const reply = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join(" ").trim();
+    res.json({ reply: reply || "…" });
+  } catch (err) {
+    console.error("Assistant request failed:", err.message);
+    res.status(502).json({ error: "upstream_error" });
+  }
 });
 
 /* ---------- GET /api/food/barcode/:code ---------- */

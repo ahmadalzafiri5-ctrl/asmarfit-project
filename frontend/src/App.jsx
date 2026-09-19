@@ -30,6 +30,13 @@ import {
   Equal,
   X,
   BookOpen,
+  Frown,
+  Meh,
+  Laugh,
+  Angry,
+  MessageCircle,
+  Send,
+  GlassWater,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -145,8 +152,8 @@ const STR = {
     obExperienceFailed: "I tried, but without success.",
     obExperienceCouldntKeep: "Yes, but I couldn't keep the results.",
     obExperienceNever: "I've never tried this before.",
-    obAiScanTitle: "No time to track? Soon, that won't matter.",
-    obAiScanSub: "We're building AI food photo recognition — snap a picture of your plate and get instant nutrition info. Coming in a future update.",
+    obAiScanTitle: "Track your food in seconds",
+    obAiScanSub: "Scan a barcode with your camera or search for a food — your meal is logged in a snap.",
     obStatsTitle: "A few numbers",
     obStatsSub: "Used to calculate your daily targets.",
     obNameLabel: "Your name",
@@ -189,6 +196,34 @@ const STR = {
     addItem: "Add",
     per100g: "per 100 g",
     amount: "Amount",
+    freeWorkout: "Free workout",
+    freeWorkoutSub: "Pick your exercises and enter your own weights.",
+    yourExercises: "Your exercises",
+    noExercisesYet: "No exercises logged yet — start a workout.",
+    bestLabel: "Best",
+    addSet: "Add set",
+    emptyWorkout: "Add your first exercise to begin.",
+    addExerciseBtn: "Add exercise",
+    saveWeight: "Save",
+    weightInputPlaceholder: "Weight in kg",
+    needMoreWeights: "Log your weight regularly to see the trend.",
+    exerciseProgress: "Exercise progress",
+    exerciseProgressHint: "Log this exercise in at least two workouts.",
+    noProgressYet: "Finish a workout to see your progress here.",
+    muscleGlutes: "Glutes",
+    muscleCardio: "Cardio",
+    muscleFull: "Full body",
+    waterTitle: "Water",
+    waterGoalLabel: "Goal",
+    waterAddGlass: "+ 250 ml",
+    waterUndo: "Undo",
+    assistantTitle: "ASFIT Assistant",
+    assistantEntry: "Ask the assistant",
+    assistantHello: "Hi! I'm your ASFIT assistant. Ask me about training, nutrition or how to use the app.",
+    assistantPlaceholder: "Type your question …",
+    assistantThinking: "Thinking …",
+    assistantError: "Sorry, something went wrong. Please try again.",
+    assistantNotConfigured: "The assistant isn't set up yet (missing API key on the server).",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -339,8 +374,8 @@ const STR = {
     obExperienceFailed: "Ich habe es versucht, aber leider ohne Erfolg.",
     obExperienceCouldntKeep: "Ja, aber ich konnte das Ergebnis nicht halten.",
     obExperienceNever: "Ich habe es noch nie versucht.",
-    obAiScanTitle: "Keine Zeit zum Tracken? Bald kein Problem mehr.",
-    obAiScanSub: "Wir bauen gerade eine KI-Bilderkennung für Essen — Foto vom Teller machen und sofort Nährwerte erhalten. Kommt in einem späteren Update.",
+    obAiScanTitle: "Essen tracken in Sekunden",
+    obAiScanSub: "Barcode mit der Kamera scannen oder Lebensmittel suchen — dein Essen ist blitzschnell erfasst.",
     obStatsTitle: "Ein paar Zahlen",
     obStatsSub: "Damit berechnen wir deine Tagesziele.",
     obNameLabel: "Dein Name",
@@ -383,6 +418,34 @@ const STR = {
     addItem: "Hinzufügen",
     per100g: "pro 100 g",
     amount: "Menge",
+    freeWorkout: "Freies Workout",
+    freeWorkoutSub: "Wähle deine Übungen und trage dein Gewicht selbst ein.",
+    yourExercises: "Deine Übungen",
+    noExercisesYet: "Noch keine Übungen — starte ein Workout.",
+    bestLabel: "Bestwert",
+    addSet: "Satz hinzufügen",
+    emptyWorkout: "Füge deine erste Übung hinzu.",
+    addExerciseBtn: "Übung hinzufügen",
+    saveWeight: "Speichern",
+    weightInputPlaceholder: "Gewicht in kg",
+    needMoreWeights: "Trage regelmäßig dein Gewicht ein, um den Verlauf zu sehen.",
+    exerciseProgress: "Übungs-Fortschritt",
+    exerciseProgressHint: "Trage diese Übung in mindestens zwei Workouts ein.",
+    noProgressYet: "Beende ein Workout, dann siehst du hier deinen Fortschritt.",
+    muscleGlutes: "Gesäß",
+    muscleCardio: "Cardio",
+    muscleFull: "Ganzkörper",
+    waterTitle: "Wasser",
+    waterGoalLabel: "Ziel",
+    waterAddGlass: "+ 250 ml",
+    waterUndo: "Zurück",
+    assistantTitle: "ASFIT-Assistent",
+    assistantEntry: "Assistent fragen",
+    assistantHello: "Hallo! Ich bin dein ASFIT-Assistent. Frag mich zu Training, Ernährung oder zur Bedienung der App.",
+    assistantPlaceholder: "Deine Frage …",
+    assistantThinking: "Denke nach …",
+    assistantError: "Da ist etwas schiefgelaufen. Bitte versuch es nochmal.",
+    assistantNotConfigured: "Der Assistent ist noch nicht eingerichtet (API-Schlüssel auf dem Server fehlt).",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -450,15 +513,6 @@ const STR = {
   },
 };
 
-/* Today's active-plan exercises. `sets`/`reps` are the program's prescription;
-   `startWeight` is only a sane default for the weight stepper when the user
-   has no personal best logged yet — it is never displayed as "last time". */
-const EXERCISES = [
-  { key: "bench", name: "Bench Press", nameDe: "Bankdrücken", sets: 4, reps: 6, startWeight: 20 },
-  { key: "incline", name: "Incline DB Press", nameDe: "Schrägbankdrücken (KH)", sets: 3, reps: 10, startWeight: 10 },
-  { key: "flye", name: "Cable Fly", nameDe: "Kabelzug-Fliegende", sets: 3, reps: 12, startWeight: 10 },
-  { key: "ohp2", name: "Overhead Press", nameDe: "Schulterdrücken", sets: 4, reps: 8, startWeight: 20 },
-];
 
 /* Full exercise library, filterable by muscle group */
 const EXERCISE_LIBRARY = [
@@ -494,6 +548,167 @@ const EXERCISE_LIBRARY = [
   { key: "cablecrunch", name: "Cable Crunch", nameDe: "Kabel-Crunch", muscle: "core", cue: "Round the spine, not the hips", cueDe: "Wirbelsäule runden, nicht die Hüfte" },
   { key: "russiantwist", name: "Russian Twist", nameDe: "Russian Twist", muscle: "core", cue: "Rotate from the ribs", cueDe: "Aus den Rippen heraus drehen" },
 ];
+
+/* Extended exercise catalogue (own wording). Grouped by muscle group; the
+   library screen filters on `muscle`. */
+const EX = (key, name, nameDe, muscle, cue, cueDe) => ({ key, name, nameDe, muscle, cue, cueDe });
+EXERCISE_LIBRARY.push(
+  // Chest
+  EX("decline_bench", "Decline Bench Press", "Negativbankdrücken", "chest", "Lower to the lower chest, control the bar", "Zur unteren Brust senken, Stange kontrollieren"),
+  EX("incline_bench", "Incline Barbell Press", "Schrägbankdrücken (LH)", "chest", "Bar to the upper chest, elbows at 45°", "Stange zur oberen Brust, Ellbogen bei 45°"),
+  EX("dumbbell_bench", "Dumbbell Bench Press", "Kurzhantel-Bankdrücken", "chest", "Deep stretch, press up and slightly in", "Tief dehnen, nach oben und leicht zusammen drücken"),
+  EX("machine_chest_press", "Machine Chest Press", "Brustpresse (Maschine)", "chest", "Shoulder blades pinned to the pad", "Schulterblätter am Polster fixieren"),
+  EX("pec_deck", "Pec Deck", "Butterfly (Maschine)", "chest", "Squeeze the chest at the front", "Vorne die Brust zusammenziehen"),
+  EX("db_fly", "Dumbbell Fly", "Kurzhantel-Fliegende", "chest", "Slight elbow bend, wide arc", "Ellbogen leicht gebeugt, weiter Bogen"),
+  EX("low_cable_fly", "Low-to-High Cable Fly", "Kabelzug von unten nach oben", "chest", "Sweep up to the chin, squeeze", "Bis zum Kinn hochführen, zusammendrücken"),
+  EX("high_cable_fly", "High-to-Low Cable Fly", "Kabelzug von oben nach unten", "chest", "Pull down to the hips", "Zu den Hüften nach unten ziehen"),
+  EX("svend_press", "Svend Press", "Svend Press", "chest", "Squeeze plates together while pressing", "Scheiben beim Drücken zusammenpressen"),
+  EX("floor_press", "Floor Press", "Floor Press", "chest", "Elbows touch the floor, pause", "Ellbogen berühren den Boden, kurz halten"),
+  EX("diamond_pushup", "Diamond Push-Up", "Diamant-Liegestütz", "chest", "Hands close, elbows tight", "Hände eng, Ellbogen nah am Körper"),
+  EX("incline_pushup", "Incline Push-Up", "Erhöhter Liegestütz", "chest", "Hands on a bench, body straight", "Hände auf einer Bank, Körper gerade"),
+  EX("decline_pushup", "Decline Push-Up", "Fußerhöhter Liegestütz", "chest", "Feet up, keep the core tight", "Füße erhöht, Rumpf anspannen"),
+  EX("machine_dip", "Assisted Dip Machine", "Dip-Maschine (assistiert)", "chest", "Lean forward slightly", "Leicht nach vorne lehnen"),
+  // Back
+  EX("pendlay_row", "Pendlay Row", "Pendlay-Rudern", "back", "Bar from the floor each rep, flat back", "Stange jede Wiederholung vom Boden, gerader Rücken"),
+  EX("db_row", "One-Arm Dumbbell Row", "Einarmiges Kurzhantelrudern", "back", "Pull the elbow toward the hip", "Ellbogen zur Hüfte ziehen"),
+  EX("chest_supported_row", "Chest-Supported Row", "Brustgestütztes Rudern", "back", "No swinging, squeeze the shoulder blades", "Kein Schwung, Schulterblätter zusammenziehen"),
+  EX("wide_cable_row", "Wide-Grip Cable Row", "Rudern breit am Kabel", "back", "Pull to the upper abs", "Zum oberen Bauch ziehen"),
+  EX("machine_row", "Machine Row", "Rudermaschine", "back", "Chest on the pad, pull elbows back", "Brust am Polster, Ellbogen nach hinten"),
+  EX("inverted_row", "Inverted Row", "Rudern liegend am Barren", "back", "Body straight, chest to the bar", "Körper gerade, Brust zur Stange"),
+  EX("chinup", "Chin-Up", "Klimmzug im Untergriff", "back", "Chin over the bar, no kipping", "Kinn über die Stange, kein Schwung"),
+  EX("wide_pullup", "Wide-Grip Pull-Up", "Breiter Klimmzug", "back", "Pull elbows down toward the ribs", "Ellbogen zu den Rippen ziehen"),
+  EX("neutral_pulldown", "Neutral-Grip Pulldown", "Latzug mit neutralem Griff", "back", "Lean back slightly, pull to the chest", "Leicht zurücklehnen, zur Brust ziehen"),
+  EX("close_pulldown", "Close-Grip Pulldown", "Enger Latzug", "back", "Elbows close to the body", "Ellbogen nah am Körper"),
+  EX("straight_arm_pulldown", "Straight-Arm Pulldown", "Gestreckter Armzug am Kabel", "back", "Arms straight, drive with the lats", "Arme gestreckt, mit dem Latissimus ziehen"),
+  EX("rack_pull", "Rack Pull", "Rack Pull", "back", "Lift from knee height, lock out hips", "Ab Kniehöhe ziehen, Hüfte strecken"),
+  EX("sumo_deadlift", "Sumo Deadlift", "Sumo-Kreuzheben", "back", "Wide stance, knees out", "Breiter Stand, Knie nach außen"),
+  EX("trapbar_deadlift", "Trap Bar Deadlift", "Kreuzheben mit Trap-Bar", "back", "Neutral grip, push the floor away", "Neutraler Griff, den Boden wegdrücken"),
+  EX("good_morning", "Good Morning", "Good Morning", "back", "Hinge at the hips, soft knees", "Aus der Hüfte beugen, Knie leicht gebeugt"),
+  EX("back_extension", "Back Extension", "Rückenstrecker", "back", "Rise to a straight line, don't overarch", "Bis zur Geraden aufrichten, nicht überstrecken"),
+  EX("barbell_shrug", "Barbell Shrug", "Schulterzucken (LH)", "back", "Shrug straight up, hold briefly", "Gerade nach oben ziehen, kurz halten"),
+  EX("db_shrug", "Dumbbell Shrug", "Schulterzucken (KH)", "back", "No rolling, straight up and down", "Nicht kreisen, gerade hoch und runter"),
+  EX("meadows_row", "Meadows Row", "Meadows Row", "back", "Landmine setup, pull to the hip", "Landmine-Aufbau, zur Hüfte ziehen"),
+  EX("db_pullover", "Dumbbell Pullover", "Kurzhantel-Pullover", "back", "Stretch overhead, ribs down", "Über Kopf dehnen, Rippen unten"),
+  EX("hyperextension", "45° Hyperextension", "45°-Hyperextension", "back", "Hinge at the hips, squeeze the glutes", "Aus der Hüfte, Gesäß anspannen"),
+  // Shoulders
+  EX("db_shoulder_press", "Dumbbell Shoulder Press", "Schulterdrücken (KH)", "shoulders", "Press straight up, don't flare ribs", "Gerade nach oben, Rippen unten lassen"),
+  EX("arnold_press", "Arnold Press", "Arnold Press", "shoulders", "Rotate palms as you press", "Handflächen beim Drücken drehen"),
+  EX("machine_shoulder_press", "Machine Shoulder Press", "Schulterpresse (Maschine)", "shoulders", "Back against the pad", "Rücken am Polster"),
+  EX("push_press", "Push Press", "Push Press", "shoulders", "Dip with the legs, drive the bar up", "Mit den Beinen eintauchen, Stange hochdrücken"),
+  EX("cable_lateral", "Cable Lateral Raise", "Seitheben am Kabel", "shoulders", "Constant tension, lead with the elbow", "Dauerhafte Spannung, mit dem Ellbogen führen"),
+  EX("front_raise", "Front Raise", "Frontheben", "shoulders", "Raise to eye level, no swinging", "Bis Augenhöhe, ohne Schwung"),
+  EX("upright_row", "Upright Row", "Aufrechtes Rudern", "shoulders", "Elbows high, bar close to the body", "Ellbogen hoch, Stange nah am Körper"),
+  EX("rear_delt_cable", "Rear Delt Cable Fly", "Reverse Fly am Kabel", "shoulders", "Arms wide, squeeze the rear delts", "Arme weit, hintere Schulter anspannen"),
+  EX("reverse_pecdeck", "Reverse Pec Deck", "Reverse Butterfly (Maschine)", "shoulders", "Chest on the pad, pull wide", "Brust am Polster, weit nach hinten ziehen"),
+  EX("pike_pushup", "Pike Push-Up", "Pike-Liegestütz", "shoulders", "Hips high, head between the arms", "Hüfte hoch, Kopf zwischen den Armen"),
+  EX("handstand_pushup", "Handstand Push-Up", "Handstand-Liegestütz", "shoulders", "Tight core, full range if possible", "Rumpf fest, möglichst voller Weg"),
+  EX("landmine_press", "Landmine Press", "Landmine Press", "shoulders", "Press up and forward, stay tall", "Nach oben und vorne drücken, aufrecht bleiben"),
+  EX("y_raise", "Y Raise", "Y-Heben", "shoulders", "Thumbs up, lift into a Y shape", "Daumen hoch, in Y-Form anheben"),
+  EX("band_pullapart", "Band Pull-Apart", "Band Pull-Apart", "shoulders", "Pull the band to the chest, arms straight", "Band zur Brust ziehen, Arme gestreckt"),
+  EX("db_external_rotation", "External Rotation", "Außenrotation", "shoulders", "Elbow at the side, slow and light", "Ellbogen an der Seite, langsam und leicht"),
+  // Arms
+  EX("ez_curl", "EZ-Bar Curl", "SZ-Curl", "arms", "Elbows pinned, full squeeze", "Ellbogen fixiert, oben anspannen"),
+  EX("incline_curl", "Incline Dumbbell Curl", "Schrägbank-Curl", "arms", "Deep stretch at the bottom", "Unten tief dehnen"),
+  EX("concentration_curl", "Concentration Curl", "Konzentrationscurl", "arms", "Elbow against the inner thigh", "Ellbogen am Oberschenkel"),
+  EX("cable_curl", "Cable Curl", "Kabelcurl", "arms", "Constant tension, slow negative", "Dauerspannung, langsam ablassen"),
+  EX("spider_curl", "Spider Curl", "Spider Curl", "arms", "Chest on an incline bench, arms hanging", "Brust auf Schrägbank, Arme hängen"),
+  EX("reverse_curl", "Reverse Curl", "Reverse Curl", "arms", "Overhand grip for forearms", "Obergriff für die Unterarme"),
+  EX("zottman_curl", "Zottman Curl", "Zottman-Curl", "arms", "Curl up, rotate, lower slowly", "Hoch curlen, drehen, langsam ablassen"),
+  EX("wrist_curl", "Wrist Curl", "Handgelenkcurl", "arms", "Forearms on knees, small controlled range", "Unterarme auf den Knien, kleine kontrollierte Bewegung"),
+  EX("overhead_ext", "Overhead Triceps Extension", "Trizepsstrecken über Kopf", "arms", "Elbows close, stretch behind the head", "Ellbogen eng, hinter dem Kopf dehnen"),
+  EX("rope_pushdown", "Rope Pushdown", "Trizepsdrücken mit Seil", "arms", "Spread the rope at the bottom", "Seil unten auseinanderziehen"),
+  EX("tricep_kickback", "Triceps Kickback", "Trizeps-Kickback", "arms", "Upper arm parallel to the floor", "Oberarm parallel zum Boden"),
+  EX("bench_dip", "Bench Dip", "Dips an der Bank", "arms", "Elbows back, shoulders down", "Ellbogen nach hinten, Schultern unten"),
+  EX("close_grip_bench", "Close-Grip Bench Press", "Enges Bankdrücken", "arms", "Hands shoulder-width, elbows tucked", "Hände schulterbreit, Ellbogen eng"),
+  EX("jm_press", "JM Press", "JM Press", "arms", "Between a press and a skull crusher", "Zwischen Bankdrücken und French Press"),
+  EX("farmers_walk", "Farmer's Walk", "Farmer's Walk", "arms", "Heavy weights, tall posture, walk", "Schwere Gewichte, aufrecht gehen"),
+  // Legs
+  EX("front_squat", "Front Squat", "Frontkniebeuge", "legs", "Elbows high, upright torso", "Ellbogen hoch, aufrechter Oberkörper"),
+  EX("goblet_squat", "Goblet Squat", "Goblet-Kniebeuge", "legs", "Weight at the chest, sit between the knees", "Gewicht an der Brust, zwischen die Knie setzen"),
+  EX("bulgarian_split", "Bulgarian Split Squat", "Bulgarische Kniebeuge", "legs", "Rear foot on a bench, drop straight down", "Hinterer Fuß auf der Bank, gerade absenken"),
+  EX("hack_squat", "Hack Squat", "Hackenschmidt-Kniebeuge", "legs", "Feet forward, deep and controlled", "Füße vorne, tief und kontrolliert"),
+  EX("smith_squat", "Smith Machine Squat", "Kniebeuge an der Multipresse", "legs", "Feet slightly forward, brace the core", "Füße leicht vor, Rumpf anspannen"),
+  EX("reverse_lunge", "Reverse Lunge", "Ausfallschritt rückwärts", "legs", "Step back, front heel stays down", "Schritt zurück, vordere Ferse am Boden"),
+  EX("step_up", "Step-Up", "Step-Up", "legs", "Drive through the front heel", "Über die vordere Ferse hochdrücken"),
+  EX("db_rdl", "Dumbbell Romanian Deadlift", "Rumänisches Kreuzheben (KH)", "legs", "Dumbbells slide along the legs", "Hanteln entlang der Beine führen"),
+  EX("stiff_leg_dl", "Stiff-Leg Deadlift", "Gestrecktes Kreuzheben", "legs", "Nearly straight legs, feel the hamstrings", "Fast gestreckte Beine, Beinbeuger spüren"),
+  EX("seated_legcurl", "Seated Leg Curl", "Sitzender Beinbeuger", "legs", "Pull the heels down and back", "Fersen nach unten und hinten ziehen"),
+  EX("lying_legcurl", "Lying Leg Curl", "Liegender Beinbeuger", "legs", "Hips down, slow negative", "Hüfte unten, langsam ablassen"),
+  EX("nordic_curl", "Nordic Hamstring Curl", "Nordic Curl", "legs", "Lower as slowly as possible", "So langsam wie möglich absenken"),
+  EX("seated_calf", "Seated Calf Raise", "Wadenheben sitzend", "legs", "Full stretch, pause at the top", "Voll dehnen, oben kurz halten"),
+  EX("legpress_calf", "Calf Press on Leg Press", "Wadenheben an der Beinpresse", "legs", "Only the ankles move", "Nur die Sprunggelenke bewegen"),
+  EX("adductor", "Adductor Machine", "Adduktoren-Maschine", "legs", "Controlled squeeze, no bouncing", "Kontrolliert zusammenpressen, nicht wippen"),
+  EX("abductor", "Abductor Machine", "Abduktoren-Maschine", "legs", "Push out, slow return", "Nach außen drücken, langsam zurück"),
+  EX("wall_sit", "Wall Sit", "Wandsitzen", "legs", "Thighs parallel, hold", "Oberschenkel parallel, halten"),
+  EX("pistol_squat", "Pistol Squat", "Pistol Squat", "legs", "One leg, hold a counterweight if needed", "Ein Bein, bei Bedarf Gegengewicht halten"),
+  EX("jump_squat", "Jump Squat", "Sprungkniebeuge", "legs", "Explode up, land softly", "Explosiv hoch, weich landen"),
+  EX("box_jump", "Box Jump", "Kastensprung", "legs", "Land softly, step down", "Weich landen, herunterschreiten"),
+  EX("sissy_squat", "Sissy Squat", "Sissy Squat", "legs", "Knees forward, lean back", "Knie nach vorne, Oberkörper zurück"),
+  EX("side_lunge", "Side Lunge", "Seitlicher Ausfallschritt", "legs", "Sit back into one hip", "In eine Hüfte zurücksetzen"),
+  // Glutes
+  EX("hip_thrust", "Hip Thrust", "Hip Thrust", "glutes", "Chin tucked, squeeze at the top", "Kinn angezogen, oben Gesäß anspannen"),
+  EX("glute_bridge", "Glute Bridge", "Glute Bridge", "glutes", "Heels close, drive the hips up", "Fersen nah, Hüfte hochdrücken"),
+  EX("single_leg_thrust", "Single-Leg Hip Thrust", "Einbeiniger Hip Thrust", "glutes", "Keep the hips level", "Hüfte waagerecht halten"),
+  EX("cable_kickback", "Cable Glute Kickback", "Kabel-Kickback (Gesäß)", "glutes", "Kick back, don't arch the lower back", "Nach hinten treten, nicht ins Hohlkreuz"),
+  EX("donkey_kick", "Donkey Kick", "Donkey Kick", "glutes", "Knee at 90°, push the heel up", "Knie 90°, Ferse nach oben drücken"),
+  EX("fire_hydrant", "Fire Hydrant", "Fire Hydrant", "glutes", "Lift the knee out to the side", "Knie seitlich anheben"),
+  EX("clamshell", "Clamshell", "Clamshell", "glutes", "Feet together, open the top knee", "Füße zusammen, oberes Knie öffnen"),
+  EX("frog_pump", "Frog Pump", "Frog Pump", "glutes", "Soles together, quick pumping reps", "Fußsohlen zusammen, schnelle Wiederholungen"),
+  EX("curtsy_lunge", "Curtsy Lunge", "Curtsy Lunge", "glutes", "Step behind and across", "Schritt hinter und über Kreuz"),
+  EX("kb_swing", "Kettlebell Swing", "Kettlebell Swing", "glutes", "Hip snap, arms are just hooks", "Hüftschwung, Arme führen nur mit"),
+  EX("good_morning_glute", "Banded Walk", "Seitschritte mit Band", "glutes", "Stay low, keep tension on the band", "Tief bleiben, Band gespannt halten"),
+  // Core
+  EX("crunch", "Crunch", "Crunch", "core", "Curl the ribs to the pelvis", "Rippen zum Becken rollen"),
+  EX("bicycle_crunch", "Bicycle Crunch", "Fahrrad-Crunch", "core", "Slow rotation, elbow to opposite knee", "Langsam drehen, Ellbogen zum Gegenknie"),
+  EX("lying_leg_raise", "Lying Leg Raise", "Beinheben liegend", "core", "Lower back stays on the floor", "Unterer Rücken bleibt am Boden"),
+  EX("side_plank", "Side Plank", "Seitstütz", "core", "Body in one line, hips up", "Körper in einer Linie, Hüfte oben"),
+  EX("ab_wheel", "Ab Wheel Rollout", "Ab-Wheel", "core", "Roll out only as far as you can control", "Nur so weit rollen, wie du kontrollierst"),
+  EX("mountain_climber", "Mountain Climber", "Bergsteiger", "core", "Hips low, fast knees", "Hüfte tief, schnelle Knie"),
+  EX("dead_bug", "Dead Bug", "Dead Bug", "core", "Back flat, opposite arm and leg", "Rücken flach, Gegenarm und -bein"),
+  EX("bird_dog", "Bird Dog", "Bird Dog", "core", "Extend long, no hip rotation", "Lang strecken, Hüfte nicht drehen"),
+  EX("pallof_press", "Pallof Press", "Pallof Press", "core", "Resist the rotation", "Der Drehung widerstehen"),
+  EX("woodchop", "Cable Woodchop", "Holzhacker am Kabel", "core", "Rotate from the torso, arms straight", "Aus dem Rumpf drehen, Arme gestreckt"),
+  EX("v_up", "V-Up", "V-Sit-Up", "core", "Reach hands to toes at the top", "Oben Hände zu den Zehen"),
+  EX("situp", "Sit-Up", "Sit-Up", "core", "Controlled up and down", "Kontrolliert hoch und runter"),
+  EX("decline_situp", "Decline Sit-Up", "Sit-Up auf der Schrägbank", "core", "Cross arms, don't yank the neck", "Arme kreuzen, nicht am Nacken ziehen"),
+  EX("hollow_hold", "Hollow Body Hold", "Hollow Hold", "core", "Low back pressed down, legs low", "Unteren Rücken andrücken, Beine tief"),
+  EX("flutter_kicks", "Flutter Kicks", "Flatterkicks", "core", "Small fast kicks, core tight", "Kleine schnelle Kicks, Rumpf fest"),
+  EX("toes_to_bar", "Toes to Bar", "Toes to Bar", "core", "Control the swing, lift with the abs", "Schwung kontrollieren, mit dem Bauch heben"),
+  EX("l_sit", "L-Sit", "L-Sit", "core", "Push the shoulders down, legs straight", "Schultern runterdrücken, Beine gestreckt"),
+  EX("suitcase_carry", "Suitcase Carry", "Suitcase Carry", "core", "One weight, don't lean", "Ein Gewicht, nicht zur Seite lehnen"),
+  EX("cable_crunch_kneel", "Kneeling Cable Crunch", "Kniender Kabel-Crunch", "core", "Round the spine, hips still", "Wirbelsäule runden, Hüfte ruhig"),
+  // Cardio
+  EX("running", "Running", "Laufen", "cardio", "Relaxed shoulders, steady breathing", "Schultern locker, gleichmäßig atmen"),
+  EX("treadmill", "Treadmill", "Laufband", "cardio", "Don't hold the rails, land under the hips", "Nicht festhalten, unter der Hüfte landen"),
+  EX("cycling", "Cycling", "Radfahren", "cardio", "Smooth pedal stroke", "Runder Tritt"),
+  EX("rowing_machine", "Rowing Machine", "Rudergerät", "cardio", "Legs, then back, then arms", "Erst Beine, dann Rücken, dann Arme"),
+  EX("elliptical", "Elliptical", "Crosstrainer", "cardio", "Stand tall, push and pull", "Aufrecht stehen, drücken und ziehen"),
+  EX("stair_climber", "Stair Climber", "Stepper", "cardio", "Full steps, light hands", "Volle Schritte, Hände locker"),
+  EX("jump_rope", "Jump Rope", "Seilspringen", "cardio", "Small jumps, wrists do the work", "Kleine Sprünge, Handgelenke drehen"),
+  EX("swimming", "Swimming", "Schwimmen", "cardio", "Long strokes, rhythmic breathing", "Lange Züge, rhythmisch atmen"),
+  EX("walking", "Walking", "Gehen", "cardio", "Brisk pace, tall posture", "Zügiges Tempo, aufrechte Haltung"),
+  EX("hiking", "Hiking", "Wandern", "cardio", "Steady pace, use the whole foot", "Gleichmäßiges Tempo, ganzen Fuß abrollen"),
+  EX("hiit", "HIIT", "HIIT", "cardio", "Short all-out intervals with rest", "Kurze volle Intervalle mit Pause"),
+  EX("burpees", "Burpees", "Burpees", "cardio", "Chest to floor, explosive jump", "Brust zum Boden, explosiver Sprung"),
+  EX("jumping_jacks", "Jumping Jacks", "Hampelmann", "cardio", "Soft landings, steady rhythm", "Weich landen, gleichmäßiger Rhythmus"),
+  EX("battle_ropes", "Battle Ropes", "Battle Ropes", "cardio", "Hips back, fast alternating waves", "Hüfte zurück, schnelle Wechselwellen"),
+  EX("sled_push", "Sled Push", "Schlittenschieben", "cardio", "Low body, drive with the legs", "Tiefer Körper, mit den Beinen drücken"),
+  EX("boxing", "Boxing / Shadowboxing", "Boxen / Schattenboxen", "cardio", "Rotate the hips, guard up", "Hüfte drehen, Deckung oben"),
+  EX("assault_bike", "Assault Bike", "Assault Bike", "cardio", "Push and pull with arms and legs", "Mit Armen und Beinen drücken und ziehen"),
+  // Full body
+  EX("power_clean", "Power Clean", "Umsetzen (Power Clean)", "full", "Explosive hip extension, catch high", "Explosive Hüftstreckung, hoch fangen"),
+  EX("snatch", "Barbell Snatch", "Reißen", "full", "Wide grip, pull under the bar", "Breiter Griff, unter die Stange ziehen"),
+  EX("clean_jerk", "Clean & Jerk", "Stoßen", "full", "Clean to the shoulders, then jerk overhead", "Umsetzen zur Schulter, dann überkopf stoßen"),
+  EX("thruster", "Thruster", "Thruster", "full", "Squat straight into a press", "Kniebeuge direkt in Überkopfdrücken"),
+  EX("turkish_getup", "Turkish Get-Up", "Türkischer Aufstieg", "full", "Eyes on the weight, move in steps", "Blick auf das Gewicht, in Schritten bewegen"),
+  EX("clean_press", "Clean and Press", "Umsetzen und Drücken", "full", "Clean, reset, press overhead", "Umsetzen, sammeln, überkopf drücken"),
+  EX("medball_slam", "Medicine Ball Slam", "Medizinball-Slam", "full", "Full extension, slam with intent", "Voll strecken, mit Kraft schmettern"),
+  EX("man_maker", "Man Maker", "Man Maker", "full", "Push-up, row each side, then stand and press", "Liegestütz, Rudern je Seite, aufstehen und drücken"),
+  EX("bear_crawl", "Bear Crawl", "Bärengang", "full", "Knees just off the floor, opposite limbs", "Knie knapp über dem Boden, Gegenglieder"),
+  EX("kb_clean", "Kettlebell Clean", "Kettlebell Clean", "full", "Keep the bell close, soft catch", "Kettlebell nah halten, weich fangen")
+);
+EXERCISE_LIBRARY.sort((a, b) => ["chest", "back", "shoulders", "arms", "legs", "glutes", "core", "cardio", "full"].indexOf(a.muscle) - ["chest", "back", "shoulders", "arms", "legs", "glutes", "core", "cardio", "full"].indexOf(b.muscle));
+
 
 /* Food database — macros per 100 g, with a realistic default serving size in grams.
    Not exhaustive (a real app would query an external database like Open Food Facts
@@ -1283,7 +1498,36 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
 /* ---------------- Main tab screens ---------------- */
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
+function WaterCard({ t, waterMl, goalMl, onAdd, onUndo }) {
+  const pct = Math.min(100, (waterMl / goalMl) * 100);
+  return (
+    <Card style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <GlassWater size={17} color={COLORS.teal} />
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.waterTitle}</span>
+        </div>
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text, whiteSpace: "nowrap" }}>
+          {(waterMl / 1000).toFixed(2).replace(/\.?0+$/, "")}
+          <span style={{ color: COLORS.dim, fontWeight: 400 }}> / {(goalMl / 1000).toFixed(1)} L</span>
+        </span>
+      </div>
+      <div style={{ height: 10, borderRadius: 5, background: COLORS.raised, overflow: "hidden", marginBottom: 12 }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: COLORS.teal, borderRadius: 5, transition: "width .5s ease" }} />
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={onAdd} style={{ flex: 1, background: COLORS.teal, color: COLORS.bg, border: "none", borderRadius: 12, padding: "10px 12px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+          {t.waterAddGlass}
+        </button>
+        <button onClick={onUndo} disabled={waterMl <= 0} style={{ background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.dim, borderRadius: 12, padding: "10px 14px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: waterMl > 0 ? "pointer" : "default" }}>
+          {t.waterUndo}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, onOpenAssistant, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const proteinEaten = sumMeals(meals, "protein");
@@ -1320,6 +1564,15 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, onLog
         </div>
       </Card>
 
+      <WaterCard t={t} waterMl={waterMl} goalMl={Math.round(((profile.weight || 70) * 35) / 250) * 250} onAdd={onAddWater} onUndo={onUndoWater} />
+
+      <Card onClick={onOpenAssistant} style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+        <div style={{ width: 36, height: 36, borderRadius: 11, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <MessageCircle size={17} color={COLORS.gold} />
+        </div>
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text }}>{t.assistantEntry}</span>
+      </Card>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <Card>
           <Dumbbell size={17} color={COLORS.gold} />
@@ -1338,8 +1591,8 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, onLog
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10 }}>{t.currentWeight}</div>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 600, color: COLORS.text, marginTop: 2 }}>{latestWeight ? `${latestWeight.kg} kg` : "–"}</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.teal, marginTop: 2 }}>
-            {weightLog.length > 1 && weeksBetween > 0
-              ? `${weightDelta > 0 ? "+" : ""}${weightDelta.toFixed(1)} kg / ${weeksBetween} ${t.weeksLabel}`
+            {weightLog.length > 1
+              ? `${weightDelta > 0 ? "+" : ""}${weightDelta.toFixed(1)} kg${weeksBetween > 0 ? ` / ${weeksBetween} ${t.weeksLabel}` : ""}`
               : t.firstWeightEntry}
           </div>
         </Card>
@@ -1429,11 +1682,12 @@ function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch, onOpenRecip
   );
 }
 
-function TrainingScreen({ t, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary }) {
-  const avgSessionSec = workoutHistory.length
-    ? Math.round(workoutHistory.reduce((s, w) => s + w.durationSec, 0) / workoutHistory.length)
-    : null;
+function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary }) {
+  const avgSessionSec = workoutHistory.length ? Math.round(workoutHistory.reduce((s, w) => s + w.durationSec, 0) / workoutHistory.length) : null;
   const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
+  const trained = Object.keys(personalBests)
+    .map((key) => ({ ex: EXERCISE_LIBRARY.find((e) => e.key === key), best: personalBests[key] }))
+    .filter((x) => x.ex);
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -1443,41 +1697,36 @@ function TrainingScreen({ t, planName, personalBests, workoutHistory, onStartWor
         </span>
       </div>
       <Card style={{ marginBottom: 18, background: COLORS.raised }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: COLORS.text }}>{planName}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>
-              {t.day} 1 · {EXERCISES.length} {t.exercises.toLowerCase()}
-            </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: COLORS.text }}>{planName || t.freeWorkout}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>{t.freeWorkoutSub}</div>
           </div>
-          <button onClick={onStartWorkout} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <button onClick={onStartWorkout} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", flexShrink: 0 }}>
             {t.startWorkout}
           </button>
         </div>
       </Card>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.exercises}</span>
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.yourExercises}</span>
         <span onClick={onOpenLibrary} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
           {t.viewLibrary}
         </span>
       </div>
       <Card style={{ padding: 4, marginBottom: 18 }}>
-        {EXERCISES.map((ex, i) => (
-          <div key={ex.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 12px", borderBottom: i < EXERCISES.length - 1 ? `1px solid ${COLORS.border}` : "none" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, fontWeight: 500 }}>{ex.name}</span>
-              </div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
-                {personalBests[ex.key] ? `${t.lastTime}: ${personalBests[ex.key]}kg × ${ex.reps}` : t.notLoggedYet}
-              </div>
+        {trained.length === 0 ? (
+          <div style={{ padding: 14, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.noExercisesYet}</div>
+        ) : (
+          trained.map(({ ex, best }, i) => (
+            <div key={ex.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 12px", borderBottom: i < trained.length - 1 ? `1px solid ${COLORS.border}` : "none" }}>
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, fontWeight: 500 }}>{lang === "de" ? ex.nameDe : ex.name}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.gold, fontWeight: 700 }}>
+                {t.bestLabel}: {best} kg
+              </span>
             </div>
-            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.dim }}>
-              {ex.sets}×{ex.reps}
-            </span>
-          </div>
-        ))}
+          ))
+        )}
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -1524,11 +1773,33 @@ function LineChart({ points, color, height = 130 }) {
   );
 }
 
-function ProgressScreen({ t }) {
-  const [range, setRange] = useState(0);
+function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight }) {
+  const [range, setRange] = useState(3);
   const [slider, setSlider] = useState(50);
-  const weight = [84.6, 84.1, 83.9, 83.4, 83.0, 82.7, 82.4];
-  const strength = [72, 74, 74, 76, 78, 78, 80];
+  const [weightInput, setWeightInput] = useState("");
+  const [exKey, setExKey] = useState(null);
+
+  const rangeDays = [28, 90, 365, Infinity][range];
+  const shownWeights = weightLog.filter((w) => rangeDays === Infinity || Date.now() - new Date(w.dateISO).getTime() <= rangeDays * 86400000);
+  const latest = weightLog.length ? weightLog[weightLog.length - 1].kg : null;
+
+  const trainedKeys = [...new Set(workoutHistory.flatMap((w) => (w.sets || []).map((s) => s.exerciseKey)))];
+  const activeKey = exKey && trainedKeys.includes(exKey) ? exKey : trainedKeys[0];
+  const exPoints = workoutHistory
+    .map((w) => {
+      const ws = (w.sets || []).filter((s) => s.exerciseKey === activeKey).map((s) => s.weight);
+      return ws.length ? Math.max(...ws) : null;
+    })
+    .filter((v) => v !== null);
+  const exBest = exPoints.length ? Math.max(...exPoints) : null;
+
+  const saveWeight = () => {
+    const kg = parseFloat(weightInput.replace(",", "."));
+    if (kg > 0) {
+      onAddWeight(kg);
+      setWeightInput("");
+    }
+  };
 
   return (
     <div style={{ padding: "0 20px 24px" }}>
@@ -1539,23 +1810,53 @@ function ProgressScreen({ t }) {
       </div>
 
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
           <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.weightTrend}</span>
-          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.teal }}>
-            82.4 <span style={{ fontSize: 12, color: COLORS.dim, fontWeight: 400 }}>kg</span>
-          </span>
+          {latest !== null && (
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.teal }}>
+              {latest} <span style={{ fontSize: 12, color: COLORS.dim, fontWeight: 400 }}>kg</span>
+            </span>
+          )}
         </div>
-        <LineChart points={weight} color={COLORS.teal} />
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input type="number" inputMode="decimal" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder={t.weightInputPlaceholder} style={{ ...numInputStyle, flex: 1 }} />
+          <button onClick={saveWeight} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+            {t.saveWeight}
+          </button>
+        </div>
+        {shownWeights.length >= 2 ? (
+          <LineChart points={shownWeights.map((w) => w.kg)} color={COLORS.teal} />
+        ) : (
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.needMoreWeights}</div>
+        )}
       </Card>
 
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.strengthCurve}</span>
-          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.gold }}>
-            80 <span style={{ fontSize: 12, color: COLORS.dim, fontWeight: 400 }}>kg {t.est1RM}</span>
-          </span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.exerciseProgress}</span>
+          {exBest !== null && (
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.gold }}>
+              {exBest} <span style={{ fontSize: 12, color: COLORS.dim, fontWeight: 400 }}>kg</span>
+            </span>
+          )}
         </div>
-        <LineChart points={strength} color={COLORS.gold} />
+        {trainedKeys.length === 0 ? (
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.noProgressYet}</div>
+        ) : (
+          <>
+            <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", paddingBottom: 2 }}>
+              {trainedKeys.map((k) => {
+                const ex = EXERCISE_LIBRARY.find((e) => e.key === k);
+                return ex ? <Chip key={k} label={lang === "de" ? ex.nameDe : ex.name} active={k === activeKey} onClick={() => setExKey(k)} /> : null;
+              })}
+            </div>
+            {exPoints.length >= 2 ? (
+              <LineChart points={exPoints} color={COLORS.gold} />
+            ) : (
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.exerciseProgressHint}</div>
+            )}
+          </>
+        )}
       </Card>
 
       <Card>
@@ -1573,6 +1874,20 @@ function ProgressScreen({ t }) {
       </Card>
     </div>
   );
+}
+
+const MOODS = {
+  1: { icon: Angry, color: "#E2694F" },
+  2: { icon: Frown, color: "#F0954A" },
+  3: { icon: Meh, color: "#E0B12F" },
+  4: { icon: Smile, color: "#63C46A" },
+  5: { icon: Laugh, color: "#00BF8F" },
+};
+
+function MoodFace({ mood, size = 20 }) {
+  const m = MOODS[mood] || MOODS[3];
+  const Icon = m.icon;
+  return <Icon size={size} color={m.color} />;
 }
 
 function NotesScreen({ t, notes, filter, setFilter, onAddNote }) {
@@ -1602,11 +1917,7 @@ function NotesScreen({ t, notes, filter, setFilter, onAddNote }) {
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.text }}>{e.date}</span>
-                <div style={{ display: "flex", gap: 2 }}>
-                  {[1, 2, 3, 4, 5].map((m) => (
-                    <div key={m} style={{ width: 5, height: 5, borderRadius: 999, background: m <= e.mood ? COLORS.teal : COLORS.border }} />
-                  ))}
-                </div>
+                <MoodFace mood={e.mood} size={20} />
               </div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, lineHeight: 1.5 }}>{e.text}</div>
             </div>
@@ -1659,9 +1970,9 @@ function NoteComposer({ t, onSave }) {
           <div
             key={m}
             onClick={() => setMood(m)}
-            style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: m === mood ? COLORS.gold : COLORS.surface, border: `1px solid ${m === mood ? COLORS.gold : COLORS.border}`, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: m === mood ? COLORS.bg : COLORS.dim }}
+            style={{ width: 48, height: 48, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: m === mood ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `2px solid ${m === mood ? MOODS[m].color : COLORS.border}`, opacity: m === mood ? 1 : 0.6 }}
           >
-            {m}
+            <MoodFace mood={m} size={26} />
           </div>
         ))}
       </div>
@@ -1686,119 +1997,121 @@ function NoteComposer({ t, onSave }) {
 
 /* ---------------- Workout flow ---------------- */
 
-function RestTimer({ t, seconds, total, onSkip }) {
-  const pct = (seconds / total) * 100;
-  return (
-    <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16, display: "flex", alignItems: "center", gap: 14, boxShadow: "0 12px 30px rgba(0,0,0,0.35)" }}>
-      <Ring pct={100 - pct} size={52} stroke={5} color={COLORS.teal} track={COLORS.border}>
-        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text }}>{seconds}</span>
-      </Ring>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text }}>{t.resting}…</div>
-      </div>
-      <button onClick={onSkip} style={{ background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.text, borderRadius: 10, padding: "8px 12px", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-        {t.skipRest}
-      </button>
-    </div>
-  );
-}
+const numInputStyle = {
+  width: "100%",
+  background: COLORS.raised,
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: 10,
+  padding: "10px 12px",
+  color: COLORS.text,
+  fontFamily: "Inter, sans-serif",
+  fontSize: 14,
+  outline: "none",
+};
 
 function WorkoutSession({ t, lang, onFinish }) {
-  const [exIdx, setExIdx] = useState(0);
-  const [completedSets, setCompletedSets] = useState(0);
-  const [reps, setReps] = useState(EXERCISES[0].reps);
-  const [weight, setWeight] = useState(EXERCISES[0].startWeight);
-  const [resting, setResting] = useState(false);
-  const [restLeft, setRestLeft] = useState(90);
-  const [setLog, setSetLog] = useState([]);
+  const [entries, setEntries] = useState([]);
+  const [picking, setPicking] = useState(false);
+  const [query, setQuery] = useState("");
   const startTimeRef = useRef(Date.now());
-  const ex = EXERCISES[exIdx];
-  const isLast = exIdx === EXERCISES.length - 1;
-  const setsDone = completedSets >= ex.sets;
+  const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
 
-  useEffect(() => {
-    if (!resting) return;
-    if (restLeft <= 0) {
-      setResting(false);
-      return;
-    }
-    const id = setTimeout(() => setRestLeft((s) => s - 1), 1000);
-    return () => clearTimeout(id);
-  }, [resting, restLeft]);
-
-  const completeSet = () => {
-    setSetLog((log) => [...log, { exerciseKey: ex.key, weight, reps }]);
-    const next = completedSets + 1;
-    setCompletedSets(next);
-    if (next < ex.sets) {
-      setRestLeft(90);
-      setResting(true);
-    }
+  const addExercise = (key) => {
+    setEntries((e) => [...e, { key, sets: [{ weight: "", reps: "" }] }]);
+    setPicking(false);
+    setQuery("");
   };
+  const updateSet = (ei, si, field, value) =>
+    setEntries((e) => e.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.map((s, j) => (j !== si ? s : { ...s, [field]: value })) })));
+  const addSet = (ei) => setEntries((e) => e.map((en, i) => (i !== ei ? en : { ...en, sets: [...en.sets, { ...en.sets[en.sets.length - 1] }] })));
+  const removeSet = (ei, si) =>
+    setEntries((e) => e.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.filter((_, j) => j !== si) })).filter((en) => en.sets.length > 0));
 
-  const nextExercise = () => {
-    const ni = exIdx + 1;
-    setExIdx(ni);
-    setCompletedSets(0);
-    setReps(EXERCISES[ni].reps);
-    setWeight(EXERCISES[ni].startWeight);
-    setResting(false);
-  };
+  const setLog = [];
+  entries.forEach((en) =>
+    en.sets.forEach((s) => {
+      const w = parseFloat(String(s.weight).replace(",", "."));
+      const r = parseInt(s.reps, 10);
+      if (r > 0) setLog.push({ exerciseKey: en.key, weight: w > 0 ? w : 0, reps: r });
+    })
+  );
+  const canFinish = setLog.length > 0;
 
-  const finish = () => {
+  const finish = () =>
     onFinish({
       durationSec: Math.round((Date.now() - startTimeRef.current) / 1000),
-      volumeKg: setLog.reduce((s, log) => s + log.weight * log.reps, 0),
+      volumeKg: setLog.reduce((s, l) => s + l.weight * l.reps, 0),
       setLog,
     });
-  };
+
+  if (picking) {
+    const q = query.trim().toLowerCase();
+    const list = EXERCISE_LIBRARY.filter((ex) => !q || ex.name.toLowerCase().includes(q) || ex.nameDe.toLowerCase().includes(q));
+    return (
+      <div style={{ padding: "0 20px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 14 }}>
+          <Search size={16} color={COLORS.dim} />
+          <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.libSearchPlaceholder} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
+        </div>
+        <Card style={{ padding: 4, maxHeight: 520, overflowY: "auto", marginBottom: 14 }}>
+          {list.map((ex, i) => (
+            <div key={ex.key} onClick={() => addExercise(ex.key)} style={{ padding: "12px", cursor: "pointer", borderBottom: i < list.length - 1 ? `1px solid ${COLORS.border}` : "none", fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>
+              {nameOf(ex)}
+            </div>
+          ))}
+        </Card>
+        <button onClick={() => setPicking(false)} style={{ width: "100%", background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.dim, borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+          {t.back}
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ position: "relative", padding: "0 20px 24px", minHeight: 500 }}>
-      <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {EXERCISES.map((e, i) => (
-          <div key={e.key} style={{ height: 3, borderRadius: 2, flex: 1, background: i < exIdx ? COLORS.gold : i === exIdx ? COLORS.teal : COLORS.border }} />
-        ))}
+    <div style={{ padding: "0 20px 24px" }}>
+      {entries.length === 0 && <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, marginTop: 0 }}>{t.emptyWorkout}</p>}
+
+      {entries.map((en, ei) => {
+        const ex = EXERCISE_LIBRARY.find((e) => e.key === en.key);
+        return (
+          <Card key={ei} style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 12 }}>{ex ? nameOf(ex) : en.key}</div>
+            {en.sets.map((s, si) => (
+              <div key={si} style={{ display: "grid", gridTemplateColumns: "22px 1fr 1fr 24px", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{si + 1}</span>
+                <input type="number" inputMode="decimal" min="0" value={s.weight} onChange={(e) => updateSet(ei, si, "weight", e.target.value)} placeholder="kg" style={numInputStyle} />
+                <input type="number" inputMode="numeric" min="0" value={s.reps} onChange={(e) => updateSet(ei, si, "reps", e.target.value)} placeholder={t.reps} style={numInputStyle} />
+                <div onClick={() => removeSet(ei, si)} style={{ cursor: "pointer", display: "flex" }}>
+                  <X size={16} color={COLORS.dim} />
+                </div>
+              </div>
+            ))}
+            <div onClick={() => addSet(ei)} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer", marginTop: 4 }}>
+              + {t.addSet}
+            </div>
+          </Card>
+        );
+      })}
+
+      <div onClick={() => setPicking(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "13px 14px", marginBottom: 14, cursor: "pointer" }}>
+        <Plus size={16} color={COLORS.gold} />
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.gold }}>{t.addExerciseBtn}</span>
       </div>
 
-      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 4 }}>
-        {t.setOf} {Math.min(completedSets + 1, ex.sets)} / {ex.sets}
-      </div>
-      <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, color: COLORS.text, margin: "0 0 20px" }}>{lang === "de" ? ex.nameDe : ex.name}</h2>
-
-      <Card style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>{t.reps}</div>
-        <Stepper value={reps} onChange={setReps} />
-      </Card>
-      <Card style={{ marginBottom: 20 }}>
-        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>{t.weight}</div>
-        <Stepper value={weight} onChange={setWeight} step={2.5} suffix=" kg" />
-      </Card>
-
-      <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
-        {Array.from({ length: ex.sets }).map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < completedSets ? COLORS.gold : COLORS.raised }} />
-        ))}
-      </div>
-
-      {!setsDone ? (
-        <button onClick={completeSet} disabled={resting} style={{ width: "100%", background: resting ? COLORS.raised : COLORS.gold, color: resting ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: resting ? "default" : "pointer" }}>
-          {t.completeSet}
-        </button>
-      ) : (
-        <button onClick={isLast ? finish : nextExercise} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
-          {isLast ? t.finishWorkout : t.nextExercise}
-        </button>
-      )}
-
-      {resting && <RestTimer t={t} seconds={restLeft} total={90} onSkip={() => setResting(false)} />}
+      <button
+        disabled={!canFinish}
+        onClick={finish}
+        style={{ width: "100%", background: canFinish ? COLORS.gold : COLORS.raised, color: canFinish ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: canFinish ? "pointer" : "default" }}
+      >
+        {t.finishWorkout}
+      </button>
     </div>
   );
 }
 
 function WorkoutSummary({ t, lang, summary, onDone }) {
   const prExercises = (summary?.newBests || []).map(({ exerciseKey, weight }) => {
-    const ex = EXERCISES.find((e) => e.key === exerciseKey);
+    const ex = EXERCISE_LIBRARY.find((e) => e.key === exerciseKey);
     return { key: exerciseKey, name: ex ? (lang === "de" ? ex.nameDe : ex.name) : exerciseKey, weight };
   });
   return (
@@ -2118,6 +2431,94 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
   );
 }
 
+/* ---------------- Assistant (support / questions) ---------------- */
+
+function AssistantScreen({ t, lang }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const endRef = useRef(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, busy]);
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || busy) return;
+    const next = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    setInput("");
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/assistant`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: next, lang }),
+      });
+      if (res.status === 503) {
+        setError(t.assistantNotConfigured);
+      } else if (!res.ok) {
+        setError(t.assistantError);
+      } else {
+        const data = await res.json();
+        setMessages([...next, { role: "assistant", content: data.reply }]);
+      }
+    } catch {
+      setError(t.serverError);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const bubble = (m, i) => (
+    <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
+      <div
+        style={{
+          maxWidth: "82%",
+          padding: "10px 14px",
+          borderRadius: 16,
+          fontFamily: "Inter, sans-serif",
+          fontSize: 13.5,
+          lineHeight: 1.5,
+          whiteSpace: "pre-wrap",
+          background: m.role === "user" ? COLORS.gold : COLORS.surface,
+          color: m.role === "user" ? COLORS.bg : COLORS.text,
+          border: m.role === "user" ? "none" : `1px solid ${COLORS.border}`,
+        }}
+      >
+        {m.content}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", minHeight: 620 }}>
+      <div style={{ flex: 1 }}>
+        {bubble({ role: "assistant", content: t.assistantHello }, "hello")}
+        {messages.map(bubble)}
+        {busy && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>{t.assistantThinking}</div>}
+        {error && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 10 }}>{error}</div>}
+        <div ref={endRef} />
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10, position: "sticky", bottom: 0, background: COLORS.bg, paddingTop: 8 }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
+          placeholder={t.assistantPlaceholder}
+          style={{ ...numInputStyle, flex: 1, borderRadius: 14, padding: "12px 14px" }}
+        />
+        <button onClick={send} disabled={busy || !input.trim()} style={{ width: 46, borderRadius: 14, border: "none", background: busy || !input.trim() ? COLORS.raised : COLORS.gold, cursor: busy || !input.trim() ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Send size={18} color={busy || !input.trim() ? COLORS.dim : COLORS.bg} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------- Recipes ---------------- */
 
 function RecipesScreen({ t, lang, onAdd, onDone }) {
@@ -2237,6 +2638,9 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking }) {
     { key: "shoulders", label: t.muscleShoulders },
     { key: "arms", label: t.muscleArms },
     { key: "core", label: t.muscleCore },
+    { key: "glutes", label: t.muscleGlutes },
+    { key: "cardio", label: t.muscleCardio },
+    { key: "full", label: t.muscleFull },
   ];
 
   const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
@@ -2495,6 +2899,7 @@ export default function AsmarFitApp() {
   const [workoutHistory, setWorkoutHistory] = useState([]);
   const [personalBests, setPersonalBests] = useState({});
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
+  const [waterMl, setWaterMl] = useState(0);
 
   const t = useMemo(() => STR[lang], [lang]);
 
@@ -2502,6 +2907,11 @@ export default function AsmarFitApp() {
     setProfile(data);
     setWeightLog([{ dateISO: new Date().toISOString(), kg: data.weight }]);
     setOnboarded(true);
+  };
+
+  const addWeight = (kg) => {
+    setWeightLog((l) => [...l, { dateISO: new Date().toISOString(), kg }]);
+    setProfile((p) => ({ ...p, weight: kg }));
   };
 
   const finishWorkout = (summary) => {
@@ -2517,7 +2927,7 @@ export default function AsmarFitApp() {
       }
     }
     setPersonalBests(updatedBests);
-    setWorkoutHistory((h) => [...h, { id: Date.now(), dateISO: new Date().toISOString(), durationSec: summary.durationSec, volumeKg: summary.volumeKg }]);
+    setWorkoutHistory((h) => [...h, { id: Date.now(), dateISO: new Date().toISOString(), durationSec: summary.durationSec, volumeKg: summary.volumeKg, sets: summary.setLog }]);
     setLastWorkoutSummary({ durationSec: summary.durationSec, volumeKg: summary.volumeKg, newBests });
     setOverlay("workoutSummary");
   };
@@ -2564,6 +2974,10 @@ export default function AsmarFitApp() {
   } else if (overlay === "recipes") {
     content = <RecipesScreen t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} />;
     topTitle = t.recipesTitle;
+    showBack = () => setOverlay(null);
+  } else if (overlay === "assistant") {
+    content = <AssistantScreen t={t} lang={lang} />;
+    topTitle = t.assistantTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "planBuilder") {
     content = (
@@ -2640,6 +3054,10 @@ export default function AsmarFitApp() {
           weightLog={weightLog}
           workoutHistory={workoutHistory}
           notes={notes}
+          waterMl={waterMl}
+          onAddWater={() => setWaterMl((w) => w + 250)}
+          onUndoWater={() => setWaterMl((w) => Math.max(0, w - 250))}
+          onOpenAssistant={() => setOverlay("assistant")}
           onLogFood={() => {
             setActiveMealKey("snacks");
             setOverlay("foodSearch");
@@ -2667,7 +3085,8 @@ export default function AsmarFitApp() {
       training: (
         <TrainingScreen
           t={t}
-          planName={planName || t.pushPullLegs}
+          lang={lang}
+          planName={planName}
           personalBests={personalBests}
           workoutHistory={workoutHistory}
           onStartWorkout={() => setOverlay("workout")}
@@ -2678,7 +3097,7 @@ export default function AsmarFitApp() {
           }}
         />
       ),
-      progress: <ProgressScreen t={t} />,
+      progress: <ProgressScreen t={t} lang={lang} weightLog={weightLog} workoutHistory={workoutHistory} onAddWeight={addWeight} />,
       notes: <NotesScreen t={t} notes={notes} filter={notesFilter} setFilter={setNotesFilter} onAddNote={() => setOverlay("noteComposer")} />,
     };
     content = screens[tab];
