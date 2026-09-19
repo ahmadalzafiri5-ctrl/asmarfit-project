@@ -29,6 +29,7 @@ import {
   RotateCcw,
   Equal,
   X,
+  BookOpen,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -156,6 +157,11 @@ const STR = {
     addItem: "Add",
     per100g: "per 100 g",
     amount: "Amount",
+    recipesTitle: "Recipes",
+    recipesButton: "Browse recipes",
+    ingredients: "Ingredients",
+    perServing: "per serving",
+    logRecipe: "Log this",
     foodCatAll: "All",
     foodCatProtein: "Protein",
     foodCatCarb: "Carbs",
@@ -315,6 +321,11 @@ const STR = {
     addItem: "Hinzufügen",
     per100g: "pro 100 g",
     amount: "Menge",
+    recipesTitle: "Rezepte",
+    recipesButton: "Rezepte durchstöbern",
+    ingredients: "Zutaten",
+    perServing: "pro Portion",
+    logRecipe: "Loggen",
     foodCatAll: "Alle",
     foodCatProtein: "Protein",
     foodCatCarb: "Kohlenhydrate",
@@ -546,6 +557,156 @@ const FOOD_DB = [
   { key: "spaetzle", name: "Käsespätzle", category: "dish", defaultGrams: 300, per100: { kcal: 220, protein: 8, carbs: 24, fat: 10 } },
   { key: "roesti", name: "Rösti", category: "dish", defaultGrams: 200, per100: { kcal: 210, protein: 3, carbs: 25, fat: 11 } },
   { key: "fondue", name: "Cheese fondue", category: "dish", defaultGrams: 150, per100: { kcal: 320, protein: 19, carbs: 6, fat: 25 } },
+];
+
+/* Curated recipes — browsable and loggable as a meal in one tap. Category
+   reuses the same keys as the meal sections (breakfast/lunch/dinner/snacks)
+   so it shares translations with the rest of the app. */
+const RECIPES = [
+  {
+    key: "scrambled_eggs",
+    name: "Scrambled eggs",
+    nameDe: "Rührei",
+    category: "breakfast",
+    kcal: 280,
+    protein: 20,
+    carbs: 3,
+    fat: 21,
+    ingredients: ["3 eggs", "1 tbsp butter", "Salt, pepper"],
+    ingredientsDe: ["3 Eier", "1 EL Butter", "Salz, Pfeffer"],
+  },
+  {
+    key: "overnight_oats",
+    name: "Overnight oats",
+    nameDe: "Overnight Oats",
+    category: "breakfast",
+    kcal: 420,
+    protein: 24,
+    carbs: 55,
+    fat: 11,
+    ingredients: ["60g oats", "200ml milk", "1 scoop whey protein", "1 banana"],
+    ingredientsDe: ["60g Haferflocken", "200ml Milch", "1 Scoop Whey-Protein", "1 Banane"],
+  },
+  {
+    key: "yogurt_berries",
+    name: "Greek yogurt with berries",
+    nameDe: "Griechischer Joghurt mit Beeren",
+    category: "breakfast",
+    kcal: 260,
+    protein: 22,
+    carbs: 24,
+    fat: 8,
+    ingredients: ["250g Greek yogurt", "100g mixed berries", "1 tbsp honey"],
+    ingredientsDe: ["250g griechischer Joghurt", "100g Beerenmischung", "1 EL Honig"],
+  },
+  {
+    key: "chicken_rice_broccoli",
+    name: "Chicken, rice & broccoli",
+    nameDe: "Hähnchen mit Reis und Brokkoli",
+    category: "lunch",
+    kcal: 560,
+    protein: 48,
+    carbs: 62,
+    fat: 12,
+    ingredients: ["200g chicken breast", "150g rice (cooked)", "200g broccoli", "1 tbsp olive oil"],
+    ingredientsDe: ["200g Hähnchenbrust", "150g Reis (gekocht)", "200g Brokkoli", "1 EL Olivenöl"],
+  },
+  {
+    key: "lentil_soup",
+    name: "Lentil soup",
+    nameDe: "Linsensuppe",
+    category: "lunch",
+    kcal: 340,
+    protein: 18,
+    carbs: 50,
+    fat: 7,
+    ingredients: ["150g red lentils", "1 onion", "1 carrot", "vegetable broth"],
+    ingredientsDe: ["150g rote Linsen", "1 Zwiebel", "1 Karotte", "Gemüsebrühe"],
+  },
+  {
+    key: "tuna_salad",
+    name: "Tuna salad",
+    nameDe: "Thunfischsalat",
+    category: "lunch",
+    kcal: 380,
+    protein: 34,
+    carbs: 10,
+    fat: 22,
+    ingredients: ["1 can tuna", "Mixed salad greens", "1/2 avocado", "Olive oil & lemon"],
+    ingredientsDe: ["1 Dose Thunfisch", "Gemischter Blattsalat", "1/2 Avocado", "Olivenöl & Zitrone"],
+  },
+  {
+    key: "salmon_sweet_potato",
+    name: "Salmon with sweet potato",
+    nameDe: "Lachs mit Süßkartoffel",
+    category: "dinner",
+    kcal: 520,
+    protein: 38,
+    carbs: 45,
+    fat: 20,
+    ingredients: ["180g salmon fillet", "250g sweet potato", "Steamed greens"],
+    ingredientsDe: ["180g Lachsfilet", "250g Süßkartoffel", "Gedämpftes Gemüse"],
+  },
+  {
+    key: "tofu_stirfry",
+    name: "Veggie stir-fry with tofu",
+    nameDe: "Gemüsepfanne mit Tofu",
+    category: "dinner",
+    kcal: 410,
+    protein: 26,
+    carbs: 35,
+    fat: 18,
+    ingredients: ["200g tofu", "Mixed vegetables", "1 tbsp soy sauce", "1 tbsp sesame oil"],
+    ingredientsDe: ["200g Tofu", "Gemischtes Gemüse", "1 EL Sojasauce", "1 EL Sesamöl"],
+  },
+  {
+    key: "wholewheat_pasta",
+    name: "Whole wheat pasta with tomato sauce",
+    nameDe: "Vollkornpasta mit Tomatensauce",
+    category: "dinner",
+    kcal: 480,
+    protein: 18,
+    carbs: 78,
+    fat: 10,
+    ingredients: ["100g whole wheat pasta", "Tomato sauce", "Parmesan", "Basil"],
+    ingredientsDe: ["100g Vollkornpasta", "Tomatensauce", "Parmesan", "Basilikum"],
+  },
+  {
+    key: "protein_shake",
+    name: "Protein shake",
+    nameDe: "Protein-Shake",
+    category: "snacks",
+    kcal: 180,
+    protein: 28,
+    carbs: 8,
+    fat: 3,
+    ingredients: ["1 scoop whey protein", "250ml milk or water", "Ice"],
+    ingredientsDe: ["1 Scoop Whey-Protein", "250ml Milch oder Wasser", "Eis"],
+  },
+  {
+    key: "cottage_pineapple",
+    name: "Cottage cheese with pineapple",
+    nameDe: "Hüttenkäse mit Ananas",
+    category: "snacks",
+    kcal: 200,
+    protein: 22,
+    carbs: 18,
+    fat: 4,
+    ingredients: ["200g cottage cheese", "100g pineapple"],
+    ingredientsDe: ["200g Hüttenkäse", "100g Ananas"],
+  },
+  {
+    key: "trail_mix",
+    name: "Trail mix",
+    nameDe: "Nussmix",
+    category: "snacks",
+    kcal: 220,
+    protein: 7,
+    carbs: 14,
+    fat: 16,
+    ingredients: ["15g almonds", "15g cashews", "10g raisins"],
+    ingredientsDe: ["15g Mandeln", "15g Cashews", "10g Rosinen"],
+  },
 ];
 
 function scale(per100, grams) {
@@ -1014,7 +1175,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, onLog
   );
 }
 
-function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch }) {
+function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch, onOpenRecipes }) {
   const mealDefs = [
     { key: "breakfast", label: t.breakfast },
     { key: "lunch", label: t.lunch },
@@ -1029,10 +1190,15 @@ function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch }) {
         <MacroBar label={t.fat} value={sumMeals(meals, "fat")} target={macroTargets.fat} color={COLORS.coral} />
       </Card>
 
-      <div onClick={() => onOpenFoodSearch("snacks")} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 20, cursor: "pointer" }}>
+      <div onClick={() => onOpenFoodSearch("snacks")} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 12, cursor: "pointer" }}>
         <Search size={16} color={COLORS.dim} />
         <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, flex: 1 }}>{t.searchPlaceholder}</span>
         <ScanLine size={17} color={COLORS.gold} />
+      </div>
+
+      <div onClick={onOpenRecipes} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
+        <BookOpen size={16} color={COLORS.gold} />
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.recipesButton}</span>
       </div>
 
       {mealDefs.map((m) => {
@@ -1754,6 +1920,111 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
   );
 }
 
+/* ---------------- Recipes ---------------- */
+
+function RecipesScreen({ t, lang, onAdd, onDone }) {
+  const [cat, setCat] = useState("all");
+  const [selected, setSelected] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const categories = [
+    { key: "all", label: t.foodCatAll },
+    { key: "breakfast", label: t.breakfast },
+    { key: "lunch", label: t.lunch },
+    { key: "dinner", label: t.dinner },
+    { key: "snacks", label: t.snacks },
+  ];
+
+  const results = RECIPES.filter((r) => cat === "all" || r.category === cat);
+
+  const confirmAdd = () => {
+    const name = lang === "de" ? selected.nameDe : selected.name;
+    onAdd({ name, kcal: selected.kcal, protein: selected.protein, carbs: selected.carbs, fat: selected.fat });
+    setToast(name);
+    setSelected(null);
+    setTimeout(() => setToast(null), 1400);
+  };
+
+  return (
+    <div style={{ padding: "0 20px 24px", position: "relative" }}>
+      {!selected ? (
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto", paddingBottom: 2 }}>
+            {categories.map((c) => (
+              <Chip key={c.key} label={c.label} active={cat === c.key} onClick={() => setCat(c.key)} />
+            ))}
+          </div>
+          <Card style={{ padding: 4, maxHeight: 480, overflowY: "auto" }}>
+            {results.map((r, i) => (
+              <div
+                key={r.key}
+                onClick={() => setSelected(r)}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? `1px solid ${COLORS.border}` : "none", cursor: "pointer" }}
+              >
+                <div>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{lang === "de" ? r.nameDe : r.name}</div>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
+                    {r.kcal} kcal {t.perServing}
+                  </div>
+                </div>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(228,166,76,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Plus size={15} color={COLORS.gold} />
+                </div>
+              </div>
+            ))}
+          </Card>
+        </>
+      ) : (
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: COLORS.text }}>{lang === "de" ? selected.nameDe : selected.name}</div>
+            <div onClick={() => setSelected(null)} style={{ cursor: "pointer" }}>
+              <X size={18} color={COLORS.dim} />
+            </div>
+          </div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 20 }}>
+            {selected.kcal} kcal {t.perServing}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 22 }}>
+            {[
+              { label: "kcal", val: selected.kcal, color: COLORS.text },
+              { label: t.protein, val: `${selected.protein}g`, color: COLORS.teal },
+              { label: t.carbs, val: `${selected.carbs}g`, color: COLORS.gold },
+              { label: t.fat, val: `${selected.fat}g`, color: COLORS.coral },
+            ].map((s, i) => (
+              <div key={i} style={{ background: COLORS.raised, borderRadius: 12, padding: "10px 4px", textAlign: "center" }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: s.color }}>{s.val}</div>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: COLORS.dim, marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.ingredients}</div>
+          <div style={{ marginBottom: 22 }}>
+            {(lang === "de" ? selected.ingredientsDe : selected.ingredients).map((ing, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: COLORS.gold, flexShrink: 0 }} />
+                {ing}
+              </div>
+            ))}
+          </div>
+
+          <button onClick={confirmAdd} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            {t.logRecipe}
+          </button>
+        </Card>
+      )}
+
+      {toast && (
+        <div style={{ position: "absolute", left: 20, right: 20, bottom: 14, background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)" }}>
+          <Check size={15} /> {toast} — {t.addedToast}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- Exercise library ---------------- */
 
 function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking }) {
@@ -2092,6 +2363,10 @@ export default function AsmarFitApp() {
     content = <BarcodeScanScreen t={t} onAdd={addFoodItem} onDone={() => setOverlay(null)} />;
     topTitle = t.barcodeTitle;
     showBack = () => setOverlay("foodSearch");
+  } else if (overlay === "recipes") {
+    content = <RecipesScreen t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} />;
+    topTitle = t.recipesTitle;
+    showBack = () => setOverlay(null);
   } else if (overlay === "planBuilder") {
     content = (
       <PlanBuilder
@@ -2184,6 +2459,10 @@ export default function AsmarFitApp() {
           onOpenFoodSearch={(key) => {
             setActiveMealKey(key);
             setOverlay("foodSearch");
+          }}
+          onOpenRecipes={() => {
+            setActiveMealKey("snacks");
+            setOverlay("recipes");
           }}
         />
       ),
