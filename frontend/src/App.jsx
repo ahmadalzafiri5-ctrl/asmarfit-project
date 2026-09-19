@@ -245,6 +245,7 @@ const STR = {
     stepsUnavailable: "Health Connect isn't available on this device — enter your steps manually.",
     stepsManualPlaceholder: "Steps today",
     stepsSave: "Save",
+    stepsGoalEdit: "Set step goal",
     eatenLabel: "Eaten",
     burnedLabel: "Burned",
     goalLabel: "Goal",
@@ -513,6 +514,7 @@ const STR = {
     stepsUnavailable: "Health Connect ist auf diesem Gerät nicht verfügbar — trage deine Schritte manuell ein.",
     stepsManualPlaceholder: "Schritte heute",
     stepsSave: "Speichern",
+    stepsGoalEdit: "Schritteziel festlegen",
     eatenLabel: "Gegessen",
     burnedLabel: "Verbrannt",
     goalLabel: "Ziel",
@@ -1726,7 +1728,7 @@ function WaterCard({ t, waterMl, goalMl, onAdd, onUndo }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, onOpenAssistant, steps, stepsSource, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -1779,7 +1781,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
         ))}
       </div>
 
-      <StepsCard t={t} steps={steps} source={stepsSource} weightKg={profile.weight} onConnect={onConnectSteps} onSaveManual={onSaveSteps} />
+      <StepsCard t={t} steps={steps} source={stepsSource} weightKg={profile.weight} goal={stepsGoal} onSaveGoal={onSaveStepsGoal} onConnect={onConnectSteps} onSaveManual={onSaveSteps} />
 
       <WaterCard t={t} waterMl={waterMl} goalMl={Math.round(((profile.weight || 70) * 35) / 250) * 250} onAdd={onAddWater} onUndo={onUndoWater} />
 
@@ -2917,9 +2919,10 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
 
 /* ---------------- Steps card ---------------- */
 
-function StepsCard({ t, steps, source, weightKg, onConnect, onSaveManual }) {
+function StepsCard({ t, steps, source, weightKg, goal, onSaveGoal, onConnect, onSaveManual }) {
   const [input, setInput] = useState("");
-  const goal = 10000;
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState("");
   const pct = Math.min(100, (steps / goal) * 100);
   return (
     <Card style={{ marginBottom: 12 }}>
@@ -2930,9 +2933,23 @@ function StepsCard({ t, steps, source, weightKg, onConnect, onSaveManual }) {
         </div>
         <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text, whiteSpace: "nowrap" }}>
           {steps.toLocaleString("de-DE")}
-          <span style={{ color: COLORS.dim, fontWeight: 400 }}> / {goal.toLocaleString("de-DE")}</span>
+          <span onClick={() => { setGoalInput(String(goal)); setEditingGoal(!editingGoal); }} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer", textDecoration: "underline dotted" }}> / {goal.toLocaleString("de-DE")}</span>
         </span>
       </div>
+      {editingGoal && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <input type="number" inputMode="numeric" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} placeholder={t.stepsGoalEdit} style={{ ...numInputStyle, flex: 1 }} />
+          <button
+            onClick={() => {
+              const v = parseInt(goalInput, 10);
+              if (v >= 500 && v <= 100000) { onSaveGoal(v); setEditingGoal(false); }
+            }}
+            style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+          >
+            {t.stepsSave}
+          </button>
+        </div>
+      )}
       <div style={{ height: 10, borderRadius: 5, background: COLORS.raised, overflow: "hidden", marginBottom: 8 }}>
         <div style={{ height: "100%", width: pct + "%", background: COLORS.gold, borderRadius: 5, transition: "width .5s ease" }} />
       </div>
@@ -3463,6 +3480,7 @@ export default function AsmarFitApp() {
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
   const [waterMl, setWaterMl] = useState(0);
   const [steps, setSteps] = useState(0);
+  const [stepsGoal, setStepsGoal] = useState(10000);
   // connect = native, not authorised yet | health = auto from Health Connect
   // manual = typed in (web) | unavailable = native but no Health Connect
   const [stepsSource, setStepsSource] = useState(IS_NATIVE_APP ? "connect" : "manual");
@@ -3673,6 +3691,8 @@ export default function AsmarFitApp() {
           stepsSource={stepsSource}
           onConnectSteps={() => refreshSteps(true)}
           onSaveSteps={(v) => setSteps(v)}
+          stepsGoal={stepsGoal}
+          onSaveStepsGoal={setStepsGoal}
           onLogFood={() => {
             setActiveMealKey("snacks");
             setOverlay("foodSearch");
