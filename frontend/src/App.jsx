@@ -107,14 +107,44 @@ const STR = {
     obWelcomeTitle: "Welcome to AsmarFit",
     obWelcomeSub: "Track it. Lift it. Own it.",
     obStart: "Get started",
+    obGenderTitle: "What's your gender?",
+    obGenderSub: "We need this to calculate your daily calorie target accurately.",
+    obGenderFemale: "Female",
+    obGenderMale: "Male",
     obGoalTitle: "What's your goal?",
     obGoalSub: "This sets your starting calorie target — you can change it anytime.",
     obGoalCut: "Lose weight",
     obGoalCutSub: "Calorie deficit, keep strength",
-    obGoalMaintain: "Maintain",
+    obGoalMaintain: "Maintain weight",
     obGoalMaintainSub: "Stay steady, build habits",
+    obGoalGain: "Gain weight",
+    obGoalGainSub: "Calorie surplus, build up gradually",
     obGoalBulk: "Build muscle",
     obGoalBulkSub: "Calorie surplus, focus on volume",
+    obGoalOther: "Something else",
+    obGoalOtherSub: "Not sure yet — we'll figure it out",
+    obReasonTitle: "Why do you want to reach this goal?",
+    obReasonConfidence: "For my confidence",
+    obReasonHealth: "For my health",
+    obReasonFitness: "For my fitness",
+    obReasonEvent: "For a special occasion",
+    obReasonBurn: "To burn more calories",
+    obReasonOther: "For another reason",
+    obSkip: "Skip",
+    obMoreTitle: "What else would you like to achieve?",
+    obMoreEating: "Improve my eating habits",
+    obMoreCook: "Learn to cook healthy",
+    obMoreImmune: "Strengthen my immune system",
+    obMoreSleep: "Sleep better and have more energy",
+    obMoreFeel: "Feel better in my body",
+    obMoreOther: "Something else",
+    obExperienceTitle: "Have you tried to reach a similar goal before?",
+    obExperienceNotReached: "Yes, but I haven't reached my goal yet.",
+    obExperienceFailed: "I tried, but without success.",
+    obExperienceCouldntKeep: "Yes, but I couldn't keep the results.",
+    obExperienceNever: "I've never tried this before.",
+    obAiScanTitle: "No time to track? Soon, that won't matter.",
+    obAiScanSub: "We're building AI food photo recognition — snap a picture of your plate and get instant nutrition info. Coming in a future update.",
     obStatsTitle: "A few numbers",
     obStatsSub: "Used to calculate your daily targets.",
     obNameLabel: "Your name",
@@ -271,14 +301,44 @@ const STR = {
     obWelcomeTitle: "Willkommen bei AsmarFit",
     obWelcomeSub: "Dein Training. Deine Zahlen. Dein Fortschritt.",
     obStart: "Los geht's",
+    obGenderTitle: "Was ist dein Geschlecht?",
+    obGenderSub: "Wir benötigen dein Geschlecht, um dein tägliches Kalorienziel genau zu berechnen.",
+    obGenderFemale: "Weiblich",
+    obGenderMale: "Männlich",
     obGoalTitle: "Was ist dein Ziel?",
     obGoalSub: "Das legt dein Start-Kalorienziel fest — du kannst es jederzeit ändern.",
     obGoalCut: "Abnehmen",
     obGoalCutSub: "Kaloriendefizit, Kraft erhalten",
-    obGoalMaintain: "Halten",
+    obGoalMaintain: "Gewicht halten",
     obGoalMaintainSub: "Gewicht stabil, Gewohnheiten aufbauen",
+    obGoalGain: "Zunehmen",
+    obGoalGainSub: "Kalorienüberschuss, langsam aufbauen",
     obGoalBulk: "Muskeln aufbauen",
     obGoalBulkSub: "Kalorienüberschuss, Fokus auf Volumen",
+    obGoalOther: "Etwas anderes",
+    obGoalOtherSub: "Noch nicht sicher — finden wir gemeinsam heraus",
+    obReasonTitle: "Warum möchtest du dieses Ziel erreichen?",
+    obReasonConfidence: "Für mein Selbstbewusstsein",
+    obReasonHealth: "Für meine Gesundheit",
+    obReasonFitness: "Für meine Fitness",
+    obReasonEvent: "Für einen speziellen Anlass",
+    obReasonBurn: "Um mehr Kalorien zu verbrennen",
+    obReasonOther: "Aus einem anderen Grund",
+    obSkip: "Überspringen",
+    obMoreTitle: "Was möchtest du darüber hinaus erreichen?",
+    obMoreEating: "Mein Essverhalten verbessern",
+    obMoreCook: "Lernen, gesund zu kochen",
+    obMoreImmune: "Mein Immunsystem stärken",
+    obMoreSleep: "Besser schlafen und mehr Energie haben",
+    obMoreFeel: "Mich in meinem Körper wohlfühlen",
+    obMoreOther: "Etwas anderes",
+    obExperienceTitle: "Hast du das schon einmal versucht?",
+    obExperienceNotReached: "Ja, aber ich habe mein Ziel noch nicht erreicht.",
+    obExperienceFailed: "Ich habe es versucht, aber leider ohne Erfolg.",
+    obExperienceCouldntKeep: "Ja, aber ich konnte das Ergebnis nicht halten.",
+    obExperienceNever: "Ich habe es noch nie versucht.",
+    obAiScanTitle: "Keine Zeit zum Tracken? Bald kein Problem mehr.",
+    obAiScanSub: "Wir bauen gerade eine KI-Bilderkennung für Essen — Foto vom Teller machen und sofort Nährwerte erhalten. Kommt in einem späteren Update.",
     obStatsTitle: "Ein paar Zahlen",
     obStatsSub: "Damit berechnen wir deine Tagesziele.",
     obNameLabel: "Dein Name",
@@ -893,8 +953,16 @@ function Chip({ label, active, onClick }) {
 /* ---------------- Onboarding ---------------- */
 
 function Onboarding({ t, lang, setLang, onFinish }) {
+  // Shown once, before anything else — a returning-to-onboarding user (via
+  // "replay onboarding" in Settings) has already picked a language, so this
+  // doesn't need its own persisted flag; it just gates step 0.
+  const [langChosen, setLangChosen] = useState(false);
   const [step, setStep] = useState(0);
+  const [gender, setGender] = useState(null);
   const [goal, setGoal] = useState(null);
+  const [reason, setReason] = useState(null);
+  const [moreGoals, setMoreGoals] = useState([]);
+  const [experience, setExperience] = useState(null);
   const [name, setName] = useState("");
   const [weight, setWeight] = useState("84");
   const [height, setHeight] = useState("180");
@@ -902,12 +970,50 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const [vision3Months, setVision3Months] = useState("");
   const [visionWhy, setVisionWhy] = useState("");
 
+  const toggleMoreGoal = (key) => {
+    setMoreGoals((g) => (g.includes(key) ? g.filter((x) => x !== key) : [...g, key]));
+  };
+
   const kcalGoal = useMemo(() => {
     const base = 2200;
     if (goal === "cut") return base - 400;
-    if (goal === "bulk") return base + 350;
+    if (goal === "gain" || goal === "bulk") return base + 350;
     return base;
   }, [goal]);
+
+  const LAST_STEP = 9;
+  const canContinue = !((step === 1 && !gender) || (step === 2 && !goal) || (step === 6 && !name.trim()));
+
+  // Language picker comes before everything else, including "Welcome" — a
+  // brand-new visitor hasn't chosen DE/EN yet, so both language names are
+  // shown together rather than relying on translated copy for this screen.
+  if (!langChosen) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", marginBottom: 30 }}>
+          <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, #b9822f)`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Dumbbell size={34} color={COLORS.bg} />
+          </div>
+          <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>Sprache wählen · Choose your language</h2>
+        </div>
+        {[
+          { key: "de", label: "Deutsch" },
+          { key: "en", label: "English" },
+        ].map((l) => (
+          <div
+            key={l.key}
+            onClick={() => {
+              setLang(l.key);
+              setLangChosen(true);
+            }}
+            style={{ padding: 18, borderRadius: 16, marginBottom: 12, cursor: "pointer", textAlign: "center", background: COLORS.surface, border: `1.5px solid ${COLORS.border}` }}
+          >
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{l.label}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px" }}>
@@ -923,7 +1029,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
       {step > 0 && (
         <div style={{ display: "flex", gap: 6, margin: "22px 0 4px" }}>
-          {[1, 2, 3, 4].map((i) => (
+          {Array.from({ length: LAST_STEP }, (_, i) => i + 1).map((i) => (
             <div key={i} style={{ height: 3, borderRadius: 2, flex: 1, background: i <= step ? COLORS.gold : COLORS.border }} />
           ))}
         </div>
@@ -942,12 +1048,29 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
         {step === 1 && (
           <div>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obGenderTitle}</h2>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obGenderSub}</p>
+            {[
+              { key: "female", title: t.obGenderFemale },
+              { key: "male", title: t.obGenderMale },
+            ].map(({ key, title }) => (
+              <div key={key} onClick={() => setGender(key)} style={{ padding: 18, borderRadius: 16, marginBottom: 12, cursor: "pointer", textAlign: "center", background: gender === key ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${gender === key ? COLORS.gold : COLORS.border}` }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obGoalTitle}</h2>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obGoalSub}</p>
             {[
               { key: "cut", icon: TrendingDown, title: t.obGoalCut, sub: t.obGoalCutSub },
               { key: "maintain", icon: Equal, title: t.obGoalMaintain, sub: t.obGoalMaintainSub },
-              { key: "bulk", icon: TrendingUp, title: t.obGoalBulk, sub: t.obGoalBulkSub },
+              { key: "gain", icon: TrendingUp, title: t.obGoalGain, sub: t.obGoalGainSub },
+              { key: "bulk", icon: Dumbbell, title: t.obGoalBulk, sub: t.obGoalBulkSub },
+              { key: "other", icon: Smile, title: t.obGoalOther, sub: t.obGoalOtherSub },
             ].map(({ key, icon: Icon, title, sub }) => (
               <div key={key} onClick={() => setGoal(key)} style={{ display: "flex", alignItems: "center", gap: 14, padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: goal === key ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${goal === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ width: 42, height: 42, borderRadius: 12, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -962,7 +1085,66 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           </div>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
+          <div>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 22px" }}>{t.obReasonTitle}</h2>
+            {[
+              { key: "confidence", title: t.obReasonConfidence },
+              { key: "health", title: t.obReasonHealth },
+              { key: "fitness", title: t.obReasonFitness },
+              { key: "event", title: t.obReasonEvent },
+              { key: "burn", title: t.obReasonBurn },
+              { key: "other", title: t.obReasonOther },
+            ].map(({ key, title }) => (
+              <div key={key} onClick={() => setReason(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: reason === key ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${reason === key ? COLORS.gold : COLORS.border}` }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {step === 4 && (
+          <div>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 22px" }}>{t.obMoreTitle}</h2>
+            {[
+              { key: "eating", title: t.obMoreEating },
+              { key: "cook", title: t.obMoreCook },
+              { key: "immune", title: t.obMoreImmune },
+              { key: "sleep", title: t.obMoreSleep },
+              { key: "feel", title: t.obMoreFeel },
+              { key: "other", title: t.obMoreOther },
+            ].map(({ key, title }) => (
+              <div
+                key={key}
+                onClick={() => toggleMoreGoal(key)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: moreGoals.includes(key) ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}` }}
+              >
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
+                <div style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}`, background: moreGoals.includes(key) ? COLORS.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {moreGoals.includes(key) && <Check size={12} color={COLORS.bg} />}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {step === 5 && (
+          <div>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 22px" }}>{t.obExperienceTitle}</h2>
+            {[
+              { key: "notReached", title: t.obExperienceNotReached },
+              { key: "failed", title: t.obExperienceFailed },
+              { key: "couldntKeep", title: t.obExperienceCouldntKeep },
+              { key: "never", title: t.obExperienceNever },
+            ].map(({ key, title }) => (
+              <div key={key} onClick={() => setExperience(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: experience === key ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${experience === key ? COLORS.gold : COLORS.border}` }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {step === 6 && (
           <div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obStatsTitle}</h2>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obStatsSub}</p>
@@ -983,7 +1165,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 7 && (
           <div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obVisionTitle}</h2>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obVisionSub}</p>
@@ -1008,7 +1190,17 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           </div>
         )}
 
-        {step === 4 && (
+        {step === 8 && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(228,166,76,0.14)", margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Camera size={30} color={COLORS.gold} />
+            </div>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 21, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>{t.obAiScanTitle}</h2>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: 0 }}>{t.obAiScanSub}</p>
+          </div>
+        )}
+
+        {step === 9 && (
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(228,166,76,0.14)", margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Check size={28} color={COLORS.gold} />
@@ -1047,15 +1239,19 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           </button>
         )}
         <button
-          disabled={(step === 1 && !goal) || (step === 2 && !name.trim())}
+          disabled={!canContinue}
           onClick={() =>
-            step === 4
+            step === LAST_STEP
               ? onFinish({
                   name: name.trim(),
+                  gender,
                   weight: Number(weight),
                   height: Number(height),
                   target: Number(target),
                   goal,
+                  reason,
+                  moreGoals,
+                  experience,
                   kcalGoal,
                   macroTargets: computeMacroTargets(kcalGoal),
                   vision3Months: vision3Months.trim(),
@@ -1065,18 +1261,18 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           }
           style={{
             flex: 1,
-            background: (step === 1 && !goal) || (step === 2 && !name.trim()) ? COLORS.raised : COLORS.gold,
-            color: (step === 1 && !goal) || (step === 2 && !name.trim()) ? COLORS.dim : COLORS.bg,
+            background: canContinue ? COLORS.gold : COLORS.raised,
+            color: canContinue ? COLORS.bg : COLORS.dim,
             border: "none",
             borderRadius: 14,
             padding: "14px 18px",
             fontFamily: "Sora, sans-serif",
             fontWeight: 700,
             fontSize: 14.5,
-            cursor: (step === 1 && !goal) || (step === 2 && !name.trim()) ? "default" : "pointer",
+            cursor: canContinue ? "pointer" : "default",
           }}
         >
-          {step === 0 ? t.obStart : step === 4 ? t.obFinish : t.next}
+          {step === 0 ? t.obStart : step === LAST_STEP ? t.obFinish : t.next}
         </button>
       </div>
     </div>
