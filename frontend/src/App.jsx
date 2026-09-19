@@ -274,6 +274,27 @@ const STR = {
     settingsSupport: "Ask AI support",
     privacyTitle: "Privacy",
     privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight and notes are currently kept on your device only."},{"h":"Food search and barcode","p":"Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI photo scan and assistant","p":"For the photo scan, a downscaled image is sent to our server and from there to an AI service for analysis; our server does not store it. Questions you type to the assistant are handled the same way."},{"h":"Health data (steps)","p":"On request, ASFIT reads your daily steps from Health Connect to estimate calories burned. The values stay on your device. You can revoke access at any time in Health Connect."}],
+    recordsTitle: "Records",
+    recordsCardSub: "Your highest achievements — take the challenge",
+    recordsAuto: "Your best lifts & sessions",
+    recordsCustom: "My challenges",
+    recordsAdd: "New challenge",
+    recordName: "Name (e.g. Marathon, 100 m swim)",
+    recordValue: "Result",
+    recordUnit: "Unit (kg, km, min …)",
+    recordLower: "Lower is better (time)",
+    recordHigher: "Higher is better",
+    recordReward: "My reward (optional)",
+    recordCreate: "Create challenge",
+    recordNewValue: "New result",
+    recordsEmpty: "No records yet — train or create a challenge.",
+    celebrateTitle: "New record!",
+    celebrateSub: "You beat your best. Well done!",
+    celebrateReward: "Your reward",
+    celebrateClose: "Awesome!",
+    exerciseMaxReps: "Most reps",
+    exerciseChart: "Progress",
+    cardioLongest: "Longest",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -543,6 +564,27 @@ const STR = {
     settingsSupport: "KI-Support fragen",
     privacyTitle: "Datenschutz",
     privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht und Notizen werden derzeit nur auf deinem Gerät gehalten."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Foto-Scan und Assistent","p":"Beim Foto-Scan wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet; unser Server speichert es nicht. Fragen an den Assistenten laufen genauso."},{"h":"Gesundheitsdaten (Schritte)","p":"Auf Wunsch liest ASFIT deine Tagesschritte aus Health Connect, um verbrannte Kalorien zu schätzen. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."}],
+    recordsTitle: "Rekorde",
+    recordsCardSub: "Deine höchsten Leistungen — nimm die Herausforderung an",
+    recordsAuto: "Deine Bestleistungen",
+    recordsCustom: "Meine Herausforderungen",
+    recordsAdd: "Neue Herausforderung",
+    recordName: "Name (z. B. Marathon, 100 m Schwimmen)",
+    recordValue: "Ergebnis",
+    recordUnit: "Einheit (kg, km, min …)",
+    recordLower: "Weniger ist besser (Zeit)",
+    recordHigher: "Mehr ist besser",
+    recordReward: "Meine Belohnung (optional)",
+    recordCreate: "Herausforderung anlegen",
+    recordNewValue: "Neues Ergebnis",
+    recordsEmpty: "Noch keine Rekorde — trainiere oder lege eine Herausforderung an.",
+    celebrateTitle: "Neuer Rekord!",
+    celebrateSub: "Du hast deine Bestleistung geknackt. Stark!",
+    celebrateReward: "Deine Belohnung",
+    celebrateClose: "Mega!",
+    exerciseMaxReps: "Meiste Wdh.",
+    exerciseChart: "Fortschritt",
+    cardioLongest: "Längste",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -1901,7 +1943,7 @@ function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch, onOpenRecip
   );
 }
 
-function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary }) {
+function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords }) {
   const timed = workoutHistory.filter((w) => w.durationSec > 0);
   const avgSessionSec = timed.length ? Math.round(timed.reduce((s, w) => s + w.durationSec, 0) / timed.length) : null;
   const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
@@ -1925,6 +1967,17 @@ function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onSt
           <button onClick={onStartWorkout} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", flexShrink: 0 }}>
             {t.startWorkout}
           </button>
+        </div>
+      </Card>
+
+      <Card style={{ marginBottom: 18, cursor: "pointer" }}>
+        <div onClick={onOpenRecords} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ fontSize: 26 }}>🏆</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{t.recordsTitle}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{t.recordsCardSub}</div>
+          </div>
+          <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
         </div>
       </Card>
 
@@ -1965,30 +2018,43 @@ function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onSt
   );
 }
 
-function LineChart({ points, color, height = 130 }) {
+function LineChart({ points, color, height = 140, unit = "" }) {
   const w = 300;
+  const padX = 24;
+  const padTop = 26;
+  const padBottom = 26;
+  const n = points.length;
   const max = Math.max(...points);
   const min = Math.min(...points);
   const range = max - min || 1;
-  const coords = points.map((p, i) => {
-    const x = (i / (points.length - 1)) * w;
-    const y = height - ((p - min) / range) * (height - 20) - 10;
-    return [x, y];
-  });
-  const path = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  const areaPath = `${path} L${w},${height} L0,${height} Z`;
-  const gradId = `fade-${color.replace("#", "")}`;
+  const coords = points.map((p, i) => [n === 1 ? w / 2 : padX + (i / (n - 1)) * (w - 2 * padX), padTop + (1 - (p - min) / range) * (height - padTop - padBottom)]);
+  const path = coords.map(([x, y], i) => (i === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1)).join(" ");
+  const areaPath = path + " L" + coords[n - 1][0] + "," + height + " L" + coords[0][0] + "," + height + " Z";
+  const gradId = "fade-" + color.replace("#", "");
+  const maxIdx = points.lastIndexOf(max);
+  const minIdx = points.indexOf(min);
+  const fmtV = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",") + (unit ? " " + unit : "");
+  const anchorFor = (x) => (x < 40 ? "start" : x > w - 40 ? "end" : "middle");
+  const marker = (idx, c, above) => (
+    <g key={idx + "-" + c}>
+      <circle cx={coords[idx][0]} cy={coords[idx][1]} r={5.5} fill={COLORS.bg} stroke={c} strokeWidth={2.5} />
+      <text x={coords[idx][0]} y={coords[idx][1] + (above ? -11 : 19)} textAnchor={anchorFor(coords[idx][0])} fontSize="11" fontWeight="700" fontFamily="Sora, sans-serif" fill={c}>
+        {(above ? "▲ " : "▼ ") + fmtV(points[idx])}
+      </text>
+    </g>
+  );
   return (
-    <svg viewBox={`0 0 ${w} ${height}`} width="100%" height={height} preserveAspectRatio="none">
+    <svg viewBox={"0 0 " + w + " " + height} width="100%" style={{ display: "block" }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.22" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={areaPath} fill={`url(#${gradId})`} />
-      <path d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
-      <circle cx={coords[coords.length - 1][0]} cy={coords[coords.length - 1][1]} r={4} fill={color} />
+      {n > 1 && <path d={areaPath} fill={"url(#" + gradId + ")"} />}
+      {n > 1 && <path d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
+      {max !== min && marker(minIdx, COLORS.coral, false)}
+      {marker(maxIdx, COLORS.gold, true)}
     </svg>
   );
 }
@@ -2045,7 +2111,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight }) {
           </button>
         </div>
         {shownWeights.length >= 2 ? (
-          <LineChart points={shownWeights.map((w) => w.kg)} color={COLORS.teal} />
+          <LineChart points={shownWeights.map((w) => w.kg)} color={COLORS.teal} unit="kg" />
         ) : (
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.needMoreWeights}</div>
         )}
@@ -2071,7 +2137,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight }) {
               })}
             </div>
             {exPoints.length >= 2 ? (
-              <LineChart points={exPoints} color={COLORS.gold} />
+              <LineChart points={exPoints} color={COLORS.gold} unit="kg" />
             ) : (
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.exerciseProgressHint}</div>
             )}
@@ -2350,16 +2416,151 @@ function WorkoutSession({ t, lang, onFinish }) {
   );
 }
 
+function Celebration({ t, data, onClose }) {
+  if (!data) return null;
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
+        <div style={{ fontSize: 30, letterSpacing: 6, marginBottom: 6 }}>🎉🏆🎉</div>
+        <div style={{ width: 84, height: 84, borderRadius: "50%", background: "rgba(0,191,143,0.14)", margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Laugh size={46} color={COLORS.gold} />
+        </div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 6 }}>{t.celebrateTitle}</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, marginBottom: 14 }}>{t.celebrateSub}</div>
+        {data.lines.map((l, i) => (
+          <div key={i} style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.gold, marginBottom: 4 }}>{l}</div>
+        ))}
+        {data.reward ? (
+          <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 14, background: COLORS.surface, border: "1px solid " + COLORS.border }}>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.celebrateReward}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, marginTop: 2 }}>🎁 {data.reward}</div>
+          </div>
+        ) : null}
+        <button onClick={onClose} style={{ width: "100%", marginTop: 20, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
+          {t.celebrateClose}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, customRecords, onCreate, onUpdate }) {
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ name: "", unit: "km", value: "", lower: false, reward: "" });
+  const [inputs, setInputs] = useState({});
+  const nameOf = (key) => {
+    const ex = EXERCISE_LIBRARY.find((e) => e.key === key);
+    return ex ? (lang === "de" ? ex.nameDe : ex.name) : key;
+  };
+  const repsAt = (key, weight) => {
+    const all = workoutHistory.flatMap((w) => (w.sets || []).filter((x) => x.exerciseKey === key && x.weight === weight).map((x) => x.reps));
+    return all.length ? Math.max(...all) : null;
+  };
+  const strength = Object.keys(personalBests).map((k) => ({ key: k, best: personalBests[k] }));
+  const cardio = Object.keys(cardioBests).map((k) => ({ key: k, best: cardioBests[k] }));
+  const fmtNum = (v) => (Math.round(v * 100) / 100).toString().replace(".", ",");
+  const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid " + COLORS.border };
+
+  const create = () => {
+    const v = parseFloat(String(form.value).replace(",", "."));
+    if (!form.name.trim() || !(v > 0)) return;
+    onCreate({ name: form.name.trim(), unit: form.unit.trim(), value: v, lower: form.lower, reward: form.reward.trim() });
+    setForm({ name: "", unit: "km", value: "", lower: false, reward: "" });
+    setAdding(false);
+  };
+
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.recordsAuto}</div>
+      <Card style={{ marginBottom: 18 }}>
+        {strength.length === 0 && cardio.length === 0 ? (
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.recordsEmpty}</div>
+        ) : (
+          <>
+            {strength.map((r) => (
+              <div key={r.key} style={rowStyle}>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>🏆 {nameOf(r.key)}</span>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold, textAlign: "right" }}>
+                  {fmtNum(r.best)} kg{repsAt(r.key, r.best) ? " × " + repsAt(r.key, r.best) : ""}
+                </span>
+              </div>
+            ))}
+            {cardio.map((r) => (
+              <div key={r.key} style={rowStyle}>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>🏆 {nameOf(r.key)} · {t.cardioLongest}</span>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{fmtNum(r.best)} min</span>
+              </div>
+            ))}
+          </>
+        )}
+      </Card>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.recordsCustom}</span>
+        <span onClick={() => setAdding(!adding)} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>+ {t.recordsAdd}</span>
+      </div>
+
+      {adding && (
+        <Card style={{ marginBottom: 12 }}>
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t.recordName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <input type="number" inputMode="decimal" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={t.recordValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+            <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder={t.recordUnit} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+          </div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+            <Chip label={t.recordHigher} active={!form.lower} onClick={() => setForm({ ...form, lower: false })} />
+            <Chip label={t.recordLower} active={form.lower} onClick={() => setForm({ ...form, lower: true })} />
+          </div>
+          <input value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} placeholder={t.recordReward} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />
+          <button onClick={create} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            {t.recordCreate}
+          </button>
+        </Card>
+      )}
+
+      {customRecords.map((r) => {
+        const pts = r.history.map((h) => h.value);
+        return (
+          <Card key={r.id} style={{ marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>🏆 {r.name}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.gold }}>{fmtNum(r.best)} {r.unit}</span>
+            </div>
+            {r.reward ? <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8 }}>🎁 {r.reward}</div> : null}
+            {pts.length >= 2 && <LineChart points={pts} color={COLORS.gold} unit={r.unit} height={120} />}
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <input type="number" inputMode="decimal" value={inputs[r.id] || ""} onChange={(e) => setInputs({ ...inputs, [r.id]: e.target.value })} placeholder={t.recordNewValue + " (" + r.unit + ")"} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+              <button
+                onClick={() => {
+                  const v = parseFloat(String(inputs[r.id] || "").replace(",", "."));
+                  if (v > 0) {
+                    onUpdate(r.id, v);
+                    setInputs({ ...inputs, [r.id]: "" });
+                  }
+                }}
+                style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+              >
+                {t.stepsSave}
+              </button>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 function WorkoutSummary({ t, lang, summary, onDone }) {
-  const prExercises = (summary?.newBests || []).map(({ exerciseKey, weight }) => {
+  const prExercises = (summary?.newBests || []).map(({ exerciseKey, weight, minutes }) => {
     const ex = EXERCISE_LIBRARY.find((e) => e.key === exerciseKey);
-    return { key: exerciseKey, name: ex ? (lang === "de" ? ex.nameDe : ex.name) : exerciseKey, weight };
+    return { key: exerciseKey, name: ex ? (lang === "de" ? ex.nameDe : ex.name) : exerciseKey, value: minutes ? minutes + " min" : weight + "kg" };
   });
   return (
     <div style={{ padding: "10px 20px 24px", textAlign: "center" }}>
       <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(0,191,143,0.14)", margin: "10px auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Award size={30} color={COLORS.gold} />
+        {prExercises.length > 0 ? <Laugh size={38} color={COLORS.gold} /> : <Award size={30} color={COLORS.gold} />}
       </div>
+      {prExercises.length > 0 && <div style={{ fontSize: 26, marginTop: -8, marginBottom: 8 }}>🎉🏆🎉</div>}
       <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 24px" }}>{t.workoutDone}</h2>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18, textAlign: "left" }}>
@@ -2383,7 +2584,7 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
           {prExercises.map((ex) => (
             <div key={ex.key} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
               <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{ex.name}</span>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{ex.weight}kg</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{ex.value}</span>
             </div>
           ))}
         </Card>
@@ -3148,6 +3349,18 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
       .reverse()
       .slice(0, 6);
     const best = personalBests[selected.key];
+    const chartPoints = workoutHistory
+      .map((w) => {
+        if (isCardio) {
+          const c = (w.cardio || []).filter((x) => x.exerciseKey === selected.key).map((x) => x.minutes);
+          return c.length ? c.reduce((a, b) => a + b, 0) : null;
+        }
+        const ws = (w.sets || []).filter((x) => x.exerciseKey === selected.key).map((x) => x.weight);
+        return ws.length ? Math.max(...ws) : null;
+      })
+      .filter((v) => v !== null);
+    const allReps = workoutHistory.flatMap((w) => (w.sets || []).filter((x) => x.exerciseKey === selected.key).map((x) => x.reps));
+    const maxReps = allReps.length ? Math.max(...allReps) : null;
     const save = () => {
       if (isCardio) {
         const mins = parseFloat(String(wInput).replace(",", "."));
@@ -3177,11 +3390,10 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
             </div>
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "12px 0" }}>{cueOf(selected)}</div>
-          {best ? (
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.gold }}>
-              {t.exerciseBest}: {best} kg
-            </div>
-          ) : null}
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {best ? <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.gold }}>🏆 {t.exerciseBest}: {best} kg</div> : null}
+            {maxReps ? <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.teal }}>{t.exerciseMaxReps}: {maxReps}</div> : null}
+          </div>
         </Card>
 
         <Card style={{ marginBottom: 14 }}>
@@ -3195,6 +3407,12 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           </button>
         </Card>
 
+        {chartPoints.length >= 2 && (
+          <Card style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>{t.exerciseChart}</div>
+            <LineChart points={chartPoints} color={COLORS.gold} unit={isCardio ? "min" : "kg"} />
+          </Card>
+        )}
         <Card>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.exerciseHistory}</div>
           {history.length === 0 ? (
@@ -3478,6 +3696,9 @@ export default function AsmarFitApp() {
   const [workoutHistory, setWorkoutHistory] = useState([]);
   const [personalBests, setPersonalBests] = useState({});
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
+  const [cardioBests, setCardioBests] = useState({});
+  const [customRecords, setCustomRecords] = useState([]);
+  const [celebrate, setCelebrate] = useState(null);
   const [waterMl, setWaterMl] = useState(0);
   const [steps, setSteps] = useState(0);
   const [stepsGoal, setStepsGoal] = useState(10000);
@@ -3537,6 +3758,16 @@ export default function AsmarFitApp() {
       }
     }
     setPersonalBests(updatedBests);
+    const updatedCardio = { ...cardioBests };
+    for (const c of summary.cardio || []) {
+      if (c.minutes > (updatedCardio[c.exerciseKey] || 0)) {
+        updatedCardio[c.exerciseKey] = c.minutes;
+        const ex = newBests.find((b) => b.exerciseKey === c.exerciseKey);
+        if (ex) ex.minutes = c.minutes;
+        else newBests.push({ exerciseKey: c.exerciseKey, minutes: c.minutes });
+      }
+    }
+    setCardioBests(updatedCardio);
     const w = profile.weight || 70;
     const strengthMinutes = summary.setLog.length * 2.5; // ~2.5 min per set incl. rest
     const cardioKcal = (summary.cardio || []).reduce((sum, c) => sum + burnKcal(CARDIO_MET[c.exerciseKey] || 6, w, c.minutes), 0);
@@ -3545,7 +3776,27 @@ export default function AsmarFitApp() {
     if (showSummary) {
       setLastWorkoutSummary({ durationSec: summary.durationSec, volumeKg: summary.volumeKg, newBests, burnedKcal });
       setOverlay("workoutSummary");
+    } else if (newBests.length) {
+      setCelebrate({
+        lines: newBests.map((b) => {
+          const ex = EXERCISE_LIBRARY.find((e) => e.key === b.exerciseKey);
+          const nm = ex ? (lang === "de" ? ex.nameDe : ex.name) : b.exerciseKey;
+          return nm + ": " + (b.minutes ? b.minutes + " min" : b.weight + " kg");
+        }),
+      });
     }
+  };
+
+  const createCustomRecord = ({ name, unit, value, lower, reward }) => {
+    setCustomRecords((r) => [...r, { id: Date.now(), name, unit, lower, reward, best: value, history: [{ value, dateISO: new Date().toISOString() }] }]);
+  };
+
+  const updateCustomRecord = (id, value) => {
+    const rec = customRecords.find((r) => r.id === id);
+    if (!rec) return;
+    const better = rec.lower ? value < rec.best : value > rec.best;
+    setCustomRecords((all) => all.map((r) => (r.id === id ? { ...r, best: better ? value : r.best, history: [...r.history, { value, dateISO: new Date().toISOString() }] } : r)));
+    if (better) setCelebrate({ lines: [rec.name + ": " + value + " " + rec.unit], reward: rec.reward });
   };
 
   const addFoodItem = (food) => {
@@ -3594,6 +3845,10 @@ export default function AsmarFitApp() {
   } else if (overlay === "recipes") {
     content = <RecipesScreen t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} />;
     topTitle = t.recipesTitle;
+    showBack = () => setOverlay(null);
+  } else if (overlay === "records") {
+    content = <RecordsScreen t={t} lang={lang} personalBests={personalBests} cardioBests={cardioBests} workoutHistory={workoutHistory} customRecords={customRecords} onCreate={createCustomRecord} onUpdate={updateCustomRecord} />;
+    topTitle = t.recordsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "privacy") {
     content = <PrivacyScreen t={t} />;
@@ -3726,6 +3981,7 @@ export default function AsmarFitApp() {
           workoutHistory={workoutHistory}
           onStartWorkout={() => setOverlay("workout")}
           onOpenPlanBuilder={() => setOverlay("planBuilder")}
+          onOpenRecords={() => setOverlay("records")}
           onOpenLibrary={() => {
             setLibraryReturnTo("main");
             setOverlay("exerciseLibrary");
@@ -3782,6 +4038,7 @@ export default function AsmarFitApp() {
             </div>
           </>
         )}
+        <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
       </div>
     </div>
   );
