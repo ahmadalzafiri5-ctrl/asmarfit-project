@@ -7,7 +7,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "50kb" }));
+app.use(express.json({ limit: "8mb" })); // photo scan sends a downscaled JPEG as base64
 
 const PORT = process.env.PORT || 3001;
 const USDA_API_KEY = process.env.USDA_API_KEY;
@@ -286,6 +286,79 @@ app.post("/api/assistant", async (req, res) => {
     res.json({ reply: reply || "…" });
   } catch (err) {
     console.error("Assistant request failed:", err.message);
+    res.status(502).json({ error: "upstream_error" });
+  }
+});
+
+/* ---------- POST /api/food/photo ---------- */
+// AI food photo recognition: a vision model estimates the dish and its
+// nutrition from one photo. Estimates only — the app lets the user review.
+app.post("/api/food/photo", async (req, res) => {
+  if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
+
+  const now = Date.now();
+  const hits = (assistantHits.get(req.ip) || []).filter((ts) => now - ts < 60_000);
+  if (hits.length >= 15) return res.status(429).json({ error: "rate_limited" });
+  assistantHits.set(req.ip, [...hits, now]);
+
+  const image = typeof req.body?.image === "string" ? req.body.image : "";
+  const sep = image.indexOf(";base64,");
+  const mediaType = image.slice(5, sep);
+  const b64 = image.slice(sep + 8);
+  const m = ["image/jpeg", "image/png", "image/webp"].includes(mediaType) && /^[A-Za-z0-9+/=]+$/.test(b64) ? [null, mediaType, b64] : null;
+  if (!m) return res.status(400).json({ error: "Expected a base64 image data URL (jpeg/png/webp)" });
+  const lang = req.body?.lang === "en" ? "English" : "German";
+
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: process.env.PHOTO_MODEL || ASSISTANT_MODEL,
+        max_tokens: 700,
+        system:
+          "You estimate nutrition from a photo of a meal. Identify each visible food item, estimate its portion in grams and its nutrition. " +
+          "Answer with ONLY a JSON object, no prose, in exactly this shape: " +
+          '{"name": string (short dish name in ' + lang + '), "items": [{"name": string (' + lang + '), "grams": number, "kcal": number, "protein": number, "carbs": number, "fat": number}], "isFood": boolean}. ' +
+          "Use realistic values (protein/carbs/fat in grams, kcal for the whole portion). If the photo does not show food, return isFood false and an empty items array.",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: m[1], data: m[2] } },
+              { type: "text", text: "Estimate this meal." },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!r.ok) {
+      console.error("Anthropic API returned", r.status);
+      return res.status(502).json({ error: "upstream_error" });
+    }
+    const data = await r.json();
+    const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join(" ");
+    const jsonStart = text.indexOf("{");
+    const jsonEnd = text.lastIndexOf("}");
+    if (jsonStart < 0 || jsonEnd < jsonStart) return res.status(502).json({ error: "bad_model_output" });
+    const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+    const num = (v) => (Number.isFinite(Number(v)) ? Math.max(0, Math.round(Number(v) * 10) / 10) : 0);
+    const items = (Array.isArray(parsed.items) ? parsed.items : []).slice(0, 12).map((it) => ({
+      name: String(it.name || "").slice(0, 80),
+      grams: num(it.grams),
+      kcal: Math.round(num(it.kcal)),
+      protein: num(it.protein),
+      carbs: num(it.carbs),
+      fat: num(it.fat),
+    }));
+    const total = items.reduce(
+      (t, it) => ({ grams: t.grams + it.grams, kcal: t.kcal + it.kcal, protein: t.protein + it.protein, carbs: t.carbs + it.carbs, fat: t.fat + it.fat }),
+      { grams: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+    for (const k of ["grams", "protein", "carbs", "fat"]) total[k] = Math.round(total[k] * 10) / 10;
+    res.json({ isFood: parsed.isFood !== false && items.length > 0, name: String(parsed.name || "").slice(0, 80), items, total });
+  } catch (err) {
+    console.error("Photo scan failed:", err.message);
     res.status(502).json({ error: "upstream_error" });
   }
 });
