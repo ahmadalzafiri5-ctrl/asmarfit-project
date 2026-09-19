@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Capacitor } from "@capacitor/core";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 import {
@@ -59,11 +59,18 @@ const COLORS = {
 const STR = {
   en: {
     tabs: { home: "Home", nutrition: "Nutrition", training: "Training", progress: "Progress", notes: "Notes" },
-    greeting: "Good morning, Karim",
+    greetingPrefix: "Good morning",
     kcalLeft: "left today",
     lastWorkout: "Last workout",
     currentWeight: "Current weight",
     todaysNote: "Today's note",
+    noWorkoutsYet: "No workouts yet",
+    noNoteToday: "No note yet",
+    firstWeightEntry: "First entry",
+    weeksLabel: "weeks",
+    notLoggedYet: "Not logged yet",
+    avgSession: "avg. session",
+    photoDateLabel: "JAN 2026",
     quickLog: "Quick log",
     logFood: "Log food",
     logWeight: "Log weight",
@@ -109,6 +116,8 @@ const STR = {
     obGoalBulkSub: "Calorie surplus, focus on volume",
     obStatsTitle: "A few numbers",
     obStatsSub: "Used to calculate your daily targets.",
+    obNameLabel: "Your name",
+    obNamePlaceholder: "e.g. Alex",
     obWeight: "Current weight (kg)",
     obHeight: "Height (cm)",
     obTarget: "Target weight (kg)",
@@ -209,10 +218,17 @@ const STR = {
   },
   de: {
     tabs: { home: "Start", nutrition: "Ernährung", training: "Training", progress: "Fortschritt", notes: "Notizen" },
-    greeting: "Guten Morgen, Karim",
+    greetingPrefix: "Guten Morgen",
     kcalLeft: "übrig heute",
     lastWorkout: "Letztes Workout",
     currentWeight: "Aktuelles Gewicht",
+    noWorkoutsYet: "Noch keine Workouts",
+    noNoteToday: "Noch keine Notiz",
+    firstWeightEntry: "Erster Eintrag",
+    weeksLabel: "Wochen",
+    notLoggedYet: "Noch nicht trainiert",
+    avgSession: "Ø Sitzung",
+    photoDateLabel: "Jan. 2026",
     todaysNote: "Heutige Notiz",
     quickLog: "Schnell erfassen",
     logFood: "Essen loggen",
@@ -259,6 +275,8 @@ const STR = {
     obGoalBulkSub: "Kalorienüberschuss, Fokus auf Volumen",
     obStatsTitle: "Ein paar Zahlen",
     obStatsSub: "Damit berechnen wir deine Tagesziele.",
+    obNameLabel: "Dein Name",
+    obNamePlaceholder: "z. B. Alex",
     obWeight: "Aktuelles Gewicht (kg)",
     obHeight: "Größe (cm)",
     obTarget: "Zielgewicht (kg)",
@@ -359,12 +377,14 @@ const STR = {
   },
 };
 
-/* Today's active-plan exercises (used by the workout session demo) */
+/* Today's active-plan exercises. `sets`/`reps` are the program's prescription;
+   `startWeight` is only a sane default for the weight stepper when the user
+   has no personal best logged yet — it is never displayed as "last time". */
 const EXERCISES = [
-  { key: "bench", name: "Bench Press", nameDe: "Bankdrücken", sets: 4, reps: 6, lastWeight: 80, pr: true },
-  { key: "incline", name: "Incline DB Press", nameDe: "Schrägbankdrücken (KH)", sets: 3, reps: 10, lastWeight: 32 },
-  { key: "flye", name: "Cable Fly", nameDe: "Kabelzug-Fliegende", sets: 3, reps: 12, lastWeight: 18 },
-  { key: "ohp2", name: "Overhead Press", nameDe: "Schulterdrücken", sets: 4, reps: 8, lastWeight: 50 },
+  { key: "bench", name: "Bench Press", nameDe: "Bankdrücken", sets: 4, reps: 6, startWeight: 20 },
+  { key: "incline", name: "Incline DB Press", nameDe: "Schrägbankdrücken (KH)", sets: 3, reps: 10, startWeight: 10 },
+  { key: "flye", name: "Cable Fly", nameDe: "Kabelzug-Fliegende", sets: 3, reps: 12, startWeight: 10 },
+  { key: "ohp2", name: "Overhead Press", nameDe: "Schulterdrücken", sets: 4, reps: 8, startWeight: 20 },
 ];
 
 /* Full exercise library, filterable by muscle group */
@@ -538,6 +558,28 @@ function scale(per100, grams) {
   };
 }
 
+// Simple standard macro split (30% protein / 40% carbs / 30% fat) derived
+// from the user's own kcal goal — not fake, just a deterministic default
+// until the app offers a way to fine-tune macro targets individually.
+function computeMacroTargets(kcalGoal) {
+  return {
+    protein: Math.round((kcalGoal * 0.3) / 4),
+    carbs: Math.round((kcalGoal * 0.4) / 4),
+    fat: Math.round((kcalGoal * 0.3) / 9),
+  };
+}
+
+function sumMeals(meals, field) {
+  return Object.values(meals).reduce((total, items) => total + items.reduce((s, it) => s + (it[field] || 0), 0), 0);
+}
+
+function formatDuration(totalSeconds) {
+  if (totalSeconds == null) return "–:--";
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 function Ring({ pct, size = 168, stroke = 14, color = COLORS.gold, track = COLORS.raised, children }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -692,6 +734,7 @@ function Chip({ label, active, onClick }) {
 function Onboarding({ t, lang, setLang, onFinish }) {
   const [step, setStep] = useState(0);
   const [goal, setGoal] = useState(null);
+  const [name, setName] = useState("");
   const [weight, setWeight] = useState("84");
   const [height, setHeight] = useState("180");
   const [target, setTarget] = useState("80");
@@ -762,6 +805,10 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           <div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obStatsTitle}</h2>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obStatsSub}</p>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.obNameLabel}</div>
+              <TextField value={name} onChange={setName} placeholder={t.obNamePlaceholder} />
+            </div>
             {[
               { label: t.obWeight, val: weight, set: setWeight },
               { label: t.obHeight, val: height, set: setHeight },
@@ -839,9 +886,34 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           </button>
         )}
         <button
-          disabled={step === 1 && !goal}
-          onClick={() => (step === 4 ? onFinish() : setStep(step + 1))}
-          style={{ flex: 1, background: step === 1 && !goal ? COLORS.raised : COLORS.gold, color: step === 1 && !goal ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: step === 1 && !goal ? "default" : "pointer" }}
+          disabled={(step === 1 && !goal) || (step === 2 && !name.trim())}
+          onClick={() =>
+            step === 4
+              ? onFinish({
+                  name: name.trim(),
+                  weight: Number(weight),
+                  height: Number(height),
+                  target: Number(target),
+                  goal,
+                  kcalGoal,
+                  macroTargets: computeMacroTargets(kcalGoal),
+                  vision3Months: vision3Months.trim(),
+                  visionWhy: visionWhy.trim(),
+                })
+              : setStep(step + 1)
+          }
+          style={{
+            flex: 1,
+            background: (step === 1 && !goal) || (step === 2 && !name.trim()) ? COLORS.raised : COLORS.gold,
+            color: (step === 1 && !goal) || (step === 2 && !name.trim()) ? COLORS.dim : COLORS.bg,
+            border: "none",
+            borderRadius: 14,
+            padding: "14px 18px",
+            fontFamily: "Sora, sans-serif",
+            fontWeight: 700,
+            fontSize: 14.5,
+            cursor: (step === 1 && !goal) || (step === 2 && !name.trim()) ? "default" : "pointer",
+          }}
         >
           {step === 0 ? t.obStart : step === 4 ? t.obFinish : t.next}
         </button>
@@ -852,24 +924,40 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
 /* ---------------- Main tab screens ---------------- */
 
-function HomeScreen({ t, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
-  const kcalGoal = 2400,
-    kcalEaten = 1847;
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
+  const kcalGoal = profile.kcalGoal;
+  const kcalEaten = sumMeals(meals, "kcal");
+  const proteinEaten = sumMeals(meals, "protein");
+  const carbsEaten = sumMeals(meals, "carbs");
+  const fatEaten = sumMeals(meals, "fat");
+
+  const lastWorkout = workoutHistory.length ? workoutHistory[workoutHistory.length - 1] : null;
+
+  const latestWeight = weightLog.length ? weightLog[weightLog.length - 1] : null;
+  const firstWeight = weightLog.length ? weightLog[0] : null;
+  const weeksBetween =
+    firstWeight && latestWeight ? Math.round((new Date(latestWeight.dateISO) - new Date(firstWeight.dateISO)) / (7 * 24 * 3600 * 1000)) : 0;
+  const weightDelta = firstWeight && latestWeight ? latestWeight.kg - firstWeight.kg : 0;
+
+  const latestNote = notes.length ? notes[0] : null;
+
   return (
     <div style={{ padding: "4px 20px 24px" }}>
-      <p style={{ color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 14, marginTop: -4, marginBottom: 22 }}>{t.greeting}</p>
+      <p style={{ color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 14, marginTop: -4, marginBottom: 22 }}>
+        {t.greetingPrefix}, {profile.name}
+      </p>
 
       <Card style={{ display: "flex", alignItems: "center", gap: 22, marginBottom: 16 }}>
-        <Ring pct={(kcalEaten / kcalGoal) * 100}>
+        <Ring pct={kcalGoal ? (kcalEaten / kcalGoal) * 100 : 0}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 28, fontWeight: 700, color: COLORS.text, lineHeight: 1 }}>{kcalGoal - kcalEaten}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 28, fontWeight: 700, color: COLORS.text, lineHeight: 1 }}>{Math.max(kcalGoal - kcalEaten, 0)}</div>
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 4 }}>kcal {t.kcalLeft}</div>
           </div>
         </Ring>
         <div style={{ flex: 1 }}>
-          <MacroBar label={t.protein} value={132} target={180} color={COLORS.teal} />
-          <MacroBar label={t.carbs} value={210} target={280} color={COLORS.gold} />
-          <MacroBar label={t.fat} value={58} target={80} color={COLORS.coral} />
+          <MacroBar label={t.protein} value={proteinEaten} target={profile.macroTargets.protein} color={COLORS.teal} />
+          <MacroBar label={t.carbs} value={carbsEaten} target={profile.macroTargets.carbs} color={COLORS.gold} />
+          <MacroBar label={t.fat} value={fatEaten} target={profile.macroTargets.fat} color={COLORS.coral} />
         </div>
       </Card>
 
@@ -877,14 +965,24 @@ function HomeScreen({ t, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
         <Card>
           <Dumbbell size={17} color={COLORS.gold} />
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10 }}>{t.lastWorkout}</div>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 600, color: COLORS.text, marginTop: 2 }}>Push Day A</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>9,240 kg</div>
+          {lastWorkout ? (
+            <>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 600, color: COLORS.text, marginTop: 2 }}>{formatDuration(lastWorkout.durationSec)}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{Math.round(lastWorkout.volumeKg)} kg</div>
+            </>
+          ) : (
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginTop: 2 }}>{t.noWorkoutsYet}</div>
+          )}
         </Card>
         <Card>
           <TrendingUp size={17} color={COLORS.teal} />
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10 }}>{t.currentWeight}</div>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 600, color: COLORS.text, marginTop: 2 }}>82.4 kg</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.teal, marginTop: 2 }}>−0.6 kg / 4 weeks</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 600, color: COLORS.text, marginTop: 2 }}>{latestWeight ? `${latestWeight.kg} kg` : "–"}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.teal, marginTop: 2 }}>
+            {weightLog.length > 1 && weeksBetween > 0
+              ? `${weightDelta > 0 ? "+" : ""}${weightDelta.toFixed(1)} kg / ${weeksBetween} ${t.weeksLabel}`
+              : t.firstWeightEntry}
+          </div>
         </Card>
       </div>
 
@@ -893,7 +991,7 @@ function HomeScreen({ t, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
           <NotebookPen size={16} color={COLORS.dim} />
           <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>{t.todaysNote}</span>
         </div>
-        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>Energy felt high — slept 7.5h. Great pump on incline press.</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: latestNote ? COLORS.text : COLORS.dim }}>{latestNote ? latestNote.text : t.noNoteToday}</div>
       </Card>
 
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.quickLog}</div>
@@ -916,7 +1014,7 @@ function HomeScreen({ t, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
   );
 }
 
-function NutritionScreen({ t, meals, onOpenFoodSearch }) {
+function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch }) {
   const mealDefs = [
     { key: "breakfast", label: t.breakfast },
     { key: "lunch", label: t.lunch },
@@ -926,9 +1024,9 @@ function NutritionScreen({ t, meals, onOpenFoodSearch }) {
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <Card style={{ marginBottom: 16 }}>
-        <MacroBar label={t.protein} value={132} target={180} color={COLORS.teal} />
-        <MacroBar label={t.carbs} value={210} target={280} color={COLORS.gold} />
-        <MacroBar label={t.fat} value={58} target={80} color={COLORS.coral} />
+        <MacroBar label={t.protein} value={sumMeals(meals, "protein")} target={macroTargets.protein} color={COLORS.teal} />
+        <MacroBar label={t.carbs} value={sumMeals(meals, "carbs")} target={macroTargets.carbs} color={COLORS.gold} />
+        <MacroBar label={t.fat} value={sumMeals(meals, "fat")} target={macroTargets.fat} color={COLORS.coral} />
       </Card>
 
       <div onClick={() => onOpenFoodSearch("snacks")} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 20, cursor: "pointer" }}>
@@ -967,7 +1065,11 @@ function NutritionScreen({ t, meals, onOpenFoodSearch }) {
   );
 }
 
-function TrainingScreen({ t, planName, onStartWorkout, onOpenPlanBuilder, onOpenLibrary }) {
+function TrainingScreen({ t, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary }) {
+  const avgSessionSec = workoutHistory.length
+    ? Math.round(workoutHistory.reduce((s, w) => s + w.durationSec, 0) / workoutHistory.length)
+    : null;
+  const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -1002,14 +1104,9 @@ function TrainingScreen({ t, planName, onStartWorkout, onOpenPlanBuilder, onOpen
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, fontWeight: 500 }}>{ex.name}</span>
-                {ex.pr && (
-                  <span style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(228,166,76,0.14)", color: COLORS.gold, borderRadius: 999, padding: "2px 8px", fontSize: 10, fontFamily: "Sora, sans-serif", fontWeight: 700 }}>
-                    <Award size={10} /> {t.newPR}
-                  </span>
-                )}
               </div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
-                {t.lastTime}: {ex.lastWeight}kg × {ex.reps}
+                {personalBests[ex.key] ? `${t.lastTime}: ${personalBests[ex.key]}kg × ${ex.reps}` : t.notLoggedYet}
               </div>
             </div>
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.dim }}>
@@ -1022,12 +1119,12 @@ function TrainingScreen({ t, planName, onStartWorkout, onOpenPlanBuilder, onOpen
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <Card>
           <Timer size={17} color={COLORS.teal} />
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 8 }}>1:47:12</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>avg. session</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 8 }}>{formatDuration(avgSessionSec)}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{t.avgSession}</div>
         </Card>
         <Card>
           <Flame size={17} color={COLORS.coral} />
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 8 }}>9,240 kg</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 8 }}>{totalVolume} kg</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{t.volume}</div>
         </Card>
       </div>
@@ -1104,7 +1201,7 @@ function ProgressScreen({ t }) {
             <Camera size={30} strokeWidth={1.4} />
           </div>
           <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - slider}% 0 0)`, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(160deg,#3a2f22,#1b1c1f)" }}>
-            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11, color: COLORS.gold, fontWeight: 700 }}>JAN 2026</span>
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11, color: COLORS.gold, fontWeight: 700 }}>{t.photoDateLabel}</span>
           </div>
           <div style={{ position: "absolute", top: 0, bottom: 0, left: `${slider}%`, width: 2, background: COLORS.text, transform: "translateX(-1px)" }} />
         </div>
@@ -1246,9 +1343,11 @@ function WorkoutSession({ t, lang, onFinish }) {
   const [exIdx, setExIdx] = useState(0);
   const [completedSets, setCompletedSets] = useState(0);
   const [reps, setReps] = useState(EXERCISES[0].reps);
-  const [weight, setWeight] = useState(EXERCISES[0].lastWeight);
+  const [weight, setWeight] = useState(EXERCISES[0].startWeight);
   const [resting, setResting] = useState(false);
   const [restLeft, setRestLeft] = useState(90);
+  const [setLog, setSetLog] = useState([]);
+  const startTimeRef = useRef(Date.now());
   const ex = EXERCISES[exIdx];
   const isLast = exIdx === EXERCISES.length - 1;
   const setsDone = completedSets >= ex.sets;
@@ -1264,6 +1363,7 @@ function WorkoutSession({ t, lang, onFinish }) {
   }, [resting, restLeft]);
 
   const completeSet = () => {
+    setSetLog((log) => [...log, { exerciseKey: ex.key, weight, reps }]);
     const next = completedSets + 1;
     setCompletedSets(next);
     if (next < ex.sets) {
@@ -1277,8 +1377,16 @@ function WorkoutSession({ t, lang, onFinish }) {
     setExIdx(ni);
     setCompletedSets(0);
     setReps(EXERCISES[ni].reps);
-    setWeight(EXERCISES[ni].lastWeight);
+    setWeight(EXERCISES[ni].startWeight);
     setResting(false);
+  };
+
+  const finish = () => {
+    onFinish({
+      durationSec: Math.round((Date.now() - startTimeRef.current) / 1000),
+      volumeKg: setLog.reduce((s, log) => s + log.weight * log.reps, 0),
+      setLog,
+    });
   };
 
   return (
@@ -1314,7 +1422,7 @@ function WorkoutSession({ t, lang, onFinish }) {
           {t.completeSet}
         </button>
       ) : (
-        <button onClick={isLast ? onFinish : nextExercise} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
+        <button onClick={isLast ? finish : nextExercise} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
           {isLast ? t.finishWorkout : t.nextExercise}
         </button>
       )}
@@ -1324,8 +1432,11 @@ function WorkoutSession({ t, lang, onFinish }) {
   );
 }
 
-function WorkoutSummary({ t, onDone }) {
-  const prExercises = EXERCISES.filter((e) => e.pr);
+function WorkoutSummary({ t, lang, summary, onDone }) {
+  const prExercises = (summary?.newBests || []).map(({ exerciseKey, weight }) => {
+    const ex = EXERCISES.find((e) => e.key === exerciseKey);
+    return { key: exerciseKey, name: ex ? (lang === "de" ? ex.nameDe : ex.name) : exerciseKey, weight };
+  });
   return (
     <div style={{ padding: "10px 20px 24px", textAlign: "center" }}>
       <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(228,166,76,0.14)", margin: "10px auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1336,12 +1447,12 @@ function WorkoutSummary({ t, onDone }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18, textAlign: "left" }}>
         <Card>
           <Timer size={17} color={COLORS.teal} />
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 8 }}>48:12</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 8 }}>{formatDuration(summary?.durationSec)}</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{t.duration}</div>
         </Card>
         <Card>
           <Flame size={17} color={COLORS.coral} />
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 8 }}>9,860 kg</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 8 }}>{Math.round(summary?.volumeKg || 0)} kg</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{t.volume}</div>
         </Card>
       </div>
@@ -1352,7 +1463,7 @@ function WorkoutSummary({ t, onDone }) {
           {prExercises.map((ex) => (
             <div key={ex.key} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
               <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{ex.name}</span>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{ex.lastWeight + 2.5}kg</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{ex.weight}kg</span>
             </div>
           ))}
         </Card>
@@ -1413,7 +1524,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode }) {
   const scaled = selected ? scale(selected.per100, grams) : null;
 
   const confirmAdd = () => {
-    onAdd({ name: selected.name, kcal: scaled.kcal, grams });
+    onAdd({ name: selected.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, grams });
     setToast(selected.name);
     setSelected(null);
     setTimeout(() => setToast(null), 1400);
@@ -1619,7 +1730,7 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
           </div>
           <button
             onClick={() => {
-              onAdd({ name: found.name, kcal: scaled.kcal, grams });
+              onAdd({ name: found.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, grams });
               onDone();
             }}
             style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
@@ -1812,16 +1923,16 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
 
 /* ---------------- Settings ---------------- */
 
-function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, onReplayOnboarding }) {
+function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, onReplayOnboarding }) {
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <Card style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
         <div style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, #b9822f)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.bg }}>K</span>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
         </div>
         <div>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>Karim</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>82.4 kg · 180 cm</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{profile.name}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{profile.weight} kg · {profile.height} cm</div>
         </div>
       </Card>
 
@@ -1868,6 +1979,16 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
 
 /* ---------------- App shell ---------------- */
 
+// Real device clock for the mock status bar (was a fixed "9:41" placeholder).
+function StatusBarClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 15000);
+    return () => clearInterval(id);
+  }, []);
+  return <span>{now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>;
+}
+
 export default function AsmarFitApp() {
   const [onboarded, setOnboarded] = useState(false);
   const [tab, setTab] = useState("home");
@@ -1884,27 +2005,53 @@ export default function AsmarFitApp() {
   const [pbSelectedDay, setPbSelectedDay] = useState(null);
 
   const [notesFilter, setNotesFilter] = useState(0);
-  const [notes, setNotes] = useState([
-    { id: 1, type: 1, date: "Sep 5", icon: Dumbbell, text: "Energy felt high — slept 7.5h. Great pump on incline press.", mood: 4 },
-    { id: 2, type: 2, date: "Sep 4", icon: UtensilsCrossed, text: "Skipped the evening snack, stayed under target easily.", mood: 4 },
-    { id: 3, type: 3, date: "Sep 3", icon: Mic, text: "Voice note · 0:42 — feeling a bit run down, dialing back volume tomorrow.", mood: 2 },
-    { id: 4, type: 1, date: "Sep 2", icon: Dumbbell, text: "Leg day — new squat PR at 130kg for a triple.", mood: 5 },
-  ]);
+  const [notes, setNotes] = useState([]);
 
-  const [meals, setMeals] = useState({
-    breakfast: [{ name: "Oats, whey & banana", kcal: 512 }],
-    lunch: [
-      { name: "Chicken, rice & broccoli", kcal: 610 },
-      { name: "Olive oil, 1 tbsp", kcal: 80 },
-    ],
-    dinner: [],
-    snacks: [
-      { name: "Greek yogurt & almonds", kcal: 380 },
-      { name: "Protein bar", kcal: 265 },
-    ],
+  const [meals, setMeals] = useState({ breakfast: [], lunch: [], dinner: [], snacks: [] });
+
+  // Real user data, populated once onboarding finishes — no seeded demo
+  // values, so every screen starts from an honest empty state.
+  const [profile, setProfile] = useState({
+    name: "",
+    weight: null,
+    height: null,
+    target: null,
+    goal: null,
+    kcalGoal: 2200,
+    macroTargets: computeMacroTargets(2200),
+    vision3Months: "",
+    visionWhy: "",
   });
+  const [weightLog, setWeightLog] = useState([]);
+  const [workoutHistory, setWorkoutHistory] = useState([]);
+  const [personalBests, setPersonalBests] = useState({});
+  const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
 
   const t = useMemo(() => STR[lang], [lang]);
+
+  const finishOnboarding = (data) => {
+    setProfile(data);
+    setWeightLog([{ dateISO: new Date().toISOString(), kg: data.weight }]);
+    setOnboarded(true);
+  };
+
+  const finishWorkout = (summary) => {
+    const newBests = [];
+    const updatedBests = { ...personalBests };
+    for (const s of summary.setLog) {
+      const prevBest = updatedBests[s.exerciseKey] || 0;
+      if (s.weight > prevBest) {
+        updatedBests[s.exerciseKey] = s.weight;
+        const existing = newBests.find((b) => b.exerciseKey === s.exerciseKey);
+        if (existing) existing.weight = s.weight;
+        else newBests.push({ exerciseKey: s.exerciseKey, weight: s.weight });
+      }
+    }
+    setPersonalBests(updatedBests);
+    setWorkoutHistory((h) => [...h, { id: Date.now(), dateISO: new Date().toISOString(), durationSec: summary.durationSec, volumeKg: summary.volumeKg }]);
+    setLastWorkoutSummary({ durationSec: summary.durationSec, volumeKg: summary.volumeKg, newBests });
+    setOverlay("workoutSummary");
+  };
 
   const addFoodItem = (food) => {
     setMeals((m) => ({ ...m, [activeMealKey]: [...m[activeMealKey], food] }));
@@ -1930,11 +2077,11 @@ export default function AsmarFitApp() {
   let content, topTitle, showBack, onSettingsBtn;
 
   if (overlay === "workout") {
-    content = <WorkoutSession t={t} lang={lang} onFinish={() => setOverlay("workoutSummary")} />;
+    content = <WorkoutSession t={t} lang={lang} onFinish={finishWorkout} />;
     topTitle = t.startWorkout;
     showBack = () => setOverlay(null);
   } else if (overlay === "workoutSummary") {
-    content = <WorkoutSummary t={t} onDone={() => setOverlay(null)} />;
+    content = <WorkoutSummary t={t} lang={lang} summary={lastWorkoutSummary} onDone={() => setOverlay(null)} />;
     topTitle = t.workoutDone;
     showBack = () => setOverlay(null);
   } else if (overlay === "foodSearch") {
@@ -2001,6 +2148,7 @@ export default function AsmarFitApp() {
         setUnits={setUnits}
         reminders={reminders}
         setReminders={setReminders}
+        profile={profile}
         onReplayOnboarding={() => {
           setOverlay(null);
           setOnboarded(false);
@@ -2014,6 +2162,11 @@ export default function AsmarFitApp() {
       home: (
         <HomeScreen
           t={t}
+          profile={profile}
+          meals={meals}
+          weightLog={weightLog}
+          workoutHistory={workoutHistory}
+          notes={notes}
           onLogFood={() => {
             setActiveMealKey("snacks");
             setOverlay("foodSearch");
@@ -2027,6 +2180,7 @@ export default function AsmarFitApp() {
         <NutritionScreen
           t={t}
           meals={meals}
+          macroTargets={profile.macroTargets}
           onOpenFoodSearch={(key) => {
             setActiveMealKey(key);
             setOverlay("foodSearch");
@@ -2037,6 +2191,8 @@ export default function AsmarFitApp() {
         <TrainingScreen
           t={t}
           planName={planName || t.pushPullLegs}
+          personalBests={personalBests}
+          workoutHistory={workoutHistory}
           onStartWorkout={() => setOverlay("workout")}
           onOpenPlanBuilder={() => setOverlay("planBuilder")}
           onOpenLibrary={() => {
@@ -2063,13 +2219,13 @@ export default function AsmarFitApp() {
       `}</style>
       <div style={{ width: 390, maxWidth: "100%", background: COLORS.bg, borderRadius: 40, border: "10px solid #0A0A0B", overflow: "hidden", boxShadow: "0 30px 60px rgba(0,0,0,0.45)", fontFamily: "Inter, sans-serif" }}>
         <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 26px 0", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>
-          <span>9:41</span>
+          <StatusBarClock />
           <Droplets size={13} color={COLORS.dim} />
         </div>
 
         {!onboarded ? (
           <div style={{ height: 720 }}>
-            <Onboarding t={t} lang={lang} setLang={setLang} onFinish={() => setOnboarded(true)} />
+            <Onboarding t={t} lang={lang} setLang={setLang} onFinish={finishOnboarding} />
           </div>
         ) : (
           <>
