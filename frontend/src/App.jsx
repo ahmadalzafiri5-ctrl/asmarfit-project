@@ -73,6 +73,8 @@ const STR = {
   en: {
     tabs: { home: "Home", nutrition: "Nutrition", training: "Training", progress: "Progress", notes: "Notes" },
     greetingPrefix: "Good morning",
+    greetingDay: "Hello",
+    greetingEvening: "Good evening",
     kcalLeft: "left today",
     lastWorkout: "Last workout",
     currentWeight: "Current weight",
@@ -333,6 +335,7 @@ const STR = {
     cheatPast: "Past",
     cheatTip: "Enjoy it guilt-free — one cheat doesn't undo your progress.",
     cheatNext: "Next",
+    myMealsPick: "Add to:",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -400,6 +403,8 @@ const STR = {
   de: {
     tabs: { home: "Start", nutrition: "Ernährung", training: "Training", progress: "Fortschritt", notes: "Notizen" },
     greetingPrefix: "Guten Morgen",
+    greetingDay: "Hallo",
+    greetingEvening: "Guten Abend",
     kcalLeft: "übrig heute",
     lastWorkout: "Letztes Workout",
     currentWeight: "Aktuelles Gewicht",
@@ -660,6 +665,7 @@ const STR = {
     cheatPast: "Vorbei",
     cheatTip: "Genieß es ohne schlechtes Gewissen — ein Cheat macht deinen Fortschritt nicht kaputt.",
     cheatNext: "Nächster",
+    myMealsPick: "Hinzufügen zu:",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -1868,7 +1874,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   return (
     <div style={{ padding: "4px 20px 24px" }}>
       <p style={{ color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 14, marginTop: -4, marginBottom: 22 }}>
-        {t.greetingPrefix}, {profile.name}
+        {new Date().getHours() < 11 ? t.greetingPrefix : new Date().getHours() < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
       </p>
 
       <Card style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
@@ -3390,7 +3396,15 @@ function StepsCard({ t, steps, source, weightKg, goal, onSaveGoal, onConnect, on
 
 /* ---------------- Recipes ---------------- */
 
-function MyMealsScreen({ t, myMeals, onSave, onDelete }) {
+function MyMealsScreen({ t, myMeals, onSave, onDelete, onAddTo, initialSlot = "snacks" }) {
+  const [slot, setSlot] = useState(initialSlot);
+  const [toast, setToast] = useState(null);
+  const slots = [
+    { key: "breakfast", label: t.breakfast },
+    { key: "lunch", label: t.lunch },
+    { key: "dinner", label: t.dinner },
+    { key: "snacks", label: t.snacks },
+  ];
   const [f, setF] = useState({ name: "", kcal: "", protein: "", carbs: "", fat: "" });
   const num = (v) => Math.max(0, Math.round(parseFloat(String(v).replace(",", ".")) || 0));
   const save = () => {
@@ -3418,25 +3432,55 @@ function MyMealsScreen({ t, myMeals, onSave, onDelete }) {
           {t.myMealSave}
         </button>
       </Card>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 8 }}>{t.myMealsPick}</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto" }}>
+        {slots.map((sl) => (
+          <Chip key={sl.key} label={sl.label} active={slot === sl.key} onClick={() => setSlot(sl.key)} />
+        ))}
+      </div>
       <Card style={{ padding: 4 }}>
         {myMeals.length === 0 ? (
           <div style={{ padding: 12, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.myMealsEmpty}</div>
         ) : (
           myMeals.map((m, i) => (
-            <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < myMeals.length - 1 ? "1px solid " + COLORS.border : "none" }}>
+            <div
+              key={m.id}
+              onClick={() => {
+                onAddTo(slot, { name: m.name, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
+                setToast(m.name);
+                setTimeout(() => setToast(null), 1400);
+              }}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < myMeals.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}
+            >
               <div>
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{m.name}</div>
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
                   {m.kcal} kcal · {m.protein}g P · {m.carbs}g C · {m.fat}g F
                 </div>
               </div>
-              <div onClick={() => onDelete(m.id)} style={{ cursor: "pointer", padding: 6 }}>
-                <Trash2 size={16} color={COLORS.dim} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Plus size={15} color={COLORS.gold} />
+                </div>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(m.id);
+                  }}
+                  style={{ cursor: "pointer", padding: 6 }}
+                >
+                  <Trash2 size={16} color={COLORS.dim} />
+                </div>
               </div>
             </div>
           ))
         )}
       </Card>
+      {toast && (
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 90, background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 50 }}>
+          <Check size={15} /> {toast} — {t.addedToast}
+        </div>
+      )}
     </div>
   );
 }
@@ -4284,7 +4328,7 @@ export default function AsmarFitApp() {
     topTitle = t.recipesTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "myMeals") {
-    content = <MyMealsScreen t={t} myMeals={myMeals} onSave={addMyMeal} onDelete={(id) => setMyMeals((l) => l.filter((x) => x.id !== id))} />;
+    content = <MyMealsScreen t={t} myMeals={myMeals} initialSlot={activeMealKey} onAddTo={(k, food) => setMeals((m) => ({ ...m, [k]: [...m[k], food] }))} onSave={addMyMeal} onDelete={(id) => setMyMeals((l) => l.filter((x) => x.id !== id))} />;
     topTitle = t.myMealsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "cheats") {
