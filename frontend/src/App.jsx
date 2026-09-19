@@ -33,10 +33,12 @@ import {
 } from "lucide-react";
 
 /* ---------------------------------------------------------
-   AsmarFit — interactive mobile app prototype
-   Tokens
-   bg:#121214  surface:#1B1C1F  raised:#222327  border:#2C2D31
-   text:#F3F1EC  dim:#8D8E93  gold:#E4A64C  teal:#47BFAE  coral:#E2694F
+   ASFIT — interactive mobile app prototype
+   Light theme, green-accented (Yazio-inspired). Tokens
+   bg:#FFFFFF  surface:#F6F7F8  raised:#EEF1F3  border:#E1E4E8
+   text:#161A1D  dim:#68707A  gold:#00BF8F  teal:#2F80ED  coral:#E2694F
+   ("gold" keeps its old name to avoid renaming ~150 call sites, but it's
+   now the primary green brand accent, not an actual gold/orange.)
 --------------------------------------------------------- */
 
 // Backend proxy (USDA FoodData Central search + Open Food Facts barcode lookup).
@@ -46,14 +48,14 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 const COLORS = {
-  bg: "#121214",
-  surface: "#1B1C1F",
-  raised: "#222327",
-  border: "#2C2D31",
-  text: "#F3F1EC",
-  dim: "#8D8E93",
-  gold: "#E4A64C",
-  teal: "#47BFAE",
+  bg: "#FFFFFF",
+  surface: "#F6F7F8",
+  raised: "#EEF1F3",
+  border: "#E1E4E8",
+  text: "#161A1D",
+  dim: "#68707A",
+  gold: "#00BF8F",
+  teal: "#2F80ED",
   coral: "#E2694F",
 };
 
@@ -104,7 +106,7 @@ const STR = {
     est1RM: "Est. 1RM",
     today: "Today",
     // Onboarding
-    obWelcomeTitle: "Welcome to AsmarFit",
+    obWelcomeTitle: "Welcome to ASFIT",
     obWelcomeSub: "Track it. Lift it. Own it.",
     obStart: "Get started",
     obGenderTitle: "What's your gender?",
@@ -161,7 +163,7 @@ const STR = {
     obConfirmTitle: "You're all set",
     obConfirmSub: "Your personal daily target:",
     obYourVision: "Your vision",
-    obFinish: "Enter AsmarFit",
+    obFinish: "Enter ASFIT",
     back: "Back",
     next: "Continue",
     // Workout flow
@@ -298,7 +300,7 @@ const STR = {
     est1RM: "Gesch. 1RM",
     today: "Heute",
     // Onboarding
-    obWelcomeTitle: "Willkommen bei AsmarFit",
+    obWelcomeTitle: "Willkommen bei ASFIT",
     obWelcomeSub: "Dein Training. Deine Zahlen. Dein Fortschritt.",
     obStart: "Los geht's",
     obGenderTitle: "Was ist dein Geschlecht?",
@@ -355,7 +357,7 @@ const STR = {
     obConfirmTitle: "Alles bereit",
     obConfirmSub: "Dein persönliches Tagesziel:",
     obYourVision: "Deine Vision",
-    obFinish: "AsmarFit öffnen",
+    obFinish: "ASFIT öffnen",
     back: "Zurück",
     next: "Weiter",
     // Workout flow
@@ -835,9 +837,9 @@ function MacroBar({ label, value, target, color }) {
   const pct = Math.min(100, (value / target) * 100);
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-        <span style={{ fontSize: 13, color: COLORS.dim, fontFamily: "Inter, sans-serif" }}>{label}</span>
-        <span style={{ fontSize: 13, color: COLORS.text, fontFamily: "Sora, sans-serif", fontWeight: 600 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+        <span style={{ fontSize: 13, color: COLORS.dim, fontFamily: "Inter, sans-serif", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+        <span style={{ fontSize: 13, color: COLORS.text, fontFamily: "Sora, sans-serif", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
           {Math.round(value)}
           <span style={{ color: COLORS.dim, fontWeight: 400 }}> / {target}g</span>
         </span>
@@ -991,7 +993,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px", justifyContent: "center" }}>
         <div style={{ textAlign: "center", marginBottom: 30 }}>
-          <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, #b9822f)`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, #009973)`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Dumbbell size={34} color={COLORS.bg} />
           </div>
           <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>Sprache wählen · Choose your language</h2>
@@ -1038,7 +1040,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         {step === 0 && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, #b9822f)`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, #009973)`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Dumbbell size={34} color={COLORS.bg} />
             </div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 26, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>{t.obWelcomeTitle}</h2>
@@ -1054,7 +1056,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               { key: "female", title: t.obGenderFemale },
               { key: "male", title: t.obGenderMale },
             ].map(({ key, title }) => (
-              <div key={key} onClick={() => setGender(key)} style={{ padding: 18, borderRadius: 16, marginBottom: 12, cursor: "pointer", textAlign: "center", background: gender === key ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${gender === key ? COLORS.gold : COLORS.border}` }}>
+              <div key={key} onClick={() => setGender(key)} style={{ padding: 18, borderRadius: 16, marginBottom: 12, cursor: "pointer", textAlign: "center", background: gender === key ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${gender === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
               </div>
             ))}
@@ -1072,7 +1074,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               { key: "bulk", icon: Dumbbell, title: t.obGoalBulk, sub: t.obGoalBulkSub },
               { key: "other", icon: Smile, title: t.obGoalOther, sub: t.obGoalOtherSub },
             ].map(({ key, icon: Icon, title, sub }) => (
-              <div key={key} onClick={() => setGoal(key)} style={{ display: "flex", alignItems: "center", gap: 14, padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: goal === key ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${goal === key ? COLORS.gold : COLORS.border}` }}>
+              <div key={key} onClick={() => setGoal(key)} style={{ display: "flex", alignItems: "center", gap: 14, padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: goal === key ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${goal === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ width: 42, height: 42, borderRadius: 12, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon size={19} color={goal === key ? COLORS.gold : COLORS.dim} />
                 </div>
@@ -1096,7 +1098,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               { key: "burn", title: t.obReasonBurn },
               { key: "other", title: t.obReasonOther },
             ].map(({ key, title }) => (
-              <div key={key} onClick={() => setReason(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: reason === key ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${reason === key ? COLORS.gold : COLORS.border}` }}>
+              <div key={key} onClick={() => setReason(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: reason === key ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${reason === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
               </div>
             ))}
@@ -1117,7 +1119,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               <div
                 key={key}
                 onClick={() => toggleMoreGoal(key)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: moreGoals.includes(key) ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}` }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: moreGoals.includes(key) ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}` }}
               >
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
                 <div style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}`, background: moreGoals.includes(key) ? COLORS.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1137,7 +1139,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               { key: "couldntKeep", title: t.obExperienceCouldntKeep },
               { key: "never", title: t.obExperienceNever },
             ].map(({ key, title }) => (
-              <div key={key} onClick={() => setExperience(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: experience === key ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${experience === key ? COLORS.gold : COLORS.border}` }}>
+              <div key={key} onClick={() => setExperience(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: experience === key ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${experience === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
               </div>
             ))}
@@ -1192,7 +1194,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
         {step === 8 && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(228,166,76,0.14)", margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(0,191,143,0.14)", margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Camera size={30} color={COLORS.gold} />
             </div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 21, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>{t.obAiScanTitle}</h2>
@@ -1202,7 +1204,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
         {step === 9 && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(228,166,76,0.14)", margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(0,191,143,0.14)", margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Check size={28} color={COLORS.gold} />
             </div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 8px" }}>{t.obConfirmTitle}</h2>
@@ -1304,14 +1306,14 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, onLog
         {t.greetingPrefix}, {profile.name}
       </p>
 
-      <Card style={{ display: "flex", alignItems: "center", gap: 22, marginBottom: 16 }}>
-        <Ring pct={kcalGoal ? (kcalEaten / kcalGoal) * 100 : 0}>
+      <Card style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+        <Ring pct={kcalGoal ? (kcalEaten / kcalGoal) * 100 : 0} size={132} stroke={11}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 28, fontWeight: 700, color: COLORS.text, lineHeight: 1 }}>{Math.max(kcalGoal - kcalEaten, 0)}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 4 }}>kcal {t.kcalLeft}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, lineHeight: 1 }}>{Math.max(kcalGoal - kcalEaten, 0)}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: COLORS.dim, marginTop: 4 }}>kcal {t.kcalLeft}</div>
           </div>
         </Ring>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <MacroBar label={t.protein} value={proteinEaten} target={profile.macroTargets.protein} color={COLORS.teal} />
           <MacroBar label={t.carbs} value={carbsEaten} target={profile.macroTargets.carbs} color={COLORS.gold} />
           <MacroBar label={t.fat} value={fatEaten} target={profile.macroTargets.fat} color={COLORS.coral} />
@@ -1635,7 +1637,7 @@ function NoteComposer({ t, onSave }) {
           <div
             key={c.type}
             onClick={() => setCategory(c.type)}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 14, cursor: "pointer", background: category === c.type ? "rgba(228,166,76,0.12)" : COLORS.surface, border: `1.5px solid ${category === c.type ? COLORS.gold : COLORS.border}` }}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 14, cursor: "pointer", background: category === c.type ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${category === c.type ? COLORS.gold : COLORS.border}` }}
           >
             <c.icon size={18} color={category === c.type ? COLORS.gold : COLORS.dim} />
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: category === c.type ? COLORS.gold : COLORS.dim }}>{c.label}</span>
@@ -1801,7 +1803,7 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
   });
   return (
     <div style={{ padding: "10px 20px 24px", textAlign: "center" }}>
-      <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(228,166,76,0.14)", margin: "10px auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(0,191,143,0.14)", margin: "10px auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Award size={30} color={COLORS.gold} />
       </div>
       <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 24px" }}>{t.workoutDone}</h2>
@@ -1931,7 +1933,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode }) {
                       {f.per100.kcal} kcal {t.per100g}
                     </div>
                   </div>
-                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(228,166,76,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Plus size={15} color={COLORS.gold} />
                   </div>
                 </div>
@@ -2163,7 +2165,7 @@ function RecipesScreen({ t, lang, onAdd, onDone }) {
                     {r.kcal} kcal {t.perServing}
                   </div>
                 </div>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(228,166,76,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Plus size={15} color={COLORS.gold} />
                 </div>
               </div>
@@ -2262,7 +2264,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking }) {
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{cueOf(ex)}</div>
             </div>
             {mode === "pick" && (
-              <div onClick={() => onAdd(ex)} style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(228,166,76,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
+              <div onClick={() => onAdd(ex)} style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
                 <Plus size={15} color={COLORS.gold} />
               </div>
             )}
@@ -2394,7 +2396,7 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <Card style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-        <div style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, #b9822f)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, #009973)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <span style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
         </div>
         <div>

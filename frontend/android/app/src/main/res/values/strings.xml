@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">AsmarFit</string>
-    <string name="title_activity_main">AsmarFit</string>
+    <string name="app_name">ASFIT</string>
+    <string name="title_activity_main">ASFIT</string>
     <string name="package_name">com.asmarfit.app</string>
     <string name="custom_url_scheme">com.asmarfit.app</string>
 </resources>
