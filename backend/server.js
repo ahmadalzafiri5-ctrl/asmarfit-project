@@ -273,7 +273,8 @@ app.post("/api/assistant", async (req, res) => {
           "You are the assistant inside ASFIT, a fitness and nutrition tracking app (food logging with barcode scan and search, recipes, workouts with self-entered weights, progress charts, water tracking, notes with mood). " +
           "Help with training, nutrition, motivation and how to use the app. Be friendly, concrete and brief (max ~150 words). " +
           "You are not a doctor: for medical problems, injuries, eating disorders or medication, recommend a professional. " +
-          "Reply in " + lang + ".",
+          "Reply in " + lang + "." +
+          (typeof req.body?.context === "string" && req.body.context.trim() ? " Context from the app screen the user is on (use it to answer precisely): " + req.body.context.slice(0, 1500) : ""),
         messages,
       }),
     });

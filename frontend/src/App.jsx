@@ -260,6 +260,19 @@ const STR = {
     minutesLabel: "Minutes",
     cardioHint: "Cardio: enter the duration",
     kcalBurnedLabel: "kcal burned",
+    settingsTitle: "Settings",
+    photoGallery: "Choose from gallery",
+    recipeAskTitle: "Unsure about amounts? Ask the AI",
+    recipeAskHello: "Ask me anything about this recipe — how much milk, substitutions, portion sizes …",
+    exerciseBest: "Best",
+    exerciseHistory: "Your entries",
+    exerciseLogTitle: "Log an entry",
+    exerciseSaved: "Saved",
+    noHistory: "No entries yet",
+    settingsPrivacy: "Privacy",
+    settingsSupport: "Ask AI support",
+    privacyTitle: "Privacy",
+    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight and notes are currently kept on your device only."},{"h":"Food search and barcode","p":"Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI photo scan and assistant","p":"For the photo scan, a downscaled image is sent to our server and from there to an AI service for analysis; our server does not store it. Questions you type to the assistant are handled the same way."},{"h":"Health data (steps)","p":"On request, ASFIT reads your daily steps from Health Connect to estimate calories burned. The values stay on your device. You can revoke access at any time in Health Connect."}],
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -315,7 +328,6 @@ const STR = {
     moodLabel: "Energy / mood",
     saveNote: "Save note",
     // Settings
-    settingsTitle: "Settings & profile",
     units: "Units",
     reminders: "Reminders",
     remFood: "Log food",
@@ -516,6 +528,19 @@ const STR = {
     minutesLabel: "Minuten",
     cardioHint: "Cardio: Dauer eintragen",
     kcalBurnedLabel: "kcal verbrannt",
+    settingsTitle: "Einstellungen",
+    photoGallery: "Aus Galerie wählen",
+    recipeAskTitle: "Unsicher bei Mengen? Frag die KI",
+    recipeAskHello: "Frag mich alles zu diesem Rezept — wie viel Milch, Alternativen, Portionsgrößen …",
+    exerciseBest: "Bestwert",
+    exerciseHistory: "Deine Einträge",
+    exerciseLogTitle: "Eintrag speichern",
+    exerciseSaved: "Gespeichert",
+    noHistory: "Noch keine Einträge",
+    settingsPrivacy: "Datenschutz",
+    settingsSupport: "KI-Support fragen",
+    privacyTitle: "Datenschutz",
+    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht und Notizen werden derzeit nur auf deinem Gerät gehalten."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Foto-Scan und Assistent","p":"Beim Foto-Scan wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet; unser Server speichert es nicht. Fragen an den Assistenten laufen genauso."},{"h":"Gesundheitsdaten (Schritte)","p":"Auf Wunsch liest ASFIT deine Tagesschritte aus Health Connect, um verbrannte Kalorien zu schätzen. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."}],
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -571,7 +596,6 @@ const STR = {
     moodLabel: "Energie / Stimmung",
     saveNote: "Notiz speichern",
     // Settings
-    settingsTitle: "Einstellungen & Profil",
     units: "Einheiten",
     reminders: "Erinnerungen",
     remFood: "Essen loggen",
@@ -1876,7 +1900,8 @@ function NutritionScreen({ t, meals, macroTargets, onOpenFoodSearch, onOpenRecip
 }
 
 function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary }) {
-  const avgSessionSec = workoutHistory.length ? Math.round(workoutHistory.reduce((s, w) => s + w.durationSec, 0) / workoutHistory.length) : null;
+  const timed = workoutHistory.filter((w) => w.durationSec > 0);
+  const avgSessionSec = timed.length ? Math.round(timed.reduce((s, w) => s + w.durationSec, 0) / timed.length) : null;
   const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
   const trained = Object.keys(personalBests)
     .map((key) => ({ ex: EXERCISE_LIBRARY.find((e) => e.key === key), best: personalBests[key] }))
@@ -2654,7 +2679,7 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
 
 /* ---------------- Assistant (support / questions) ---------------- */
 
-function AssistantScreen({ t, lang }) {
+function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -2662,7 +2687,7 @@ function AssistantScreen({ t, lang }) {
   const endRef = useRef(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    if (messages.length > 0 || busy) endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, busy]);
 
   const send = async () => {
@@ -2674,10 +2699,10 @@ function AssistantScreen({ t, lang }) {
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/api/assistant`, {
+      const res = await fetch(API_BASE + "/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, lang }),
+        body: JSON.stringify({ messages: next, lang, context }),
       });
       if (res.status === 503) {
         setError(t.assistantNotConfigured);
@@ -2698,7 +2723,7 @@ function AssistantScreen({ t, lang }) {
     <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
       <div
         style={{
-          maxWidth: "82%",
+          maxWidth: "86%",
           padding: "10px 14px",
           borderRadius: 16,
           fontFamily: "Inter, sans-serif",
@@ -2707,7 +2732,7 @@ function AssistantScreen({ t, lang }) {
           whiteSpace: "pre-wrap",
           background: m.role === "user" ? COLORS.gold : COLORS.surface,
           color: m.role === "user" ? COLORS.bg : COLORS.text,
-          border: m.role === "user" ? "none" : `1px solid ${COLORS.border}`,
+          border: m.role === "user" ? "none" : "1px solid " + COLORS.border,
         }}
       >
         {m.content}
@@ -2716,9 +2741,9 @@ function AssistantScreen({ t, lang }) {
   );
 
   return (
-    <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", minHeight: 620 }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight }}>
       <div style={{ flex: 1 }}>
-        {bubble({ role: "assistant", content: t.assistantHello }, "hello")}
+        {bubble({ role: "assistant", content: hello }, "hello")}
         {messages.map(bubble)}
         {busy && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>{t.assistantThinking}</div>}
         {error && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 10 }}>{error}</div>}
@@ -2736,6 +2761,27 @@ function AssistantScreen({ t, lang }) {
           <Send size={18} color={busy || !input.trim() ? COLORS.dim : COLORS.bg} />
         </button>
       </div>
+    </div>
+  );
+}
+
+function AssistantScreen({ t, lang }) {
+  return (
+    <div style={{ padding: "0 20px 16px" }}>
+      <AssistantChat t={t} lang={lang} hello={t.assistantHello} />
+    </div>
+  );
+}
+
+function PrivacyScreen({ t }) {
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      {t.privacySections.map((sec) => (
+        <Card key={sec.h} style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>{sec.h}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, lineHeight: 1.55 }}>{sec.p}</div>
+        </Card>
+      ))}
     </div>
   );
 }
@@ -2766,6 +2812,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
   const [result, setResult] = useState(null);
   const [preview, setPreview] = useState(null);
   const fileRef = useRef(null);
+  const galleryRef = useRef(null);
 
   const onPick = async (e) => {
     const file = e.target.files && e.target.files[0];
@@ -2798,6 +2845,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={onPick} style={{ display: "none" }} />
+      <input ref={galleryRef} type="file" accept="image/*" onChange={onPick} style={{ display: "none" }} />
 
       {preview && status !== "idle" && <img src={preview} alt="" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 16, marginBottom: 16 }} />}
 
@@ -2807,6 +2855,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
           <button onClick={() => fileRef.current && fileRef.current.click()} style={btn}>
             {t.photoTake}
           </button>
+          <div onClick={() => galleryRef.current && galleryRef.current.click()} style={{ textAlign: "center", marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.photoGallery}</div>
         </>
       )}
 
@@ -2818,6 +2867,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
           <button onClick={() => fileRef.current && fileRef.current.click()} style={btn}>
             {t.photoAgain}
           </button>
+          <div onClick={() => galleryRef.current && galleryRef.current.click()} style={{ textAlign: "center", marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.photoGallery}</div>
         </>
       )}
 
@@ -2973,6 +3023,7 @@ function RecipesScreen({ t, lang, onAdd, onDone }) {
           </Card>
         </>
       ) : (
+        <>
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: COLORS.text }}>{lang === "de" ? selected.nameDe : selected.name}</div>
@@ -3012,6 +3063,21 @@ function RecipesScreen({ t, lang, onAdd, onDone }) {
             {t.logRecipe}
           </button>
         </Card>
+        <Card style={{ marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <MessageCircle size={16} color={COLORS.gold} />
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.recipeAskTitle}</span>
+          </div>
+          <AssistantChat
+            key={selected.key}
+            t={t}
+            lang={lang}
+            minHeight={180}
+            hello={t.recipeAskHello}
+            context={"Recipe: " + selected.name + ". Ingredients: " + selected.ingredients.join(", ") + ". Per serving: " + selected.kcal + " kcal, " + selected.protein + " g protein, " + selected.carbs + " g carbs, " + selected.fat + " g fat."}
+          />
+        </Card>
+        </>
       )}
 
       {toast && (
@@ -3025,9 +3091,13 @@ function RecipesScreen({ t, lang, onAdd, onDone }) {
 
 /* ---------------- Exercise library ---------------- */
 
-function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking }) {
+function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests = {}, workoutHistory = [], onQuickLog }) {
   const [query, setQuery] = useState("");
   const [muscle, setMuscle] = useState("all");
+  const [selected, setSelected] = useState(null);
+  const [wInput, setWInput] = useState("");
+  const [rInput, setRInput] = useState("");
+  const [saved, setSaved] = useState(false);
 
   const muscles = [
     { key: "all", label: t.muscleAll },
@@ -3046,9 +3116,88 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking }) {
   const cueOf = (ex) => (lang === "de" ? ex.cueDe : ex.cue);
   const results = EXERCISE_LIBRARY.filter((ex) => (muscle === "all" || ex.muscle === muscle) && nameOf(ex).toLowerCase().includes(query.toLowerCase()));
 
+  if (selected && mode !== "pick") {
+    const isCardio = selected.muscle === "cardio";
+    const history = workoutHistory
+      .map((w) => {
+        if (isCardio) {
+          const c = (w.cardio || []).filter((x) => x.exerciseKey === selected.key);
+          return c.length ? { dateISO: w.dateISO, text: c.map((x) => x.minutes + " min").join(", ") } : null;
+        }
+        const ss = (w.sets || []).filter((x) => x.exerciseKey === selected.key);
+        return ss.length ? { dateISO: w.dateISO, text: ss.map((x) => x.weight + " kg × " + x.reps).join(", ") } : null;
+      })
+      .filter(Boolean)
+      .reverse()
+      .slice(0, 6);
+    const best = personalBests[selected.key];
+    const save = () => {
+      if (isCardio) {
+        const mins = parseFloat(String(wInput).replace(",", "."));
+        if (!(mins > 0)) return;
+        onQuickLog({ setLog: [], cardio: [{ exerciseKey: selected.key, minutes: mins }] });
+      } else {
+        const w = parseFloat(String(wInput).replace(",", "."));
+        const r = parseInt(rInput, 10);
+        if (!(r > 0)) return;
+        onQuickLog({ setLog: [{ exerciseKey: selected.key, weight: w > 0 ? w : 0, reps: r }], cardio: [] });
+      }
+      setWInput("");
+      setRInput("");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    };
+    return (
+      <div style={{ padding: "0 20px 24px" }}>
+        <Card style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.text }}>{nameOf(selected)}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.gold, marginTop: 3 }}>{muscles.find((m) => m.key === selected.muscle)?.label}</div>
+            </div>
+            <div onClick={() => setSelected(null)} style={{ cursor: "pointer" }}>
+              <X size={18} color={COLORS.dim} />
+            </div>
+          </div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "12px 0" }}>{cueOf(selected)}</div>
+          {best ? (
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.gold }}>
+              {t.exerciseBest}: {best} kg
+            </div>
+          ) : null}
+        </Card>
+
+        <Card style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 12 }}>{t.exerciseLogTitle}</div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <input type="number" inputMode="decimal" min="0" value={wInput} onChange={(e) => setWInput(e.target.value)} placeholder={isCardio ? t.minutesLabel : "kg"} style={{ ...numInputStyle, flex: 1 }} />
+            {!isCardio && <input type="number" inputMode="numeric" min="0" value={rInput} onChange={(e) => setRInput(e.target.value)} placeholder={t.reps} style={{ ...numInputStyle, flex: 1 }} />}
+          </div>
+          <button onClick={save} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            {saved ? t.exerciseSaved : t.stepsSave}
+          </button>
+        </Card>
+
+        <Card>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.exerciseHistory}</div>
+          {history.length === 0 ? (
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.noHistory}</div>
+          ) : (
+            history.map((h, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "6px 0", fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text }}>
+                <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>{new Date(h.dateISO).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB")}</span>
+                <span style={{ textAlign: "right" }}>{h.text}</span>
+              </div>
+            ))
+          )}
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: "0 20px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "11px 14px", marginBottom: 14 }}>
         <Search size={16} color={COLORS.dim} />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.libSearchPlaceholder} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
       </div>
@@ -3061,15 +3210,21 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking }) {
 
       <Card style={{ padding: 4, marginBottom: mode === "pick" ? 16 : 0 }}>
         {results.map((ex, i) => (
-          <div key={ex.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? `1px solid ${COLORS.border}` : "none" }}>
+          <div
+            key={ex.key}
+            onClick={mode === "pick" ? undefined : () => setSelected(ex)}
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? "1px solid " + COLORS.border : "none", cursor: mode === "pick" ? "default" : "pointer" }}
+          >
             <div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(ex)}</div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{cueOf(ex)}</div>
             </div>
-            {mode === "pick" && (
+            {mode === "pick" ? (
               <div onClick={() => onAdd(ex)} style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
                 <Plus size={15} color={COLORS.gold} />
               </div>
+            ) : (
+              <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
             )}
           </div>
         ))}
@@ -3195,7 +3350,7 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
 
 /* ---------------- Settings ---------------- */
 
-function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, onReplayOnboarding }) {
+function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, onReplayOnboarding, onOpenPrivacy, onOpenAssistant }) {
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <Card style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
@@ -3237,6 +3392,14 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
         <Chip label="English" active={lang === "en"} onClick={() => setLang("en")} />
       </div>
 
+      <div onClick={onOpenAssistant} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: "1px solid " + COLORS.border }}>
+        <MessageCircle size={16} color={COLORS.gold} />
+        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.settingsSupport}</span>
+      </div>
+      <div onClick={onOpenPrivacy} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: "1px solid " + COLORS.border }}>
+        <BookOpen size={16} color={COLORS.dim} />
+        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.settingsPrivacy}</span>
+      </div>
       <div onClick={onReplayOnboarding} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: `1px solid ${COLORS.border}` }}>
         <RotateCcw size={16} color={COLORS.dim} />
         <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.replayOnboarding}</span>
@@ -3336,12 +3499,14 @@ export default function AsmarFitApp() {
     setOnboarded(true);
   };
 
+  const quickLogExercise = ({ setLog, cardio }) => finishWorkout({ durationSec: 0, volumeKg: setLog.reduce((sum, l) => sum + l.weight * l.reps, 0), setLog, cardio }, false);
+
   const addWeight = (kg) => {
     setWeightLog((l) => [...l, { dateISO: new Date().toISOString(), kg }]);
     setProfile((p) => ({ ...p, weight: kg }));
   };
 
-  const finishWorkout = (summary) => {
+  const finishWorkout = (summary, showSummary = true) => {
     const newBests = [];
     const updatedBests = { ...personalBests };
     for (const s of summary.setLog) {
@@ -3359,8 +3524,10 @@ export default function AsmarFitApp() {
     const cardioKcal = (summary.cardio || []).reduce((sum, c) => sum + burnKcal(CARDIO_MET[c.exerciseKey] || 6, w, c.minutes), 0);
     const burnedKcal = burnKcal(MET_STRENGTH, w, strengthMinutes) + cardioKcal;
     setWorkoutHistory((h) => [...h, { id: Date.now(), dateISO: new Date().toISOString(), durationSec: summary.durationSec, volumeKg: summary.volumeKg, sets: summary.setLog, cardio: summary.cardio || [], burnedKcal }]);
-    setLastWorkoutSummary({ durationSec: summary.durationSec, volumeKg: summary.volumeKg, newBests, burnedKcal });
-    setOverlay("workoutSummary");
+    if (showSummary) {
+      setLastWorkoutSummary({ durationSec: summary.durationSec, volumeKg: summary.volumeKg, newBests, burnedKcal });
+      setOverlay("workoutSummary");
+    }
   };
 
   const addFoodItem = (food) => {
@@ -3410,6 +3577,10 @@ export default function AsmarFitApp() {
     content = <RecipesScreen t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} />;
     topTitle = t.recipesTitle;
     showBack = () => setOverlay(null);
+  } else if (overlay === "privacy") {
+    content = <PrivacyScreen t={t} />;
+    topTitle = t.privacyTitle;
+    showBack = () => setOverlay("settings");
   } else if (overlay === "assistant") {
     content = <AssistantScreen t={t} lang={lang} />;
     topTitle = t.assistantTitle;
@@ -3451,6 +3622,9 @@ export default function AsmarFitApp() {
         lang={lang}
         mode={isPicking ? "pick" : "browse"}
         onAdd={addExerciseToPbDay}
+        personalBests={personalBests}
+        workoutHistory={workoutHistory}
+        onQuickLog={quickLogExercise}
         onFinishPicking={() => setOverlay("planBuilder")}
       />
     );
@@ -3471,6 +3645,8 @@ export default function AsmarFitApp() {
         reminders={reminders}
         setReminders={setReminders}
         profile={profile}
+        onOpenPrivacy={() => setOverlay("privacy")}
+        onOpenAssistant={() => setOverlay("assistant")}
         onReplayOnboarding={() => {
           setOverlay(null);
           setOnboarded(false);
