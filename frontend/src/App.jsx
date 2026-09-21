@@ -74,20 +74,41 @@ const COLORS = {
 };
 
 const THEMES = {
-  neutral: { bg: "#FFFFFF", surface: "#F6F7F8", raised: "#EEF1F3", border: "#E1E4E8", text: "#161A1D", dim: "#68707A", gold: "#00BF8F", goldSoft: COLORS.goldSoft, teal: "#2F80ED", coral: "#E2694F", coralSoft: COLORS.coralSoft },
-  female: { bg: "#FFFFFF", surface: "#FDF4F8", raised: "#FBE8F0", border: "#F3D6E2", text: "#2B1A24", dim: "#8A6E7C", gold: "#E5548A", goldSoft: "rgba(229,84,138,0.13)", teal: "#9B6FE0", coral: "#F08A5D", coralSoft: "rgba(240,138,93,0.16)" },
-  male: { bg: "#FFFFFF", surface: "#F2F5FB", raised: "#E8EEF9", border: "#D6E0F0", text: "#0F1729", dim: "#5F6C86", gold: "#2563EB", goldSoft: "rgba(37,99,235,0.12)", teal: "#0E9F9A", coral: "#F0782E", coralSoft: "rgba(240,120,46,0.14)" },
+  neutral: {
+    light: { bg: "#FFFFFF", surface: "#F6F7F8", raised: "#EEF1F3", border: "#E1E4E8", text: "#161A1D", dim: "#68707A", gold: "#00BF8F", goldSoft: "rgba(0,191,143,0.14)", teal: "#2F80ED", coral: "#E2694F", coralSoft: "rgba(226,105,79,0.14)" },
+    dark: { bg: "#111416", surface: "#1A1E21", raised: "#242A2E", border: "#2F363B", text: "#F1F4F5", dim: "#9AA5AC", gold: "#1FD1A2", goldSoft: "rgba(31,209,162,0.16)", teal: "#5B9DF5", coral: "#F0806A", coralSoft: "rgba(240,128,106,0.18)" },
+  },
+  female: {
+    light: { bg: "#FFFFFF", surface: "#FDF4F8", raised: "#FBE8F0", border: "#F3D6E2", text: "#2B1A24", dim: "#8A6E7C", gold: "#E5548A", goldSoft: "rgba(229,84,138,0.13)", teal: "#9B6FE0", coral: "#F08A5D", coralSoft: "rgba(240,138,93,0.16)" },
+    dark: { bg: "#171015", surface: "#22171E", raised: "#2D1F27", border: "#3D2A35", text: "#FAEFF4", dim: "#B79CAA", gold: "#F26AA0", goldSoft: "rgba(242,106,160,0.17)", teal: "#B08AF0", coral: "#F59B70", coralSoft: "rgba(245,155,112,0.18)" },
+  },
+  male: {
+    light: { bg: "#FFFFFF", surface: "#F2F5FB", raised: "#E8EEF9", border: "#D6E0F0", text: "#0F1729", dim: "#5F6C86", gold: "#2563EB", goldSoft: "rgba(37,99,235,0.12)", teal: "#0E9F9A", coral: "#F0782E", coralSoft: "rgba(240,120,46,0.14)" },
+    dark: { bg: "#0D1220", surface: "#151C2E", raised: "#1E2740", border: "#2A3550", text: "#EBF1FF", dim: "#94A1BE", gold: "#5B8DF6", goldSoft: "rgba(91,141,246,0.18)", teal: "#2CC4BE", coral: "#F58F4C", coralSoft: "rgba(245,143,76,0.18)" },
+  },
 };
 
-function applyTheme(gender) {
-  const theme = THEMES[gender] || THEMES.neutral;
+let themeMode = "system";
+try {
+  themeMode = JSON.parse(localStorage.getItem("asfit.appearance") || "\"system\"");
+} catch {
+  themeMode = "system";
+}
+
+function applyTheme(gender, mode = themeMode) {
+  themeMode = mode;
+  const dark = mode === "dark" || (mode === "system" && typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const theme = (THEMES[gender] || THEMES.neutral)[dark ? "dark" : "light"];
   const root = document.documentElement;
   Object.entries(theme).forEach(([k, v]) => root.style.setProperty("--c-" + k, v));
+  root.style.colorScheme = dark ? "dark" : "light";
+  document.body && (document.body.style.background = theme.bg);
 }
 
 // Apply the saved theme before the first paint to avoid a colour flash.
 try {
-  applyTheme(JSON.parse(localStorage.getItem("asfit.profile") || "null")?.gender);
+  const savedTheme = JSON.parse(localStorage.getItem("asfit.colorTheme") || '"auto"');
+  applyTheme(savedTheme === "auto" ? JSON.parse(localStorage.getItem("asfit.profile") || "null")?.gender : savedTheme);
 } catch {
   applyTheme(null);
 }
@@ -367,6 +388,24 @@ const STR = {
     backupImport: "Restore from file",
     backupImported: "Data restored",
     backupBad: "This file is not a valid ASFIT backup.",
+    setDisplay: "Display",
+    setAppearance: "Brightness",
+    setLight: "Light",
+    setDark: "Dark",
+    setSystem: "System",
+    setColorTheme: "Colour scheme",
+    setThemeAuto: "Automatic",
+    setThemeNeutral: "Green",
+    setThemeFemale: "Rose",
+    setThemeMale: "Blue",
+    setTextSize: "Text size",
+    setSmall: "Small",
+    setNormal: "Normal",
+    setLarge: "Large",
+    setDangerTitle: "Delete all data",
+    setDangerText: "This removes every entry from this device. It cannot be undone — save a backup first.",
+    setDangerConfirm: "Really delete ALL data on this device?",
+    setVersion: "ASFIT version 1.0",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -704,6 +743,24 @@ const STR = {
     backupImport: "Aus Datei wiederherstellen",
     backupImported: "Daten wiederhergestellt",
     backupBad: "Diese Datei ist keine gültige ASFIT-Sicherung.",
+    setDisplay: "Darstellung",
+    setAppearance: "Helligkeit",
+    setLight: "Hell",
+    setDark: "Dunkel",
+    setSystem: "System",
+    setColorTheme: "Farbschema",
+    setThemeAuto: "Automatisch",
+    setThemeNeutral: "Grün",
+    setThemeFemale: "Rosé",
+    setThemeMale: "Blau",
+    setTextSize: "Schriftgröße",
+    setSmall: "Klein",
+    setNormal: "Normal",
+    setLarge: "Groß",
+    setDangerTitle: "Alle Daten löschen",
+    setDangerText: "Entfernt alle Einträge von diesem Gerät. Das kann nicht rückgängig gemacht werden — sichere vorher ein Backup.",
+    setDangerConfirm: "Wirklich ALLE Daten auf diesem Gerät löschen?",
+    setVersion: "ASFIT Version 1.0",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -1522,7 +1579,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px", justifyContent: "center" }}>
         <div style={{ textAlign: "center", marginBottom: 30 }}>
-          <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, #009973)`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Dumbbell size={34} color={COLORS.bg} />
           </div>
           <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>Sprache wählen · Choose your language</h2>
@@ -4158,7 +4215,7 @@ function BackupCard({ t }) {
   );
 }
 
-function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, onReplayOnboarding, onOpenPrivacy, onOpenAssistant }) {
+function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, display, onReplayOnboarding, onOpenPrivacy, onOpenAssistant }) {
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <Card style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
@@ -4170,6 +4227,28 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{profile.weight} kg · {profile.height} cm</div>
         </div>
       </Card>
+
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.setAppearance}</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+        <Chip label={t.setLight} active={display.appearance === "light"} onClick={() => display.setAppearance("light")} />
+        <Chip label={t.setDark} active={display.appearance === "dark"} onClick={() => display.setAppearance("dark")} />
+        <Chip label={t.setSystem} active={display.appearance === "system"} onClick={() => display.setAppearance("system")} />
+      </div>
+
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.setColorTheme}</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+        <Chip label={t.setThemeAuto} active={display.colorTheme === "auto"} onClick={() => display.setColorTheme("auto")} />
+        <Chip label={t.setThemeNeutral} active={display.colorTheme === "neutral"} onClick={() => display.setColorTheme("neutral")} />
+        <Chip label={t.setThemeFemale} active={display.colorTheme === "female"} onClick={() => display.setColorTheme("female")} />
+        <Chip label={t.setThemeMale} active={display.colorTheme === "male"} onClick={() => display.setColorTheme("male")} />
+      </div>
+
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.setTextSize}</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
+        <Chip label={t.setSmall} active={display.textSize === "s"} onClick={() => display.setTextSize("s")} />
+        <Chip label={t.setNormal} active={display.textSize === "m"} onClick={() => display.setTextSize("m")} />
+        <Chip label={t.setLarge} active={display.textSize === "l"} onClick={() => display.setTextSize("l")} />
+      </div>
 
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.units}</div>
       <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
@@ -4217,6 +4296,21 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
         <LogOut size={16} color={COLORS.coral} />
         <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.coral }}>{t.signOut}</span>
       </div>
+      <div style={{ padding: "13px 4px", borderTop: "1px solid " + COLORS.border }}>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.coral, fontWeight: 600 }}>{t.setDangerTitle}</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "4px 0 10px", lineHeight: 1.45 }}>{t.setDangerText}</div>
+        <button
+          onClick={() => {
+            if (!window.confirm(t.setDangerConfirm)) return;
+            Object.keys(localStorage).filter((k) => k.startsWith("asfit.")).forEach((k) => localStorage.removeItem(k));
+            window.location.reload();
+          }}
+          style={{ width: "100%", background: COLORS.coralSoft, color: COLORS.coral, border: "1px solid " + COLORS.coral, borderRadius: 10, padding: "10px 12px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+        >
+          {t.setDangerTitle}
+        </button>
+      </div>
+      <div style={{ textAlign: "center", padding: "14px 0 4px", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>
     </div>
   );
 }
@@ -4266,9 +4360,20 @@ export default function AsmarFitApp() {
     vision3Months: "",
     visionWhy: "",
   });
+  const [appearance, setAppearance] = usePersisted("appearance", "system");
+  const [colorTheme, setColorTheme] = usePersisted("colorTheme", "auto");
+  const [textSize, setTextSize] = usePersisted("textSize", "m");
   useEffect(() => {
-    applyTheme(profile.gender);
-  }, [profile.gender]);
+    const resolve = () => applyTheme(colorTheme === "auto" ? profile.gender : colorTheme, appearance);
+    resolve();
+    if (appearance !== "system" || !window.matchMedia) return undefined;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener("change", resolve);
+    return () => mq.removeEventListener("change", resolve);
+  }, [profile.gender, colorTheme, appearance]);
+  useEffect(() => {
+    document.documentElement.style.zoom = { s: "0.92", m: "1", l: "1.12" }[textSize] || "1";
+  }, [textSize]);
   const [weightLog, setWeightLog] = usePersisted("weightLog", []);
   const [workoutHistory, setWorkoutHistory] = usePersisted("workoutHistory", []);
   const [personalBests, setPersonalBests] = usePersisted("personalBests", {});
@@ -4518,6 +4623,7 @@ export default function AsmarFitApp() {
         reminders={reminders}
         setReminders={setReminders}
         profile={profile}
+        display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize }}
         onOpenPrivacy={() => setOverlay("privacy")}
         onOpenAssistant={() => setOverlay("assistant")}
         onReplayOnboarding={() => {
