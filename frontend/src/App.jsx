@@ -27,6 +27,7 @@ import {
   LogOut,
   Barcode,
   Trash2,
+  Link2,
   Star,
   RotateCcw,
   Equal,
@@ -406,6 +407,28 @@ const STR = {
     setDangerText: "This removes every entry from this device. It cannot be undone — save a backup first.",
     setDangerConfirm: "Really delete ALL data on this device?",
     setVersion: "ASFIT version 1.0",
+    connTitle: "Connections",
+    connSettings: "Connections & health apps",
+    connIntro: "Connect ASFIT to your phone's health store. Data from your watch and other apps flows in automatically.",
+    connStatusOn: "Connected",
+    connStatusOff: "Not connected",
+    connConnect: "Connect",
+    connSync: "Sync now",
+    connLast: "Last sync",
+    connNever: "never",
+    connData: "What ASFIT reads",
+    connSteps: "Steps",
+    connWeight: "Body weight",
+    connWorkouts: "Workouts (last 14 days)",
+    connWebOnly: "Connecting only works in the installed app on your phone — not in the browser.",
+    connOthersTitle: "Garmin, Fitbit, Samsung Health, Google Fit, Strava, Withings, Oura …",
+    connOthersAndroid: "Turn on syncing with Health Connect inside these apps. ASFIT then reads their data from Health Connect — no extra login needed.",
+    connOthersIos: "Turn on syncing with Apple Health inside these apps. ASFIT then reads their data from Apple Health — no extra login needed.",
+    connOthersWeb: "Turn on syncing with Health Connect (Android) or Apple Health (iPhone) inside these apps. ASFIT then reads their data from there.",
+    connIosNote: "iPhone: Apple Health is supported in the code, but the iPhone app itself still has to be built and published (needs a Mac).",
+    connUnavailable: "Health Connect is not available on this device. Install or update it from the Play Store.",
+    connImported: "from health app",
+    connDenied: "Not allowed yet",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -761,6 +784,28 @@ const STR = {
     setDangerText: "Entfernt alle Einträge von diesem Gerät. Das kann nicht rückgängig gemacht werden — sichere vorher ein Backup.",
     setDangerConfirm: "Wirklich ALLE Daten auf diesem Gerät löschen?",
     setVersion: "ASFIT Version 1.0",
+    connTitle: "Verbindungen",
+    connSettings: "Verbindungen & Gesundheits-Apps",
+    connIntro: "Verbinde ASFIT mit dem Gesundheitsspeicher deines Handys. Daten von deiner Uhr und anderen Apps kommen dann automatisch rein.",
+    connStatusOn: "Verbunden",
+    connStatusOff: "Nicht verbunden",
+    connConnect: "Verbinden",
+    connSync: "Jetzt synchronisieren",
+    connLast: "Zuletzt synchronisiert",
+    connNever: "noch nie",
+    connData: "Was ASFIT liest",
+    connSteps: "Schritte",
+    connWeight: "Körpergewicht",
+    connWorkouts: "Workouts (letzte 14 Tage)",
+    connWebOnly: "Verbinden funktioniert nur in der installierten App auf dem Handy — nicht im Browser.",
+    connOthersTitle: "Garmin, Fitbit, Samsung Health, Google Fit, Strava, Withings, Oura …",
+    connOthersAndroid: "Schalte in diesen Apps die Synchronisierung mit Health Connect ein. ASFIT liest ihre Daten dann aus Health Connect — ohne extra Login.",
+    connOthersIos: "Schalte in diesen Apps die Synchronisierung mit Apple Health ein. ASFIT liest ihre Daten dann aus Apple Health — ohne extra Login.",
+    connOthersWeb: "Schalte in diesen Apps die Synchronisierung mit Health Connect (Android) oder Apple Health (iPhone) ein. ASFIT liest die Daten dann von dort.",
+    connIosNote: "iPhone: Apple Health ist im Code vorbereitet, aber die iPhone-App selbst muss noch gebaut und veröffentlicht werden (dafür braucht man einen Mac).",
+    connUnavailable: "Health Connect ist auf diesem Gerät nicht verfügbar. Installiere oder aktualisiere es im Play Store.",
+    connImported: "aus Gesundheits-App",
+    connDenied: "Noch nicht erlaubt",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -3018,6 +3063,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
 // PC browser has no access to Google's ML Kit scanner module, so it shows a
 // hint instead of a scan button rather than faking a result.
 const IS_NATIVE_APP = Capacitor.isNativePlatform();
+const HEALTH_STORE_NAME = Capacitor.getPlatform() === "ios" ? "Apple Health" : "Health Connect";
 
 function usePersisted(key, init) {
   const [v, setV] = useState(() => {
@@ -4215,7 +4261,55 @@ function BackupCard({ t }) {
   );
 }
 
-function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, display, onReplayOnboarding, onOpenPrivacy, onOpenAssistant }) {
+function ConnectionsScreen({ t, info, native, onConnect }) {
+  const isIos = Capacitor.getPlatform() === "ios";
+  const rows = [
+    { key: "steps", label: t.connSteps },
+    { key: "weight", label: t.connWeight },
+    { key: "workouts", label: t.connWorkouts },
+  ];
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginBottom: 14, lineHeight: 1.5 }}>{t.connIntro}</div>
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, minWidth: 0 }}>{native ? HEALTH_STORE_NAME : "Health Connect / Apple Health"}</div>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, color: info.connected ? COLORS.gold : COLORS.dim }}>{info.connected ? "● " + t.connStatusOn : "○ " + t.connStatusOff}</span>
+        </div>
+        {!native && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 12 }}>{t.connWebOnly}</div>}
+        {native && info.unavailable && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 12 }}>{t.connUnavailable}</div>}
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, marginBottom: 6 }}>{t.connData}</div>
+        {rows.map((r) => {
+          const on = info.granted.includes(r.key);
+          return (
+            <div key={r.key} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
+              <span>{r.label}</span>
+              <span style={{ color: on ? COLORS.gold : COLORS.dim }}>{on ? "✓" : t.connDenied}</span>
+            </div>
+          );
+        })}
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, margin: "10px 0 12px" }}>
+          {t.connLast}: {info.lastSync ? new Date(info.lastSync).toLocaleString() : t.connNever}
+        </div>
+        <button
+          onClick={onConnect}
+          disabled={!native}
+          style={{ width: "100%", background: native ? COLORS.gold : COLORS.raised, color: native ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: native ? "pointer" : "default" }}
+        >
+          {info.connected ? t.connSync : t.connConnect}
+        </button>
+      </Card>
+
+      <Card style={{ marginBottom: 12 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>{t.connOthersTitle}</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, lineHeight: 1.5 }}>{!native ? t.connOthersWeb : isIos ? t.connOthersIos : t.connOthersAndroid}</div>
+      </Card>
+      {!isIos && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, lineHeight: 1.5 }}>{t.connIosNote}</div>}
+    </div>
+  );
+}
+
+function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, display, onReplayOnboarding, onOpenPrivacy, onOpenAssistant, onOpenConnections }) {
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <Card style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
@@ -4279,6 +4373,10 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
         <Chip label="English" active={lang === "en"} onClick={() => setLang("en")} />
       </div>
 
+      <div onClick={onOpenConnections} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: "1px solid " + COLORS.border }}>
+        <Link2 size={16} color={COLORS.gold} />
+        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.connSettings}</span>
+      </div>
       <div onClick={onOpenAssistant} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: "1px solid " + COLORS.border }}>
         <MessageCircle size={16} color={COLORS.gold} />
         <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.settingsSupport}</span>
@@ -4375,7 +4473,11 @@ export default function AsmarFitApp() {
     document.documentElement.style.zoom = { s: "0.92", m: "1", l: "1.12" }[textSize] || "1";
   }, [textSize]);
   const [weightLog, setWeightLog] = usePersisted("weightLog", []);
+  const weightLogRef = useRef([]);
+  weightLogRef.current = weightLog;
   const [workoutHistory, setWorkoutHistory] = usePersisted("workoutHistory", []);
+  const historyRef = useRef([]);
+  historyRef.current = workoutHistory;
   const [personalBests, setPersonalBests] = usePersisted("personalBests", {});
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
   const [cardioBests, setCardioBests] = usePersisted("cardioBests", {});
@@ -4391,18 +4493,78 @@ export default function AsmarFitApp() {
   // manual = typed in (web) | unavailable = native but no Health Connect
   const [stepsSource, setStepsSource] = useState(IS_NATIVE_APP ? "connect" : "manual");
 
+  const [healthInfo, setHealthInfo] = usePersisted("healthInfo", { connected: false, lastSync: null, granted: [], unavailable: false });
+  const lastExtrasRef = useRef(0);
+
+  // Pulls weight and workouts from the health store (steps are handled in refreshSteps).
+  const syncExtras = async (granted) => {
+    const now = new Date();
+    if (granted.includes("weight")) {
+      const from = new Date(now.getTime() - 30 * 86400000);
+      const res = await Health.readSamples({ dataType: "weight", startDate: from.toISOString(), endDate: now.toISOString(), limit: 50, ascending: true });
+      const log = weightLogRef.current;
+      const lastMs = log.length ? Date.parse(log[log.length - 1].dateISO) : 0;
+      const fresh = (res.samples || []).filter((x) => Date.parse(x.startDate) > lastMs + 1000 && x.value > 0);
+      if (fresh.length) {
+        const entries = fresh.map((x) => ({ dateISO: new Date(x.startDate).toISOString(), kg: Math.round(x.value * 10) / 10, imported: true }));
+        setWeightLog((l) => [...l, ...entries]);
+        setProfile((p) => ({ ...p, weight: entries[entries.length - 1].kg }));
+      }
+    }
+    if (granted.includes("workouts")) {
+      const from = new Date(now.getTime() - 14 * 86400000);
+      const res = await Health.queryWorkouts({ startDate: from.toISOString(), endDate: now.toISOString(), limit: 50, ascending: true });
+      const known = new Set(historyRef.current.map((w) => w.platformId).filter(Boolean));
+      const fresh = (res.workouts || []).filter((w) => w.platformId && !known.has(w.platformId));
+      if (fresh.length) {
+        const entries = fresh.map((w) => ({
+          id: Date.parse(w.startDate) || Date.now(),
+          dateISO: new Date(w.startDate).toISOString(),
+          durationSec: Math.round(w.duration || 0),
+          volumeKg: 0,
+          sets: [],
+          cardio: [],
+          burnedKcal: Math.round(w.totalEnergyBurned || 0),
+          imported: true,
+          platformId: w.platformId,
+          source: w.sourceName || "",
+          workoutType: w.workoutType,
+        }));
+        setWorkoutHistory((h) => [...h, ...entries.filter((e) => !h.some((x) => x.platformId === e.platformId))]);
+      }
+    }
+  };
+
   const refreshSteps = async (askPermission) => {
     if (!IS_NATIVE_APP) return;
     try {
       const avail = await Health.isAvailable();
-      if (!avail.available) return setStepsSource("unavailable");
-      const status = askPermission ? await Health.requestAuthorization({ read: ["steps"] }) : await Health.checkAuthorization({ read: ["steps"] });
-      if (!status.readAuthorized.includes("steps")) return setStepsSource("connect");
+      if (!avail.available) {
+        setHealthInfo((h) => ({ ...h, unavailable: true }));
+        return setStepsSource("unavailable");
+      }
+      const wanted = ["steps", "weight", "workouts"];
+      const status = askPermission ? await Health.requestAuthorization({ read: wanted }) : await Health.checkAuthorization({ read: wanted });
+      if (!status.readAuthorized.includes("steps")) {
+        setHealthInfo((h) => ({ ...h, connected: false, granted: status.readAuthorized || [], unavailable: false }));
+        return setStepsSource("connect");
+      }
       const start = new Date();
       start.setHours(0, 0, 0, 0);
       const res = await Health.queryAggregated({ dataType: "steps", startDate: start.toISOString(), endDate: new Date().toISOString(), bucket: "day", aggregation: "sum" });
       setSteps(Math.round(res.samples.reduce((sum, x) => sum + (x.value || 0), 0)));
       setStepsSource("health");
+      let lastSync = healthInfo.lastSync;
+      if (askPermission || Date.now() - lastExtrasRef.current > 10 * 60000) {
+        try {
+          await syncExtras(status.readAuthorized);
+        } catch {
+          /* weight/workouts are optional — steps keep working */
+        }
+        lastExtrasRef.current = Date.now();
+        lastSync = new Date().toISOString();
+      }
+      setHealthInfo({ connected: true, lastSync, granted: status.readAuthorized, unavailable: false });
     } catch {
       setStepsSource("unavailable");
     }
@@ -4543,6 +4705,10 @@ export default function AsmarFitApp() {
     content = <RecipesScreen t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} customRecipes={customRecipes} onSaveRecipe={saveRecipe} onDeleteRecipe={deleteRecipe} />;
     topTitle = t.recipesTitle;
     showBack = () => setOverlay(null);
+  } else if (overlay === "connections") {
+    content = <ConnectionsScreen t={t} info={healthInfo} native={IS_NATIVE_APP} onConnect={() => refreshSteps(true)} />;
+    topTitle = t.connTitle;
+    showBack = () => setOverlay("settings");
   } else if (overlay === "myMeals") {
     content = <MyMealsScreen t={t} myMeals={myMeals} initialSlot={activeMealKey} onAddTo={(k, food) => setMeals((m) => ({ ...m, [k]: [...m[k], food] }))} onSave={addMyMeal} onDelete={(id) => setMyMeals((l) => l.filter((x) => x.id !== id))} />;
     topTitle = t.myMealsTitle;
@@ -4626,6 +4792,7 @@ export default function AsmarFitApp() {
         display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize }}
         onOpenPrivacy={() => setOverlay("privacy")}
         onOpenAssistant={() => setOverlay("assistant")}
+        onOpenConnections={() => setOverlay("connections")}
         onReplayOnboarding={() => {
           setOverlay(null);
           setOnboarded(false);
