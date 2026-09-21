@@ -4425,7 +4425,18 @@ function StatusBarClock() {
   return <span>{now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>;
 }
 
+function useIsPhone() {
+  const [phone, setPhone] = useState(() => typeof window !== "undefined" && window.innerWidth < 520);
+  useEffect(() => {
+    const on = () => setPhone(window.innerWidth < 520);
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  return phone;
+}
+
 export default function AsmarFitApp() {
+  const isPhone = useIsPhone();
   const [onboarded, setOnboarded] = usePersisted("onboarded", false);
   const [tab, setTab] = useState("home");
   const [lang, setLang] = usePersisted("lang", "de");
@@ -4875,28 +4886,30 @@ export default function AsmarFitApp() {
   }
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "24px 12px", minHeight: "100%" }}>
+    <div style={{ display: "flex", justifyContent: "center", padding: isPhone ? 0 : "24px 12px", minHeight: "100%" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
         * { box-sizing: border-box; }
         input[type="range"] { -webkit-appearance: none; height: 4px; border-radius: 2px; background: ${COLORS.raised}; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: ${COLORS.gold}; cursor: pointer; }
       `}</style>
-      <div style={{ width: 390, maxWidth: "100%", background: COLORS.bg, borderRadius: 40, border: "10px solid #0A0A0B", overflow: "hidden", boxShadow: "0 30px 60px rgba(0,0,0,0.45)", fontFamily: "Inter, sans-serif" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 26px 0", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>
-          <StatusBarClock />
-          <Droplets size={13} color={COLORS.dim} />
-        </div>
+      <div style={isPhone ? { width: "100%", height: "100dvh", display: "flex", flexDirection: "column", background: COLORS.bg, overflow: "hidden", fontFamily: "Inter, sans-serif", paddingTop: "env(safe-area-inset-top)" } : { width: 390, maxWidth: "100%", background: COLORS.bg, borderRadius: 40, border: "10px solid #0A0A0B", overflow: "hidden", boxShadow: "0 30px 60px rgba(0,0,0,0.45)", fontFamily: "Inter, sans-serif" }}>
+        {!isPhone && (
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 26px 0", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>
+            <StatusBarClock />
+            <Droplets size={13} color={COLORS.dim} />
+          </div>
+        )}
 
         {!onboarded ? (
-          <div style={{ height: 720 }}>
+          <div style={isPhone ? { flex: 1, minHeight: 0 } : { height: 720 }}>
             <Onboarding t={t} lang={lang} setLang={setLang} onFinish={finishOnboarding} />
           </div>
         ) : (
           <>
             <TopBar title={topTitle} lang={lang} setLang={setLang} onBack={showBack} onSettings={!showBack ? () => setOverlay("settings") : null} />
-            <div style={{ height: 700, overflowY: "auto" }}>{content}</div>
-            <div style={{ display: "flex", justifyContent: "space-around", padding: "10px 6px 20px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
+            <div style={isPhone ? { flex: 1, minHeight: 0, overflowY: "auto" } : { height: 700, overflowY: "auto" }}>{content}</div>
+            <div style={{ display: "flex", justifyContent: "space-around", padding: isPhone ? "10px 6px calc(12px + env(safe-area-inset-bottom))" : "10px 6px 20px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
               {nav.map(({ key, icon: Icon, label }) => {
                 const active = tab === key && !overlay;
                 return (
