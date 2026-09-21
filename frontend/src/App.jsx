@@ -57,17 +57,41 @@ import {
 // of localhost, which a phone can't reach. Falls back to local dev default.
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
+// Colours are CSS variables so the whole app can switch theme at runtime
+// (see THEMES / applyTheme below — the palette follows the gender chosen in onboarding).
 const COLORS = {
-  bg: "#FFFFFF",
-  surface: "#F6F7F8",
-  raised: "#EEF1F3",
-  border: "#E1E4E8",
-  text: "#161A1D",
-  dim: "#68707A",
-  gold: "#00BF8F",
-  teal: "#2F80ED",
-  coral: "#E2694F",
+  bg: "var(--c-bg)",
+  surface: "var(--c-surface)",
+  raised: "var(--c-raised)",
+  border: "var(--c-border)",
+  text: "var(--c-text)",
+  dim: "var(--c-dim)",
+  gold: "var(--c-gold)",
+  goldSoft: "var(--c-goldSoft)",
+  teal: "var(--c-teal)",
+  coral: "var(--c-coral)",
+  coralSoft: "var(--c-coralSoft)",
 };
+
+const THEMES = {
+  neutral: { bg: "#FFFFFF", surface: "#F6F7F8", raised: "#EEF1F3", border: "#E1E4E8", text: "#161A1D", dim: "#68707A", gold: "#00BF8F", goldSoft: COLORS.goldSoft, teal: "#2F80ED", coral: "#E2694F", coralSoft: COLORS.coralSoft },
+  female: { bg: "#FFFFFF", surface: "#FDF4F8", raised: "#FBE8F0", border: "#F3D6E2", text: "#2B1A24", dim: "#8A6E7C", gold: "#E5548A", goldSoft: "rgba(229,84,138,0.13)", teal: "#9B6FE0", coral: "#F08A5D", coralSoft: "rgba(240,138,93,0.16)" },
+  male: { bg: "#FFFFFF", surface: "#F2F5FB", raised: "#E8EEF9", border: "#D6E0F0", text: "#0F1729", dim: "#5F6C86", gold: "#2563EB", goldSoft: "rgba(37,99,235,0.12)", teal: "#0E9F9A", coral: "#F0782E", coralSoft: "rgba(240,120,46,0.14)" },
+};
+
+function applyTheme(gender) {
+  const theme = THEMES[gender] || THEMES.neutral;
+  const root = document.documentElement;
+  Object.entries(theme).forEach(([k, v]) => root.style.setProperty("--c-" + k, v));
+}
+
+// Apply the saved theme before the first paint to avoid a colour flash.
+try {
+  applyTheme(JSON.parse(localStorage.getItem("asfit.profile") || "null")?.gender);
+} catch {
+  applyTheme(null);
+}
+
 
 const STR = {
   en: {
@@ -1444,7 +1468,7 @@ function AiScanIllustration({ t, kcal, carbs, fat, protein }) {
   );
   return (
     <div style={{ position: "relative", width: 260, height: 210, margin: "0 auto 22px" }}>
-      <div style={{ position: "absolute", left: 60, top: 40, width: 140, height: 140, borderRadius: "50%", background: "rgba(0,191,143,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "absolute", left: 60, top: 40, width: 140, height: 140, borderRadius: "50%", background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <UtensilsCrossed size={52} color={COLORS.gold} />
       </div>
       {bubble("kcal", kcal, "", { left: 92, top: 0 })}
@@ -1561,7 +1585,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               { key: "female", title: t.obGenderFemale },
               { key: "male", title: t.obGenderMale },
             ].map(({ key, title }) => (
-              <div key={key} onClick={() => setGender(key)} style={{ padding: 18, borderRadius: 16, marginBottom: 12, cursor: "pointer", textAlign: "center", background: gender === key ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${gender === key ? COLORS.gold : COLORS.border}` }}>
+              <div key={key} onClick={() => { setGender(key); applyTheme(key); }} style={{ padding: 18, borderRadius: 16, marginBottom: 12, cursor: "pointer", textAlign: "center", background: gender === key ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${gender === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
               </div>
             ))}
@@ -1604,7 +1628,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               { key: "bulk", icon: Dumbbell, title: t.obGoalBulk, sub: t.obGoalBulkSub },
               { key: "other", icon: Smile, title: t.obGoalOther, sub: t.obGoalOtherSub },
             ].map(({ key, icon: Icon, title, sub }) => (
-              <div key={key} onClick={() => setGoal(key)} style={{ display: "flex", alignItems: "center", gap: 14, padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: goal === key ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${goal === key ? COLORS.gold : COLORS.border}` }}>
+              <div key={key} onClick={() => setGoal(key)} style={{ display: "flex", alignItems: "center", gap: 14, padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: goal === key ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${goal === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ width: 42, height: 42, borderRadius: 12, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon size={19} color={goal === key ? COLORS.gold : COLORS.dim} />
                 </div>
@@ -1628,7 +1652,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               { key: "burn", title: t.obReasonBurn },
               { key: "other", title: t.obReasonOther },
             ].map(({ key, title }) => (
-              <div key={key} onClick={() => setReason(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: reason === key ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${reason === key ? COLORS.gold : COLORS.border}` }}>
+              <div key={key} onClick={() => setReason(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: reason === key ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${reason === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
               </div>
             ))}
@@ -1649,7 +1673,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               <div
                 key={key}
                 onClick={() => toggleMoreGoal(key)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: moreGoals.includes(key) ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}` }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: moreGoals.includes(key) ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}` }}
               >
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
                 <div style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}`, background: moreGoals.includes(key) ? COLORS.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1669,7 +1693,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               { key: "couldntKeep", title: t.obExperienceCouldntKeep },
               { key: "never", title: t.obExperienceNever },
             ].map(({ key, title }) => (
-              <div key={key} onClick={() => setExperience(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: experience === key ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${experience === key ? COLORS.gold : COLORS.border}` }}>
+              <div key={key} onClick={() => setExperience(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: experience === key ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${experience === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
               </div>
             ))}
@@ -1754,7 +1778,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
         {step === 12 && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(0,191,143,0.14)", margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: COLORS.goldSoft, margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Check size={28} color={COLORS.gold} />
             </div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 8px" }}>{t.obConfirmTitle}</h2>
@@ -1923,7 +1947,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
       <WaterCard t={t} waterMl={waterMl} goalMl={Math.round(((profile.weight || 70) * 35) / 250) * 250} onAdd={onAddWater} onUndo={onUndoWater} />
 
       <Card onClick={onOpenAssistant} style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
-        <div style={{ width: 36, height: 36, borderRadius: 11, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <MessageCircle size={17} color={COLORS.gold} />
         </div>
         <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text }}>{t.assistantEntry}</span>
@@ -2147,7 +2171,7 @@ function LineChart({ points, color, height = 140, unit = "" }) {
   const coords = points.map((p, i) => [n === 1 ? w / 2 : padX + (i / (n - 1)) * (w - 2 * padX), padTop + (1 - (p - min) / range) * (height - padTop - padBottom)]);
   const path = coords.map(([x, y], i) => (i === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1)).join(" ");
   const areaPath = path + " L" + coords[n - 1][0] + "," + height + " L" + coords[0][0] + "," + height + " Z";
-  const gradId = "fade-" + color.replace("#", "");
+  const gradId = "fade-" + color.replace(/[^a-z0-9]/gi, "");
   const maxIdx = points.lastIndexOf(max);
   const minIdx = points.indexOf(min);
   const fmtV = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",") + (unit ? " " + unit : "");
@@ -2284,7 +2308,7 @@ const MOODS = {
   2: { icon: Frown, color: "#F0954A" },
   3: { icon: Meh, color: "#E0B12F" },
   4: { icon: Smile, color: "#63C46A" },
-  5: { icon: Laugh, color: "#00BF8F" },
+  5: { icon: Laugh, color: COLORS.gold },
 };
 
 function MoodFace({ mood, size = 20 }) {
@@ -2351,7 +2375,7 @@ function NoteComposer({ t, onSave }) {
           <div
             key={c.type}
             onClick={() => setCategory(c.type)}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 14, cursor: "pointer", background: category === c.type ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `1.5px solid ${category === c.type ? COLORS.gold : COLORS.border}` }}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 14, cursor: "pointer", background: category === c.type ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${category === c.type ? COLORS.gold : COLORS.border}` }}
           >
             <c.icon size={18} color={category === c.type ? COLORS.gold : COLORS.dim} />
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: category === c.type ? COLORS.gold : COLORS.dim }}>{c.label}</span>
@@ -2373,7 +2397,7 @@ function NoteComposer({ t, onSave }) {
           <div
             key={m}
             onClick={() => setMood(m)}
-            style={{ width: 48, height: 48, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: m === mood ? "rgba(0,191,143,0.12)" : COLORS.surface, border: `2px solid ${m === mood ? MOODS[m].color : COLORS.border}`, opacity: m === mood ? 1 : 0.6 }}
+            style={{ width: 48, height: 48, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: m === mood ? COLORS.goldSoft : COLORS.surface, border: `2px solid ${m === mood ? MOODS[m].color : COLORS.border}`, opacity: m === mood ? 1 : 0.6 }}
           >
             <MoodFace mood={m} size={26} />
           </div>
@@ -2558,7 +2582,7 @@ function Celebration({ t, data, onClose }) {
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
         <div style={{ fontSize: 30, letterSpacing: 6, marginBottom: 6 }}>🎉🏆🎉</div>
-        <div style={{ width: 84, height: 84, borderRadius: "50%", background: "rgba(0,191,143,0.14)", margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 84, height: 84, borderRadius: "50%", background: COLORS.goldSoft, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Laugh size={46} color={COLORS.gold} />
         </div>
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 6 }}>{t.celebrateTitle}</div>
@@ -2694,7 +2718,7 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
   });
   return (
     <div style={{ padding: "10px 20px 24px", textAlign: "center" }}>
-      <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(0,191,143,0.14)", margin: "10px auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 72, height: 72, borderRadius: "50%", background: COLORS.goldSoft, margin: "10px auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {prExercises.length > 0 ? <Laugh size={38} color={COLORS.gold} /> : <Award size={30} color={COLORS.gold} />}
       </div>
       {prExercises.length > 0 && <div style={{ fontSize: 26, marginTop: -8, marginBottom: 8 }}>🎉🏆🎉</div>}
@@ -2809,7 +2833,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
           </div>
 
-          <div onClick={onOpenPhoto} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: "rgba(0,191,143,0.12)", border: `1px solid ${COLORS.gold}`, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
+          <div onClick={onOpenPhoto} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.goldSoft, border: `1px solid ${COLORS.gold}`, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
             <Camera size={16} color={COLORS.gold} />
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.photoScanBtn}</span>
           </div>
@@ -2847,7 +2871,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{m.name}</div>
                         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{m.kcal} kcal</div>
                       </div>
-                      <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Plus size={15} color={COLORS.gold} />
                       </div>
                     </div>
@@ -2874,7 +2898,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                       {f.per100.kcal} kcal {t.per100g}
                     </div>
                   </div>
-                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Plus size={15} color={COLORS.gold} />
                   </div>
                 </div>
@@ -3479,7 +3503,7 @@ function MyMealsScreen({ t, myMeals, onSave, onDelete, onAddTo, initialSlot = "s
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Plus size={15} color={COLORS.gold} />
                 </div>
                 <div
@@ -3683,7 +3707,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       ) : !selected ? (
         <>
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <button onClick={() => setMode("form")} style={{ flex: 1, background: "rgba(0,191,143,0.12)", border: "1px solid " + COLORS.gold, color: COLORS.gold, borderRadius: 12, padding: "10px 8px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
+            <button onClick={() => setMode("form")} style={{ flex: 1, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, color: COLORS.gold, borderRadius: 12, padding: "10px 8px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
               ✨ {t.recipeCreateAi}
             </button>
             <button onClick={() => setMode("form")} style={{ flex: 1, background: COLORS.raised, border: "1px solid " + COLORS.border, color: COLORS.gold, borderRadius: 12, padding: "10px 8px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
@@ -3709,7 +3733,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
                     {r.kcal} kcal {t.perServing}
                   </div>
                 </div>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Plus size={15} color={COLORS.gold} />
                 </div>
               </div>
@@ -3941,7 +3965,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{cueOf(ex)}</div>
             </div>
             {mode === "pick" ? (
-              <div onClick={() => onAdd(ex)} style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(0,191,143,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
+              <div onClick={() => onAdd(ex)} style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
                 <Plus size={15} color={COLORS.gold} />
               </div>
             ) : (
@@ -4242,6 +4266,9 @@ export default function AsmarFitApp() {
     vision3Months: "",
     visionWhy: "",
   });
+  useEffect(() => {
+    applyTheme(profile.gender);
+  }, [profile.gender]);
   const [weightLog, setWeightLog] = usePersisted("weightLog", []);
   const [workoutHistory, setWorkoutHistory] = usePersisted("workoutHistory", []);
   const [personalBests, setPersonalBests] = usePersisted("personalBests", {});
