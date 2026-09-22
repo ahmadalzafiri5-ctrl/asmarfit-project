@@ -439,6 +439,7 @@ const STR = {
     progressAddFirst: "Add your first photo",
     progressAddAnother: "Add another photo",
     progressPhotoError: "This photo couldn't be loaded. Try a different one.",
+    progressTapAgainDelete: "Tap again to delete",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -826,6 +827,7 @@ const STR = {
     progressAddFirst: "Erstes Foto hinzufügen",
     progressAddAnother: "Weiteres Foto hinzufügen",
     progressPhotoError: "Dieses Foto konnte nicht geladen werden. Probiere ein anderes.",
+    progressTapAgainDelete: "Nochmal tippen zum Löschen",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -2334,6 +2336,12 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
   const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
 
   const [photoError, setPhotoError] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  useEffect(() => {
+    if (confirmDeleteId === null) return undefined;
+    const id = setTimeout(() => setConfirmDeleteId(null), 3000);
+    return () => clearTimeout(id);
+  }, [confirmDeleteId]);
   const pickPhoto = async (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
@@ -2342,6 +2350,9 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
     try {
       const dataUrl = await downscaleImage(file, 640);
       onAddPhoto({ id: Date.now(), dateISO: new Date().toISOString(), dataUrl });
+      // A photo you just added should always show up as "after" — otherwise
+      // an earlier tap on an older thumbnail keeps overriding new uploads.
+      setCompareId(null);
     } catch {
       setPhotoError(t.progressPhotoError);
     }
@@ -2470,20 +2481,47 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
 
             <div style={{ display: "flex", gap: 8, marginTop: sorted.length < 2 ? 12 : 0, overflowX: "auto", paddingBottom: 2 }}>
               {sorted.map((p) => (
-                <div key={p.id} style={{ position: "relative", flexShrink: 0 }}>
+                <div key={p.id} style={{ position: "relative", flexShrink: 0, marginTop: 22 }}>
+                  {confirmDeleteId === p.id && (
+                    <div style={{ position: "absolute", top: -24, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", fontFamily: "Sora, sans-serif", fontSize: 9.5, fontWeight: 700, color: "#fff", background: COLORS.coral, padding: "3px 7px", borderRadius: 7 }}>
+                      {t.progressTapAgainDelete}
+                    </div>
+                  )}
                   <img
                     src={p.dataUrl}
-                    onClick={() => setCompareId(p.id)}
+                    onClick={() => {
+                      setCompareId(p.id);
+                      setConfirmDeleteId(null);
+                    }}
                     style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: (after ? after.id : sorted[sorted.length - 1].id) === p.id ? `2px solid ${COLORS.gold}` : `2px solid ${COLORS.border}` }}
                   />
                   <div
                     onClick={() => {
-                      if (window.confirm(t.progressDeleteConfirm)) onDeletePhoto(p.id);
+                      if (confirmDeleteId === p.id) {
+                        setConfirmDeleteId(null);
+                        onDeletePhoto(p.id);
+                      } else {
+                        setConfirmDeleteId(p.id);
+                      }
                     }}
                     title={t.progressDeletePhoto}
-                    style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: COLORS.coral, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                    style={{
+                      position: "absolute",
+                      top: -6,
+                      right: -6,
+                      width: confirmDeleteId === p.id ? 24 : 20,
+                      height: confirmDeleteId === p.id ? 24 : 20,
+                      borderRadius: "50%",
+                      background: COLORS.coral,
+                      border: confirmDeleteId === p.id ? "2px solid #fff" : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      boxShadow: confirmDeleteId === p.id ? "0 0 0 2px " + COLORS.coral : "none",
+                    }}
                   >
-                    <X size={12} color="#fff" />
+                    <X size={confirmDeleteId === p.id ? 14 : 12} color="#fff" />
                   </div>
                 </div>
               ))}
@@ -4436,6 +4474,12 @@ function ConnectionsScreen({ t, info, native, onConnect }) {
 }
 
 function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, display, onReplayOnboarding, onOpenPrivacy, onOpenAssistant, onOpenConnections }) {
+  const [confirmingDanger, setConfirmingDanger] = useState(false);
+  useEffect(() => {
+    if (!confirmingDanger) return undefined;
+    const id = setTimeout(() => setConfirmingDanger(false), 4000);
+    return () => clearTimeout(id);
+  }, [confirmingDanger]);
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <Card style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
@@ -4525,13 +4569,28 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "4px 0 10px", lineHeight: 1.45 }}>{t.setDangerText}</div>
         <button
           onClick={() => {
-            if (!window.confirm(t.setDangerConfirm)) return;
+            if (!confirmingDanger) {
+              setConfirmingDanger(true);
+              return;
+            }
+            setConfirmingDanger(false);
             Object.keys(localStorage).filter((k) => k.startsWith("asfit.")).forEach((k) => localStorage.removeItem(k));
             window.location.reload();
           }}
-          style={{ width: "100%", background: COLORS.coralSoft, color: COLORS.coral, border: "1px solid " + COLORS.coral, borderRadius: 10, padding: "10px 12px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+          style={{
+            width: "100%",
+            background: confirmingDanger ? COLORS.coral : COLORS.coralSoft,
+            color: confirmingDanger ? "#fff" : COLORS.coral,
+            border: "1px solid " + COLORS.coral,
+            borderRadius: 10,
+            padding: "10px 12px",
+            fontFamily: "Sora, sans-serif",
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: "pointer",
+          }}
         >
-          {t.setDangerTitle}
+          {confirmingDanger ? t.setDangerConfirm : t.setDangerTitle}
         </button>
       </div>
       <div style={{ textAlign: "center", padding: "14px 0 4px", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>
