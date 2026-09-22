@@ -436,6 +436,9 @@ const STR = {
     progressDeletePhoto: "Delete this photo",
     progressDeleteConfirm: "Delete this progress photo? This can't be undone.",
     progressTapToCompare: "Tap a photo to compare it as \"after\"",
+    progressAddFirst: "Add your first photo",
+    progressAddAnother: "Add another photo",
+    progressPhotoError: "This photo couldn't be loaded. Try a different one.",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -820,6 +823,9 @@ const STR = {
     progressDeletePhoto: "Dieses Foto löschen",
     progressDeleteConfirm: "Dieses Fortschrittsfoto löschen? Das kann nicht rückgängig gemacht werden.",
     progressTapToCompare: "Tippe ein Foto an, um es als „Nachher“ zu vergleichen",
+    progressAddFirst: "Erstes Foto hinzufügen",
+    progressAddAnother: "Weiteres Foto hinzufügen",
+    progressPhotoError: "Dieses Foto konnte nicht geladen werden. Probiere ein anderes.",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -2327,12 +2333,18 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
   const after = sorted.find((p) => p.id === compareId) || sorted[sorted.length - 1] || null;
   const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
 
+  const [photoError, setPhotoError] = useState(null);
   const pickPhoto = async (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
     if (!file) return;
-    const dataUrl = await downscaleImage(file, 640);
-    onAddPhoto({ id: Date.now(), dateISO: new Date().toISOString(), dataUrl });
+    setPhotoError(null);
+    try {
+      const dataUrl = await downscaleImage(file, 640);
+      onAddPhoto({ id: Date.now(), dateISO: new Date().toISOString(), dataUrl });
+    } catch {
+      setPhotoError(t.progressPhotoError);
+    }
   };
   const [weightInput, setWeightInput] = useState("");
   const [exKey, setExKey] = useState(null);
@@ -2418,16 +2430,8 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
       </Card>
 
       <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ marginBottom: 12 }}>
           <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.photoCompare}</span>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div onClick={() => cameraRef.current && cameraRef.current.click()} style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              <Camera size={15} color={COLORS.gold} />
-            </div>
-            <div onClick={() => galleryRef.current && galleryRef.current.click()} style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              <Plus size={15} color={COLORS.gold} />
-            </div>
-          </div>
         </div>
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={pickPhoto} style={{ display: "none" }} />
         <input ref={galleryRef} type="file" accept="image/*" onChange={pickPhoto} style={{ display: "none" }} />
@@ -2486,6 +2490,26 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
             </div>
           </>
         )}
+
+        {photoError && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginTop: 12 }}>{photoError}</div>}
+
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, margin: "16px 0 8px" }}>
+          {sorted.length === 0 ? t.progressAddFirst : t.progressAddAnother}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => cameraRef.current && cameraRef.current.click()}
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 10px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+          >
+            <Camera size={16} /> {t.photoTake}
+          </button>
+          <button
+            onClick={() => galleryRef.current && galleryRef.current.click()}
+            style={{ flex: 1, background: COLORS.raised, border: `1px solid ${COLORS.border}`, color: COLORS.gold, borderRadius: 12, padding: "12px 10px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+          >
+            {t.photoGallery}
+          </button>
+        </div>
       </Card>
     </div>
   );
