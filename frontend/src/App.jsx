@@ -429,6 +429,14 @@ const STR = {
     connUnavailable: "Health Connect is not available on this device. Install or update it from the Play Store.",
     connImported: "from health app",
     connDenied: "Not allowed yet",
+    libNoResults: "No exercises match. Try a different word or muscle group.",
+    progressPhotosEmpty: "Add your first progress photo to see your transformation over time.",
+    progressPhotosHint: "Add another photo later to compare before and after.",
+    progressBefore: "Before",
+    progressAfter: "After",
+    progressDeletePhoto: "Delete this photo",
+    progressDeleteConfirm: "Delete this progress photo? This can't be undone.",
+    progressTapToCompare: "Tap a photo to compare it as \"after\"",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -806,6 +814,14 @@ const STR = {
     connUnavailable: "Health Connect ist auf diesem Gerät nicht verfügbar. Installiere oder aktualisiere es im Play Store.",
     connImported: "aus Gesundheits-App",
     connDenied: "Noch nicht erlaubt",
+    libNoResults: "Keine Übungen gefunden. Probiere ein anderes Wort oder eine andere Muskelgruppe.",
+    progressPhotosEmpty: "Füge dein erstes Fortschrittsfoto hinzu, um deine Veränderung über die Zeit zu sehen.",
+    progressPhotosHint: "Füge später ein weiteres Foto hinzu, um Vorher und Nachher zu vergleichen.",
+    progressBefore: "Vorher",
+    progressAfter: "Nachher",
+    progressDeletePhoto: "Dieses Foto löschen",
+    progressDeleteConfirm: "Dieses Fortschrittsfoto löschen? Das kann nicht rückgängig gemacht werden.",
+    progressTapToCompare: "Tippe ein Foto an, um es als „Nachher“ zu vergleichen",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -2302,9 +2318,24 @@ function LineChart({ points, color, height = 140, unit = "" }) {
   );
 }
 
-function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight }) {
+function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photos, onAddPhoto, onDeletePhoto }) {
   const [range, setRange] = useState(3);
   const [slider, setSlider] = useState(50);
+  const [compareId, setCompareId] = useState(null);
+  const cameraRef = useRef(null);
+  const galleryRef = useRef(null);
+  const sorted = [...photos].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+  const before = sorted[0] || null;
+  const after = sorted.find((p) => p.id === compareId) || sorted[sorted.length - 1] || null;
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { month: "short", year: "numeric" });
+
+  const pickPhoto = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const dataUrl = await downscaleImage(file, 640);
+    onAddPhoto({ id: Date.now(), dateISO: new Date().toISOString(), dataUrl });
+  };
   const [weightInput, setWeightInput] = useState("");
   const [exKey, setExKey] = useState(null);
 
@@ -2389,17 +2420,72 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight }) {
       </Card>
 
       <Card>
-        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text, marginBottom: 12 }}>{t.photoCompare}</div>
-        <div style={{ position: "relative", height: 220, borderRadius: 14, overflow: "hidden", background: COLORS.raised }}>
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(160deg,#2a2b30,#1b1c1f)", color: COLORS.dim }}>
-            <Camera size={30} strokeWidth={1.4} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.photoCompare}</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div onClick={() => cameraRef.current && cameraRef.current.click()} style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              <Camera size={15} color={COLORS.gold} />
+            </div>
+            <div onClick={() => galleryRef.current && galleryRef.current.click()} style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              <Plus size={15} color={COLORS.gold} />
+            </div>
           </div>
-          <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - slider}% 0 0)`, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(160deg,#3a2f22,#1b1c1f)" }}>
-            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11, color: COLORS.gold, fontWeight: 700 }}>{t.photoDateLabel}</span>
-          </div>
-          <div style={{ position: "absolute", top: 0, bottom: 0, left: `${slider}%`, width: 2, background: COLORS.text, transform: "translateX(-1px)" }} />
         </div>
-        <input type="range" min={0} max={100} value={slider} onChange={(e) => setSlider(Number(e.target.value))} style={{ width: "100%", marginTop: 12, accentColor: COLORS.gold }} />
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={pickPhoto} style={{ display: "none" }} />
+        <input ref={galleryRef} type="file" accept="image/*" onChange={pickPhoto} style={{ display: "none" }} />
+
+        {!before ? (
+          <div style={{ height: 220, borderRadius: 14, background: COLORS.raised, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px", gap: 10 }}>
+            <Camera size={28} strokeWidth={1.4} color={COLORS.dim} />
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, lineHeight: 1.5 }}>{t.progressPhotosEmpty}</span>
+          </div>
+        ) : (
+          <>
+            <div style={{ position: "relative", height: 260, borderRadius: 14, overflow: "hidden", background: COLORS.raised }}>
+              <img src={before.dataUrl} alt={t.progressBefore} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+              <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - slider}% 0 0)` }}>
+                <img src={(after || before).dataUrl} alt={t.progressAfter} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+              <div style={{ position: "absolute", top: 0, bottom: 0, left: `${slider}%`, width: 2, background: "#fff", transform: "translateX(-1px)", boxShadow: "0 0 8px rgba(0,0,0,0.4)" }} />
+              <span style={{ position: "absolute", left: 10, bottom: 10, fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.45)", padding: "3px 8px", borderRadius: 8 }}>
+                {t.progressBefore} · {fmtDate(before.dateISO)}
+              </span>
+              {after && after.id !== before.id && (
+                <span style={{ position: "absolute", right: 10, bottom: 10, fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.45)", padding: "3px 8px", borderRadius: 8 }}>
+                  {t.progressAfter} · {fmtDate(after.dateISO)}
+                </span>
+              )}
+            </div>
+            <input type="range" min={0} max={100} value={slider} onChange={(e) => setSlider(Number(e.target.value))} style={{ width: "100%", marginTop: 12, accentColor: COLORS.gold }} />
+
+            {sorted.length < 2 ? (
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10 }}>{t.progressPhotosHint}</div>
+            ) : (
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, margin: "10px 0 8px" }}>{t.progressTapToCompare}</div>
+            )}
+
+            <div style={{ display: "flex", gap: 8, marginTop: sorted.length < 2 ? 12 : 0, overflowX: "auto", paddingBottom: 2 }}>
+              {sorted.map((p) => (
+                <div key={p.id} style={{ position: "relative", flexShrink: 0 }}>
+                  <img
+                    src={p.dataUrl}
+                    onClick={() => setCompareId(p.id)}
+                    style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: (after ? after.id : sorted[sorted.length - 1].id) === p.id ? `2px solid ${COLORS.gold}` : `2px solid ${COLORS.border}` }}
+                  />
+                  <div
+                    onClick={() => {
+                      if (window.confirm(t.progressDeleteConfirm)) onDeletePhoto(p.id);
+                    }}
+                    title={t.progressDeletePhoto}
+                    style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: COLORS.coral, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                  >
+                    <X size={12} color="#fff" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );
@@ -3945,7 +4031,19 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
 
   const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
   const cueOf = (ex) => (lang === "de" ? ex.cueDe : ex.cue);
-  const results = EXERCISE_LIBRARY.filter((ex) => (muscle === "all" || ex.muscle === muscle) && nameOf(ex).toLowerCase().includes(query.toLowerCase()));
+  // Search matches either language and tolerates simple English plurals, so
+  // "biceps curls" still finds "Bicep Curl" even while the UI is in German.
+  const matchesQuery = (ex) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const targets = [ex.name.toLowerCase(), ex.nameDe.toLowerCase()];
+    if (targets.some((tgt) => tgt.includes(q))) return true;
+    return q.split(/\s+/).filter(Boolean).every((tok) => {
+      const alt = tok.length > 3 && tok.endsWith("s") ? tok.slice(0, -1) : tok;
+      return targets.some((tgt) => tgt.includes(tok) || tgt.includes(alt));
+    });
+  };
+  const results = EXERCISE_LIBRARY.filter((ex) => (muscle === "all" || ex.muscle === muscle) && matchesQuery(ex));
 
   if (selected && mode !== "pick") {
     const isCardio = selected.muscle === "cardio";
@@ -4056,6 +4154,9 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
         ))}
       </div>
 
+      {results.length === 0 ? (
+        <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24, padding: "0 12px" }}>{t.libNoResults}</div>
+      ) : (
       <Card style={{ padding: 4, marginBottom: mode === "pick" ? 16 : 0 }}>
         {results.map((ex, i) => (
           <div
@@ -4077,8 +4178,9 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           </div>
         ))}
       </Card>
+      )}
 
-      {mode === "pick" && (
+      {mode === "pick" && results.length > 0 && (
         <button onClick={onFinishPicking} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
           {t.finishPicking}
         </button>
@@ -4493,6 +4595,7 @@ export default function AsmarFitApp() {
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
   const [cardioBests, setCardioBests] = usePersisted("cardioBests", {});
   const [customRecords, setCustomRecords] = usePersisted("customRecords", []);
+  const [progressPhotos, setProgressPhotos] = usePersisted("progressPhotos", []);
   const [myMeals, setMyMeals] = usePersisted("myMeals", []);
   const [customRecipes, setCustomRecipes] = usePersisted("customRecipes", []);
   const [cheats, setCheats] = usePersisted("cheats", []);
@@ -4877,7 +4980,18 @@ export default function AsmarFitApp() {
           }}
         />
       ),
-      progress: <ProgressScreen t={t} lang={lang} weightLog={weightLog} workoutHistory={workoutHistory} onAddWeight={addWeight} />,
+      progress: (
+        <ProgressScreen
+          t={t}
+          lang={lang}
+          weightLog={weightLog}
+          workoutHistory={workoutHistory}
+          onAddWeight={addWeight}
+          photos={progressPhotos}
+          onAddPhoto={(p) => setProgressPhotos((ph) => [...ph, p])}
+          onDeletePhoto={(id) => setProgressPhotos((ph) => ph.filter((p) => p.id !== id))}
+        />
+      ),
       notes: <NotesScreen t={t} notes={notes} filter={notesFilter} setFilter={setNotesFilter} onAddNote={() => setOverlay("noteComposer")} />,
     };
     content = screens[tab];
