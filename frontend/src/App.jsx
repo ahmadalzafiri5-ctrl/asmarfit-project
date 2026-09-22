@@ -2480,7 +2480,10 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
             )}
 
             <div style={{ display: "flex", gap: 8, marginTop: sorted.length < 2 ? 12 : 0, overflowX: "auto", paddingBottom: 2 }}>
-              {sorted.map((p) => (
+              {sorted.map((p) => {
+                const isBefore = p.id === before.id;
+                const isAfterSel = (after ? after.id : sorted[sorted.length - 1].id) === p.id;
+                return (
                 <div key={p.id} style={{ position: "relative", flexShrink: 0, marginTop: 22 }}>
                   {confirmDeleteId === p.id && (
                     <div style={{ position: "absolute", top: -24, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", fontFamily: "Sora, sans-serif", fontSize: 9.5, fontWeight: 700, color: "#fff", background: COLORS.coral, padding: "3px 7px", borderRadius: 7 }}>
@@ -2493,8 +2496,12 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
                       setCompareId(p.id);
                       setConfirmDeleteId(null);
                     }}
-                    style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: (after ? after.id : sorted[sorted.length - 1].id) === p.id ? `2px solid ${COLORS.gold}` : `2px solid ${COLORS.border}` }}
+                    style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: isAfterSel ? `2px solid ${COLORS.gold}` : isBefore ? "2px solid #8E97A3" : `2px solid ${COLORS.border}` }}
                   />
+                  <div style={{ display: "flex", gap: 3, justifyContent: "center", marginTop: 4 }}>
+                    {isBefore && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#8E97A3" }} />}
+                    {isAfterSel && <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.gold }} />}
+                  </div>
                   <div
                     onClick={() => {
                       if (confirmDeleteId === p.id) {
@@ -2524,7 +2531,8 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
                     <X size={confirmDeleteId === p.id ? 14 : 12} color="#fff" />
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
