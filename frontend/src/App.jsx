@@ -131,7 +131,6 @@ const STR = {
     weeksLabel: "weeks",
     notLoggedYet: "Not logged yet",
     avgSession: "avg. session",
-    photoDateLabel: "JAN 2026",
     quickLog: "Quick log",
     logFood: "Log food",
     logWeight: "Log weight",
@@ -515,7 +514,6 @@ const STR = {
     weeksLabel: "Wochen",
     notLoggedYet: "Noch nicht trainiert",
     avgSession: "Ø Sitzung",
-    photoDateLabel: "Jan. 2026",
     todaysNote: "Heutige Notiz",
     quickLog: "Schnell erfassen",
     logFood: "Essen loggen",
@@ -2327,7 +2325,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
   const sorted = [...photos].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
   const before = sorted[0] || null;
   const after = sorted.find((p) => p.id === compareId) || sorted[sorted.length - 1] || null;
-  const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { month: "short", year: "numeric" });
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
 
   const pickPhoto = async (e) => {
     const file = e.target.files && e.target.files[0];
@@ -2446,13 +2444,15 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
               <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - slider}% 0 0)` }}>
                 <img src={(after || before).dataUrl} alt={t.progressAfter} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
-              <div style={{ position: "absolute", top: 0, bottom: 0, left: `${slider}%`, width: 2, background: "#fff", transform: "translateX(-1px)", boxShadow: "0 0 8px rgba(0,0,0,0.4)" }} />
-              <span style={{ position: "absolute", left: 10, bottom: 10, fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.45)", padding: "3px 8px", borderRadius: 8 }}>
+              <div style={{ position: "absolute", top: 0, bottom: 0, left: `${slider}%`, width: 3, background: "#fff", transform: "translateX(-1.5px)", boxShadow: "0 0 8px rgba(0,0,0,0.5)" }} />
+              <span style={{ position: "absolute", left: 10, top: 10, display: "flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", padding: "5px 10px", borderRadius: 9 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#8E97A3", flexShrink: 0 }} />
                 {t.progressBefore} · {fmtDate(before.dateISO)}
               </span>
               {after && after.id !== before.id && (
-                <span style={{ position: "absolute", right: 10, bottom: 10, fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.45)", padding: "3px 8px", borderRadius: 8 }}>
+                <span style={{ position: "absolute", right: 10, bottom: 10, display: "flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", padding: "5px 10px", borderRadius: 9 }}>
                   {t.progressAfter} · {fmtDate(after.dateISO)}
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: COLORS.gold, flexShrink: 0 }} />
                 </span>
               )}
             </div>
