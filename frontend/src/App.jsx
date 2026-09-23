@@ -254,6 +254,11 @@ const STR = {
     bestLabel: "Best",
     addSet: "Add set",
     emptyWorkout: "Add your first exercise to begin.",
+    discardWorkout: "Discard workout",
+    discardWorkoutConfirm: "Tap again to discard — not saved",
+    workoutRunning: "Workout in progress",
+    workoutRunningSince: "Started at",
+    resumeWorkout: "Resume",
     addExerciseBtn: "Add exercise",
     saveWeight: "Save",
     weightInputPlaceholder: "Weight in kg",
@@ -645,6 +650,11 @@ const STR = {
     bestLabel: "Bestwert",
     addSet: "Satz hinzufügen",
     emptyWorkout: "Füge deine erste Übung hinzu.",
+    discardWorkout: "Workout verwerfen",
+    discardWorkoutConfirm: "Nochmal tippen zum Verwerfen — wird nicht gespeichert",
+    workoutRunning: "Workout läuft",
+    workoutRunningSince: "Gestartet um",
+    resumeWorkout: "Fortsetzen",
     addExerciseBtn: "Übung hinzufügen",
     saveWeight: "Speichern",
     weightInputPlaceholder: "Gewicht in kg",
@@ -2022,7 +2032,7 @@ function WaterCard({ t, waterMl, goalMl, onAdd, onUndo }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress, activeWorkout, onResumeWorkout }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2047,6 +2057,21 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
       <p style={{ color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 14, marginTop: -4, marginBottom: 22 }}>
         {new Date().getHours() < 11 ? t.greetingPrefix : new Date().getHours() < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
       </p>
+
+      {activeWorkout && (
+        <Card onClick={onResumeWorkout} style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", background: COLORS.goldSoft, border: `1px solid ${COLORS.gold}` }}>
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS.gold, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Timer size={17} color={COLORS.bg} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.workoutRunning}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
+              {t.workoutRunningSince} {new Date(activeWorkout.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </div>
+          </div>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.gold, flexShrink: 0 }}>{t.resumeWorkout}</span>
+        </Card>
+      )}
 
       <Card style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
         <Ring pct={kcalGoal ? (kcalEaten / (kcalGoal + kcalBurned)) * 100 : 0} size={132} stroke={11}>
@@ -2217,7 +2242,7 @@ function NutritionScreen({ t, meals, macroTargets, myMeals, cheats, onOpenFoodSe
   );
 }
 
-function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords }) {
+function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout }) {
   const timed = workoutHistory.filter((w) => w.durationSec > 0);
   const avgSessionSec = timed.length ? Math.round(timed.reduce((s, w) => s + w.durationSec, 0) / timed.length) : null;
   const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
@@ -2239,7 +2264,7 @@ function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onSt
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>{t.freeWorkoutSub}</div>
           </div>
           <button onClick={onStartWorkout} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", flexShrink: 0 }}>
-            {t.startWorkout}
+            {activeWorkout ? t.resumeWorkout : t.startWorkout}
           </button>
         </div>
       </Card>
@@ -2703,26 +2728,42 @@ const numInputStyle = {
   outline: "none",
 };
 
-function WorkoutSession({ t, lang, onFinish }) {
-  const [entries, setEntries] = useState([]);
+function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish, onDiscard }) {
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
-  const startTimeRef = useRef(Date.now());
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
+
+  // Elapsed time is computed from a persisted wall-clock start, not a
+  // running counter — so it keeps counting correctly even after the app
+  // was backgrounded (music, another app) or fully closed and reopened.
+  // This tick just re-renders once a second while the screen is visible.
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const elapsedSec = Math.max(0, Math.round((now - startedAt) / 1000));
+
+  useEffect(() => {
+    if (!confirmDiscard) return undefined;
+    const id = setTimeout(() => setConfirmDiscard(false), 4000);
+    return () => clearTimeout(id);
+  }, [confirmDiscard]);
 
   const addExercise = (key) => {
     const isCardio = (EXERCISE_LIBRARY.find((x) => x.key === key) || {}).muscle === "cardio";
-    setEntries((e) => [...e, isCardio ? { key, cardio: true, minutes: "" } : { key, sets: [{ weight: "", reps: "" }] }]);
+    onChangeEntries([...entries, isCardio ? { key, cardio: true, minutes: "" } : { key, sets: [{ weight: "", reps: "" }] }]);
     setPicking(false);
     setQuery("");
   };
   const updateSet = (ei, si, field, value) =>
-    setEntries((e) => e.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.map((s, j) => (j !== si ? s : { ...s, [field]: value })) })));
-  const addSet = (ei) => setEntries((e) => e.map((en, i) => (i !== ei ? en : { ...en, sets: [...en.sets, { ...en.sets[en.sets.length - 1] }] })));
+    onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.map((s, j) => (j !== si ? s : { ...s, [field]: value })) })));
+  const addSet = (ei) => onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: [...en.sets, { ...en.sets[en.sets.length - 1] }] })));
   const removeSet = (ei, si) =>
-    setEntries((e) => e.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.filter((_, j) => j !== si) })).filter((en) => en.cardio || en.sets.length > 0));
-  const updateMinutes = (ei, value) => setEntries((e) => e.map((en, i) => (i !== ei ? en : { ...en, minutes: value })));
-  const removeEntry = (ei) => setEntries((e) => e.filter((_, i) => i !== ei));
+    onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.filter((_, j) => j !== si) })).filter((en) => en.cardio || en.sets.length > 0));
+  const updateMinutes = (ei, value) => onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, minutes: value })));
+  const removeEntry = (ei) => onChangeEntries(entries.filter((_, i) => i !== ei));
 
   const setLog = [];
   const cardioLog = [];
@@ -2743,7 +2784,7 @@ function WorkoutSession({ t, lang, onFinish }) {
 
   const finish = () =>
     onFinish({
-      durationSec: Math.round((Date.now() - startTimeRef.current) / 1000),
+      durationSec: elapsedSec,
       volumeKg: setLog.reduce((s, l) => s + l.weight * l.reps, 0),
       setLog,
       cardio: cardioLog,
@@ -2774,6 +2815,12 @@ function WorkoutSession({ t, lang, onFinish }) {
 
   return (
     <div style={{ padding: "0 20px 24px" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: COLORS.goldSoft, borderRadius: 999, padding: "8px 18px" }}>
+          <Timer size={15} color={COLORS.gold} />
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.gold, fontVariantNumeric: "tabular-nums" }}>{formatDuration(elapsedSec)}</span>
+        </div>
+      </div>
       {entries.length === 0 && <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, marginTop: 0 }}>{t.emptyWorkout}</p>}
 
       {entries.map((en, ei) => {
@@ -2820,6 +2867,16 @@ function WorkoutSession({ t, lang, onFinish }) {
       >
         {t.finishWorkout}
       </button>
+
+      <div
+        onClick={() => {
+          if (confirmDiscard) onDiscard();
+          else setConfirmDiscard(true);
+        }}
+        style={{ textAlign: "center", marginTop: 16, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: confirmDiscard ? COLORS.coral : COLORS.dim, cursor: "pointer" }}
+      >
+        {confirmDiscard ? t.discardWorkoutConfirm : t.discardWorkout}
+      </div>
     </div>
   );
 }
@@ -4745,6 +4802,15 @@ export default function AsmarFitApp() {
   const [personalBests, setPersonalBests] = usePersisted("personalBests", {});
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
   const [cardioBests, setCardioBests] = usePersisted("cardioBests", {});
+  // A workout in progress is persisted immediately (start time + entries so
+  // far), so it keeps counting real elapsed time and survives the app being
+  // backgrounded or fully closed — only "Workout beenden" or discarding it
+  // clears this, not leaving the screen.
+  const [activeWorkout, setActiveWorkout] = usePersisted("activeWorkout", null);
+  const startOrResumeWorkout = () => {
+    setActiveWorkout((w) => w || { startedAt: Date.now(), entries: [] });
+    setOverlay("workout");
+  };
   const [customRecords, setCustomRecords] = usePersisted("customRecords", []);
   const [progressPhotos, setProgressPhotos] = usePersisted("progressPhotos", []);
   const [myMeals, setMyMeals] = usePersisted("myMeals", []);
@@ -4947,7 +5013,23 @@ export default function AsmarFitApp() {
   let content, topTitle, showBack, onSettingsBtn;
 
   if (overlay === "workout") {
-    content = <WorkoutSession t={t} lang={lang} onFinish={finishWorkout} />;
+    content = (
+      <WorkoutSession
+        t={t}
+        lang={lang}
+        startedAt={activeWorkout?.startedAt || Date.now()}
+        entries={activeWorkout?.entries || []}
+        onChangeEntries={(entries) => setActiveWorkout((w) => ({ startedAt: w?.startedAt || Date.now(), entries }))}
+        onFinish={(summary) => {
+          finishWorkout(summary);
+          setActiveWorkout(null);
+        }}
+        onDiscard={() => {
+          setActiveWorkout(null);
+          setOverlay(null);
+        }}
+      />
+    );
     topTitle = t.startWorkout;
     showBack = () => setOverlay(null);
   } else if (overlay === "workoutSummary") {
@@ -5090,9 +5172,11 @@ export default function AsmarFitApp() {
             setActiveMealKey("snacks");
             setOverlay("foodSearch");
           }}
-          onStartWorkout={() => setOverlay("workout")}
+          onStartWorkout={startOrResumeWorkout}
           onAddNote={() => setOverlay("noteComposer")}
           onGoProgress={() => setTab("progress")}
+          activeWorkout={activeWorkout}
+          onResumeWorkout={startOrResumeWorkout}
         />
       ),
       nutrition: (
@@ -5122,13 +5206,14 @@ export default function AsmarFitApp() {
           planName={planName}
           personalBests={personalBests}
           workoutHistory={workoutHistory}
-          onStartWorkout={() => setOverlay("workout")}
+          onStartWorkout={startOrResumeWorkout}
           onOpenPlanBuilder={() => setOverlay("planBuilder")}
           onOpenRecords={() => setOverlay("records")}
           onOpenLibrary={() => {
             setLibraryReturnTo("main");
             setOverlay("exerciseLibrary");
           }}
+          activeWorkout={activeWorkout}
         />
       ),
       progress: (
