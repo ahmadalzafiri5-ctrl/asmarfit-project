@@ -255,7 +255,6 @@ const STR = {
     addSet: "Add set",
     emptyWorkout: "Add your first exercise to begin.",
     discardWorkout: "Discard workout",
-    discardWorkoutConfirm: "Tap again to discard — not saved",
     workoutRunning: "Workout in progress",
     workoutRunningSince: "Started at",
     resumeWorkout: "Resume",
@@ -651,7 +650,6 @@ const STR = {
     addSet: "Satz hinzufügen",
     emptyWorkout: "Füge deine erste Übung hinzu.",
     discardWorkout: "Workout verwerfen",
-    discardWorkoutConfirm: "Nochmal tippen zum Verwerfen — wird nicht gespeichert",
     workoutRunning: "Workout läuft",
     workoutRunningSince: "Gestartet um",
     resumeWorkout: "Fortsetzen",
@@ -2731,7 +2729,6 @@ const numInputStyle = {
 function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish, onDiscard }) {
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
 
   // Elapsed time is computed from a persisted wall-clock start, not a
@@ -2744,12 +2741,6 @@ function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish
     return () => clearInterval(id);
   }, []);
   const elapsedSec = Math.max(0, Math.round((now - startedAt) / 1000));
-
-  useEffect(() => {
-    if (!confirmDiscard) return undefined;
-    const id = setTimeout(() => setConfirmDiscard(false), 4000);
-    return () => clearTimeout(id);
-  }, [confirmDiscard]);
 
   const addExercise = (key) => {
     const isCardio = (EXERCISE_LIBRARY.find((x) => x.key === key) || {}).muscle === "cardio";
@@ -2868,14 +2859,8 @@ function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish
         {t.finishWorkout}
       </button>
 
-      <div
-        onClick={() => {
-          if (confirmDiscard) onDiscard();
-          else setConfirmDiscard(true);
-        }}
-        style={{ textAlign: "center", marginTop: 16, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: confirmDiscard ? COLORS.coral : COLORS.dim, cursor: "pointer" }}
-      >
-        {confirmDiscard ? t.discardWorkoutConfirm : t.discardWorkout}
+      <div onClick={onDiscard} style={{ textAlign: "center", marginTop: 16, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
+        {t.discardWorkout}
       </div>
     </div>
   );
