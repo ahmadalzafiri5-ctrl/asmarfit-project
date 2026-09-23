@@ -2744,13 +2744,16 @@ function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish
 
   const addExercise = (key) => {
     const isCardio = (EXERCISE_LIBRARY.find((x) => x.key === key) || {}).muscle === "cardio";
-    onChangeEntries([...entries, isCardio ? { key, cardio: true, minutes: "" } : { key, sets: [{ weight: "", reps: "" }] }]);
+    // Strength exercises start with no set yet — kg/Wdh only appear once you
+    // tap "+ Satz hinzufügen" for the first set, instead of a pre-filled row.
+    onChangeEntries([...entries, isCardio ? { key, cardio: true, minutes: "" } : { key, sets: [] }]);
     setPicking(false);
     setQuery("");
   };
   const updateSet = (ei, si, field, value) =>
     onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.map((s, j) => (j !== si ? s : { ...s, [field]: value })) })));
-  const addSet = (ei) => onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: [...en.sets, { ...en.sets[en.sets.length - 1] }] })));
+  const addSet = (ei) =>
+    onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: [...en.sets, en.sets.length ? { ...en.sets[en.sets.length - 1] } : { weight: "", reps: "" }] })));
   const removeSet = (ei, si) =>
     onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.filter((_, j) => j !== si) })).filter((en) => en.cardio || en.sets.length > 0));
   const updateMinutes = (ei, value) => onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, minutes: value })));
