@@ -2356,7 +2356,7 @@ function LineChart({ points, color, height = 140, unit = "" }) {
   );
 }
 
-function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photos, onAddPhoto, onDeletePhoto }) {
+function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDeleteWeight, photos, onAddPhoto, onDeletePhoto }) {
   const [range, setRange] = useState(3);
   const [slider, setSlider] = useState(50);
   const [compareId, setCompareId] = useState(null);
@@ -2441,6 +2441,24 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, photo
           <LineChart points={shownWeights.map((w) => w.kg)} color={COLORS.teal} unit="kg" />
         ) : (
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.needMoreWeights}</div>
+        )}
+
+        {shownWeights.length > 0 && (
+          <div style={{ marginTop: 14, maxHeight: 220, overflowY: "auto", borderTop: `1px solid ${COLORS.border}` }}>
+            {[...shownWeights].reverse().map((w) => (
+              <div key={w.dateISO} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 2px", borderBottom: `1px solid ${COLORS.border}` }}>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>
+                  {new Date(w.dateISO).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{w.kg} kg</span>
+                  <div onClick={() => onDeleteWeight(w.dateISO)} style={{ cursor: "pointer", padding: 4 }}>
+                    <X size={14} color={COLORS.dim} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </Card>
 
@@ -5211,6 +5229,7 @@ export default function AsmarFitApp() {
           weightLog={weightLog}
           workoutHistory={workoutHistory}
           onAddWeight={addWeight}
+          onDeleteWeight={(dateISO) => setWeightLog((l) => l.filter((w) => w.dateISO !== dateISO))}
           photos={progressPhotos}
           onAddPhoto={(p) => setProgressPhotos((ph) => [...ph, p])}
           onDeletePhoto={(id) => setProgressPhotos((ph) => ph.filter((p) => p.id !== id))}
