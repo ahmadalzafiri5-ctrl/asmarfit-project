@@ -2340,8 +2340,25 @@ function LineChart({ points, color, height = 140, unit = "" }) {
       </text>
     </g>
   );
+  // The far left (oldest) and far right (newest) point don't automatically
+  // get a label unless they happen to be the min/max — label them too, in a
+  // plain neutral style, so both edges of the chart always show a value.
+  const edgeLabel = (idx) => {
+    const [x, y] = coords[idx];
+    const above = y > 40;
+    return (
+      <g key={"edge-" + idx}>
+        <circle cx={x} cy={y} r={3.5} fill={COLORS.bg} stroke={COLORS.dim} strokeWidth={2} />
+        <text x={x} y={y + (above ? -10 : 17)} textAnchor={anchorFor(x)} fontSize="10.5" fontWeight="600" fontFamily="Inter, sans-serif" fill={COLORS.dim}>
+          {fmtV(points[idx])}
+        </text>
+      </g>
+    );
+  };
+  const firstIdx = 0;
+  const lastIdx = n - 1;
   return (
-    <svg viewBox={"0 0 " + w + " " + height} width="100%" style={{ display: "block" }}>
+    <svg viewBox={"0 0 " + w + " " + height} width="100%" style={{ display: "block", overflow: "visible" }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.22" />
@@ -2350,6 +2367,8 @@ function LineChart({ points, color, height = 140, unit = "" }) {
       </defs>
       {n > 1 && <path d={areaPath} fill={"url(#" + gradId + ")"} />}
       {n > 1 && <path d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
+      {n > 1 && firstIdx !== minIdx && firstIdx !== maxIdx && edgeLabel(firstIdx)}
+      {n > 1 && lastIdx !== minIdx && lastIdx !== maxIdx && edgeLabel(lastIdx)}
       {max !== min && marker(minIdx, COLORS.coral, false)}
       {marker(maxIdx, COLORS.gold, true)}
     </svg>
