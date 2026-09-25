@@ -90,6 +90,10 @@ const THEMES = {
     light: { bg: "#FFFFFF", surface: "#F2F5FB", raised: "#E8EEF9", border: "#D6E0F0", text: "#0F1729", dim: "#5F6C86", gold: "#2563EB", goldSoft: "rgba(37,99,235,0.12)", teal: "#0E9F9A", coral: "#F0782E", coralSoft: "rgba(240,120,46,0.14)" },
     dark: { bg: "#0D1220", surface: "#151C2E", raised: "#1E2740", border: "#2A3550", text: "#EBF1FF", dim: "#94A1BE", gold: "#5B8DF6", goldSoft: "rgba(91,141,246,0.18)", teal: "#2CC4BE", coral: "#F58F4C", coralSoft: "rgba(245,143,76,0.18)" },
   },
+  diverse: {
+    light: { bg: "#FFFFFF", surface: "#F8F6F1", raised: "#F0EBDF", border: "#E2DAC8", text: "#171512", dim: "#7A7364", gold: "#B8860B", goldSoft: "rgba(184,134,11,0.14)", teal: "#2B2B2B", coral: "#A63D40", coralSoft: "rgba(166,61,64,0.16)" },
+    dark: { bg: "#0B0B0A", surface: "#161513", raised: "#201E1A", border: "#2E2B24", text: "#F5EFE0", dim: "#A79C87", gold: "#D4AF37", goldSoft: "rgba(212,175,55,0.18)", teal: "#B7AE9C", coral: "#E0726F", coralSoft: "rgba(224,114,111,0.18)" },
+  },
 };
 
 let themeMode = "system";
@@ -173,6 +177,7 @@ const STR = {
     obGenderSub: "We need this to calculate your daily calorie target accurately.",
     obGenderFemale: "Female",
     obGenderMale: "Male",
+    obGenderDiverse: "Diverse",
     obGoalTitle: "What's your goal?",
     obGoalSub: "This sets your starting calorie target — you can change it anytime.",
     obGoalCut: "Lose weight",
@@ -405,6 +410,7 @@ const STR = {
     setThemeNeutral: "Green",
     setThemeFemale: "Rose",
     setThemeMale: "Blue",
+    setThemeDiverse: "Black & gold",
     setTextSize: "Text size",
     setSmall: "Small",
     setNormal: "Normal",
@@ -568,6 +574,7 @@ const STR = {
     obGenderSub: "Wir benötigen dein Geschlecht, um dein tägliches Kalorienziel genau zu berechnen.",
     obGenderFemale: "Weiblich",
     obGenderMale: "Männlich",
+    obGenderDiverse: "Divers",
     obGoalTitle: "Was ist dein Ziel?",
     obGoalSub: "Das legt dein Start-Kalorienziel fest — du kannst es jederzeit ändern.",
     obGoalCut: "Abnehmen",
@@ -800,6 +807,7 @@ const STR = {
     setThemeNeutral: "Grün",
     setThemeFemale: "Rosé",
     setThemeMale: "Blau",
+    setThemeDiverse: "Schwarz-Gold",
     setTextSize: "Schriftgröße",
     setSmall: "Klein",
     setNormal: "Normal",
@@ -1710,7 +1718,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         {step === 0 && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, #009973)`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Dumbbell size={34} color={COLORS.bg} />
             </div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 26, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>{t.obWelcomeTitle}</h2>
@@ -1725,6 +1733,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
             {[
               { key: "female", title: t.obGenderFemale },
               { key: "male", title: t.obGenderMale },
+              { key: "diverse", title: t.obGenderDiverse },
             ].map(({ key, title }) => (
               <div key={key} onClick={() => { setGender(key); applyTheme(key); }} style={{ padding: 18, borderRadius: 16, marginBottom: 12, cursor: "pointer", textAlign: "center", background: gender === key ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${gender === key ? COLORS.gold : COLORS.border}` }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
@@ -4633,7 +4642,7 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <Card style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-        <div style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, #009973)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <span style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
         </div>
         <div>
@@ -4655,6 +4664,7 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
         <Chip label={t.setThemeNeutral} active={display.colorTheme === "neutral"} onClick={() => display.setColorTheme("neutral")} />
         <Chip label={t.setThemeFemale} active={display.colorTheme === "female"} onClick={() => display.setColorTheme("female")} />
         <Chip label={t.setThemeMale} active={display.colorTheme === "male"} onClick={() => display.setColorTheme("male")} />
+        <Chip label={t.setThemeDiverse} active={display.colorTheme === "diverse"} onClick={() => display.setColorTheme("diverse")} />
       </div>
 
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.setTextSize}</div>
