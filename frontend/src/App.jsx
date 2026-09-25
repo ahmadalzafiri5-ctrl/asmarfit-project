@@ -159,6 +159,7 @@ const STR = {
     newPR: "New PR",
     volume: "Volume",
     exercises: "Exercises",
+    exerciseSingular: "Exercise",
     viewLibrary: "Exercise library",
     lastTime: "Last time",
     weightTrend: "Weight trend",
@@ -400,6 +401,7 @@ const STR = {
     backupImport: "Restore from file",
     backupImported: "Data restored",
     backupBad: "This file is not a valid ASFIT backup.",
+    backupCopyFailed: "Couldn't copy — try \"Save as file\" instead.",
     setDisplay: "Display",
     setAppearance: "Brightness",
     setLight: "Light",
@@ -556,6 +558,7 @@ const STR = {
     newPR: "Neuer Rekord",
     volume: "Volumen",
     exercises: "Übungen",
+    exerciseSingular: "Übung",
     viewLibrary: "Übungsbibliothek",
     lastTime: "Letztes Mal",
     weightTrend: "Gewichtsverlauf",
@@ -797,6 +800,7 @@ const STR = {
     backupImport: "Aus Datei wiederherstellen",
     backupImported: "Daten wiederhergestellt",
     backupBad: "Diese Datei ist keine gültige ASFIT-Sicherung.",
+    backupCopyFailed: "Kopieren fehlgeschlagen — nutze stattdessen „Als Datei speichern“.",
     setDisplay: "Darstellung",
     setAppearance: "Helligkeit",
     setLight: "Hell",
@@ -2249,13 +2253,25 @@ function NutritionScreen({ t, meals, macroTargets, myMeals, cheats, onOpenFoodSe
   );
 }
 
-function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout }) {
+function TrainingScreen({ t, lang, planName, planDays = [], personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout }) {
   const timed = workoutHistory.filter((w) => w.durationSec > 0);
   const avgSessionSec = timed.length ? Math.round(timed.reduce((s, w) => s + w.durationSec, 0) / timed.length) : null;
   const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
   const trained = Object.keys(personalBests)
     .map((key) => ({ ex: EXERCISE_LIBRARY.find((e) => e.key === key), best: personalBests[key] }))
     .filter((x) => x.ex);
+  const [selectedDayId, setSelectedDayId] = useState(planDays[0]?.id ?? null);
+  const hasPlanDays = planName && planDays.length > 0;
+  const selectedDay = hasPlanDays ? planDays.find((d) => d.id === selectedDayId) || planDays[0] : null;
+  const startFromCard = () => {
+    if (!activeWorkout && selectedDay) {
+      onStartWorkout(
+        selectedDay.exercises.map((ex) => (ex.muscle === "cardio" ? { key: ex.key, cardio: true, minutes: "" } : { key: ex.key, sets: [] }))
+      );
+    } else {
+      onStartWorkout();
+    }
+  };
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -2268,12 +2284,21 @@ function TrainingScreen({ t, lang, planName, personalBests, workoutHistory, onSt
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: COLORS.text }}>{planName || t.freeWorkout}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>{t.freeWorkoutSub}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>
+              {selectedDay ? selectedDay.name + " · " + selectedDay.exercises.length + " " + (selectedDay.exercises.length === 1 ? t.exerciseSingular : t.exercises) : t.freeWorkoutSub}
+            </div>
           </div>
-          <button onClick={onStartWorkout} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", flexShrink: 0 }}>
+          <button onClick={startFromCard} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", flexShrink: 0 }}>
             {activeWorkout ? t.resumeWorkout : t.startWorkout}
           </button>
         </div>
+        {hasPlanDays && planDays.length > 1 && (
+          <div style={{ display: "flex", gap: 8, marginTop: 14, overflowX: "auto", paddingBottom: 2 }}>
+            {planDays.map((d) => (
+              <Chip key={d.id} label={d.name} active={(selectedDay && selectedDay.id) === d.id} onClick={() => setSelectedDayId(d.id)} />
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card style={{ marginBottom: 18, cursor: "pointer" }}>
@@ -4500,7 +4525,7 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
         </div>
       )}
 
-      {days.length > 0 && (
+      {days.length > 0 && days.every((d) => d.exercises.length === 0) && (
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 20 }}>{t.selectDayFirst}</div>
       )}
 
@@ -4550,7 +4575,7 @@ function BackupCard({ t }) {
       await navigator.clipboard.writeText(collect());
       flash(t.backupCopied);
     } catch {
-      flash(t.serverError);
+      flash(t.backupCopyFailed);
     }
   };
   const onImport = async (e) => {
@@ -4789,6 +4814,10 @@ export default function AsmarFitApp() {
   const [libraryReturnTo, setLibraryReturnTo] = useState("main");
   const [activeMealKey, setActiveMealKey] = useState("snacks");
   const [planName, setPlanName] = usePersisted("planName", null);
+  // The actual days/exercises of the saved plan — previously the plan
+  // builder only kept the name and threw this away, so "Workout starten"
+  // always opened a blank free workout no matter what plan was built.
+  const [planDays, setPlanDays] = usePersisted("planDays", []);
   const [units, setUnits] = usePersisted("units", "kg");
   const [reminders, setReminders] = usePersisted("reminders", { food: true, weigh: true, train: false });
 
@@ -4842,8 +4871,8 @@ export default function AsmarFitApp() {
   // backgrounded or fully closed — only "Workout beenden" or discarding it
   // clears this, not leaving the screen.
   const [activeWorkout, setActiveWorkout] = usePersisted("activeWorkout", null);
-  const startOrResumeWorkout = () => {
-    setActiveWorkout((w) => w || { startedAt: Date.now(), entries: [] });
+  const startOrResumeWorkout = (presetEntries) => {
+    setActiveWorkout((w) => w || { startedAt: Date.now(), entries: presetEntries || [] });
     setOverlay("workout");
   };
   const [customRecords, setCustomRecords] = usePersisted("customRecords", []);
@@ -5129,6 +5158,7 @@ export default function AsmarFitApp() {
         }}
         onSave={(name) => {
           setPlanName(name);
+          setPlanDays(pbDays);
           setTimeout(() => {
             setOverlay(null);
             setPbName("");
@@ -5239,6 +5269,7 @@ export default function AsmarFitApp() {
           t={t}
           lang={lang}
           planName={planName}
+          planDays={planDays}
           personalBests={personalBests}
           workoutHistory={workoutHistory}
           onStartWorkout={startOrResumeWorkout}
