@@ -287,6 +287,11 @@ const STR = {
     waterGoalLabel: "Goal",
     waterAddGlass: "+ 250 ml",
     waterUndo: "Undo",
+    waterCustomPh: "Amount in ml",
+    waterAddBtn: "Add",
+    waterGoalPh: "Daily goal in ml",
+    waterSave: "Save",
+    searchRetry: "Tap to retry",
     assistantTitle: "ASFIT Assistant",
     assistantEntry: "Ask the assistant",
     assistantHello: "Hi! I'm your ASFIT assistant. Ask me about training, nutrition or how to use the app.",
@@ -749,6 +754,11 @@ const STR = {
     waterGoalLabel: "Ziel",
     waterAddGlass: "+ 250 ml",
     waterUndo: "Zurück",
+    waterCustomPh: "Menge in ml",
+    waterAddBtn: "Hinzufügen",
+    waterGoalPh: "Tagesziel in ml",
+    waterSave: "Speichern",
+    searchRetry: "Tippen zum Wiederholen",
     assistantTitle: "ASFIT-Assistent",
     assistantEntry: "Assistent fragen",
     assistantHello: "Hallo! Ich bin dein ASFIT-Assistent. Frag mich zu Training, Ernährung oder zur Bedienung der App.",
@@ -2147,8 +2157,14 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
 /* ---------------- Main tab screens ---------------- */
 
-function WaterCard({ t, waterMl, goalMl, onAdd, onUndo }) {
+function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
   const pct = Math.min(100, (waterMl / goalMl) * 100);
+  const [custom, setCustom] = useState("");
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState("");
+  const customVal = parseInt(custom, 10);
+  const customOk = customVal > 0 && customVal <= 5000;
+  const chip = { flex: 1, background: COLORS.raised, color: COLORS.text, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "9px 4px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" };
   return (
     <Card style={{ marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -2158,25 +2174,61 @@ function WaterCard({ t, waterMl, goalMl, onAdd, onUndo }) {
         </div>
         <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text, whiteSpace: "nowrap" }}>
           {(waterMl / 1000).toFixed(2).replace(/\.?0+$/, "")}
-          <span style={{ color: COLORS.dim, fontWeight: 400 }}> / {(goalMl / 1000).toFixed(1)} L</span>
+          <span onClick={() => { setGoalInput(String(goalMl)); setEditingGoal(!editingGoal); }} style={{ color: COLORS.teal, fontWeight: 600, cursor: "pointer", textDecoration: "underline dotted" }}> / {(goalMl / 1000).toFixed(2).replace(/\.?0+$/, "")} L</span>
         </span>
       </div>
+      {editingGoal && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <input type="number" inputMode="numeric" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} placeholder={t.waterGoalPh} style={{ ...numInputStyle, flex: 1 }} />
+          <button
+            onClick={() => {
+              const v = parseInt(goalInput, 10);
+              if (v >= 500 && v <= 10000) { onSaveGoal(v); setEditingGoal(false); }
+            }}
+            style={{ background: COLORS.teal, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+          >
+            {t.waterSave}
+          </button>
+        </div>
+      )}
       <div style={{ height: 10, borderRadius: 5, background: COLORS.raised, overflow: "hidden", marginBottom: 12 }}>
         <div style={{ height: "100%", width: `${pct}%`, background: COLORS.teal, borderRadius: 5, transition: "width .5s ease" }} />
       </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        {[200, 250, 330, 500].map((ml) => (
+          <button key={ml} onClick={() => onAdd(ml)} style={chip}>+ {ml}</button>
+        ))}
+      </div>
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={onAdd} style={{ flex: 1, background: COLORS.teal, color: COLORS.bg, border: "none", borderRadius: 12, padding: "10px 12px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-          {t.waterAddGlass}
-        </button>
-        <button onClick={onUndo} disabled={waterMl <= 0} style={{ background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.dim, borderRadius: 12, padding: "10px 14px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: waterMl > 0 ? "pointer" : "default" }}>
-          {t.waterUndo}
+        <input
+          type="number"
+          inputMode="numeric"
+          value={custom}
+          onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && customOk) { onAdd(customVal); setCustom(""); } }}
+          placeholder={t.waterCustomPh}
+          style={{ ...numInputStyle, flex: 1, minWidth: 0 }}
+        />
+        <button
+          onClick={() => { if (customOk) { onAdd(customVal); setCustom(""); } }}
+          disabled={!customOk}
+          style={{ background: customOk ? COLORS.teal : COLORS.raised, color: customOk ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: customOk ? "pointer" : "default", whiteSpace: "nowrap" }}
+        >
+          {t.waterAddBtn}
         </button>
       </div>
+      {waterMl > 0 && (
+        <div style={{ textAlign: "right", marginTop: 8 }}>
+          <span onClick={onUndo} style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, cursor: "pointer", textDecoration: "underline" }}>
+            {t.waterUndo}{lastMl ? " (−" + lastMl + " ml)" : ""}
+          </span>
+        </div>
+      )}
     </Card>
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress, activeWorkout, onResumeWorkout }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress, activeWorkout, onResumeWorkout }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2246,7 +2298,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
 
       <StepsCard t={t} steps={steps} source={stepsSource} weightKg={profile.weight} goal={stepsGoal} onSaveGoal={onSaveStepsGoal} onConnect={onConnectSteps} onSaveManual={onSaveSteps} />
 
-      <WaterCard t={t} waterMl={waterMl} goalMl={profile.waterGoalMl || Math.round(((profile.weight || 70) * 35) / 250) * 250} onAdd={onAddWater} onUndo={onUndoWater} />
+      <WaterCard t={t} waterMl={waterMl} goalMl={profile.waterGoalMl || Math.round(((profile.weight || 70) * 35) / 250) * 250} lastMl={lastWaterMl} onAdd={onAddWater} onUndo={onUndoWater} onSaveGoal={onSaveWaterGoal} />
 
       <Card onClick={onOpenAssistant} style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
         <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -3293,6 +3345,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
   const [selected, setSelected] = useState(null);
   const [grams, setGrams] = useState(100);
   const [toast, setToast] = useState(null);
+  const [retryTick, setRetryTick] = useState(0);
 
   // Live text search against the backend proxy (USDA FoodData Central).
   // The category chips are hidden for now: the API has no category field,
@@ -3329,12 +3382,13 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
       clearTimeout(debounce);
       controller.abort();
     };
-  }, [query, lang]);
+  }, [query, lang, retryTick]);
 
+  const unit = selected?.unit === "ml" ? "ml" : "g";
   const scaled = selected ? scale(selected.per100, grams) : null;
 
   const confirmAdd = () => {
-    onAdd({ name: selected.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, grams });
+    onAdd({ name: selected.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, grams, unit });
     setToast(selected.name);
     setSelected(null);
     setTimeout(() => setToast(null), 1400);
@@ -3362,7 +3416,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
           {status === "loading" ? (
             <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.searchLoading}</div>
           ) : status === "error" ? (
-            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.serverError}</div>
+            <div onClick={() => setRetryTick((n) => n + 1)} style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24, cursor: "pointer" }}>{t.serverError}<div style={{ color: COLORS.gold, fontWeight: 600, marginTop: 6 }}>{t.searchRetry}</div></div>
           ) : status === "tooShort" ? (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -3401,7 +3455,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             <Card style={{ padding: 4, maxHeight: 380, overflowY: "auto" }}>
               {results.map((f, i) => (
                 <div
-                  key={f.fdcId ?? i}
+                  key={(f.fdcId ?? f.barcode ?? "") + "-" + i}
                   onClick={() => {
                     setSelected(f);
                     setGrams(100);
@@ -3411,7 +3465,8 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                   <div>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{f.name}</div>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
-                      {f.per100.kcal} kcal {t.per100g}
+                      {f.per100.kcal} kcal {f.unit === "ml" ? "/ 100 ml" : t.per100g} · P {f.per100.protein} · C {f.per100.carbs} · F {f.per100.fat}
+                      {f.brand ? " · " + String(f.brand).split(",")[0].slice(0, 24) : ""}
                     </div>
                   </div>
                   <div style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -3431,7 +3486,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             </div>
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: selected.note ? 8 : 20 }}>
-            {selected.per100.kcal} kcal {t.per100g}
+            {selected.per100.kcal} kcal {unit === "ml" ? "/ 100 ml" : t.per100g}{selected.brand ? " · " + String(selected.brand).split(",")[0] : ""}
           </div>
           {selected.note && (
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginBottom: 20, lineHeight: 1.45 }}>
@@ -3440,8 +3495,20 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
           )}
 
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 8 }}>{t.amount}</div>
-          <div style={{ marginBottom: 20 }}>
-            <Stepper value={grams} onChange={(v) => setGrams(Math.max(10, v))} step={10} suffix=" g" />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <div onClick={() => setGrams((g) => Math.max(5, Math.round(g) - 10))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <Minus size={14} color={COLORS.text} />
+            </div>
+            <input type="number" inputMode="decimal" value={grams || ""} onChange={(e) => setGrams(Math.max(0, Math.min(5000, Number(e.target.value) || 0)))} style={{ ...numInputStyle, width: 90, textAlign: "center", fontWeight: 700 }} />
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{unit}</span>
+            <div onClick={() => setGrams((g) => Math.min(5000, Math.round(g) + 10))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <Plus size={14} color={COLORS.text} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+            {[50, 100, 150, 200, 250].map((g) => (
+              <div key={g} onClick={() => setGrams(g)} style={{ flex: 1, textAlign: "center", padding: "7px 0", borderRadius: 10, fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer", background: grams === g ? COLORS.goldSoft : COLORS.raised, color: grams === g ? COLORS.gold : COLORS.dim, border: `1px solid ${grams === g ? COLORS.gold : COLORS.border}` }}>{g}</div>
+            ))}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 22 }}>
@@ -3458,7 +3525,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             ))}
           </div>
 
-          <button onClick={confirmAdd} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          <button onClick={confirmAdd} disabled={!(grams > 0)} style={{ width: "100%", opacity: grams > 0 ? 1 : 0.5, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             {t.addItem}
           </button>
         </Card>
@@ -5360,6 +5427,7 @@ export default function AsmarFitApp() {
   const [cheats, setCheats] = usePersisted("cheats", []);
   const [celebrate, setCelebrate] = useState(null);
   const [waterMl, setWaterMl] = usePersistedDaily("water", 0);
+  const [waterLog, setWaterLog] = usePersistedDaily("waterLog", []);
   const [steps, setSteps] = usePersistedDaily("steps", 0);
   const [stepsGoal, setStepsGoal] = usePersisted("stepsGoal", 10000);
   // connect = native, not authorised yet | health = auto from Health Connect
@@ -5766,8 +5834,19 @@ export default function AsmarFitApp() {
           workoutHistory={workoutHistory}
           notes={notes}
           waterMl={waterMl}
-          onAddWater={() => setWaterMl((w) => w + 250)}
-          onUndoWater={() => setWaterMl((w) => Math.max(0, w - 250))}
+          onAddWater={(ml) => {
+            const v = Math.round(Number(ml));
+            if (!(v > 0 && v <= 5000)) return;
+            setWaterMl((w) => w + v);
+            setWaterLog((l) => [...l.slice(-49), v]);
+          }}
+          onUndoWater={() => {
+            const last = waterLog.length ? waterLog[waterLog.length - 1] : 250;
+            setWaterMl((w) => Math.max(0, w - last));
+            setWaterLog((l) => l.slice(0, -1));
+          }}
+          lastWaterMl={waterLog.length ? waterLog[waterLog.length - 1] : 250}
+          onSaveWaterGoal={(ml) => setProfile((p) => ({ ...p, waterGoalMl: ml }))}
           onOpenAssistant={() => setOverlay("assistant")}
           steps={steps}
           stepsSource={stepsSource}

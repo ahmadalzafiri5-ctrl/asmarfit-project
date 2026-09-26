@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import NodeCache from "node-cache";
+import { searchBasics, fold, tokensOf } from "./basics.js";
 
 dotenv.config();
 
@@ -107,12 +108,16 @@ function normalizeUsdaFood(food) {
  * the same shape. `isSupplement` is true when the product's category tags mark
  * it as a protein/sports supplement, so the frontend can highlight it later.
  */
+function decodeEntities(str) {
+  return String(str).replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#0?39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+}
+
 function normalizeOffProduct(product) {
   const n = product.nutriments || {};
   return {
     source: "openfoodfacts",
     barcode: product.code,
-    name: product.product_name || product.generic_name || "Unknown product",
+    name: decodeEntities(product.product_name || product.generic_name || "Unknown product"),
     // `brands` is a comma string on the barcode API but an array on the search API.
     brand: Array.isArray(product.brands) ? product.brands.join(", ") || null : product.brands || null,
     imageUrl: product.image_front_small_url || product.image_url || null,
@@ -128,54 +133,103 @@ function normalizeOffProduct(product) {
   };
 }
 
+/** ALL-CAPS branded names ("BANANA") → "Banana", so they read like the rest. */
+function prettyName(name) {
+  const n = String(name || "").trim();
+  return n && n === n.toUpperCase() && /[A-Z]/.test(n) ? n.toLowerCase().replace(/(^|[\s(\/-])([a-z])/g, (m, p, c) => p + c.toUpperCase()) : n;
+}
+
 /**
- * USDA FoodData Central text search. Resolves to { results, error } instead of
- * throwing, so one source being down doesn't take the whole endpoint with it.
+ * One USDA request. Resolves to { results, error }. The USDA gateway sporadically
+ * answers 400/5xx for perfectly valid queries, so a failed request is retried once.
+ */
+async function usdaRequest(query, dataType, pageSize) {
+  const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
+  url.searchParams.set("query", query);
+  url.searchParams.set("api_key", USDA_API_KEY);
+  url.searchParams.set("pageSize", String(pageSize));
+  url.searchParams.set("dataType", dataType);
+  let lastError = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(12_000) });
+      if (r.ok) {
+        const data = await r.json();
+        return { results: (data.foods || []).map(normalizeUsdaFood), error: null };
+      }
+      lastError = "USDA API returned " + r.status;
+    } catch (err) {
+      console.error("USDA search failed:", err.message);
+      lastError = "Failed to reach USDA FoodData Central";
+    }
+  }
+  return { results: [], error: lastError };
+}
+
+/**
+ * USDA FoodData Central text search: curated data (Foundation + SR Legacy) first,
+ * branded products second. Two separate requests so branded noise can never push the
+ * clean entries out of the page.
  */
 async function searchUsda(query) {
-  try {
-    const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
-    url.searchParams.set("query", query);
-    url.searchParams.set("api_key", USDA_API_KEY);
-    url.searchParams.set("pageSize", "20");
-    // Prefer well-curated data first; branded foods still show up further down.
-    url.searchParams.set("dataType", "Foundation,SR Legacy,Survey (FNDDS),Branded");
-
-    const r = await fetch(url);
-    if (!r.ok) return { results: [], error: `USDA API returned ${r.status}` };
-    const data = await r.json();
-    return { results: (data.foods || []).map(normalizeUsdaFood), error: null };
-  } catch (err) {
-    console.error("USDA search failed:", err.message);
-    return { results: [], error: "Failed to reach USDA FoodData Central" };
-  }
+  const [curated, branded] = await Promise.all([
+    usdaRequest(query, "Foundation,SR Legacy", 15),
+    usdaRequest(query, "Branded", 12),
+  ]);
+  const clean = (list) =>
+    list
+      .map((f) => ({ ...f, name: prettyName(f.name) }))
+      .filter((f) => f.name && f.per100.kcal > 0 && f.per100.kcal <= 950);
+  return {
+    results: [...clean(curated.results), ...clean(branded.results)],
+    error: curated.results.length + branded.results.length === 0 ? curated.error || branded.error : null,
+  };
 }
 
 /**
  * Open Food Facts text search via the dedicated search service
  * (search.openfoodfacts.org). Good coverage of branded products and supplements
- * that USDA lacks, and far more tolerant of load than the legacy CGI endpoint.
- * Same { results, error } contract.
+ * that USDA lacks. Results are re-ranked (name matches the query first) because the
+ * raw relevance order is noisy for short words. Same { results, error } contract.
  */
-async function searchOpenFoodFacts(query) {
+async function searchOpenFoodFacts(query, lang) {
   try {
     const url = new URL("https://search.openfoodfacts.org/search");
     url.searchParams.set("q", query);
-    url.searchParams.set("page_size", "24");
+    if (lang === "de") url.searchParams.set("langs", "de");
+    url.searchParams.set("page_size", "50");
     url.searchParams.set(
       "fields",
       "code,product_name,generic_name,brands,nutriments,categories_tags,categories,nutrition_grades,image_front_small_url,image_url"
     );
 
-    const r = await fetch(url, { headers: { "User-Agent": OFF_USER_AGENT } });
-    if (!r.ok) return { results: [], error: `Open Food Facts returned ${r.status}` };
+    const r = await fetch(url, { headers: { "User-Agent": OFF_USER_AGENT }, signal: AbortSignal.timeout(12_000) });
+    if (!r.ok) return { results: [], error: "Open Food Facts returned " + r.status };
     const data = await r.json();
-    const results = (data.hits || [])
+    const tokens = tokensOf(query);
+    const scored = (data.hits || [])
       .map(normalizeOffProduct)
-      // Free-text OFF results include entries with no usable name or no nutrition
-      // data at all — drop those so the list stays useful (name + kcal).
-      .filter((p) => p.name && p.name !== "Unknown product" && p.per100.kcal > 0);
-    return { results, error: null };
+      // Drop entries with no usable name / nutrition, and impossible outliers
+      // (no food has more than ~900 kcal per 100 g).
+      .filter((p) => p.name && p.name !== "Unknown product" && p.name.trim().length > 2 && p.per100.kcal > 0 && p.per100.kcal <= 950)
+      .map((p, i) => {
+        const words = tokensOf(p.name);
+        const nameFold = words.join(" ");
+        const allInName = tokens.every((t) => words.some((w) => w.startsWith(t)));
+        const brandHit = tokens.every((t) => fold(p.brand || "").includes(t));
+        let rank = 4;
+        if (nameFold === tokens.join(" ")) rank = 0;
+        else if (allInName && words[0]?.startsWith(tokens[0])) rank = 1;
+        else if (allInName) rank = 2;
+        else if (brandHit) rank = 3;
+        return { p, rank, i };
+      })
+      .sort((a, b) => a.rank - b.rank || a.i - b.i);
+    // Keep only genuine matches when there are enough of them; otherwise fall back to
+    // the raw list so odd spellings still return something.
+    const genuine = scored.filter((x) => x.rank < 4);
+    const use = genuine.length >= 5 ? genuine : scored;
+    return { results: use.map((x) => x.p), error: null };
   } catch (err) {
     console.error("Open Food Facts search failed:", err.message);
     return { results: [], error: "Failed to reach Open Food Facts" };
@@ -183,18 +237,20 @@ async function searchOpenFoodFacts(query) {
 }
 
 /**
- * Merges the two sources: USDA first (curated basics), then Open Food Facts
- * (branded products & supplements), de-duplicated on name + brand, capped so
- * the response stays a reasonable size.
+ * Merges the sources in priority order (curated basics, USDA, Open Food Facts),
+ * de-duplicated on name + brand and on name + kcal (OFF is full of near-identical
+ * copies), capped so the response stays a reasonable size.
  */
-function mergeSearchResults(usdaResults, offResults) {
+function mergeSearchResults(...lists) {
   const seen = new Set();
-  const keyOf = (r) => `${(r.name || "").toLowerCase().trim()}|${(r.brand || "").toLowerCase().trim()}`;
+  const seenKcal = new Set();
   const merged = [];
-  for (const item of [...usdaResults, ...offResults]) {
-    const key = keyOf(item);
-    if (seen.has(key)) continue;
+  for (const item of lists.flat()) {
+    const key = (item.name || "").toLowerCase().trim() + "|" + (item.brand || "").toLowerCase().trim();
+    const key2 = (item.name || "").toLowerCase().trim() + "|" + item.per100.kcal;
+    if (seen.has(key) || seenKcal.has(key2)) continue;
     seen.add(key);
+    seenKcal.add(key2);
     merged.push(item);
   }
   return merged.slice(0, 40);
@@ -203,38 +259,35 @@ function mergeSearchResults(usdaResults, offResults) {
 /* ---------- GET /api/food/search?q=banana&lang=de ---------- */
 app.get("/api/food/search", async (req, res) => {
   const query = (req.query.q || "").trim();
-  // Language of the app UI (DE/EN toggle), not the query's own language.
-  // Picks the search source entirely: USDA's names are always English (even
-  // translating the search term doesn't help — the *results* are still
-  // English, e.g. branded items literally named "EGGS"), while Open Food
-  // Facts actually has German-language products. Mixing the two under a
-  // German UI produced English/German results side by side, which read as
-  // broken — so each language now uses exactly one source instead of both.
+  // Language of the app UI (DE/EN toggle). German results come from the curated list
+  // plus Open Food Facts (real German products). English results come from the curated
+  // list plus USDA (Open Food Facts fills in when USDA has too little / is unavailable).
   const lang = req.query.lang === "de" ? "de" : "en";
   if (!query) return res.status(400).json({ error: "Missing ?q= search term" });
-  const cacheKey = `search:${lang}:${query.toLowerCase()}`;
+  const cacheKey = "search2:" + lang + ":" + query.toLowerCase();
   const cached = cache.get(cacheKey);
   if (cached) return res.json({ cached: true, results: cached });
 
-  // German always uses Open Food Facts. English uses USDA — but if this server has
-  // no USDA key yet, fall back to Open Food Facts instead of failing every search.
-  const useUsda = lang === "en" && Boolean(USDA_API_KEY);
-  const [usda, off] = useUsda
-    ? [await searchUsda(query), { results: [], error: null }]
-    : [{ results: [], error: null }, await searchOpenFoodFacts(query)];
+  const basics = searchBasics(query, lang);
+  let usda = { results: [], error: null };
+  let off = { results: [], error: null };
+  if (lang === "en" && USDA_API_KEY) {
+    usda = await searchUsda(query);
+    if (usda.results.length < 8) off = await searchOpenFoodFacts(query, lang);
+  } else {
+    off = await searchOpenFoodFacts(query, lang);
+  }
 
-  const results = mergeSearchResults(usda.results, off.results);
+  const results = mergeSearchResults(basics, usda.results, off.results);
 
-  // Only fail (and skip caching) when there's nothing to show AND a source
-  // actually errored — never when a source came back genuinely empty, and
-  // never just because OFF was intentionally skipped for lang=en (its
-  // `error` is null in that case, not truthy, so this only fires on a real
-  // failure).
+  // Only fail (and skip caching) when there's nothing to show AND a source actually
+  // errored — never when a source came back genuinely empty.
   if (results.length === 0 && (usda.error || off.error)) {
     return res.status(502).json({ error: usda.error || off.error });
   }
 
-  cache.set(cacheKey, results);
+  // Don't cache partial results caused by a failing source, so the next try can recover.
+  if (!usda.error && !off.error) cache.set(cacheKey, results);
   res.json({ cached: false, results });
 });
 
