@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, Children, cloneElement } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
@@ -44,6 +44,15 @@ import {
   Send,
   GlassWater,
   Footprints,
+  User,
+  Target,
+  Palette,
+  Shield,
+  HelpCircle,
+  Info,
+  Share2,
+  Database,
+  ChevronDown,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -467,6 +476,57 @@ const STR = {
     progressAddAnother: "Add another photo",
     progressPhotoError: "This photo couldn't be loaded. Try a different one.",
     progressTapAgainDelete: "Tap again to delete",
+    setGroupAccount: "Account",
+    setGroupApp: "App",
+    setGroupData: "Data & privacy",
+    setGroupHelp: "Help & info",
+    setProfileRow: "Edit profile",
+    setGoalsRow: "My goals",
+    setDisplayRow: "Appearance & language",
+    setDataRow: "Backup & delete data",
+    setHelpRow: "Help & FAQ",
+    setShareRow: "Recommend ASFIT",
+    setAboutRow: "About ASFIT",
+    setName: "Name",
+    setGender: "Gender",
+    setBirth: "Birthday",
+    setHeight: "Height (cm)",
+    setSavedMsg: "Saved",
+    setGoalType: "Goal",
+    setTargetWeight: "Target weight (kg)",
+    setTargetDate: "Target date",
+    setKcal: "Calorie goal",
+    setKcalAuto: "Automatic",
+    setKcalManual: "Manual",
+    setKcalHint: "Calculated from your body data, goal and target date.",
+    setKcalManualHint: "Your own daily calorie goal (kcal).",
+    setMacros: "Macro split",
+    setSplitBalanced: "Balanced 30/40/30",
+    setSplitProtein: "High protein 40/30/30",
+    setSplitLowcarb: "Low carb 35/25/40",
+    setMacroOrder: "Protein / Carbs / Fat in %",
+    setStepsGoalLabel: "Step goal",
+    setWaterGoal: "Water goal (ml)",
+    setWaterDefault: "Default for your weight:",
+    remTime: "Time",
+    remNoteWeb: "Reminders work in the installed Android app.",
+    remNoteNative: "You get a notification every day at the chosen time.",
+    remFoodBody: "Time to log your meals 🍽️",
+    remWeighBody: "Step on the scale and log your weight ⚖️",
+    remTrainBody: "Time for your workout 💪",
+    setAskAi: "Ask the AI assistant",
+    setFaqTitle: "Frequently asked questions",
+    setFaq: [{"q":"How do I log food?","a":"Open the Nutrition tab and tap the search bar. Search for a food, scan a barcode or use the AI photo scan. Pick the amount and tap Add."},{"q":"How does the AI photo scan work?","a":"Take or choose a photo of your meal. The AI estimates ingredients, calories and macros. You can edit names and amounts before logging — it is an estimate and can be off."},{"q":"How are my calories calculated?","a":"From your age, height, weight and gender (Mifflin-St Jeor) times an activity factor, adjusted for your goal and target date. You can set your own goal under Settings → My goals."},{"q":"Where is my data stored?","a":"On your device. Use Settings → Backup & delete data to save a backup file, so nothing is lost if you reinstall the app."},{"q":"How do workouts work?","a":"Start a workout in the Training tab. It keeps running — even if you close the app — until you finish or discard it."},{"q":"What are records and challenges?","a":"Training → Records shows your best lifts automatically. You can also create your own challenge, like a 5 km run, and set a reward for beating it."},{"q":"Why is the first search or AI answer slow?","a":"The free server goes to sleep when unused and needs up to a minute to wake up. After that it is fast again."},{"q":"How do I connect a smartwatch or other health apps?","a":"Settings → Connections & health apps. Turn on syncing with Health Connect in your watch or fitness app, then connect ASFIT there."}],
+    setAboutVersion: "Version",
+    setAboutData: "Data sources",
+    setAboutDataText: "Nutrition data: USDA FoodData Central and Open Food Facts (© Open Food Facts contributors, ODbL).",
+    setAboutAi: "AI",
+    setAboutAiText: "Assistant, photo scan and recipes are powered by Claude from Anthropic. Recipe images are AI illustrations.",
+    setAboutDisclaimer: "Please note",
+    setAboutDisclaimerText: "ASFIT does not give medical advice. Calorie and nutrient values are estimates. Talk to a doctor before big changes to your diet or training.",
+    setShareText: "I track my training and nutrition with ASFIT:",
+    setShareCopied: "Link copied",
+    setDataIntro: "Your data lives on this device. Save a backup regularly.",
     recipesTitle: "Recipes",
     recipesButton: "Browse recipes",
     ingredients: "Ingredients",
@@ -878,6 +938,57 @@ const STR = {
     progressAddAnother: "Weiteres Foto hinzufügen",
     progressPhotoError: "Dieses Foto konnte nicht geladen werden. Probiere ein anderes.",
     progressTapAgainDelete: "Nochmal tippen zum Löschen",
+    setGroupAccount: "Konto",
+    setGroupApp: "App",
+    setGroupData: "Daten & Datenschutz",
+    setGroupHelp: "Hilfe & Info",
+    setProfileRow: "Profil bearbeiten",
+    setGoalsRow: "Meine Ziele",
+    setDisplayRow: "Darstellung & Sprache",
+    setDataRow: "Daten sichern & löschen",
+    setHelpRow: "Hilfe & FAQ",
+    setShareRow: "ASFIT weiterempfehlen",
+    setAboutRow: "Über ASFIT",
+    setName: "Name",
+    setGender: "Geschlecht",
+    setBirth: "Geburtstag",
+    setHeight: "Größe (cm)",
+    setSavedMsg: "Gespeichert",
+    setGoalType: "Ziel",
+    setTargetWeight: "Zielgewicht (kg)",
+    setTargetDate: "Zieldatum",
+    setKcal: "Kalorienziel",
+    setKcalAuto: "Automatisch",
+    setKcalManual: "Manuell",
+    setKcalHint: "Berechnet aus deinen Körperdaten, deinem Ziel und dem Zieldatum.",
+    setKcalManualHint: "Dein eigenes Tagesziel (kcal).",
+    setMacros: "Makro-Verteilung",
+    setSplitBalanced: "Ausgewogen 30/40/30",
+    setSplitProtein: "Eiweißreich 40/30/30",
+    setSplitLowcarb: "Low Carb 35/25/40",
+    setMacroOrder: "Eiweiß / Kohlenhydrate / Fett in %",
+    setStepsGoalLabel: "Schritteziel",
+    setWaterGoal: "Wasserziel (ml)",
+    setWaterDefault: "Standard für dein Gewicht:",
+    remTime: "Uhrzeit",
+    remNoteWeb: "Erinnerungen funktionieren in der installierten Android-App.",
+    remNoteNative: "Du bekommst täglich zur gewählten Uhrzeit eine Benachrichtigung.",
+    remFoodBody: "Zeit, dein Essen einzutragen 🍽️",
+    remWeighBody: "Wiege dich und trage dein Gewicht ein ⚖️",
+    remTrainBody: "Zeit fürs Training 💪",
+    setAskAi: "KI-Assistenten fragen",
+    setFaqTitle: "Häufige Fragen",
+    setFaq: [{"q":"Wie logge ich Essen?","a":"Öffne den Tab Ernährung und tippe auf die Suchleiste. Suche ein Lebensmittel, scanne einen Barcode oder nutze den KI-Foto-Scan. Menge wählen und auf Hinzufügen tippen."},{"q":"Wie funktioniert der KI-Foto-Scan?","a":"Mach ein Foto deiner Mahlzeit oder wähle eins aus. Die KI schätzt Zutaten, Kalorien und Makros. Namen und Mengen kannst du vor dem Loggen ändern — es ist eine Schätzung und kann abweichen."},{"q":"Wie werden meine Kalorien berechnet?","a":"Aus Alter, Größe, Gewicht und Geschlecht (Mifflin-St Jeor) mal einem Aktivitätsfaktor, angepasst an dein Ziel und Zieldatum. Ein eigenes Ziel legst du unter Einstellungen → Meine Ziele fest."},{"q":"Wo werden meine Daten gespeichert?","a":"Auf deinem Gerät. Unter Einstellungen → Daten sichern & löschen speicherst du eine Sicherungsdatei, damit nichts verloren geht, wenn du die App neu installierst."},{"q":"Wie funktionieren Workouts?","a":"Starte ein Workout im Tab Training. Es läuft weiter — auch wenn du die App schließt — bis du es beendest oder verwirfst."},{"q":"Was sind Rekorde und Herausforderungen?","a":"Unter Training → Rekorde siehst du deine Bestleistungen automatisch. Du kannst auch eigene Herausforderungen anlegen, z. B. einen 5-km-Lauf, und eine Belohnung festlegen."},{"q":"Warum dauert die erste Suche oder KI-Antwort lange?","a":"Der kostenlose Server schläft, wenn ihn niemand nutzt, und braucht bis zu einer Minute zum Aufwachen. Danach ist er wieder schnell."},{"q":"Wie verbinde ich meine Smartwatch oder andere Gesundheits-Apps?","a":"Einstellungen → Verbindungen & Gesundheits-Apps. Schalte in deiner Uhr- oder Fitness-App die Synchronisierung mit Health Connect ein und verbinde dann ASFIT dort."}],
+    setAboutVersion: "Version",
+    setAboutData: "Datenquellen",
+    setAboutDataText: "Nährwerte: USDA FoodData Central und Open Food Facts (© Open-Food-Facts-Mitwirkende, ODbL).",
+    setAboutAi: "KI",
+    setAboutAiText: "Assistent, Foto-Scan und Rezepte laufen mit Claude von Anthropic. Rezeptbilder sind KI-Illustrationen.",
+    setAboutDisclaimer: "Hinweis",
+    setAboutDisclaimerText: "ASFIT gibt keine medizinische Beratung. Kalorien- und Nährwertangaben sind Schätzwerte. Sprich vor größeren Änderungen bei Ernährung oder Training mit einer Ärztin oder einem Arzt.",
+    setShareText: "Ich tracke mein Training und meine Ernährung mit ASFIT:",
+    setShareCopied: "Link kopiert",
+    setDataIntro: "Deine Daten liegen auf diesem Gerät. Sichere sie regelmäßig.",
     recipesTitle: "Rezepte",
     recipesButton: "Rezepte durchstöbern",
     ingredients: "Zutaten",
@@ -1433,11 +1544,13 @@ function scale(per100, grams) {
 // Simple standard macro split (30% protein / 40% carbs / 30% fat) derived
 // from the user's own kcal goal — not fake, just a deterministic default
 // until the app offers a way to fine-tune macro targets individually.
-function computeMacroTargets(kcalGoal) {
+const MACRO_SPLITS = { balanced: [0.3, 0.4, 0.3], protein: [0.4, 0.3, 0.3], lowcarb: [0.35, 0.25, 0.4] };
+function computeMacroTargets(kcalGoal, split = "balanced") {
+  const [p, c, f] = MACRO_SPLITS[split] || MACRO_SPLITS.balanced;
   return {
-    protein: Math.round((kcalGoal * 0.3) / 4),
-    carbs: Math.round((kcalGoal * 0.4) / 4),
-    fat: Math.round((kcalGoal * 0.3) / 9),
+    protein: Math.round((kcalGoal * p) / 4),
+    carbs: Math.round((kcalGoal * c) / 4),
+    fat: Math.round((kcalGoal * f) / 9),
   };
 }
 
@@ -2137,7 +2250,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
 
       <StepsCard t={t} steps={steps} source={stepsSource} weightKg={profile.weight} goal={stepsGoal} onSaveGoal={onSaveStepsGoal} onConnect={onConnectSteps} onSaveManual={onSaveSteps} />
 
-      <WaterCard t={t} waterMl={waterMl} goalMl={Math.round(((profile.weight || 70) * 35) / 250) * 250} onAdd={onAddWater} onUndo={onUndoWater} />
+      <WaterCard t={t} waterMl={waterMl} goalMl={profile.waterGoalMl || Math.round(((profile.weight || 70) * 35) / 250) * 250} onAdd={onAddWater} onUndo={onUndoWater} />
 
       <Card onClick={onOpenAssistant} style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
         <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -4805,7 +4918,270 @@ function ConnectionsScreen({ t, info, native, onConnect }) {
   );
 }
 
-function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setReminders, profile, display, onReplayOnboarding, onOpenPrivacy, onOpenAssistant, onOpenConnections }) {
+function SettingsGroup({ title, children }) {
+  const kids = Children.toArray(children);
+  return (
+    <div style={{ marginBottom: 22 }}>
+      {title && <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: COLORS.dim, textTransform: "uppercase", letterSpacing: 0.8, margin: "0 6px 8px" }}>{title}</div>}
+      <Card style={{ padding: 0, overflow: "hidden" }}>{kids.map((k, i) => cloneElement(k, { first: i === 0 }))}</Card>
+    </div>
+  );
+}
+
+function SettingsRow({ icon: Icon, tint = "gold", label, sub, onClick, right, first }) {
+  const bg = tint === "coral" ? COLORS.coralSoft : tint === "dim" ? COLORS.raised : COLORS.goldSoft;
+  const fg = tint === "coral" ? COLORS.coral : tint === "dim" ? COLORS.dim : COLORS.gold;
+  return (
+    <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: onClick ? "pointer" : "default", borderTop: first ? "none" : "1px solid " + COLORS.border }}>
+      <div style={{ width: 34, height: 34, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon size={17} color={fg} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14.5, color: COLORS.text }}>{label}</div>
+        {sub && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{sub}</div>}
+      </div>
+      {right}
+      {onClick && !right && <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />}
+    </div>
+  );
+}
+
+function SettingsLabel({ children }) {
+  return <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, margin: "16px 0 8px" }}>{children}</div>;
+}
+
+function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
+  const remOn = Object.values(reminders).filter(Boolean).length;
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <Card onClick={() => onNav("settingsProfile")} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22, cursor: "pointer" }}>
+        <div style={{ width: 54, height: 54, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16.5, fontWeight: 700, color: COLORS.text }}>{profile.name}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{profile.weight} kg · {profile.height} cm · {profile.kcalGoal} kcal</div>
+        </div>
+        <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+      </Card>
+
+      <SettingsGroup title={t.setGroupAccount}>
+        <SettingsRow icon={User} label={t.setProfileRow} onClick={() => onNav("settingsProfile")} />
+        <SettingsRow icon={Target} label={t.setGoalsRow} sub={profile.kcalGoal + " kcal"} onClick={() => onNav("settingsGoals")} />
+      </SettingsGroup>
+
+      <SettingsGroup title={t.setGroupApp}>
+        <SettingsRow icon={Palette} label={t.setDisplayRow} onClick={() => onNav("settingsDisplay")} />
+        <SettingsRow icon={Bell} label={t.reminders} sub={remOn + " / 3"} onClick={() => onNav("settingsReminders")} />
+        <SettingsRow icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
+      </SettingsGroup>
+
+      <SettingsGroup title={t.setGroupData}>
+        <SettingsRow icon={Database} label={t.setDataRow} onClick={() => onNav("settingsData")} />
+        <SettingsRow icon={Shield} label={t.settingsPrivacy} onClick={() => onNav("privacy")} />
+      </SettingsGroup>
+
+      <SettingsGroup title={t.setGroupHelp}>
+        <SettingsRow icon={HelpCircle} label={t.setHelpRow} onClick={() => onNav("settingsHelp")} />
+        <SettingsRow icon={MessageCircle} label={t.settingsSupport} onClick={() => onNav("assistant")} />
+        <SettingsRow icon={Share2} label={t.setShareRow} sub={shareMsg} onClick={onShare} />
+        <SettingsRow icon={Info} label={t.setAboutRow} onClick={() => onNav("settingsAbout")} />
+      </SettingsGroup>
+
+      <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>
+    </div>
+  );
+}
+
+function ProfileSettings({ t, profile, onSave }) {
+  const [name, setName] = useState(profile.name || "");
+  const [gender, setGender] = useState(profile.gender || "male");
+  const [birth, setBirth] = useState(profile.birth || { d: "1", m: "1", y: "2000" });
+  const [height, setHeight] = useState(String(profile.height || ""));
+  const [saved, setSaved] = useState(false);
+  const canSave = name.trim() && Number(height) > 100 && Number(height) < 250;
+  const save = () => {
+    if (!canSave) return;
+    onSave({ name: name.trim(), gender, birth, height: Number(height) });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <SettingsLabel>{t.setName}</SettingsLabel>
+      <TextField value={name} onChange={setName} placeholder={t.setName} />
+      <SettingsLabel>{t.setGender}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Chip label={t.obGenderFemale} active={gender === "female"} onClick={() => setGender("female")} />
+        <Chip label={t.obGenderMale} active={gender === "male"} onClick={() => setGender("male")} />
+        <Chip label={t.obGenderDiverse} active={gender === "diverse"} onClick={() => setGender("diverse")} />
+      </div>
+      <SettingsLabel>{t.setBirth}</SettingsLabel>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.7fr 1.2fr", gap: 10 }}>
+        {[
+          { key: "d", options: Array.from({ length: 31 }, (_, i) => ({ v: i + 1, l: i + 1 })) },
+          { key: "m", options: t.months.map((l, i) => ({ v: i + 1, l })) },
+          { key: "y", options: Array.from({ length: 90 }, (_, i) => new Date().getFullYear() - 10 - i).map((v) => ({ v, l: v })) },
+        ].map((f) => (
+          <select key={f.key} value={birth[f.key]} onChange={(e) => setBirth((b) => ({ ...b, [f.key]: e.target.value }))} style={{ ...numInputStyle, padding: "12px 8px" }}>
+            {f.options.map((o) => (
+              <option key={o.v} value={o.v}>{o.l}</option>
+            ))}
+          </select>
+        ))}
+      </div>
+      <SettingsLabel>{t.setHeight}</SettingsLabel>
+      <input type="number" inputMode="numeric" value={height} onChange={(e) => setHeight(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+      <button onClick={save} disabled={!canSave} style={{ width: "100%", marginTop: 22, background: canSave ? COLORS.gold : COLORS.raised, color: canSave ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: canSave ? "pointer" : "default" }}>
+        {saved ? t.setSavedMsg : t.stepsSave}
+      </button>
+    </div>
+  );
+}
+
+function GoalsSettings({ t, profile, stepsGoal, onSave }) {
+  const [goal, setGoal] = useState(profile.goal || "maintain");
+  const [target, setTarget] = useState(String(profile.target || profile.weight || ""));
+  const [targetDate, setTargetDate] = useState(profile.targetDate || new Date(Date.now() + 84 * 86400000).toISOString().slice(0, 10));
+  const [manual, setManual] = useState(!!profile.kcalManual);
+  const [kcalInput, setKcalInput] = useState(String(profile.kcalGoal || 2000));
+  const [split, setSplit] = useState(profile.macroSplit || "balanced");
+  const [steps, setSteps] = useState(String(stepsGoal));
+  const defaultWater = Math.round(((profile.weight || 70) * 35) / 250) * 250;
+  const [water, setWater] = useState(String(profile.waterGoalMl || defaultWater));
+  const [saved, setSaved] = useState(false);
+  const auto = computeKcalGoal({ gender: profile.gender, age: profile.age || ageFromBirth(profile.birth || { d: 1, m: 1, y: 2000 }), height: profile.height, weight: profile.weight, target: Number(target), goal, targetDate });
+  const kcal = manual ? Math.round(Number(kcalInput)) : auto;
+  const valid = kcal >= 800 && kcal <= 6000 && Number(steps) >= 500 && Number(water) >= 500;
+  const macros = computeMacroTargets(kcal || 0, split);
+  const save = () => {
+    if (!valid) return;
+    onSave(
+      { goal, target: Number(target), targetDate, kcalManual: manual, kcalGoal: kcal, macroSplit: split, macroTargets: computeMacroTargets(kcal, split), waterGoalMl: Number(water) === defaultWater ? null : Number(water) },
+      Math.round(Number(steps))
+    );
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+  const goals = [
+    { key: "cut", label: t.obGoalCut },
+    { key: "maintain", label: t.obGoalMaintain },
+    { key: "gain", label: t.obGoalGain },
+    { key: "bulk", label: t.obGoalBulk },
+  ];
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <SettingsLabel>{t.setGoalType}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {goals.map((g) => (
+          <Chip key={g.key} label={g.label} active={goal === g.key} onClick={() => setGoal(g.key)} />
+        ))}
+      </div>
+      <SettingsLabel>{t.setTargetWeight}</SettingsLabel>
+      <input type="number" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+      <SettingsLabel>{t.setTargetDate}</SettingsLabel>
+      <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+
+      <SettingsLabel>{t.setKcal}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        <Chip label={t.setKcalAuto} active={!manual} onClick={() => setManual(false)} />
+        <Chip label={t.setKcalManual} active={manual} onClick={() => setManual(true)} />
+      </div>
+      {manual ? (
+        <input type="number" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+      ) : (
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, color: COLORS.text }}>{auto} <span style={{ fontSize: 13, color: COLORS.dim, fontWeight: 500 }}>kcal</span></div>
+      )}
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 6 }}>{manual ? t.setKcalManualHint : t.setKcalHint}</div>
+
+      <SettingsLabel>{t.setMacros}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Chip label={t.setSplitBalanced} active={split === "balanced"} onClick={() => setSplit("balanced")} />
+        <Chip label={t.setSplitProtein} active={split === "protein"} onClick={() => setSplit("protein")} />
+        <Chip label={t.setSplitLowcarb} active={split === "lowcarb"} onClick={() => setSplit("lowcarb")} />
+      </div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 8 }}>
+        {t.protein} {macros.protein} g · {t.carbs} {macros.carbs} g · {t.fat} {macros.fat} g
+      </div>
+
+      <SettingsLabel>{t.setStepsGoalLabel}</SettingsLabel>
+      <input type="number" inputMode="numeric" value={steps} onChange={(e) => setSteps(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+      <SettingsLabel>{t.setWaterGoal}</SettingsLabel>
+      <input type="number" inputMode="numeric" value={water} onChange={(e) => setWater(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 6 }}>{t.setWaterDefault} {defaultWater} ml</div>
+
+      <button onClick={save} disabled={!valid} style={{ width: "100%", marginTop: 24, background: valid ? COLORS.gold : COLORS.raised, color: valid ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: valid ? "pointer" : "default" }}>
+        {saved ? t.setSavedMsg : t.stepsSave}
+      </button>
+    </div>
+  );
+}
+
+function DisplaySettings({ t, lang, setLang, display }) {
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <SettingsLabel>{t.setAppearance}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8 }}>
+        <Chip label={t.setLight} active={display.appearance === "light"} onClick={() => display.setAppearance("light")} />
+        <Chip label={t.setDark} active={display.appearance === "dark"} onClick={() => display.setAppearance("dark")} />
+        <Chip label={t.setSystem} active={display.appearance === "system"} onClick={() => display.setAppearance("system")} />
+      </div>
+      <SettingsLabel>{t.setColorTheme}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Chip label={t.setThemeAuto} active={display.colorTheme === "auto"} onClick={() => display.setColorTheme("auto")} />
+        <Chip label={t.setThemeNeutral} active={display.colorTheme === "neutral"} onClick={() => display.setColorTheme("neutral")} />
+        <Chip label={t.setThemeFemale} active={display.colorTheme === "female"} onClick={() => display.setColorTheme("female")} />
+        <Chip label={t.setThemeMale} active={display.colorTheme === "male"} onClick={() => display.setColorTheme("male")} />
+        <Chip label={t.setThemeDiverse} active={display.colorTheme === "diverse"} onClick={() => display.setColorTheme("diverse")} />
+      </div>
+      <SettingsLabel>{t.setTextSize}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8 }}>
+        <Chip label={t.setSmall} active={display.textSize === "s"} onClick={() => display.setTextSize("s")} />
+        <Chip label={t.setNormal} active={display.textSize === "m"} onClick={() => display.setTextSize("m")} />
+        <Chip label={t.setLarge} active={display.textSize === "l"} onClick={() => display.setTextSize("l")} />
+      </div>
+      <SettingsLabel>{t.language}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8 }}>
+        <Chip label="Deutsch" active={lang === "de"} onClick={() => setLang("de")} />
+        <Chip label="English" active={lang === "en"} onClick={() => setLang("en")} />
+      </div>
+    </div>
+  );
+}
+
+function RemindersSettings({ t, reminders, setReminders, times, setTimes, native }) {
+  const rows = [
+    { key: "food", label: t.remFood, icon: UtensilsCrossed },
+    { key: "weigh", label: t.remWeigh, icon: TrendingUp },
+    { key: "train", label: t.remTrain, icon: Dumbbell },
+  ];
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "0 2px 14px", lineHeight: 1.5 }}>{native ? t.remNoteNative : t.remNoteWeb}</div>
+      <Card style={{ padding: 0, overflow: "hidden" }}>
+        {rows.map((r, i) => (
+          <div key={r.key} style={{ padding: "13px 14px", borderTop: i === 0 ? "none" : "1px solid " + COLORS.border }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <r.icon size={16} color={COLORS.dim} />
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14.5, color: COLORS.text }}>{r.label}</span>
+              </div>
+              <Switch checked={!!reminders[r.key]} onChange={(v) => setReminders({ ...reminders, [r.key]: v })} />
+            </div>
+            {reminders[r.key] && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.remTime}</span>
+                <input type="time" value={times[r.key]} onChange={(e) => e.target.value && setTimes({ ...times, [r.key]: e.target.value })} style={{ ...numInputStyle, width: 120 }} />
+              </div>
+            )}
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+function DataSettings({ t, onReplayOnboarding }) {
   const [confirmingDanger, setConfirmingDanger] = useState(false);
   useEffect(() => {
     if (!confirmingDanger) return undefined;
@@ -4813,93 +5189,17 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
     return () => clearTimeout(id);
   }, [confirmingDanger]);
   return (
-    <div style={{ padding: "0 20px 24px" }}>
-      <Card style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-        <div style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
-        </div>
-        <div>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{profile.name}</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{profile.weight} kg · {profile.height} cm</div>
-        </div>
+    <div style={{ padding: "0 20px 28px" }}>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "0 2px 14px", lineHeight: 1.5 }}>{t.setDataIntro}</div>
+      <Card style={{ marginBottom: 18 }}>
+        <BackupCard t={t} />
       </Card>
-
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.setAppearance}</div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-        <Chip label={t.setLight} active={display.appearance === "light"} onClick={() => display.setAppearance("light")} />
-        <Chip label={t.setDark} active={display.appearance === "dark"} onClick={() => display.setAppearance("dark")} />
-        <Chip label={t.setSystem} active={display.appearance === "system"} onClick={() => display.setAppearance("system")} />
-      </div>
-
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.setColorTheme}</div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
-        <Chip label={t.setThemeAuto} active={display.colorTheme === "auto"} onClick={() => display.setColorTheme("auto")} />
-        <Chip label={t.setThemeNeutral} active={display.colorTheme === "neutral"} onClick={() => display.setColorTheme("neutral")} />
-        <Chip label={t.setThemeFemale} active={display.colorTheme === "female"} onClick={() => display.setColorTheme("female")} />
-        <Chip label={t.setThemeMale} active={display.colorTheme === "male"} onClick={() => display.setColorTheme("male")} />
-        <Chip label={t.setThemeDiverse} active={display.colorTheme === "diverse"} onClick={() => display.setColorTheme("diverse")} />
-      </div>
-
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.setTextSize}</div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
-        <Chip label={t.setSmall} active={display.textSize === "s"} onClick={() => display.setTextSize("s")} />
-        <Chip label={t.setNormal} active={display.textSize === "m"} onClick={() => display.setTextSize("m")} />
-        <Chip label={t.setLarge} active={display.textSize === "l"} onClick={() => display.setTextSize("l")} />
-      </div>
-
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.units}</div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
-        <Chip label="kg" active={units === "kg"} onClick={() => setUnits("kg")} />
-        <Chip label="lbs" active={units === "lbs"} onClick={() => setUnits("lbs")} />
-      </div>
-
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.reminders}</div>
-      <Card style={{ padding: 4, marginBottom: 22 }}>
-        {[
-          { key: "food", label: t.remFood, icon: UtensilsCrossed },
-          { key: "weigh", label: t.remWeigh, icon: TrendingUp },
-          { key: "train", label: t.remTrain, icon: Dumbbell },
-        ].map((r, i, arr) => (
-          <div key={r.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px", borderBottom: i < arr.length - 1 ? `1px solid ${COLORS.border}` : "none" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <r.icon size={16} color={COLORS.dim} />
-              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{r.label}</span>
-            </div>
-            <Switch checked={reminders[r.key]} onChange={(v) => setReminders({ ...reminders, [r.key]: v })} />
-          </div>
-        ))}
-      </Card>
-
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.language}</div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 26 }}>
-        <Chip label="Deutsch" active={lang === "de"} onClick={() => setLang("de")} />
-        <Chip label="English" active={lang === "en"} onClick={() => setLang("en")} />
-      </div>
-
-      <div onClick={onOpenConnections} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: "1px solid " + COLORS.border }}>
-        <Link2 size={16} color={COLORS.gold} />
-        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.connSettings}</span>
-      </div>
-      <div onClick={onOpenAssistant} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: "1px solid " + COLORS.border }}>
-        <MessageCircle size={16} color={COLORS.gold} />
-        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.settingsSupport}</span>
-      </div>
-      <div onClick={onOpenPrivacy} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: "1px solid " + COLORS.border }}>
-        <BookOpen size={16} color={COLORS.dim} />
-        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.settingsPrivacy}</span>
-      </div>
-      <BackupCard t={t} />
-      <div onClick={onReplayOnboarding} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer", borderTop: `1px solid ${COLORS.border}` }}>
-        <RotateCcw size={16} color={COLORS.dim} />
-        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{t.replayOnboarding}</span>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 4px", cursor: "pointer" }}>
-        <LogOut size={16} color={COLORS.coral} />
-        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.coral }}>{t.signOut}</span>
-      </div>
-      <div style={{ padding: "13px 4px", borderTop: "1px solid " + COLORS.border }}>
-        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.coral, fontWeight: 600 }}>{t.setDangerTitle}</div>
-        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "4px 0 10px", lineHeight: 1.45 }}>{t.setDangerText}</div>
+      <SettingsGroup>
+        <SettingsRow icon={RotateCcw} tint="dim" label={t.replayOnboarding} onClick={onReplayOnboarding} />
+      </SettingsGroup>
+      <Card style={{ border: "1px solid " + COLORS.coral }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, color: COLORS.coral, fontWeight: 700 }}>{t.setDangerTitle}</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "4px 0 12px", lineHeight: 1.45 }}>{t.setDangerText}</div>
         <button
           onClick={() => {
             if (!confirmingDanger) {
@@ -4910,23 +5210,57 @@ function SettingsScreen({ t, lang, setLang, units, setUnits, reminders, setRemin
             Object.keys(localStorage).filter((k) => k.startsWith("asfit.")).forEach((k) => localStorage.removeItem(k));
             window.location.reload();
           }}
-          style={{
-            width: "100%",
-            background: confirmingDanger ? COLORS.coral : COLORS.coralSoft,
-            color: confirmingDanger ? "#fff" : COLORS.coral,
-            border: "1px solid " + COLORS.coral,
-            borderRadius: 10,
-            padding: "10px 12px",
-            fontFamily: "Sora, sans-serif",
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
+          style={{ width: "100%", background: confirmingDanger ? COLORS.coral : COLORS.coralSoft, color: confirmingDanger ? "#fff" : COLORS.coral, border: "1px solid " + COLORS.coral, borderRadius: 10, padding: "11px 12px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
         >
           {confirmingDanger ? t.setDangerConfirm : t.setDangerTitle}
         </button>
+      </Card>
+    </div>
+  );
+}
+
+function HelpSettings({ t, onOpenAssistant }) {
+  const [open, setOpen] = useState(null);
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <button onClick={onOpenAssistant} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer", marginBottom: 20 }}>
+        <MessageCircle size={17} /> {t.setAskAi}
+      </button>
+      <SettingsLabel>{t.setFaqTitle}</SettingsLabel>
+      <Card style={{ padding: 0, overflow: "hidden" }}>
+        {t.setFaq.map((f, i) => (
+          <div key={i} style={{ borderTop: i === 0 ? "none" : "1px solid " + COLORS.border }}>
+            <div onClick={() => setOpen(open === i ? null : i)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "13px 14px", cursor: "pointer" }}>
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, fontWeight: 500, color: COLORS.text }}>{f.q}</span>
+              <ChevronDown size={16} color={COLORS.dim} style={{ flexShrink: 0, transform: open === i ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+            </div>
+            {open === i && <div style={{ padding: "0 14px 14px", fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, lineHeight: 1.55 }}>{f.a}</div>}
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+function AboutSettings({ t }) {
+  const block = (title, text) => (
+    <Card style={{ marginBottom: 12 }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>{title}</div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, lineHeight: 1.55 }}>{text}</div>
+    </Card>
+  );
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <div style={{ textAlign: "center", padding: "10px 0 22px" }}>
+        <div style={{ width: 76, height: 76, borderRadius: 22, background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, margin: "0 auto 12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Dumbbell size={34} color={COLORS.bg} />
+        </div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text }}>ASFIT</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 4 }}>{t.setAboutVersion} 1.0</div>
       </div>
-      <div style={{ textAlign: "center", padding: "14px 0 4px", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>
+      {block(t.setAboutData, t.setAboutDataText)}
+      {block(t.setAboutAi, t.setAboutAiText)}
+      {block(t.setAboutDisclaimer, t.setAboutDisclaimerText)}
     </div>
   );
 }
@@ -4968,6 +5302,8 @@ export default function AsmarFitApp() {
   const [planDays, setPlanDays] = usePersisted("planDays", []);
   const [units, setUnits] = usePersisted("units", "kg");
   const [reminders, setReminders] = usePersisted("reminders", { food: true, weigh: true, train: false });
+  const [reminderTimes, setReminderTimes] = usePersisted("reminderTimes", { food: "12:30", weigh: "08:00", train: "18:00" });
+  const [shareMsg, setShareMsg] = useState(null);
 
   const [pbName, setPbName] = usePersisted("pbName", "");
   const [pbDays, setPbDays] = usePersisted("pbDays", []);
@@ -5222,6 +5558,61 @@ export default function AsmarFitApp() {
     { key: "notes", icon: NotebookPen, label: t.tabs.notes },
   ];
 
+  const saveProfileBasics = (v) =>
+    setProfile((p) => {
+      const next = { ...p, ...v, age: ageFromBirth(v.birth) };
+      if (!p.kcalManual) {
+        next.kcalGoal = computeKcalGoal({ gender: next.gender, age: next.age, height: next.height, weight: next.weight, target: next.target, goal: next.goal, targetDate: next.targetDate });
+        next.macroTargets = computeMacroTargets(next.kcalGoal, next.macroSplit);
+      }
+      return next;
+    });
+  const saveGoals = (v, steps) => {
+    setProfile((p) => ({ ...p, ...v }));
+    setStepsGoal(steps);
+  };
+  const shareApp = async () => {
+    const url = "https://asmarfit-project.onrender.com";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "ASFIT", text: t.setShareText, url });
+        return;
+      }
+      await navigator.clipboard.writeText(t.setShareText + " " + url);
+      setShareMsg(t.setShareCopied);
+      setTimeout(() => setShareMsg(null), 2500);
+    } catch {
+      /* share sheet dismissed */
+    }
+  };
+
+  // Daily reminders as local notifications (only inside the installed app).
+  useEffect(() => {
+    if (!IS_NATIVE_APP || !onboarded) return;
+    (async () => {
+      try {
+        const { LocalNotifications } = await import("@capacitor/local-notifications");
+        await LocalNotifications.cancel({ notifications: [{ id: 1 }, { id: 2 }, { id: 3 }] });
+        const defs = [
+          { id: 1, key: "food", body: t.remFoodBody },
+          { id: 2, key: "weigh", body: t.remWeighBody },
+          { id: 3, key: "train", body: t.remTrainBody },
+        ].filter((d) => reminders[d.key]);
+        if (defs.length === 0) return;
+        const perm = await LocalNotifications.requestPermissions();
+        if (perm.display !== "granted") return;
+        await LocalNotifications.schedule({
+          notifications: defs.map((d) => {
+            const [hour, minute] = (reminderTimes[d.key] || "12:00").split(":").map(Number);
+            return { id: d.id, title: "ASFIT", body: d.body, schedule: { on: { hour, minute }, allowWhileIdle: true } };
+          }),
+        });
+      } catch {
+        /* notifications are optional */
+      }
+    })();
+  }, [reminders, reminderTimes, onboarded, lang]);
+
   let content, topTitle, showBack, onSettingsBtn;
 
   if (overlay === "workout") {
@@ -5339,28 +5730,37 @@ export default function AsmarFitApp() {
     topTitle = t.newNote;
     showBack = () => setOverlay(null);
   } else if (overlay === "settings") {
-    content = (
-      <SettingsScreen
-        t={t}
-        lang={lang}
-        setLang={setLang}
-        units={units}
-        setUnits={setUnits}
-        reminders={reminders}
-        setReminders={setReminders}
-        profile={profile}
-        display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize }}
-        onOpenPrivacy={() => setOverlay("privacy")}
-        onOpenAssistant={() => setOverlay("assistant")}
-        onOpenConnections={() => setOverlay("connections")}
-        onReplayOnboarding={() => {
-          setOverlay(null);
-          setOnboarded(false);
-        }}
-      />
-    );
+    content = <SettingsScreen t={t} profile={profile} reminders={reminders} onNav={setOverlay} onShare={shareApp} shareMsg={shareMsg} />;
     topTitle = t.settingsTitle;
     showBack = () => setOverlay(null);
+  } else if (overlay === "settingsProfile") {
+    content = <ProfileSettings t={t} profile={profile} onSave={saveProfileBasics} />;
+    topTitle = t.setProfileRow;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "settingsGoals") {
+    content = <GoalsSettings t={t} profile={profile} stepsGoal={stepsGoal} onSave={saveGoals} />;
+    topTitle = t.setGoalsRow;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "settingsDisplay") {
+    content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize }} />;
+    topTitle = t.setDisplayRow;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "settingsReminders") {
+    content = <RemindersSettings t={t} reminders={reminders} setReminders={setReminders} times={reminderTimes} setTimes={setReminderTimes} native={IS_NATIVE_APP} />;
+    topTitle = t.reminders;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "settingsData") {
+    content = <DataSettings t={t} onReplayOnboarding={() => { setOverlay(null); setOnboarded(false); }} />;
+    topTitle = t.setDataRow;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "settingsHelp") {
+    content = <HelpSettings t={t} onOpenAssistant={() => setOverlay("assistant")} />;
+    topTitle = t.setHelpRow;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "settingsAbout") {
+    content = <AboutSettings t={t} />;
+    topTitle = t.setAboutRow;
+    showBack = () => setOverlay("settings");
   } else {
     const screens = {
       home: (
