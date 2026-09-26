@@ -355,6 +355,23 @@ const STR = {
     privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight and notes are currently kept on your device only."},{"h":"Food search and barcode","p":"Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI photo scan and assistant","p":"For the photo scan, a downscaled image is sent to our server and from there to an AI service for analysis; our server does not store it. Questions you type to the assistant are handled the same way."},{"h":"Recipe images","p":"For an AI recipe image, the recipe name and a few ingredient words are sent to the free image service pollinations.ai. Your own recipe photos stay on your device."},{"h":"Health data (steps)","p":"On request, ASFIT reads your daily steps from Health Connect to estimate calories burned. The values stay on your device. You can revoke access at any time in Health Connect."}],
     recordsTitle: "Records",
     recordsCardSub: "Your highest achievements — take the challenge",
+    historyTitle: "History",
+    historyCardSub: "Calendar & streak — see what you tracked",
+    streakDaysLabel: "day streak",
+    streakBest: "Best streak",
+    streakThisMonth: "This month",
+    streakNone: "Log a meal today to start your streak",
+    streakKeep: "Log something today to keep your streak alive",
+    legendTracked: "Tracked",
+    legendMissed: "Missed",
+    dayNothing: "Nothing tracked on this day.",
+    dayNotYet: "This day hasn't happened yet.",
+    dayWorkouts: "Workouts",
+    dayWater: "Water",
+    daySteps: "Steps",
+    dayTotal: "Total",
+    dayToday: "Today",
+    daysUnit: "days",
     recordsAuto: "Your best lifts & sessions",
     recordsCustom: "My challenges",
     recordsAdd: "New challenge",
@@ -822,6 +839,23 @@ const STR = {
     privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht und Notizen werden derzeit nur auf deinem Gerät gehalten."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Foto-Scan und Assistent","p":"Beim Foto-Scan wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet; unser Server speichert es nicht. Fragen an den Assistenten laufen genauso."},{"h":"Rezeptbilder","p":"Für ein KI-Rezeptbild werden der Rezeptname und ein paar Zutaten-Wörter an den kostenlosen Bilddienst pollinations.ai gesendet. Eigene Rezeptfotos bleiben auf deinem Gerät."},{"h":"Gesundheitsdaten (Schritte)","p":"Auf Wunsch liest ASFIT deine Tagesschritte aus Health Connect, um verbrannte Kalorien zu schätzen. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."}],
     recordsTitle: "Rekorde",
     recordsCardSub: "Deine höchsten Leistungen — nimm die Herausforderung an",
+    historyTitle: "Verlauf",
+    historyCardSub: "Kalender & Serie — sieh, was du getrackt hast",
+    streakDaysLabel: "Tage in Folge",
+    streakBest: "Beste Serie",
+    streakThisMonth: "Diesen Monat",
+    streakNone: "Trage heute eine Mahlzeit ein, um deine Serie zu starten",
+    streakKeep: "Trage heute etwas ein, damit deine Serie weiterläuft",
+    legendTracked: "Getrackt",
+    legendMissed: "Verpasst",
+    dayNothing: "An diesem Tag wurde nichts getrackt.",
+    dayNotYet: "Dieser Tag liegt noch in der Zukunft.",
+    dayWorkouts: "Workouts",
+    dayWater: "Wasser",
+    daySteps: "Schritte",
+    dayTotal: "Gesamt",
+    dayToday: "Heute",
+    daysUnit: "Tage",
     recordsAuto: "Deine Bestleistungen",
     recordsCustom: "Meine Herausforderungen",
     recordsAdd: "Neue Herausforderung",
@@ -2228,7 +2262,7 @@ function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress, activeWorkout, onResumeWorkout }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress, activeWorkout, onResumeWorkout, history, streak, onOpenHistory }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2296,6 +2330,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
         ))}
       </div>
 
+      <StreakCard t={t} streak={streak} history={history} onOpen={onOpenHistory} />
       <StepsCard t={t} steps={steps} source={stepsSource} weightKg={profile.weight} goal={stepsGoal} onSaveGoal={onSaveStepsGoal} onConnect={onConnectSteps} onSaveManual={onSaveSteps} />
 
       <WaterCard t={t} waterMl={waterMl} goalMl={profile.waterGoalMl || Math.round(((profile.weight || 70) * 35) / 250) * 250} lastMl={lastWaterMl} onAdd={onAddWater} onUndo={onUndoWater} onSaveGoal={onSaveWaterGoal} />
@@ -3593,6 +3628,230 @@ function usePersistedDaily(key, init) {
     }
   }, [key, v]);
   return [v, setV];
+}
+
+// ---------- History: calendar + streak ----------
+const HIST_GREEN = "#2E9E5B";
+const HIST_RED = "#D64545";
+
+const dateKey = (d) => d.toLocaleDateString("sv");
+
+// Archived days (asfit.daily) plus the live values for today.
+function buildHistory(meals, waterMl, steps) {
+  let daily = {};
+  try {
+    daily = JSON.parse(localStorage.getItem("asfit.daily") || "{}") || {};
+  } catch {
+    daily = {};
+  }
+  return { ...daily, [todayStamp()]: { ...(daily[todayStamp()] || {}), meals, water: waterMl, steps } };
+}
+
+const dayHasFood = (day) => Boolean(day && day.meals && Object.values(day.meals).some((a) => Array.isArray(a) && a.length > 0));
+
+// current streak (today may still be open), best streak, first tracked day
+function computeStreaks(history) {
+  const keys = Object.keys(history).filter((k) => dayHasFood(history[k])).sort();
+  if (!keys.length) return { current: 0, best: 0, first: null, trackedToday: false };
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const trackedToday = dayHasFood(history[dateKey(today)]);
+  const cursor = new Date(today);
+  if (!trackedToday) cursor.setDate(cursor.getDate() - 1);
+  let current = 0;
+  while (dayHasFood(history[dateKey(cursor)])) {
+    current++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  let best = 0;
+  let run = 0;
+  const walk = new Date(keys[0] + "T12:00:00");
+  while (walk <= today) {
+    if (dayHasFood(history[dateKey(walk)])) {
+      run++;
+      best = Math.max(best, run);
+    } else {
+      run = 0;
+    }
+    walk.setDate(walk.getDate() + 1);
+  }
+  return { current, best, first: keys[0], trackedToday };
+}
+
+function StreakCard({ t, streak, history, onOpen }) {
+  const week = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const k = dateKey(d);
+    const tracked = dayHasFood(history[k]);
+    const missed = !tracked && i > 0 && streak.first && k >= streak.first;
+    week.push({ k, tracked, missed, isToday: i === 0 });
+  }
+  return (
+    <Card onClick={onOpen} style={{ marginBottom: 12, cursor: "pointer" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ fontSize: 26 }}>{streak.current > 0 ? "🔥" : "📅"}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>
+            {streak.current > 0 ? streak.current + " " + t.streakDaysLabel : t.historyTitle}
+          </div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
+            {streak.current === 0 ? t.streakNone : !streak.trackedToday ? t.streakKeep : t.historyCardSub}
+          </div>
+        </div>
+        <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+      </div>
+      <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+        {week.map((d) => (
+          <div key={d.k} style={{ flex: 1, height: 26, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: d.tracked ? HIST_GREEN : d.missed ? HIST_RED : COLORS.raised, border: d.isToday ? "2px solid " + COLORS.gold : "none", boxSizing: "border-box" }}>
+            {d.tracked ? <Check size={13} color="#fff" /> : d.missed ? <X size={13} color="#fff" /> : null}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
+  const now = new Date();
+  const todayKey = dateKey(now);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [selected, setSelected] = useState(todayKey);
+  const locale = lang === "de" ? "de-DE" : "en-US";
+
+  const view = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+  const lead = (view.getDay() + 6) % 7; // Monday first
+  const cells = [];
+  for (let i = 0; i < lead; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(view.getFullYear(), view.getMonth(), d, 12));
+  const weekdayNames = [0, 1, 2, 3, 4, 5, 6].map((i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: "short" }).slice(0, 2));
+
+  const monthTracked = cells.filter((c) => c && dayHasFood(history[dateKey(c)])).length;
+  const stat = (label, value, color) => (
+    <div style={{ flex: 1, background: COLORS.raised, borderRadius: 14, padding: "12px 6px", textAlign: "center" }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: color || COLORS.text }}>{value}</div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 2 }}>{label}</div>
+    </div>
+  );
+
+  const selDay = history[selected];
+  const selDate = new Date(selected + "T12:00:00");
+  const isFuture = selected > todayKey;
+  const slots = ["breakfast", "lunch", "dinner", "snacks"];
+  const totalKcal = selDay && selDay.meals ? sumMeals(selDay.meals, "kcal") : 0;
+  const dayWorkouts = workoutHistory.filter((w) => dateKey(new Date(w.dateISO)) === selected);
+
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        {stat(t.streakDaysLabel, (streak.current > 0 ? "🔥 " : "") + streak.current)}
+        {stat(t.streakBest, streak.best)}
+        {stat(t.streakThisMonth, monthTracked + " " + t.daysUnit, HIST_GREEN)}
+      </div>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div onClick={() => setMonthOffset((m) => m - 1)} style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <ChevronLeft size={18} color={COLORS.text} />
+          </div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, textTransform: "capitalize" }}>
+            {view.toLocaleDateString(locale, { month: "long", year: "numeric" })}
+          </div>
+          <div onClick={() => setMonthOffset((m) => Math.min(0, m + 1))} style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: monthOffset < 0 ? "pointer" : "default", opacity: monthOffset < 0 ? 1 : 0.25 }}>
+            <ChevronLeft size={18} color={COLORS.text} style={{ transform: "rotate(180deg)" }} />
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
+          {weekdayNames.map((w, i) => (
+            <div key={i} style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim }}>{w}</div>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+          {cells.map((c, i) => {
+            if (!c) return <div key={"e" + i} />;
+            const k = dateKey(c);
+            const tracked = dayHasFood(history[k]);
+            const past = k < todayKey;
+            const missed = !tracked && past && streak.first && k >= streak.first;
+            const isSel = k === selected;
+            return (
+              <div
+                key={k}
+                onClick={() => setSelected(k)}
+                style={{ aspectRatio: "1 / 1", borderRadius: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", background: tracked ? HIST_GREEN : missed ? HIST_RED : COLORS.raised, color: tracked || missed ? "#fff" : COLORS.dim, border: isSel ? "2px solid " + COLORS.gold : k === todayKey ? "2px solid " + COLORS.border : "2px solid transparent", boxSizing: "border-box", opacity: k > todayKey ? 0.45 : 1 }}
+              >
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, lineHeight: 1 }}>{c.getDate()}</span>
+                {tracked ? <Check size={13} color="#fff" style={{ marginTop: 2 }} /> : missed ? <X size={13} color="#fff" style={{ marginTop: 2 }} /> : <span style={{ height: 15 }} />}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "center" }}>
+          {[[HIST_GREEN, t.legendTracked], [HIST_RED, t.legendMissed]].map(([c, l]) => (
+            <div key={l} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: c, display: "inline-block" }} />
+              {l}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>
+          {selected === todayKey ? t.dayToday + " · " : ""}
+          {selDate.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" })}
+        </div>
+        {isFuture ? (
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.dayNotYet}</div>
+        ) : !dayHasFood(selDay) && dayWorkouts.length === 0 ? (
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.dayNothing}</div>
+        ) : (
+          <>
+            {slots.map((slot) => {
+              const items = (selDay && selDay.meals && selDay.meals[slot]) || [];
+              if (!items.length) return null;
+              return (
+                <div key={slot} style={{ marginBottom: 10 }}>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.gold, marginBottom: 4 }}>{t[slot]}</div>
+                  {items.map((it, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "5px 0", fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text }}>
+                      <span style={{ minWidth: 0 }}>
+                        {it.name}
+                        {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}{it.unit || "g"}</span> : null}
+                      </span>
+                      <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>{Math.round(it.kcal || 0)} kcal</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+            {dayHasFood(selDay) && (
+              <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid " + COLORS.border, paddingTop: 10, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text }}>
+                <span>{t.dayTotal}</span>
+                <span>
+                  {Math.round(totalKcal)}{kcalGoal ? " / " + kcalGoal : ""} kcal · P {Math.round(sumMeals(selDay.meals, "protein"))} · C {Math.round(sumMeals(selDay.meals, "carbs"))} · F {Math.round(sumMeals(selDay.meals, "fat"))}
+                </span>
+              </div>
+            )}
+            {dayWorkouts.length > 0 && (
+              <div style={{ marginTop: 10, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.gold }}>{t.dayWorkouts}: </span>
+                {dayWorkouts.map((w) => Math.round((w.durationSec || 0) / 60) + " min").join(", ")}
+              </div>
+            )}
+          </>
+        )}
+        {!isFuture && selDay && (selDay.water > 0 || selDay.steps > 0) && (
+          <div style={{ display: "flex", gap: 16, marginTop: 10, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>
+            {selDay.water > 0 && <span>💧 {t.dayWater}: {selDay.water} ml</span>}
+            {selDay.steps > 0 && <span>👣 {t.daySteps}: {Number(selDay.steps).toLocaleString(locale)}</span>}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
 }
 
 function BarcodeScanScreen({ t, onAdd, onDone }) {
@@ -5430,6 +5689,8 @@ export default function AsmarFitApp() {
   const [waterLog, setWaterLog] = usePersistedDaily("waterLog", []);
   const [steps, setSteps] = usePersistedDaily("steps", 0);
   const [stepsGoal, setStepsGoal] = usePersisted("stepsGoal", 10000);
+  const historyMap = useMemo(() => buildHistory(meals, waterMl, steps), [meals, waterMl, steps]);
+  const streak = useMemo(() => computeStreaks(historyMap), [historyMap]);
   // connect = native, not authorised yet | health = auto from Health Connect
   // manual = typed in (web) | unavailable = native but no Health Connect
   const [stepsSource, setStepsSource] = useState(IS_NATIVE_APP ? "connect" : "manual");
@@ -5729,6 +5990,10 @@ export default function AsmarFitApp() {
     content = <CheatScreen t={t} cheats={cheats} onAdd={(c) => setCheats((l) => [...l, c])} onDelete={(id) => setCheats((l) => l.filter((x) => x.id !== id))} />;
     topTitle = t.cheatTitle;
     showBack = () => setOverlay(null);
+  } else if (overlay === "history") {
+    content = <HistoryScreen t={t} lang={lang} history={historyMap} streak={streak} workoutHistory={workoutHistory} kcalGoal={profile.kcalGoal} />;
+    topTitle = t.historyTitle;
+    showBack = () => setOverlay(null);
   } else if (overlay === "records") {
     content = <RecordsScreen t={t} lang={lang} personalBests={personalBests} cardioBests={cardioBests} workoutHistory={workoutHistory} customRecords={customRecords} onCreate={createCustomRecord} onUpdate={updateCustomRecord} />;
     topTitle = t.recordsTitle;
@@ -5861,6 +6126,9 @@ export default function AsmarFitApp() {
           onStartWorkout={startOrResumeWorkout}
           onAddNote={() => setOverlay("noteComposer")}
           onGoProgress={() => setTab("progress")}
+          history={historyMap}
+          streak={streak}
+          onOpenHistory={() => setOverlay("history")}
           activeWorkout={activeWorkout}
           onResumeWorkout={startOrResumeWorkout}
         />
