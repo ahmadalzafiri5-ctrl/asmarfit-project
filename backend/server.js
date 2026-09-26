@@ -437,6 +437,38 @@ app.post("/api/recipe", async (req, res) => {
   }
 });
 
+// AI illustration for a recipe. The free pollinations.ai service rejects
+// direct browser requests (bot check), so the server fetches the picture and
+// hands it back as a data URL — the app then stores it with the recipe.
+const imageHits = new Map();
+app.post("/api/recipe-image", async (req, res) => {
+  const now = Date.now();
+  const hits = (imageHits.get(req.ip) || []).filter((ts) => now - ts < 60_000);
+  if (hits.length >= 6) return res.status(429).json({ error: "rate_limited" });
+  imageHits.set(req.ip, [...hits, now]);
+
+  const name = typeof req.body?.name === "string" ? req.body.name.trim().slice(0, 80) : "";
+  if (!name) return res.status(400).json({ error: "Expected a name" });
+  const words = (Array.isArray(req.body?.ingredients) ? req.body.ingredients : [])
+    .slice(0, 4)
+    .map((l) => String(l).replace(/^[\d.,/\s]*(g|kg|ml|l|el|tl|stk|stück|tasse|prise)?\s+/i, "").trim().slice(0, 40))
+    .filter(Boolean)
+    .join(", ");
+  const prompt = "appetizing food photography of " + name + (words ? " with " + words : "") + ", plated dish, natural light, top view";
+  const seed = Math.floor(Math.random() * 100000);
+  const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=640&height=480&nologo=true&seed=" + seed;
+
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(60_000) });
+    if (!r.ok || !(r.headers.get("content-type") || "").startsWith("image/")) return res.status(502).json({ error: "upstream_error" });
+    const buf = Buffer.from(await r.arrayBuffer());
+    res.json({ image: "data:" + r.headers.get("content-type") + ";base64," + buf.toString("base64") });
+  } catch (err) {
+    console.error("Recipe image failed:", err.message);
+    res.status(502).json({ error: "upstream_error" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`AsmarFit food API running on http://localhost:${PORT}`);
   console.log(`  GET /api/food/search?q=banana`);

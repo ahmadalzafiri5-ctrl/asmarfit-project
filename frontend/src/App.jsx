@@ -338,7 +338,7 @@ const STR = {
     settingsPrivacy: "Privacy",
     settingsSupport: "Ask AI support",
     privacyTitle: "Privacy",
-    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight and notes are currently kept on your device only."},{"h":"Food search and barcode","p":"Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI photo scan and assistant","p":"For the photo scan, a downscaled image is sent to our server and from there to an AI service for analysis; our server does not store it. Questions you type to the assistant are handled the same way."},{"h":"Health data (steps)","p":"On request, ASFIT reads your daily steps from Health Connect to estimate calories burned. The values stay on your device. You can revoke access at any time in Health Connect."}],
+    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight and notes are currently kept on your device only."},{"h":"Food search and barcode","p":"Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI photo scan and assistant","p":"For the photo scan, a downscaled image is sent to our server and from there to an AI service for analysis; our server does not store it. Questions you type to the assistant are handled the same way."},{"h":"Recipe images","p":"For an AI recipe image, the recipe name and a few ingredient words are sent to the free image service pollinations.ai. Your own recipe photos stay on your device."},{"h":"Health data (steps)","p":"On request, ASFIT reads your daily steps from Health Connect to estimate calories burned. The values stay on your device. You can revoke access at any time in Health Connect."}],
     recordsTitle: "Records",
     recordsCardSub: "Your highest achievements — take the challenge",
     recordsAuto: "Your best lifts & sessions",
@@ -376,6 +376,13 @@ const STR = {
     recipeSave: "Save recipe",
     recipeDelete: "Delete recipe",
     recipeCancel: "Cancel",
+    recipeImageAi: "Generate image with AI",
+    recipeImageNew: "New AI image",
+    recipeImageOwn: "Own photo",
+    recipeImageRemove: "Remove image",
+    recipeImageNote: "AI illustration — just for inspiration, may differ from the real dish.",
+    recipeImageBusy: "Creating image … (can take up to 30 s)",
+    recipeImageFail: "Couldn't create the image. Tap \"New AI image\" to try again.",
     myMealsButton: "My meals & snacks",
     myMealsTitle: "My meals",
     myMealsHint: "Save what you eat often — then add it with one tap.",
@@ -741,7 +748,7 @@ const STR = {
     settingsPrivacy: "Datenschutz",
     settingsSupport: "KI-Support fragen",
     privacyTitle: "Datenschutz",
-    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht und Notizen werden derzeit nur auf deinem Gerät gehalten."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Foto-Scan und Assistent","p":"Beim Foto-Scan wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet; unser Server speichert es nicht. Fragen an den Assistenten laufen genauso."},{"h":"Gesundheitsdaten (Schritte)","p":"Auf Wunsch liest ASFIT deine Tagesschritte aus Health Connect, um verbrannte Kalorien zu schätzen. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."}],
+    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht und Notizen werden derzeit nur auf deinem Gerät gehalten."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Foto-Scan und Assistent","p":"Beim Foto-Scan wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet; unser Server speichert es nicht. Fragen an den Assistenten laufen genauso."},{"h":"Rezeptbilder","p":"Für ein KI-Rezeptbild werden der Rezeptname und ein paar Zutaten-Wörter an den kostenlosen Bilddienst pollinations.ai gesendet. Eigene Rezeptfotos bleiben auf deinem Gerät."},{"h":"Gesundheitsdaten (Schritte)","p":"Auf Wunsch liest ASFIT deine Tagesschritte aus Health Connect, um verbrannte Kalorien zu schätzen. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."}],
     recordsTitle: "Rekorde",
     recordsCardSub: "Deine höchsten Leistungen — nimm die Herausforderung an",
     recordsAuto: "Deine Bestleistungen",
@@ -779,6 +786,13 @@ const STR = {
     recipeSave: "Rezept speichern",
     recipeDelete: "Rezept löschen",
     recipeCancel: "Abbrechen",
+    recipeImageAi: "Bild mit KI erzeugen",
+    recipeImageNew: "Neues KI-Bild",
+    recipeImageOwn: "Eigenes Foto",
+    recipeImageRemove: "Bild entfernen",
+    recipeImageNote: "KI-Illustration — nur zur Inspiration, kann vom echten Gericht abweichen.",
+    recipeImageBusy: "Bild wird erstellt … (kann bis zu 30 s dauern)",
+    recipeImageFail: "Bild konnte nicht erstellt werden. Tippe auf „Neues KI-Bild“, um es nochmal zu versuchen.",
     myMealsButton: "Meine Gerichte & Snacks",
     myMealsTitle: "Meine Gerichte",
     myMealsHint: "Speichere, was du oft isst — dann fügst du es mit einem Tipp hinzu.",
@@ -4096,7 +4110,10 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
   const [mode, setMode] = useState("list"); // list | form
-  const emptyForm = { name: "", category: "lunch", kcal: "", protein: "", carbs: "", fat: "", ingredients: "" };
+  const emptyForm = { name: "", category: "lunch", kcal: "", protein: "", carbs: "", fat: "", ingredients: "", image: "", imageAi: false };
+  const [imgBusy, setImgBusy] = useState(false);
+  const [imgFail, setImgFail] = useState(false);
+  const ownPhotoRef = useRef(null);
   const [form, setForm] = useState(emptyForm);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
@@ -4124,6 +4141,27 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
 
   const num = (v) => Math.max(0, Math.round(parseFloat(String(v).replace(",", ".")) || 0));
 
+  // Fetches the AI picture once and stores it as a data URL with the recipe,
+  // so it works offline afterwards and is never generated a second time.
+  const makeAiImage = async (name, ingredientsText) => {
+    setImgBusy(true);
+    setImgFail(false);
+    try {
+      const res = await fetch(API_BASE + "/api/recipe-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, ingredients: String(ingredientsText || "").split("\n") }),
+      });
+      if (!res.ok) throw new Error("http " + res.status);
+      const data = await res.json();
+      setForm((f) => ({ ...f, image: data.image, imageAi: true }));
+    } catch {
+      setImgFail(true);
+    } finally {
+      setImgBusy(false);
+    }
+  };
+
   const generate = async () => {
     const wish = aiPrompt.trim();
     if (!wish || aiBusy) return;
@@ -4139,7 +4177,8 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       else if (!res.ok) setAiError(t.assistantError);
       else {
         const r = await res.json();
-        setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n") });
+        setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n"), image: "", imageAi: false });
+        makeAiImage(r.name, r.ingredients.join("\n"));
       }
     } catch {
       setAiError(t.serverError);
@@ -4162,6 +4201,8 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       fat: num(form.fat),
       ingredients,
       ingredientsDe: ingredients,
+      image: form.image || "",
+      imageAi: !!form.imageAi,
       custom: true,
     });
     setForm(emptyForm);
@@ -4202,6 +4243,29 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
               {smallInput("carbs", t.carbs + " g")}
               {smallInput("fat", t.fat + " g")}
             </div>
+            <input ref={ownPhotoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+              const f = e.target.files && e.target.files[0];
+              e.target.value = "";
+              if (f) setForm({ ...form, image: await downscaleImage(f, 640), imageAi: false });
+            }} />
+            {form.image ? (
+              <div style={{ marginBottom: 10 }}>
+                <img src={form.image} alt="" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12, display: "block", background: COLORS.raised }} />
+                {form.imageAi && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 6 }}>{t.recipeImageNote}</div>}
+              </div>
+            ) : imgBusy ? (
+              <div style={{ height: 180, borderRadius: 12, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 20px", marginBottom: 10, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.recipeImageBusy}</div>
+            ) : imgFail ? (
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 10 }}>{t.recipeImageFail}</div>
+            ) : null}
+            <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+              <Chip label={form.imageAi || imgFail ? t.recipeImageNew : t.recipeImageAi} active={false} onClick={() => {
+                if (!form.name.trim() || imgBusy) return;
+                makeAiImage(form.name.trim(), form.ingredients);
+              }} />
+              <Chip label={t.recipeImageOwn} active={false} onClick={() => ownPhotoRef.current && ownPhotoRef.current.click()} />
+              {form.image && <Chip label={t.recipeImageRemove} active={false} onClick={() => setForm({ ...form, image: "", imageAi: false })} />}
+            </div>
             <textarea value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder={t.recipeIngredientsHint} rows={5} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
             <button onClick={saveForm} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               {t.recipeSave}
@@ -4232,7 +4296,8 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
                 onClick={() => setSelected(r)}
                 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}
               >
-                <div>
+                {r.image && <img src={r.image} alt="" loading="lazy" style={{ width: 46, height: 46, borderRadius: 10, objectFit: "cover", marginRight: 12, flexShrink: 0, background: COLORS.raised }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{r.custom ? "★ " : ""}{lang === "de" ? r.nameDe : r.name}</div>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
                     {r.kcal} kcal {t.perServing}
@@ -4248,6 +4313,12 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       ) : (
         <>
         <Card>
+          {selected.image && (
+            <div style={{ marginBottom: 14 }}>
+              <img src={selected.image} alt="" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 14, display: "block", background: COLORS.raised }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              {selected.imageAi && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 6 }}>{t.recipeImageNote}</div>}
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: COLORS.text }}>{lang === "de" ? selected.nameDe : selected.name}</div>
             <div onClick={() => setSelected(null)} style={{ cursor: "pointer" }}>
