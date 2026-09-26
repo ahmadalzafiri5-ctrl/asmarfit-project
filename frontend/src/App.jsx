@@ -314,6 +314,10 @@ const STR = {
     photoTitle: "AI photo scan",
     photoHint: "Take a photo of your meal — the AI estimates calories and macros.",
     photoTake: "Take photo",
+    photoWaking: "The server is waking up — this can take up to a minute the first time …",
+    photoEditHint: "Tap the amounts to adjust them",
+    photoDishName: "Name",
+    photoRemoveItem: "Remove",
     photoAnalyzing: "Analyzing your meal …",
     photoNoFood: "No food recognized — try another photo.",
     photoEstimate: "AI estimate — can be off, please check before logging.",
@@ -713,6 +717,10 @@ const STR = {
     photoTitle: "KI-Foto-Scan",
     photoHint: "Mach ein Foto von deiner Mahlzeit — die KI schätzt Kalorien und Makros.",
     photoTake: "Foto aufnehmen",
+    photoWaking: "Der Server wacht gerade auf — beim ersten Mal kann das bis zu einer Minute dauern …",
+    photoEditHint: "Tippe auf die Mengen, um sie anzupassen",
+    photoDishName: "Name",
+    photoRemoveItem: "Entfernen",
     photoAnalyzing: "Mahlzeit wird analysiert …",
     photoNoFood: "Kein Essen erkannt — versuch ein anderes Foto.",
     photoEstimate: "KI-Schätzung — kann abweichen, bitte vor dem Loggen prüfen.",
@@ -3701,36 +3709,83 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
   const [status, setStatus] = useState("idle"); // idle | analyzing | result | noFood | notConfigured | error
   const [result, setResult] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [slow, setSlow] = useState(false);
+  const [dishName, setDishName] = useState("");
+  const [items, setItems] = useState([]);
   const fileRef = useRef(null);
   const galleryRef = useRef(null);
+
+  // The free Render server sleeps when idle and needs up to ~50s to wake up,
+  // during which requests fail — so retry instead of showing an error right
+  // away, and tell the user why it is taking a while.
+  const postPhoto = async (dataUrl) => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(API_BASE + "/api/food/photo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl, lang }),
+        });
+        if (res.ok) return { data: await res.json() };
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 503 && body.error === "not_configured") return { notConfigured: true };
+        if (res.status < 500) throw new Error("http " + res.status);
+      } catch (err) {
+        if (attempt === 2) throw err;
+      }
+      await new Promise((r) => setTimeout(r, 8000));
+    }
+    throw new Error("failed");
+  };
 
   const onPick = async (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
     if (!file) return;
     setStatus("analyzing");
+    setSlow(false);
+    const slowTimer = setTimeout(() => setSlow(true), 7000);
     try {
       const dataUrl = await downscaleImage(file);
       setPreview(dataUrl);
-      const res = await fetch(API_BASE + "/api/food/photo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: dataUrl, lang }),
-      });
-      if (res.status === 503) return setStatus("notConfigured");
-      if (!res.ok) throw new Error("http " + res.status);
-      const data = await res.json();
+      const out = await postPhoto(dataUrl);
+      if (out.notConfigured) return setStatus("notConfigured");
+      const data = out.data;
       if (!data.isFood) return setStatus("noFood");
       setResult(data);
+      setDishName(data.name || data.items[0].name);
+      setItems(data.items.map((it) => ({ name: it.name, gramsStr: String(it.grams), grams: it.grams, kcal: it.kcal, protein: it.protein, carbs: it.carbs, fat: it.fat, base: { grams: it.grams, kcal: it.kcal, protein: it.protein, carbs: it.carbs, fat: it.fat } })));
       setStatus("result");
     } catch {
       setStatus("error");
+    } finally {
+      clearTimeout(slowTimer);
+      setSlow(false);
     }
   };
 
+  // Editing an amount scales that item's calories and macros proportionally.
+  const setItemGrams = (i, str) =>
+    setItems((list) =>
+      list.map((it, j) => {
+        if (j !== i) return it;
+        const g = parseFloat(String(str).replace(",", "."));
+        if (!(g >= 0)) return { ...it, gramsStr: str };
+        const ratio = it.base.grams > 0 ? g / it.base.grams : 1;
+        const sc = (v) => Math.round(v * ratio * 10) / 10;
+        return { ...it, gramsStr: str, grams: g, kcal: Math.round(it.base.kcal * ratio), protein: sc(it.base.protein), carbs: sc(it.base.carbs), fat: sc(it.base.fat) };
+      })
+    );
+  const setItemName = (i, name) => setItems((list) => list.map((it, j) => (j === i ? { ...it, name } : it)));
+  const removeItem = (i) => setItems((list) => list.filter((_, j) => j !== i));
+
   const btn = { width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" };
   const msg = { textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginBottom: 14 };
-  const total = result ? result.total : null;
+  const round1 = (v) => Math.round(v * 10) / 10;
+  const total = items.reduce(
+    (a, it) => ({ grams: a.grams + it.grams, kcal: a.kcal + it.kcal, protein: round1(a.protein + it.protein), carbs: round1(a.carbs + it.carbs), fat: round1(a.fat + it.fat) }),
+    { grams: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 }
+  );
 
   return (
     <div style={{ padding: "0 20px 24px" }}>
@@ -3749,7 +3804,12 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
         </>
       )}
 
-      {status === "analyzing" && <div style={{ ...msg, marginTop: 8 }}>{t.photoAnalyzing}</div>}
+      {status === "analyzing" && (
+        <div style={{ ...msg, marginTop: 8 }}>
+          {t.photoAnalyzing}
+          {slow && <div style={{ marginTop: 8, fontSize: 12 }}>{t.photoWaking}</div>}
+        </div>
+      )}
 
       {(status === "noFood" || status === "notConfigured" || status === "error") && (
         <>
@@ -3763,7 +3823,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
 
       {status === "result" && result && (
         <Card>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: COLORS.text, marginBottom: 14 }}>{result.name || result.items[0].name}</div>
+          <input value={dishName} onChange={(e) => setDishName(e.target.value)} placeholder={t.photoDishName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 14 }} />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
             {[
               { label: "kcal", val: total.kcal, color: COLORS.text },
@@ -3777,22 +3837,32 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
               </div>
             ))}
           </div>
-          {result.items.map((it, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text }}>
-              <span>
-                {it.name}
-                <span style={{ color: COLORS.dim }}> · {it.grams}g</span>
-              </span>
-              <span style={{ color: COLORS.dim }}>{it.kcal} kcal</span>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8 }}>{t.photoEditHint}</div>
+          {items.map((it, i) => (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 78px 22px", gap: 8, alignItems: "center", padding: "5px 0" }}>
+              <div style={{ minWidth: 0 }}>
+                <input value={it.name} onChange={(e) => setItemName(i, e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", padding: "8px 10px", fontSize: 13 }} />
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 3 }}>
+                  {it.kcal} kcal · {it.protein}P · {it.carbs}C · {it.fat}F
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <input type="number" inputMode="decimal" min="0" value={it.gramsStr} onChange={(e) => setItemGrams(i, e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", padding: "8px 6px", textAlign: "right" }} />
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>g</span>
+              </div>
+              <div onClick={() => removeItem(i)} title={t.photoRemoveItem} style={{ cursor: "pointer", display: "flex", justifyContent: "center" }}>
+                <X size={16} color={COLORS.dim} />
+              </div>
             </div>
           ))}
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, margin: "12px 0 16px" }}>{t.photoEstimate}</div>
           <button
+            disabled={items.length === 0}
             onClick={() => {
-              onAdd({ name: result.name || result.items[0].name, kcal: total.kcal, protein: total.protein, carbs: total.carbs, fat: total.fat, grams: Math.round(total.grams) });
+              onAdd({ name: dishName.trim() || items[0].name, kcal: total.kcal, protein: total.protein, carbs: total.carbs, fat: total.fat, grams: Math.round(total.grams) });
               onDone();
             }}
-            style={btn}
+            style={{ ...btn, opacity: items.length === 0 ? 0.5 : 1 }}
           >
             {t.addItem}
           </button>
