@@ -376,6 +376,7 @@ const STR = {
     recipeSave: "Save recipe",
     recipeDelete: "Delete recipe",
     recipeCancel: "Cancel",
+    recipeImageToggle: "Create an image too",
     recipeImageAi: "Generate image with AI",
     recipeImageNew: "New AI image",
     recipeImageOwn: "Own photo",
@@ -786,6 +787,7 @@ const STR = {
     recipeSave: "Rezept speichern",
     recipeDelete: "Rezept löschen",
     recipeCancel: "Abbrechen",
+    recipeImageToggle: "Bild dazu erstellen",
     recipeImageAi: "Bild mit KI erzeugen",
     recipeImageNew: "Neues KI-Bild",
     recipeImageOwn: "Eigenes Foto",
@@ -4113,6 +4115,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
   const emptyForm = { name: "", category: "lunch", kcal: "", protein: "", carbs: "", fat: "", ingredients: "", image: "", imageAi: false };
   const [imgBusy, setImgBusy] = useState(false);
   const [imgFail, setImgFail] = useState(false);
+  const [wantImage, setWantImage] = usePersisted("recipeWantImage", true);
   const ownPhotoRef = useRef(null);
   const [form, setForm] = useState(emptyForm);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -4178,7 +4181,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       else {
         const r = await res.json();
         setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n"), image: "", imageAi: false });
-        makeAiImage(r.name, r.ingredients.join("\n"));
+        if (wantImage) makeAiImage(r.name, r.ingredients.join("\n"));
       }
     } catch {
       setAiError(t.serverError);
@@ -4222,6 +4225,10 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
           <Card style={{ marginBottom: 14 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>✨ {t.recipeCreateAi}</div>
             <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder={t.recipeAiPrompt} rows={2} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 8, fontFamily: "Inter, sans-serif" }} />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{t.recipeImageToggle}</span>
+              <Switch checked={wantImage} onChange={setWantImage} />
+            </div>
             <button onClick={generate} disabled={aiBusy || !aiPrompt.trim()} style={{ width: "100%", background: aiBusy || !aiPrompt.trim() ? COLORS.raised : COLORS.gold, color: aiBusy || !aiPrompt.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: aiBusy ? "default" : "pointer" }}>
               {aiBusy ? t.recipeAiBusy : t.recipeAiGo}
             </button>
