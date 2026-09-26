@@ -4257,7 +4257,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
             }} />
             {form.image ? (
               <div style={{ marginBottom: 10 }}>
-                <img src={form.image} alt="" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12, display: "block", background: COLORS.raised }} />
+                <img src={form.image} alt="" style={{ width: "100%", height: 180, objectFit: "cover", objectPosition: "center top", borderRadius: 12, display: "block", background: COLORS.raised }} />
                 {form.imageAi && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 6 }}>{t.recipeImageNote}</div>}
               </div>
             ) : imgBusy ? (
@@ -4303,7 +4303,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
                 onClick={() => setSelected(r)}
                 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}
               >
-                {r.image && <img src={r.image} alt="" loading="lazy" style={{ width: 46, height: 46, borderRadius: 10, objectFit: "cover", marginRight: 12, flexShrink: 0, background: COLORS.raised }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+                {r.image && <img src={r.image} alt="" loading="lazy" style={{ width: 46, height: 46, borderRadius: 10, objectFit: "cover", objectPosition: "left top", marginRight: 12, flexShrink: 0, background: COLORS.raised }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{r.custom ? "★ " : ""}{lang === "de" ? r.nameDe : r.name}</div>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
@@ -4322,7 +4322,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
         <Card>
           {selected.image && (
             <div style={{ marginBottom: 14 }}>
-              <img src={selected.image} alt="" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 14, display: "block", background: COLORS.raised }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              <img src={selected.image} alt="" style={{ width: "100%", height: 200, objectFit: "cover", objectPosition: "center top", borderRadius: 14, display: "block", background: COLORS.raised }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
               {selected.imageAi && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 6 }}>{t.recipeImageNote}</div>}
             </div>
           )}

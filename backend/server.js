@@ -454,9 +454,11 @@ app.post("/api/recipe-image", async (req, res) => {
     .map((l) => String(l).replace(/^[\d.,/\s]*(g|kg|ml|l|el|tl|stk|stück|tasse|prise)?\s+/i, "").trim().slice(0, 40))
     .filter(Boolean)
     .join(", ");
-  const prompt = "appetizing food photography of " + name + (words ? " with " + words : "") + ", plated dish, natural light, top view";
+  const prompt =
+    "photorealistic food photograph of " + name + (words ? " with " + words : "") +
+    ", served on a plate, shot with a 50mm lens, shallow depth of field, soft natural window light, restaurant quality";
   const seed = Math.floor(Math.random() * 100000);
-  const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=640&height=480&nologo=true&seed=" + seed;
+  const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=768&height=576&nologo=true&model=flux&enhance=false&seed=" + seed;
 
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(60_000) });
