@@ -1812,9 +1812,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px", justifyContent: "center" }}>
         <div style={{ textAlign: "center", marginBottom: 30 }}>
-          <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Dumbbell size={34} color={COLORS.bg} />
-          </div>
+          <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
           <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>Sprache wählen · Choose your language</h2>
         </div>
         {[
@@ -1859,9 +1857,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         {step === 0 && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 84, height: 84, borderRadius: 24, background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, margin: "0 auto 26px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Dumbbell size={34} color={COLORS.bg} />
-            </div>
+            <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 26, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>{t.obWelcomeTitle}</h2>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14.5, color: COLORS.dim, margin: 0 }}>{t.obWelcomeSub}</p>
           </div>
@@ -5252,9 +5248,7 @@ function AboutSettings({ t }) {
   return (
     <div style={{ padding: "0 20px 28px" }}>
       <div style={{ textAlign: "center", padding: "10px 0 22px" }}>
-        <div style={{ width: 76, height: 76, borderRadius: 22, background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, margin: "0 auto 12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Dumbbell size={34} color={COLORS.bg} />
-        </div>
+        <img src="/icon-192.png" alt="ASFIT" style={{ width: 76, height: 76, borderRadius: 22, display: "block", margin: "0 auto 12px" }} />
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text }}>ASFIT</div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 4 }}>{t.setAboutVersion} 1.0</div>
       </div>
