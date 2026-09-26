@@ -212,16 +212,16 @@ app.get("/api/food/search", async (req, res) => {
   // broken — so each language now uses exactly one source instead of both.
   const lang = req.query.lang === "de" ? "de" : "en";
   if (!query) return res.status(400).json({ error: "Missing ?q= search term" });
-  if (!USDA_API_KEY) return res.status(500).json({ error: "Server is missing USDA_API_KEY" });
-
   const cacheKey = `search:${lang}:${query.toLowerCase()}`;
   const cached = cache.get(cacheKey);
   if (cached) return res.json({ cached: true, results: cached });
 
-  const [usda, off] =
-    lang === "de"
-      ? [{ results: [], error: null }, await searchOpenFoodFacts(query)]
-      : [await searchUsda(query), { results: [], error: null }];
+  // German always uses Open Food Facts. English uses USDA — but if this server has
+  // no USDA key yet, fall back to Open Food Facts instead of failing every search.
+  const useUsda = lang === "en" && Boolean(USDA_API_KEY);
+  const [usda, off] = useUsda
+    ? [await searchUsda(query), { results: [], error: null }]
+    : [{ results: [], error: null }, await searchOpenFoodFacts(query)];
 
   const results = mergeSearchResults(usda.results, off.results);
 
