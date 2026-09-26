@@ -2365,7 +2365,7 @@ function NutritionScreen({ t, meals, macroTargets, myMeals, cheats, onOpenFoodSe
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderBottom: `1px solid ${COLORS.border}`, fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
                   <span>
                     {it.name}
-                    {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}g</span> : null}
+                    {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}{it.unit || "g"}</span> : null}
                   </span>
                   <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>
                     {it.kcal} kcal
@@ -3879,7 +3879,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
       if (!data.isFood) return setStatus("noFood");
       setResult(data);
       setDishName(data.name || data.items[0].name);
-      setItems(data.items.map((it) => ({ name: it.name, gramsStr: String(it.grams), grams: it.grams, kcal: it.kcal, protein: it.protein, carbs: it.carbs, fat: it.fat, base: { grams: it.grams, kcal: it.kcal, protein: it.protein, carbs: it.carbs, fat: it.fat } })));
+      setItems(data.items.map((it) => ({ name: it.name, unit: it.unit === "ml" ? "ml" : "g", gramsStr: String(it.grams), grams: it.grams, kcal: it.kcal, protein: it.protein, carbs: it.carbs, fat: it.fat, base: { grams: it.grams, kcal: it.kcal, protein: it.protein, carbs: it.carbs, fat: it.fat } })));
       setStatus("result");
     } catch {
       setStatus("error");
@@ -3964,7 +3964,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8 }}>{t.photoEditHint}</div>
           {items.map((it, i) => (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 78px 22px", gap: 8, alignItems: "center", padding: "5px 0" }}>
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 92px 22px", gap: 8, alignItems: "center", padding: "5px 0" }}>
               <div style={{ minWidth: 0 }}>
                 <input value={it.name} onChange={(e) => setItemName(i, e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", padding: "8px 10px", fontSize: 13 }} />
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 3 }}>
@@ -3973,7 +3973,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <input type="number" inputMode="decimal" min="0" value={it.gramsStr} onChange={(e) => setItemGrams(i, e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", padding: "8px 6px", textAlign: "right" }} />
-                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>g</span>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, minWidth: 14 }}>{it.unit}</span>
               </div>
               <div onClick={() => removeItem(i)} title={t.photoRemoveItem} style={{ cursor: "pointer", display: "flex", justifyContent: "center" }}>
                 <X size={16} color={COLORS.dim} />
@@ -3984,7 +3984,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
           <button
             disabled={items.length === 0}
             onClick={() => {
-              onAdd({ name: dishName.trim() || items[0].name, kcal: total.kcal, protein: total.protein, carbs: total.carbs, fat: total.fat, grams: Math.round(total.grams) });
+              onAdd({ name: dishName.trim() || items[0].name, kcal: total.kcal, protein: total.protein, carbs: total.carbs, fat: total.fat, grams: Math.round(total.grams), unit: items.every((x) => x.unit === "ml") ? "ml" : "g" });
               onDone();
             }}
             style={{ ...btn, opacity: items.length === 0 ? 0.5 : 1 }}

@@ -318,10 +318,10 @@ app.post("/api/food/photo", async (req, res) => {
         model: process.env.PHOTO_MODEL || ASSISTANT_MODEL,
         max_tokens: 700,
         system:
-          "You estimate nutrition from a photo of a meal. Identify each visible food item, estimate its portion in grams and its nutrition. " +
+          "You estimate nutrition from a photo of a meal. Identify each visible food or drink item, estimate its portion and its nutrition. Drinks and other liquids (cola, water, juice, milk, coffee, soup, smoothies …) are measured in millilitres, solid food in grams. " +
           "Answer with ONLY a JSON object, no prose, in exactly this shape: " +
-          '{"name": string (short dish name in ' + lang + '), "items": [{"name": string (' + lang + '), "grams": number, "kcal": number, "protein": number, "carbs": number, "fat": number}], "isFood": boolean}. ' +
-          "Use realistic values (protein/carbs/fat in grams, kcal for the whole portion). If the photo does not show food, return isFood false and an empty items array.",
+          '{"name": string (short dish name in ' + lang + '), "items": [{"name": string (' + lang + '), "unit": "g" | "ml" (ml for liquids), "grams": number (the amount in the given unit), "kcal": number, "protein": number, "carbs": number, "fat": number}], "isFood": boolean}. ' +
+          "Use realistic values (protein/carbs/fat in grams, kcal for the whole portion). If the photo does not show food or drink, return isFood false and an empty items array.",
         messages: [
           {
             role: "user",
@@ -346,6 +346,7 @@ app.post("/api/food/photo", async (req, res) => {
     const num = (v) => (Number.isFinite(Number(v)) ? Math.max(0, Math.round(Number(v) * 10) / 10) : 0);
     const items = (Array.isArray(parsed.items) ? parsed.items : []).slice(0, 12).map((it) => ({
       name: String(it.name || "").slice(0, 80),
+      unit: it.unit === "ml" ? "ml" : "g",
       grams: num(it.grams),
       kcal: Math.round(num(it.kcal)),
       protein: num(it.protein),
@@ -357,6 +358,7 @@ app.post("/api/food/photo", async (req, res) => {
       { grams: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 }
     );
     for (const k of ["grams", "protein", "carbs", "fat"]) total[k] = Math.round(total[k] * 10) / 10;
+    total.unit = items.length > 0 && items.every((it) => it.unit === "ml") ? "ml" : "g";
     res.json({ isFood: parsed.isFood !== false && items.length > 0, name: String(parsed.name || "").slice(0, 80), items, total });
   } catch (err) {
     console.error("Photo scan failed:", err.message);
