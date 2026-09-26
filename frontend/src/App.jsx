@@ -356,6 +356,16 @@ const STR = {
     recordsTitle: "Records",
     recordsCardSub: "Your highest achievements — take the challenge",
     historyTitle: "History",
+    streakCelebrateTitle: "days in a row!",
+    streakMsg3: "Three days in a row — the start of a habit.",
+    streakMsg7: "A full week! That's a real habit now.",
+    streakMsg14: "Two weeks without a gap. Impressive.",
+    streakMsg30: "30 days! You've made this part of your life.",
+    streakMsg60: "60 days. Most people never get here.",
+    streakMsg100: "100 days. Legendary.",
+    streakBadges: "Milestones",
+    streakLeft: "days to go",
+    streakReached: "Reached",
     historyCardSub: "Calendar & streak — see what you tracked",
     streakDaysLabel: "day streak",
     streakBest: "Best streak",
@@ -840,6 +850,16 @@ const STR = {
     recordsTitle: "Rekorde",
     recordsCardSub: "Deine höchsten Leistungen — nimm die Herausforderung an",
     historyTitle: "Verlauf",
+    streakCelebrateTitle: "Tage in Folge!",
+    streakMsg3: "Drei Tage am Stück — der Anfang einer Gewohnheit.",
+    streakMsg7: "Eine ganze Woche! Das ist jetzt eine echte Gewohnheit.",
+    streakMsg14: "Zwei Wochen ohne Lücke. Stark.",
+    streakMsg30: "30 Tage! Das gehört jetzt zu deinem Leben.",
+    streakMsg60: "60 Tage. Da kommen die meisten nie hin.",
+    streakMsg100: "100 Tage. Legendär.",
+    streakBadges: "Meilensteine",
+    streakLeft: "Tage noch",
+    streakReached: "Erreicht",
     historyCardSub: "Kalender & Serie — sieh, was du getrackt hast",
     streakDaysLabel: "Tage in Folge",
     streakBest: "Beste Serie",
@@ -3160,8 +3180,54 @@ function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish
   );
 }
 
+const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
+
+function Confetti() {
+  const pieces = useMemo(() => {
+    const colors = ["#F5C242", "#E2694F", "#2E9E5B", "#3B82F6", "#A855F7", "#F472B6"];
+    return Array.from({ length: 60 }, (_, i) => ({
+      left: Math.random() * 100,
+      delay: Math.random() * 1.2,
+      dur: 2.6 + Math.random() * 2.2,
+      size: 6 + Math.random() * 7,
+      rot: Math.random() * 360,
+      color: colors[i % colors.length],
+      round: i % 3 === 0,
+    }));
+  }, []);
+  return (
+    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 1001 }}>
+      <style>{"@keyframes asfitConfetti { 0% { transform: translateY(-8vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(108vh) rotate(720deg); opacity: 0.9; } }"}</style>
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          style={{ position: "absolute", top: 0, left: p.left + "%", width: p.size, height: p.round ? p.size : p.size * 1.6, background: p.color, borderRadius: p.round ? "50%" : 2, transform: "rotate(" + p.rot + "deg)", animation: "asfitConfetti " + p.dur + "s " + p.delay + "s ease-in forwards", opacity: 0 }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function Celebration({ t, data, onClose }) {
   if (!data) return null;
+  if (data.kind === "streak") {
+    return (
+      <>
+        <Confetti />
+        <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
+            <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 8 }}>🔥</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 44, fontWeight: 800, color: COLORS.gold, lineHeight: 1 }}>{data.days}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 800, color: COLORS.text, margin: "6px 0 10px" }}>{t.streakCelebrateTitle}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, lineHeight: 1.5 }}>{t["streakMsg" + data.days]}</div>
+            <button onClick={onClose} style={{ width: "100%", marginTop: 20, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
+              {t.celebrateClose}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
   if (data.kind === "motivation") {
     return (
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
@@ -3182,6 +3248,8 @@ function Celebration({ t, data, onClose }) {
     );
   }
   return (
+    <>
+    <Confetti />
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
         <div style={{ fontSize: 30, letterSpacing: 6, marginBottom: 6 }}>🎉🏆🎉</div>
@@ -3204,6 +3272,7 @@ function Celebration({ t, data, onClose }) {
         </button>
       </div>
     </div>
+    </>
   );
 }
 
@@ -3796,6 +3865,29 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
             </div>
           ))}
         </div>
+      </Card>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.streakBadges}</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {STREAK_MILESTONES.map((m) => {
+            const got = streak.best >= m;
+            return (
+              <div key={m} style={{ flex: 1, textAlign: "center", padding: "8px 0", borderRadius: 12, background: got ? COLORS.goldSoft : COLORS.raised, border: "1px solid " + (got ? COLORS.gold : COLORS.border), opacity: got ? 1 : 0.6 }}>
+                <div style={{ fontSize: 17 }}>{got ? "🔥" : "🔒"}</div>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: got ? COLORS.gold : COLORS.dim }}>{m}</div>
+              </div>
+            );
+          })}
+        </div>
+        {(() => {
+          const next = STREAK_MILESTONES.find((m) => m > streak.current);
+          return next ? (
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10, textAlign: "center" }}>
+              {next - streak.current} {t.streakLeft} → {next}
+            </div>
+          ) : null;
+        })()}
       </Card>
 
       <Card>
@@ -5691,6 +5783,17 @@ export default function AsmarFitApp() {
   const [stepsGoal, setStepsGoal] = usePersisted("stepsGoal", 10000);
   const historyMap = useMemo(() => buildHistory(meals, waterMl, steps), [meals, waterMl, steps]);
   const streak = useMemo(() => computeStreaks(historyMap), [historyMap]);
+  const [streakCelebrated, setStreakCelebrated] = usePersisted("streakCelebrated", 0);
+  // Confetti once per milestone. If the streak broke, the marker drops so the next run celebrates again.
+  useEffect(() => {
+    const reached = STREAK_MILESTONES.filter((m) => m <= streak.current).pop() || 0;
+    if (reached > streakCelebrated) {
+      setStreakCelebrated(reached);
+      setCelebrate({ kind: "streak", days: reached });
+    } else if (reached < streakCelebrated) {
+      setStreakCelebrated(reached);
+    }
+  }, [streak.current]);
   // connect = native, not authorised yet | health = auto from Health Connect
   // manual = typed in (web) | unavailable = native but no Health Connect
   const [stepsSource, setStepsSource] = useState(IS_NATIVE_APP ? "connect" : "manual");
