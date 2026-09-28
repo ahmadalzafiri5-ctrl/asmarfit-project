@@ -17,8 +17,7 @@ Auto-Deploy bei Push auf `master` (GitHub: `ahmadalzafiri5-ctrl/asmarfit-project
   Barcode-Scan, Health Connect, lokale Benachrichtigungen).
 - `backend/server.js` — schlanker Proxy für externe Datenquellen (USDA
   FoodData Central, Open Food Facts) und die KI-Features (Claude: Assistent,
-  Foto-Scan, Rezepte, Rezeptbilder). Details und Endpunkte in
-  `backend/README.md`.
+  Foto-Scan, Rezepte). Details und Endpunkte in `backend/README.md`.
 - `backend/basics.js` — kuratierte Liste gängiger Lebensmittel (DE/EN) mit
   fester Nährwertangabe, damit die Suche für Alltagsbegriffe immer saubere
   Treffer liefert, bevor USDA/Open Food Facts ergänzen.

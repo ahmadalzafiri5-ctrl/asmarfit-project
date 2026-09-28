@@ -331,10 +331,8 @@ function isRateLimited(map, ip, limit) {
 // leak. Sweep out any IP that has gone quiet for a minute.
 function sweepRateLimits() {
   const now = Date.now();
-  for (const map of [assistantHits, imageHits]) {
-    for (const [ip, hits] of map) {
-      if (!hits.some((ts) => now - ts < 60_000)) map.delete(ip);
-    }
+  for (const [ip, hits] of assistantHits) {
+    if (!hits.some((ts) => now - ts < 60_000)) assistantHits.delete(ip);
   }
 }
 setInterval(sweepRateLimits, 5 * 60_000).unref();
@@ -529,37 +527,6 @@ app.post("/api/recipe", async (req, res) => {
     res.json({ name: String(raw.name).slice(0, 80), category, kcal: num(raw.kcal), protein: num(raw.protein), carbs: num(raw.carbs), fat: num(raw.fat), ingredients });
   } catch (err) {
     console.error("Recipe request failed:", err.message);
-    res.status(502).json({ error: "upstream_error" });
-  }
-});
-
-// AI illustration for a recipe. The free pollinations.ai service rejects
-// direct browser requests (bot check), so the server fetches the picture and
-// hands it back as a data URL — the app then stores it with the recipe.
-const imageHits = new Map();
-app.post("/api/recipe-image", async (req, res) => {
-  if (isRateLimited(imageHits, req.ip, 6)) return res.status(429).json({ error: "rate_limited" });
-
-  const name = typeof req.body?.name === "string" ? req.body.name.trim().slice(0, 80) : "";
-  if (!name) return res.status(400).json({ error: "Expected a name" });
-  const words = (Array.isArray(req.body?.ingredients) ? req.body.ingredients : [])
-    .slice(0, 4)
-    .map((l) => String(l).replace(/^[\d.,/\s]*(g|kg|ml|l|el|tl|stk|stück|tasse|prise)?\s+/i, "").trim().slice(0, 40))
-    .filter(Boolean)
-    .join(", ");
-  const prompt =
-    "photorealistic food photograph of " + name + (words ? " with " + words : "") +
-    ", served on a plate, shot with a 50mm lens, shallow depth of field, soft natural window light, restaurant quality";
-  const seed = Math.floor(Math.random() * 100000);
-  const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=768&height=576&nologo=true&model=flux&enhance=false&seed=" + seed;
-
-  try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(60_000) });
-    if (!r.ok || !(r.headers.get("content-type") || "").startsWith("image/")) return res.status(502).json({ error: "upstream_error" });
-    const buf = Buffer.from(await r.arrayBuffer());
-    res.json({ image: "data:" + r.headers.get("content-type") + ";base64," + buf.toString("base64") });
-  } catch (err) {
-    console.error("Recipe image failed:", err.message);
     res.status(502).json({ error: "upstream_error" });
   }
 });

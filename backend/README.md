@@ -17,11 +17,9 @@ Frontend-Code landen. Läuft in Produktion auf Render (`asmarfit-backend`).
 - `POST /api/food/photo` — Kalorien/Makros aus einem Essensfoto schätzen
   (Claude Vision). Braucht `ANTHROPIC_API_KEY`.
 - `POST /api/recipe` — Ein Rezept per KI generieren. Braucht `ANTHROPIC_API_KEY`.
-- `POST /api/recipe-image` — Bild zu einem Rezept generieren (pollinations.ai,
-  kein eigener Key nötig). Läuft auch ohne `ANTHROPIC_API_KEY`.
 
-Die drei letzten sowie `/api/assistant` sind pro IP auf 15 Anfragen/Minute
-begrenzt (`/api/recipe-image` auf 6/Minute), um Kosten zu deckeln.
+Alle vier KI-Endpunkte sind pro IP auf 15 Anfragen/Minute begrenzt, um Kosten
+zu deckeln.
 
 ## Setup
 
