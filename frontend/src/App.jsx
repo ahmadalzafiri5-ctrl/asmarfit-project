@@ -51,6 +51,8 @@ import {
   Share2,
   Database,
   ChevronDown,
+  FileText,
+  Landmark,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -355,7 +357,7 @@ const STR = {
     settingsPrivacy: "Privacy",
     settingsSupport: "Ask AI support",
     privacyTitle: "Privacy",
-    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight and notes are currently kept on your device only."},{"h":"Food search and barcode","p":"Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI photo scan and assistant","p":"For the photo scan, a downscaled image is sent to our server and from there to an AI service for analysis; our server does not store it. Questions you type to the assistant are handled the same way."},{"h":"Recipe images","p":"For an AI recipe image, the recipe name and a few ingredient words are sent to the free image service pollinations.ai. Your own recipe photos stay on your device."},{"h":"Health data (steps)","p":"On request, ASFIT reads your daily steps from Health Connect to estimate calories burned. The values stay on your device. You can revoke access at any time in Health Connect."}],
+    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight, notes and your profile picture are currently kept on your device only — never uploaded."},{"h":"Food search and barcode","p":"Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI photo scan, assistant and recipes","p":"For the photo scan, a downscaled image is sent to our server and from there to an AI service for analysis. Assistant questions and recipe requests are handled the same way. Our server does not store any of it."},{"h":"Health data (steps)","p":"On request, ASFIT reads your daily steps from Health Connect to estimate calories burned. The values stay on your device. You can revoke access at any time in Health Connect."}],
     recordsTitle: "Records",
     recordsCardSub: "Your highest achievements — take the challenge",
     historyTitle: "History",
@@ -509,6 +511,9 @@ const STR = {
     setGroupApp: "App",
     setGroupData: "Data & privacy",
     setGroupHelp: "Help & info",
+    setGroupLegal: "Legal",
+    setTermsRow: "Terms of use",
+    setImprintRow: "Legal notice",
     setProfileRow: "Edit profile",
     setGoalsRow: "My goals",
     setDisplayRow: "Appearance & language",
@@ -850,7 +855,7 @@ const STR = {
     settingsPrivacy: "Datenschutz",
     settingsSupport: "KI-Support fragen",
     privacyTitle: "Datenschutz",
-    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht und Notizen werden derzeit nur auf deinem Gerät gehalten."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Foto-Scan und Assistent","p":"Beim Foto-Scan wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet; unser Server speichert es nicht. Fragen an den Assistenten laufen genauso."},{"h":"Rezeptbilder","p":"Für ein KI-Rezeptbild werden der Rezeptname und ein paar Zutaten-Wörter an den kostenlosen Bilddienst pollinations.ai gesendet. Eigene Rezeptfotos bleiben auf deinem Gerät."},{"h":"Gesundheitsdaten (Schritte)","p":"Auf Wunsch liest ASFIT deine Tagesschritte aus Health Connect, um verbrannte Kalorien zu schätzen. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."}],
+    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht, Notizen und dein Profilbild werden derzeit nur auf deinem Gerät gehalten — nie hochgeladen."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Foto-Scan, Assistent und Rezepte","p":"Beim Foto-Scan wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet. Fragen an den Assistenten und Rezeptwünsche laufen genauso. Unser Server speichert nichts davon."},{"h":"Gesundheitsdaten (Schritte)","p":"Auf Wunsch liest ASFIT deine Tagesschritte aus Health Connect, um verbrannte Kalorien zu schätzen. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."}],
     recordsTitle: "Rekorde",
     recordsCardSub: "Deine höchsten Leistungen — nimm die Herausforderung an",
     historyTitle: "Verlauf",
@@ -1004,6 +1009,9 @@ const STR = {
     setGroupApp: "App",
     setGroupData: "Daten & Datenschutz",
     setGroupHelp: "Hilfe & Info",
+    setGroupLegal: "Rechtliches",
+    setTermsRow: "Nutzungsbedingungen",
+    setImprintRow: "Impressum",
     setProfileRow: "Profil bearbeiten",
     setGoalsRow: "Meine Ziele",
     setDisplayRow: "Darstellung & Sprache",
@@ -5355,7 +5363,6 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
 
       <SettingsGroup title={t.setGroupData}>
         <SettingsRow icon={Database} label={t.setDataRow} onClick={() => onNav("settingsData")} />
-        <SettingsRow icon={Shield} label={t.settingsPrivacy} onClick={() => onNav("privacy")} />
       </SettingsGroup>
 
       <SettingsGroup title={t.setGroupHelp}>
@@ -5363,6 +5370,12 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
         <SettingsRow icon={MessageCircle} label={t.settingsSupport} onClick={() => onNav("assistant")} />
         <SettingsRow icon={Share2} label={t.setShareRow} sub={shareMsg} onClick={onShare} />
         <SettingsRow icon={Info} label={t.setAboutRow} onClick={() => onNav("settingsAbout")} />
+      </SettingsGroup>
+
+      <SettingsGroup title={t.setGroupLegal}>
+        <SettingsRow icon={Shield} label={t.settingsPrivacy} onClick={() => onNav("privacy")} />
+        <SettingsRow icon={FileText} label={t.setTermsRow} onClick={() => window.open("/terms.html", "_blank")} />
+        <SettingsRow icon={Landmark} label={t.setImprintRow} onClick={() => window.open("/impressum.html", "_blank")} />
       </SettingsGroup>
 
       <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>

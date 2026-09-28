@@ -3,31 +3,118 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ASFIT – Datenschutz / Privacy</title>
+    <title>ASFIT – Datenschutzerklärung / Privacy Policy</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; color: #161a1d; line-height: 1.55; }
-      h1 { font-size: 22px; } h2 { font-size: 16px; margin-top: 24px; }
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; max-width: 720px; color: #161a1d; line-height: 1.6; }
+      h1 { font-size: 22px; } h2 { font-size: 16px; margin-top: 26px; }
+      .updated { color: #68707a; font-size: 13px; margin-top: -6px; }
+      .lang-switch { position: sticky; top: 0; background: #fff; padding: 10px 0; }
+      .lang-switch a { margin-right: 14px; font-weight: 600; text-decoration: none; color: #00BF8F; }
+      table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13.5px; }
+      td, th { border: 1px solid #e1e4e8; padding: 8px; text-align: left; vertical-align: top; }
+      hr { border: none; border-top: 1px solid #e1e4e8; margin: 32px 0; }
+      .placeholder { background: #fff4d6; padding: 1px 4px; border-radius: 3px; }
     </style>
   </head>
   <body>
-    <h1>Datenschutz</h1>
-    <h2>Gesundheitsdaten (Health Connect)</h2>
-    <p>ASFIT liest auf Wunsch deine Tagesschritte aus Health Connect, um daraus den geschätzten Kalorienverbrauch anzuzeigen. Diese Werte werden nur auf deinem Gerät verwendet und nicht an unseren Server oder Dritte gesendet. Du kannst den Zugriff jederzeit in Health Connect widerrufen.</p>
-    <h2>Fotos (KI-Foto-Scan)</h2>
-    <p>Wenn du eine Mahlzeit per Foto scannst, wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet. Unser Server speichert das Foto nicht.</p>
-    <h2>Lebensmittelsuche und Barcode</h2>
-    <p>Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet.</p>
-    <h2>Deine Eingaben</h2>
-    <p>Profil, Mahlzeiten, Workouts, Gewicht und Notizen werden derzeit nur auf deinem Gerät gehalten.</p>
+    <div class="lang-switch"><a href="#de">Deutsch</a><a href="#en">English</a></div>
 
-    <h1>Privacy</h1>
-    <h2>Health data (Health Connect)</h2>
-    <p>On request, ASFIT reads your daily steps from Health Connect to show an estimated calorie burn. These values are only used on your device and are not sent to our server or third parties. You can revoke access at any time in Health Connect.</p>
-    <h2>Photos (AI photo scan)</h2>
-    <p>When you scan a meal by photo, a downscaled image is sent to our server and from there to an AI service for analysis. Our server does not store the photo.</p>
-    <h2>Food search and barcode</h2>
-    <p>Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts.</p>
-    <h2>Your entries</h2>
-    <p>Profile, meals, workouts, weight and notes are currently kept on your device only.</p>
+    <div id="de">
+      <h1>Datenschutzerklärung</h1>
+      <p class="updated">Stand: <span class="placeholder">[DATUM EINTRAGEN]</span></p>
+
+      <h2>1. Verantwortlicher</h2>
+      <p>
+        <span class="placeholder">[Vollständiger Name]</span><br />
+        <span class="placeholder">[Straße, Hausnummer]</span><br />
+        <span class="placeholder">[PLZ, Ort, Land]</span><br />
+        E-Mail: <span class="placeholder">[E-Mail-Adresse]</span>
+      </p>
+
+      <h2>2. Was ASFIT ist und wie Daten grundsätzlich gespeichert werden</h2>
+      <p>ASFIT ist eine Fitness- und Ernährungs-App. Es gibt kein Nutzerkonto und keinen Login. Profil, Mahlzeiten, Workouts, Gewichtsverlauf, Notizen und Einstellungen werden ausschließlich lokal auf deinem Gerät gespeichert (im lokalen Speicher der App bzw. des Browsers). Diese Daten laufen zu keinem Zeitpunkt über unsere Server, ausser dort, wo es für eine Funktion technisch nötig ist (siehe unten). Löschst du die App oder nutzt „Einstellungen → Daten → Alles löschen“, sind diese Daten unwiderruflich weg — wir haben keine Kopie.</p>
+
+      <h2>3. Welche Daten über unseren Server verarbeitet werden</h2>
+      <table>
+        <tr><th>Funktion</th><th>Was wird gesendet</th><th>An wen</th><th>Warum</th></tr>
+        <tr><td>Lebensmittelsuche</td><td>Suchbegriff, Sprache</td><td>USDA FoodData Central (USA) bzw. Open Food Facts</td><td>Nährwerte anzeigen</td></tr>
+        <tr><td>Barcode-Scan</td><td>Barcode-Nummer</td><td>Open Food Facts</td><td>Produkt anhand des Barcodes finden</td></tr>
+        <tr><td>KI-Foto-Scan</td><td>Verkleinertes Foto der Mahlzeit</td><td>Anthropic (Claude API, USA)</td><td>Kalorien/Makros aus dem Foto schätzen</td></tr>
+        <tr><td>KI-Assistent</td><td>Deine Nachricht, optional der aktuelle App-Bildschirm als Kontext</td><td>Anthropic (Claude API, USA)</td><td>Frage beantworten</td></tr>
+        <tr><td>KI-Rezept</td><td>Dein Freitext-Wunsch (z. B. „proteinreiches Abendessen“)</td><td>Anthropic (Claude API, USA)</td><td>Rezeptvorschlag erstellen</td></tr>
+      </table>
+      <p>Unser Server (gehostet bei Render) leitet diese Anfragen nur weiter und speichert die Inhalte nicht dauerhaft — Suchergebnisse werden bis zu 6 Stunden zwischengespeichert (Cache), um Anfragen zu sparen. Fotos werden nicht auf dem Server abgelegt. Alle Anfragen laufen anonym, ohne Nutzerkonto — wir können sie dir nicht persönlich zuordnen, ausser über deine IP-Adresse, die aus technischen Gründen (Missbrauchsschutz, Rate-Limiting) kurzzeitig verarbeitet wird.</p>
+
+      <h2>4. Gesundheitsdaten (Health Connect / Apple Health)</h2>
+      <p>Auf Wunsch liest ASFIT deine Tagesschritte (und ggf. Gewicht, Workouts) aus Health Connect bzw. Apple Health, um Kalorienverbrauch zu schätzen. Diese Werte bleiben ausschließlich auf deinem Gerät und werden nicht an unseren Server gesendet. Du kannst den Zugriff jederzeit in den Einstellungen deines Geräts oder in ASFIT unter „Verbindungen“ widerrufen.</p>
+
+      <h2>5. Eigene Fotos (Profilbild, Fortschrittsfotos, eigenes Rezeptfoto)</h2>
+      <p>Fotos, die du selbst auswählst (Profilbild, Fortschrittsvergleich, eigenes Rezeptbild), werden ausschließlich lokal auf deinem Gerät gespeichert und nirgends hochgeladen.</p>
+
+      <h2>6. Rechtsgrundlage</h2>
+      <p>Die Verarbeitung erfolgt auf Grundlage deiner Einwilligung (Art. 6 Abs. 1 lit. a DSGVO) bzw. zur Erfüllung der von dir gewünschten Funktion (Art. 6 Abs. 1 lit. b DSGVO). Für Schweizer Nutzer gilt zusätzlich das Bundesgesetz über den Datenschutz (DSG).</p>
+
+      <h2>7. Speicherdauer</h2>
+      <p>Lokale Daten bleiben, bis du sie löschst oder die App deinstallierst. Server-seitige Zwischenspeicherung (Cache) von Suchergebnissen: maximal 6 Stunden. Log-Daten zur Missbrauchsabwehr (z. B. Anfragen pro IP-Adresse) werden nach spätestens wenigen Minuten automatisch verworfen.</p>
+
+      <h2>8. Deine Rechte</h2>
+      <p>Da wir keine Nutzerkonten führen und keine personenbezogenen Daten dauerhaft auf unseren Servern speichern, betreffen die meisten deiner Daten nur dein eigenes Gerät — du hast dort jederzeit vollen Zugriff und kannst sie über „Einstellungen → Daten → Alles löschen“ vollständig entfernen. Für Anfragen zu Auskunft, Berichtigung oder Löschung bezüglich serverseitig kurzzeitig verarbeiteter Daten (z. B. IP-Adressen im Rate-Limiting) wende dich an die oben genannte Adresse.</p>
+
+      <h2>9. Kinder</h2>
+      <p>ASFIT richtet sich nicht an Kinder unter 16 Jahren.</p>
+
+      <h2>10. Änderungen dieser Erklärung</h2>
+      <p>Wir passen diese Erklärung an, wenn sich die App oder die Rechtslage ändert. Die aktuelle Version ist immer unter dieser Adresse abrufbar.</p>
+    </div>
+
+    <hr />
+
+    <div id="en">
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: <span class="placeholder">[ENTER DATE]</span></p>
+
+      <h2>1. Data controller</h2>
+      <p>
+        <span class="placeholder">[Full name]</span><br />
+        <span class="placeholder">[Street, number]</span><br />
+        <span class="placeholder">[Postal code, city, country]</span><br />
+        Email: <span class="placeholder">[Email address]</span>
+      </p>
+
+      <h2>2. What ASFIT is and how data is stored by default</h2>
+      <p>ASFIT is a fitness and nutrition app. There is no user account and no login. Your profile, meals, workouts, weight history, notes and settings are stored exclusively on your device (local app/browser storage). This data never passes through our servers except where a feature technically requires it (see below). If you delete the app or use "Settings → Data → Delete everything", this data is gone for good — we don't keep a copy.</p>
+
+      <h2>3. Data processed through our server</h2>
+      <table>
+        <tr><th>Feature</th><th>What is sent</th><th>To whom</th><th>Why</th></tr>
+        <tr><td>Food search</td><td>Search term, language</td><td>USDA FoodData Central (USA) or Open Food Facts</td><td>Show nutrition values</td></tr>
+        <tr><td>Barcode scan</td><td>Barcode number</td><td>Open Food Facts</td><td>Look up the product</td></tr>
+        <tr><td>AI photo scan</td><td>A downscaled photo of your meal</td><td>Anthropic (Claude API, USA)</td><td>Estimate calories/macros from the photo</td></tr>
+        <tr><td>AI assistant</td><td>Your message, optionally the current app screen as context</td><td>Anthropic (Claude API, USA)</td><td>Answer your question</td></tr>
+        <tr><td>AI recipe</td><td>Your free-text request (e.g. "high-protein dinner")</td><td>Anthropic (Claude API, USA)</td><td>Generate a recipe suggestion</td></tr>
+      </table>
+      <p>Our server (hosted on Render) only forwards these requests and does not permanently store the content — search results are cached for up to 6 hours to reduce repeat requests. Photos are not stored on the server. All requests are anonymous, with no user account — we cannot personally identify you except via your IP address, which is processed briefly for technical reasons (abuse prevention, rate limiting).</p>
+
+      <h2>4. Health data (Health Connect / Apple Health)</h2>
+      <p>On request, ASFIT reads your daily steps (and optionally weight, workouts) from Health Connect or Apple Health to estimate calories burned. These values stay on your device only and are never sent to our server. You can revoke access at any time in your device settings or in ASFIT under "Connections".</p>
+
+      <h2>5. Your own photos (profile picture, progress photos, own recipe photo)</h2>
+      <p>Photos you choose yourself (profile picture, progress comparison, your own recipe photo) are stored exclusively on your device and never uploaded anywhere.</p>
+
+      <h2>6. Legal basis</h2>
+      <p>Processing is based on your consent (Art. 6(1)(a) GDPR) or on performing the feature you requested (Art. 6(1)(b) GDPR). Swiss users are additionally covered by the Federal Act on Data Protection (FADP).</p>
+
+      <h2>7. Retention</h2>
+      <p>Local data stays until you delete it or uninstall the app. Server-side caching of search results: up to 6 hours. Abuse-prevention logs (e.g. requests per IP address) are discarded automatically after a few minutes at most.</p>
+
+      <h2>8. Your rights</h2>
+      <p>Since we don't run user accounts and don't permanently store personal data on our servers, most of your data lives only on your own device — you have full access there at any time and can remove it completely via "Settings → Data → Delete everything". For requests about access, correction or deletion regarding briefly server-processed data (e.g. IP addresses used for rate limiting), contact the address above.</p>
+
+      <h2>9. Children</h2>
+      <p>ASFIT is not directed at children under 16.</p>
+
+      <h2>10. Changes to this policy</h2>
+      <p>We update this policy when the app or the legal situation changes. The current version is always available at this address.</p>
+    </div>
   </body>
 </html>
