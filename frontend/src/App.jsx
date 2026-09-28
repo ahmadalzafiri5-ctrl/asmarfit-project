@@ -20,14 +20,12 @@ import {
   Flame,
   Droplets,
   Camera,
-  Mic,
   Smile,
   Award,
   Timer,
   Check,
   Settings as SettingsIcon,
   Bell,
-  LogOut,
   Barcode,
   Trash2,
   Link2,
@@ -1317,133 +1315,6 @@ EXERCISE_LIBRARY.push(
   EX("kb_clean", "Kettlebell Clean", "Kettlebell Clean", "full", "Keep the bell close, soft catch", "Kettlebell nah halten, weich fangen")
 );
 EXERCISE_LIBRARY.sort((a, b) => ["chest", "back", "shoulders", "arms", "legs", "glutes", "core", "cardio", "full"].indexOf(a.muscle) - ["chest", "back", "shoulders", "arms", "legs", "glutes", "core", "cardio", "full"].indexOf(b.muscle));
-
-
-/* Food database — macros per 100 g, with a realistic default serving size in grams.
-   Not exhaustive (a real app would query an external database like Open Food Facts
-   or USDA FoodData Central), but broadened across cuisines for a richer demo. */
-const FOOD_DB = [
-  // Protein — meat, fish, eggs, plant protein
-  { key: "chicken_breast", name: "Chicken breast", category: "protein", defaultGrams: 150, per100: { kcal: 165, protein: 31, carbs: 0, fat: 3.6 } },
-  { key: "chicken_thigh", name: "Chicken thigh", category: "protein", defaultGrams: 150, per100: { kcal: 209, protein: 26, carbs: 0, fat: 10.9 } },
-  { key: "turkey", name: "Turkey breast", category: "protein", defaultGrams: 150, per100: { kcal: 135, protein: 30, carbs: 0, fat: 1 } },
-  { key: "beef_mince", name: "Beef mince, 5% fat", category: "protein", defaultGrams: 150, per100: { kcal: 137, protein: 21, carbs: 0, fat: 5 } },
-  { key: "beef_steak", name: "Beef steak, sirloin", category: "protein", defaultGrams: 150, per100: { kcal: 183, protein: 27, carbs: 0, fat: 8 } },
-  { key: "lamb", name: "Lamb, roasted", category: "protein", defaultGrams: 150, per100: { kcal: 294, protein: 25, carbs: 0, fat: 21 } },
-  { key: "duck", name: "Duck breast", category: "protein", defaultGrams: 150, per100: { kcal: 201, protein: 23, carbs: 0, fat: 12 } },
-  { key: "salmon", name: "Salmon", category: "protein", defaultGrams: 150, per100: { kcal: 208, protein: 20, carbs: 0, fat: 13 } },
-  { key: "tuna", name: "Tuna, canned in water", category: "protein", defaultGrams: 120, per100: { kcal: 116, protein: 26, carbs: 0, fat: 1 } },
-  { key: "cod", name: "Cod", category: "protein", defaultGrams: 150, per100: { kcal: 82, protein: 18, carbs: 0, fat: 0.7 } },
-  { key: "shrimp", name: "Shrimp", category: "protein", defaultGrams: 120, per100: { kcal: 99, protein: 24, carbs: 0.2, fat: 0.3 } },
-  { key: "eggs", name: "Eggs, whole", category: "protein", defaultGrams: 100, per100: { kcal: 155, protein: 13, carbs: 1.1, fat: 11 } },
-  { key: "egg_whites", name: "Egg whites", category: "protein", defaultGrams: 100, per100: { kcal: 52, protein: 11, carbs: 0.7, fat: 0.2 } },
-  { key: "tofu", name: "Tofu", category: "protein", defaultGrams: 150, per100: { kcal: 76, protein: 8, carbs: 1.9, fat: 4.8 } },
-  { key: "tempeh", name: "Tempeh", category: "protein", defaultGrams: 100, per100: { kcal: 192, protein: 20, carbs: 7.6, fat: 11 } },
-  { key: "whey", name: "Whey protein powder", category: "protein", defaultGrams: 30, per100: { kcal: 380, protein: 75, carbs: 8, fat: 6 } },
-  { key: "casein", name: "Casein protein powder", category: "protein", defaultGrams: 30, per100: { kcal: 360, protein: 70, carbs: 12, fat: 4 } },
-  { key: "jerky", name: "Beef jerky", category: "protein", defaultGrams: 30, per100: { kcal: 410, protein: 33, carbs: 11, fat: 24 } },
-  // Carbs — grains, bread, starches
-  { key: "rice_white", name: "White rice, cooked", category: "carb", defaultGrams: 200, per100: { kcal: 130, protein: 2.7, carbs: 28, fat: 0.3 } },
-  { key: "rice_basmati", name: "Basmati rice, cooked", category: "carb", defaultGrams: 200, per100: { kcal: 121, protein: 3.5, carbs: 25, fat: 0.4 } },
-  { key: "rice_brown", name: "Brown rice, cooked", category: "carb", defaultGrams: 200, per100: { kcal: 123, protein: 2.7, carbs: 26, fat: 1 } },
-  { key: "oats", name: "Oats, dry", category: "carb", defaultGrams: 60, per100: { kcal: 389, protein: 17, carbs: 66, fat: 7 } },
-  { key: "quinoa", name: "Quinoa, cooked", category: "carb", defaultGrams: 200, per100: { kcal: 120, protein: 4.4, carbs: 21, fat: 1.9 } },
-  { key: "pasta_wheat", name: "Whole wheat pasta, cooked", category: "carb", defaultGrams: 200, per100: { kcal: 124, protein: 5, carbs: 25, fat: 1.1 } },
-  { key: "pasta_white", name: "Pasta, white, cooked", category: "carb", defaultGrams: 200, per100: { kcal: 131, protein: 5, carbs: 25, fat: 1.1 } },
-  { key: "bulgur", name: "Bulgur, cooked", category: "carb", defaultGrams: 150, per100: { kcal: 83, protein: 3, carbs: 18, fat: 0.2 } },
-  { key: "couscous", name: "Couscous, cooked", category: "carb", defaultGrams: 150, per100: { kcal: 112, protein: 3.8, carbs: 23, fat: 0.2 } },
-  { key: "potato", name: "Potato, boiled", category: "carb", defaultGrams: 250, per100: { kcal: 87, protein: 2, carbs: 20, fat: 0.1 } },
-  { key: "sweetpotato", name: "Sweet potato, boiled", category: "carb", defaultGrams: 200, per100: { kcal: 86, protein: 1.6, carbs: 20, fat: 0.1 } },
-  { key: "bread_wg", name: "Bread, whole grain", category: "carb", defaultGrams: 60, per100: { kcal: 247, protein: 13, carbs: 41, fat: 3.4 } },
-  { key: "bread_white", name: "Bread, white", category: "carb", defaultGrams: 60, per100: { kcal: 265, protein: 9, carbs: 49, fat: 3.2 } },
-  { key: "pita", name: "Pita bread", category: "carb", defaultGrams: 80, per100: { kcal: 275, protein: 9, carbs: 55, fat: 1.2 } },
-  { key: "naan", name: "Naan bread", category: "carb", defaultGrams: 90, per100: { kcal: 310, protein: 9, carbs: 50, fat: 8 } },
-  { key: "tortilla", name: "Tortilla wrap", category: "carb", defaultGrams: 60, per100: { kcal: 310, protein: 8, carbs: 48, fat: 8 } },
-  { key: "bagel", name: "Bagel", category: "carb", defaultGrams: 90, per100: { kcal: 250, protein: 10, carbs: 48, fat: 1.5 } },
-  { key: "rice_noodles", name: "Rice noodles", category: "carb", defaultGrams: 200, per100: { kcal: 109, protein: 1.8, carbs: 25, fat: 0.2 } },
-  // Legumes
-  { key: "lentils", name: "Lentils, cooked", category: "legume", defaultGrams: 150, per100: { kcal: 116, protein: 9, carbs: 20, fat: 0.4 } },
-  { key: "chickpeas", name: "Chickpeas, cooked", category: "legume", defaultGrams: 150, per100: { kcal: 164, protein: 9, carbs: 27, fat: 2.6 } },
-  { key: "black_beans", name: "Black beans, cooked", category: "legume", defaultGrams: 150, per100: { kcal: 132, protein: 8.9, carbs: 24, fat: 0.5 } },
-  { key: "kidney_beans", name: "Kidney beans, cooked", category: "legume", defaultGrams: 150, per100: { kcal: 127, protein: 8.7, carbs: 23, fat: 0.5 } },
-  { key: "hummus", name: "Hummus", category: "legume", defaultGrams: 100, per100: { kcal: 166, protein: 8, carbs: 14, fat: 10 } },
-  { key: "falafel", name: "Falafel", category: "legume", defaultGrams: 100, per100: { kcal: 333, protein: 13, carbs: 32, fat: 18 } },
-  // Fats — nuts, oils, seeds
-  { key: "almonds", name: "Almonds", category: "fat", defaultGrams: 30, per100: { kcal: 579, protein: 21, carbs: 22, fat: 50 } },
-  { key: "walnuts", name: "Walnuts", category: "fat", defaultGrams: 30, per100: { kcal: 654, protein: 15, carbs: 14, fat: 65 } },
-  { key: "cashews", name: "Cashews", category: "fat", defaultGrams: 30, per100: { kcal: 553, protein: 18, carbs: 30, fat: 44 } },
-  { key: "peanuts", name: "Peanuts", category: "fat", defaultGrams: 30, per100: { kcal: 567, protein: 26, carbs: 16, fat: 49 } },
-  { key: "peanutbutter", name: "Peanut butter", category: "fat", defaultGrams: 20, per100: { kcal: 588, protein: 25, carbs: 20, fat: 50 } },
-  { key: "tahini", name: "Tahini", category: "fat", defaultGrams: 15, per100: { kcal: 595, protein: 17, carbs: 21, fat: 54 } },
-  { key: "oliveoil", name: "Olive oil", category: "fat", defaultGrams: 10, per100: { kcal: 884, protein: 0, carbs: 0, fat: 100 } },
-  { key: "coconutoil", name: "Coconut oil", category: "fat", defaultGrams: 10, per100: { kcal: 862, protein: 0, carbs: 0, fat: 100 } },
-  { key: "butter", name: "Butter", category: "fat", defaultGrams: 10, per100: { kcal: 717, protein: 0.9, carbs: 0.1, fat: 81 } },
-  { key: "avocado", name: "Avocado", category: "fat", defaultGrams: 100, per100: { kcal: 160, protein: 2, carbs: 9, fat: 15 } },
-  { key: "chia", name: "Chia seeds", category: "fat", defaultGrams: 15, per100: { kcal: 486, protein: 17, carbs: 42, fat: 31 } },
-  // Vegetables
-  { key: "broccoli", name: "Broccoli", category: "veg", defaultGrams: 150, per100: { kcal: 34, protein: 2.8, carbs: 7, fat: 0.4 } },
-  { key: "spinach", name: "Spinach", category: "veg", defaultGrams: 100, per100: { kcal: 23, protein: 2.9, carbs: 3.6, fat: 0.4 } },
-  { key: "cucumber", name: "Cucumber", category: "veg", defaultGrams: 100, per100: { kcal: 15, protein: 0.7, carbs: 3.6, fat: 0.1 } },
-  { key: "tomato", name: "Tomato", category: "veg", defaultGrams: 120, per100: { kcal: 18, protein: 0.9, carbs: 3.9, fat: 0.2 } },
-  { key: "bellpepper", name: "Bell pepper", category: "veg", defaultGrams: 100, per100: { kcal: 31, protein: 1, carbs: 6, fat: 0.3 } },
-  { key: "carrot", name: "Carrot", category: "veg", defaultGrams: 100, per100: { kcal: 41, protein: 0.9, carbs: 10, fat: 0.2 } },
-  { key: "zucchini", name: "Zucchini", category: "veg", defaultGrams: 150, per100: { kcal: 17, protein: 1.2, carbs: 3.1, fat: 0.3 } },
-  { key: "cauliflower", name: "Cauliflower", category: "veg", defaultGrams: 150, per100: { kcal: 25, protein: 1.9, carbs: 5, fat: 0.3 } },
-  { key: "eggplant", name: "Eggplant", category: "veg", defaultGrams: 150, per100: { kcal: 25, protein: 1, carbs: 6, fat: 0.2 } },
-  { key: "onion", name: "Onion", category: "veg", defaultGrams: 50, per100: { kcal: 40, protein: 1.1, carbs: 9, fat: 0.1 } },
-  { key: "mushrooms", name: "Mushrooms", category: "veg", defaultGrams: 100, per100: { kcal: 22, protein: 3.1, carbs: 3.3, fat: 0.3 } },
-  { key: "corn", name: "Sweet corn", category: "veg", defaultGrams: 100, per100: { kcal: 96, protein: 3.4, carbs: 21, fat: 1.5 } },
-  // Fruit
-  { key: "banana", name: "Banana", category: "fruit", defaultGrams: 120, per100: { kcal: 89, protein: 1.1, carbs: 23, fat: 0.3 } },
-  { key: "apple", name: "Apple", category: "fruit", defaultGrams: 150, per100: { kcal: 52, protein: 0.3, carbs: 14, fat: 0.2 } },
-  { key: "orange", name: "Orange", category: "fruit", defaultGrams: 150, per100: { kcal: 47, protein: 0.9, carbs: 12, fat: 0.1 } },
-  { key: "grapes", name: "Grapes", category: "fruit", defaultGrams: 100, per100: { kcal: 69, protein: 0.7, carbs: 18, fat: 0.2 } },
-  { key: "strawberries", name: "Strawberries", category: "fruit", defaultGrams: 150, per100: { kcal: 32, protein: 0.7, carbs: 7.7, fat: 0.3 } },
-  { key: "blueberries", name: "Blueberries", category: "fruit", defaultGrams: 100, per100: { kcal: 57, protein: 0.7, carbs: 14, fat: 0.3 } },
-  { key: "watermelon", name: "Watermelon", category: "fruit", defaultGrams: 200, per100: { kcal: 30, protein: 0.6, carbs: 8, fat: 0.2 } },
-  { key: "mango", name: "Mango", category: "fruit", defaultGrams: 150, per100: { kcal: 60, protein: 0.8, carbs: 15, fat: 0.4 } },
-  { key: "pineapple", name: "Pineapple", category: "fruit", defaultGrams: 150, per100: { kcal: 50, protein: 0.5, carbs: 13, fat: 0.1 } },
-  { key: "dates", name: "Dates", category: "fruit", defaultGrams: 40, per100: { kcal: 282, protein: 2.5, carbs: 75, fat: 0.4 } },
-  { key: "figs_dried", name: "Figs, dried", category: "fruit", defaultGrams: 30, per100: { kcal: 249, protein: 3.3, carbs: 64, fat: 0.9 } },
-  { key: "pomegranate", name: "Pomegranate seeds", category: "fruit", defaultGrams: 100, per100: { kcal: 83, protein: 1.7, carbs: 19, fat: 1.2 } },
-  { key: "kiwi", name: "Kiwi", category: "fruit", defaultGrams: 100, per100: { kcal: 61, protein: 1.1, carbs: 15, fat: 0.5 } },
-  { key: "peach", name: "Peach", category: "fruit", defaultGrams: 150, per100: { kcal: 39, protein: 0.9, carbs: 10, fat: 0.3 } },
-  // Dairy
-  { key: "milk", name: "Milk, 1.5%", category: "dairy", defaultGrams: 250, per100: { kcal: 46, protein: 3.4, carbs: 5, fat: 1.5 } },
-  { key: "milk_whole", name: "Milk, whole", category: "dairy", defaultGrams: 250, per100: { kcal: 61, protein: 3.2, carbs: 4.8, fat: 3.3 } },
-  { key: "yogurt", name: "Greek yogurt, 2%", category: "dairy", defaultGrams: 200, per100: { kcal: 73, protein: 10, carbs: 4, fat: 2 } },
-  { key: "skyr", name: "Skyr", category: "dairy", defaultGrams: 200, per100: { kcal: 63, protein: 11, carbs: 4, fat: 0.2 } },
-  { key: "cottage", name: "Cottage cheese", category: "dairy", defaultGrams: 150, per100: { kcal: 98, protein: 11, carbs: 3.4, fat: 4.3 } },
-  { key: "cheddar", name: "Cheddar cheese", category: "dairy", defaultGrams: 30, per100: { kcal: 403, protein: 25, carbs: 1.3, fat: 33 } },
-  { key: "mozzarella", name: "Mozzarella", category: "dairy", defaultGrams: 50, per100: { kcal: 280, protein: 28, carbs: 3.1, fat: 17 } },
-  { key: "parmesan", name: "Parmesan", category: "dairy", defaultGrams: 20, per100: { kcal: 431, protein: 38, carbs: 4.1, fat: 29 } },
-  { key: "feta", name: "Feta cheese", category: "dairy", defaultGrams: 50, per100: { kcal: 264, protein: 14, carbs: 4, fat: 21 } },
-  { key: "halloumi", name: "Halloumi", category: "dairy", defaultGrams: 80, per100: { kcal: 321, protein: 22, carbs: 2, fat: 25 } },
-  { key: "cream_cheese", name: "Cream cheese", category: "dairy", defaultGrams: 30, per100: { kcal: 342, protein: 6, carbs: 4, fat: 34 } },
-  // Drinks
-  { key: "oj", name: "Orange juice", category: "drink", defaultGrams: 200, per100: { kcal: 45, protein: 0.7, carbs: 10, fat: 0.2 } },
-  { key: "protein_shake", name: "Protein shake, ready-to-drink", category: "drink", defaultGrams: 330, per100: { kcal: 100, protein: 20, carbs: 3, fat: 1.5 } },
-  { key: "cola", name: "Cola", category: "drink", defaultGrams: 330, per100: { kcal: 42, protein: 0, carbs: 10.6, fat: 0 } },
-  { key: "beer", name: "Beer", category: "drink", defaultGrams: 330, per100: { kcal: 43, protein: 0.5, carbs: 3.6, fat: 0 } },
-  { key: "coffee_black", name: "Black coffee", category: "drink", defaultGrams: 200, per100: { kcal: 1, protein: 0.1, carbs: 0, fat: 0 } },
-  { key: "green_tea", name: "Green tea", category: "drink", defaultGrams: 200, per100: { kcal: 1, protein: 0, carbs: 0.2, fat: 0 } },
-  // Dishes — prepared meals from around the world
-  { key: "pizza", name: "Pizza Margherita", category: "dish", defaultGrams: 150, per100: { kcal: 266, protein: 11, carbs: 33, fat: 10 } },
-  { key: "cheeseburger", name: "Cheeseburger", category: "dish", defaultGrams: 200, per100: { kcal: 295, protein: 17, carbs: 24, fat: 15 } },
-  { key: "fries", name: "French fries", category: "dish", defaultGrams: 150, per100: { kcal: 312, protein: 3.4, carbs: 41, fat: 15 } },
-  { key: "doener", name: "Döner kebab (in bread)", category: "dish", defaultGrams: 350, per100: { kcal: 250, protein: 13, carbs: 24, fat: 11 } },
-  { key: "shawarma", name: "Shawarma", category: "dish", defaultGrams: 250, per100: { kcal: 220, protein: 18, carbs: 12, fat: 11 } },
-  { key: "sushi", name: "Sushi rolls, mixed", category: "dish", defaultGrams: 200, per100: { kcal: 150, protein: 5, carbs: 28, fat: 2 } },
-  { key: "padthai", name: "Pad Thai", category: "dish", defaultGrams: 300, per100: { kcal: 175, protein: 7, carbs: 22, fat: 6 } },
-  { key: "friedrice", name: "Fried rice", category: "dish", defaultGrams: 250, per100: { kcal: 163, protein: 4, carbs: 23, fat: 6 } },
-  { key: "butterchicken", name: "Butter chicken", category: "dish", defaultGrams: 250, per100: { kcal: 190, protein: 14, carbs: 6, fat: 12 } },
-  { key: "currywurst", name: "Currywurst", category: "dish", defaultGrams: 200, per100: { kcal: 280, protein: 10, carbs: 13, fat: 22 } },
-  { key: "schnitzel", name: "Schnitzel", category: "dish", defaultGrams: 200, per100: { kcal: 250, protein: 20, carbs: 12, fat: 13 } },
-  { key: "bratwurst", name: "Bratwurst", category: "dish", defaultGrams: 150, per100: { kcal: 300, protein: 13, carbs: 2, fat: 27 } },
-  { key: "spaetzle", name: "Käsespätzle", category: "dish", defaultGrams: 300, per100: { kcal: 220, protein: 8, carbs: 24, fat: 10 } },
-  { key: "roesti", name: "Rösti", category: "dish", defaultGrams: 200, per100: { kcal: 210, protein: 3, carbs: 25, fat: 11 } },
-  { key: "fondue", name: "Cheese fondue", category: "dish", defaultGrams: 150, per100: { kcal: 320, protein: 19, carbs: 6, fat: 25 } },
-];
 
 /* Curated recipes — browsable and loggable as a meal in one tap. Category
    reuses the same keys as the meal sections (breakfast/lunch/dinner/snacks)
@@ -2738,10 +2609,10 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
 
         {shownWeights.length > 0 && (
           <div style={{ marginTop: 14, maxHeight: 220, overflowY: "auto", borderTop: `1px solid ${COLORS.border}` }}>
-            {[...shownWeights].reverse().map((w) => (
-              <div key={w.dateISO} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 2px", borderBottom: `1px solid ${COLORS.border}` }}>
+            {[...shownWeights].reverse().map((w, i) => (
+              <div key={w.dateISO + "-" + i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 2px", borderBottom: `1px solid ${COLORS.border}` }}>
                 <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>
-                  {new Date(w.dateISO).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  {fmtDate(w.dateISO)}
                 </span>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{w.kg} kg</span>
@@ -3672,8 +3543,14 @@ function usePersisted(key, init) {
 
 const todayStamp = () => new Date().toLocaleDateString("sv");
 
+function archiveDay(daily, day, key, value) {
+  daily[day] = { ...(daily[day] || {}), [key]: value };
+  return daily;
+}
+
 // Daily values (meals, water, steps) reset when the date changes.
 function usePersistedDaily(key, init) {
+  const dayRef = useRef(todayStamp());
   const [v, setV] = useState(() => {
     try {
       const raw = JSON.parse(localStorage.getItem("asfit." + key));
@@ -3681,21 +3558,50 @@ function usePersistedDaily(key, init) {
       if (raw && raw.d) {
         // Archive the previous day so history is never lost.
         const daily = JSON.parse(localStorage.getItem("asfit.daily") || "{}");
-        daily[raw.d] = { ...(daily[raw.d] || {}), [key]: raw.v };
-        localStorage.setItem("asfit.daily", JSON.stringify(daily));
+        localStorage.setItem("asfit.daily", JSON.stringify(archiveDay(daily, raw.d, key, raw.v)));
       }
     } catch {
       /* storage unavailable */
     }
     return init;
   });
+  const latest = useRef({ v, init });
+  latest.current = { v, init };
+
   useEffect(() => {
     try {
-      localStorage.setItem("asfit." + key, JSON.stringify({ d: todayStamp(), v }));
+      localStorage.setItem("asfit." + key, JSON.stringify({ d: dayRef.current, v }));
     } catch {
       /* storage unavailable */
     }
   }, [key, v]);
+
+  // The check above only runs once, at mount — if the app is left open across
+  // local midnight, a late-night entry would otherwise keep being written under
+  // the day that was already current when the component mounted, forever (it
+  // never gets archived, and today's totals stay inflated with yesterday's
+  // data). Poll for the rollover instead, including on tab/app foreground.
+  useEffect(() => {
+    const check = () => {
+      const now = todayStamp();
+      if (now === dayRef.current) return;
+      try {
+        const daily = JSON.parse(localStorage.getItem("asfit.daily") || "{}");
+        localStorage.setItem("asfit.daily", JSON.stringify(archiveDay(daily, dayRef.current, key, latest.current.v)));
+      } catch {
+        /* storage unavailable */
+      }
+      dayRef.current = now;
+      setV(latest.current.init);
+    };
+    const id = setInterval(check, 30_000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [key]);
+
   return [v, setV];
 }
 
@@ -4296,7 +4202,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
       const data = out.data;
       if (!data.isFood) return setStatus("noFood");
       setResult(data);
-      setDishName(data.name || data.items[0].name);
+      setDishName(data.name || data.items[0]?.name || "");
       setItems(data.items.map((it) => ({ name: it.name, unit: it.unit === "ml" ? "ml" : "g", gramsStr: String(it.grams), grams: it.grams, kcal: it.kcal, protein: it.protein, carbs: it.carbs, fat: it.fat, base: { grams: it.grams, kcal: it.kcal, protein: it.protein, carbs: it.carbs, fat: it.fat } })));
       setStatus("result");
     } catch {
@@ -5800,6 +5706,13 @@ export default function AsmarFitApp() {
 
   const [healthInfo, setHealthInfo] = usePersisted("healthInfo", { connected: false, lastSync: null, granted: [], unavailable: false });
   const lastExtrasRef = useRef(0);
+  // refreshSteps below is captured once by a setInterval effect (deps: [onboarded]),
+  // so it keeps closing over whatever `healthInfo` was at that render — reading
+  // through a ref instead keeps its fallback value current on every tick.
+  const healthInfoRef = useRef(healthInfo);
+  useEffect(() => {
+    healthInfoRef.current = healthInfo;
+  }, [healthInfo]);
 
   // Pulls weight and workouts from the health store (steps are handled in refreshSteps).
   const syncExtras = async (granted) => {
@@ -5859,7 +5772,7 @@ export default function AsmarFitApp() {
       const res = await Health.queryAggregated({ dataType: "steps", startDate: start.toISOString(), endDate: new Date().toISOString(), bucket: "day", aggregation: "sum" });
       setSteps(Math.round(res.samples.reduce((sum, x) => sum + (x.value || 0), 0)));
       setStepsSource("health");
-      let lastSync = healthInfo.lastSync;
+      let lastSync = healthInfoRef.current.lastSync;
       if (askPermission || Date.now() - lastExtrasRef.current > 10 * 60000) {
         try {
           await syncExtras(status.readAuthorized);
@@ -6281,7 +6194,16 @@ export default function AsmarFitApp() {
           weightLog={weightLog}
           workoutHistory={workoutHistory}
           onAddWeight={addWeight}
-          onDeleteWeight={(dateISO) => setWeightLog((l) => l.filter((w) => w.dateISO !== dateISO))}
+          onDeleteWeight={(dateISO) =>
+            setWeightLog((l) => {
+              // Filtering by dateISO would remove every entry sharing that exact
+              // timestamp (e.g. two health-sync samples that landed on the same
+              // second) instead of just the one the user tapped — drop only the
+              // first match.
+              const idx = l.findIndex((w) => w.dateISO === dateISO);
+              return idx === -1 ? l : [...l.slice(0, idx), ...l.slice(idx + 1)];
+            })
+          }
           photos={progressPhotos}
           onAddPhoto={(p) => setProgressPhotos((ph) => [...ph, p])}
           onDeletePhoto={(id) => setProgressPhotos((ph) => ph.filter((p) => p.id !== id))}
