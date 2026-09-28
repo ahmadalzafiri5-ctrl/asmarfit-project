@@ -431,6 +431,7 @@ const STR = {
     myMealSave: "Save",
     myMealsEmpty: "Nothing saved yet.",
     saveMine: "Save to my meals",
+    delete: "Delete",
     cheatTitle: "Cheat meal / cheat day",
     cheatNextNone: "Plan your next cheat meal or cheat day",
     cheatMeal: "Cheat meal",
@@ -929,6 +930,7 @@ const STR = {
     myMealSave: "Speichern",
     myMealsEmpty: "Noch nichts gespeichert.",
     saveMine: "In Meine Gerichte speichern",
+    delete: "Löschen",
     cheatTitle: "Cheat Meal / Cheat Day",
     cheatNextNone: "Plane dein nächstes Cheat Meal oder deinen Cheat Day",
     cheatMeal: "Cheat Meal",
@@ -2329,7 +2331,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem }) {
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
   const mealDefs = [
@@ -2441,12 +2443,17 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
                       {it.name}
                       {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}{it.unit || "g"}</span> : null}
                     </span>
-                    <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>
+                    <span style={{ color: COLORS.dim, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" }}>
                       {it.kcal} kcal
                       {isToday && (
-                        <span onClick={() => onSaveMyMeal(it)} title={t.saveMine} style={{ marginLeft: 10, cursor: "pointer", color: COLORS.gold, fontSize: 16 }}>
-                          {myMeals.some((x) => x.name === it.name) ? "★" : "☆"}
-                        </span>
+                        <>
+                          <span onClick={() => onSaveMyMeal(it)} title={t.saveMine} style={{ marginLeft: 10, cursor: "pointer", color: COLORS.gold, fontSize: 16 }}>
+                            {myMeals.some((x) => x.name === it.name) ? "★" : "☆"}
+                          </span>
+                          <span onClick={() => onDeleteItem(m.key, i)} title={t.delete} style={{ marginLeft: 8, cursor: "pointer", color: COLORS.dim, display: "inline-flex" }}>
+                            <X size={14} />
+                          </span>
+                        </>
                       )}
                     </span>
                   </div>
@@ -5977,6 +5984,10 @@ export default function AsmarFitApp() {
     setMeals((m) => ({ ...m, [activeMealKey]: [...m[activeMealKey], food] }));
   };
 
+  const deleteFoodItem = (mealKey, index) => {
+    setMeals((m) => ({ ...m, [mealKey]: m[mealKey].filter((_, i) => i !== index) }));
+  };
+
   const addExerciseToPbDay = (ex) => {
     setPbDays((days) => days.map((d) => (d.id === pbSelectedDay ? { ...d, exercises: [...d.exercises, ex] } : d)));
   };
@@ -6268,6 +6279,7 @@ export default function AsmarFitApp() {
           onOpenMyMeals={() => setOverlay("myMeals")}
           onOpenCheats={() => setOverlay("cheats")}
           onSaveMyMeal={addMyMeal}
+          onDeleteItem={deleteFoodItem}
         />
       ),
       training: (
