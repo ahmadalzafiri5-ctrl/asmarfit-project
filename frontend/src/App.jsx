@@ -159,6 +159,9 @@ const STR = {
     snacks: "Snacks",
     add: "Add",
     searchPlaceholder: "Search food",
+    diaryToday: "Today",
+    diaryYesterday: "Yesterday",
+    diaryNothing: "Nothing logged on this day.",
     activePlan: "Active plan",
     newPlan: "New plan",
     pushPullLegs: "Push / Pull / Legs",
@@ -652,6 +655,9 @@ const STR = {
     snacks: "Snacks",
     add: "Hinzufügen",
     searchPlaceholder: "Lebensmittel suchen",
+    diaryToday: "Heute",
+    diaryYesterday: "Gestern",
+    diaryNothing: "An diesem Tag wurde nichts eingetragen.",
     activePlan: "Aktiver Plan",
     newPlan: "Neuer Plan",
     pushPullLegs: "Push / Pull / Legs",
@@ -2318,7 +2324,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, meals, macroTargets, myMeals, cheats, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal }) {
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
   const mealDefs = [
@@ -2327,71 +2333,129 @@ function NutritionScreen({ t, meals, macroTargets, myMeals, cheats, onOpenFoodSe
     { key: "dinner", label: t.dinner },
     { key: "snacks", label: t.snacks },
   ];
+
+  // Yazio-style day flip: browse any earlier day's diary right here, read-only,
+  // without leaving the Nutrition tab. Resets to today whenever this screen
+  // remounts (e.g. switching tabs and back) — that's the expected behaviour.
+  const [viewDate, setViewDate] = useState(() => todayStamp());
+  const dateInputRef = useRef(null);
+  const today = todayStamp();
+  const isToday = viewDate === today;
+  const viewMeals = isToday ? meals : history?.[viewDate]?.meals || { breakfast: [], lunch: [], dinner: [], snacks: [] };
+  const hasAnyItem = Object.values(viewMeals).some((a) => a.length > 0);
+  const shiftDay = (delta) => {
+    const d = new Date(viewDate + "T12:00:00");
+    d.setDate(d.getDate() + delta);
+    const next = dateKey(d);
+    if (next <= today) setViewDate(next);
+  };
+  const dateLabel = (() => {
+    if (isToday) return t.diaryToday;
+    const y = dateKey(new Date(Date.now() - 86400000));
+    if (viewDate === y) return t.diaryYesterday;
+    const locale = lang === "de" ? "de-DE" : "en-US";
+    return new Date(viewDate + "T12:00:00").toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
+  })();
+
   return (
     <div style={{ padding: "0 20px 24px" }}>
-      <Card style={{ marginBottom: 16 }}>
-        <MacroBar label={t.protein} value={sumMeals(meals, "protein")} target={macroTargets.protein} color={COLORS.teal} />
-        <MacroBar label={t.carbs} value={sumMeals(meals, "carbs")} target={macroTargets.carbs} color={COLORS.gold} />
-        <MacroBar label={t.fat} value={sumMeals(meals, "fat")} target={macroTargets.fat} color={COLORS.coral} />
-      </Card>
-
-      <div onClick={() => onOpenFoodSearch("snacks")} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 12, cursor: "pointer" }}>
-        <Search size={16} color={COLORS.dim} />
-        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, flex: 1 }}>{t.searchPlaceholder}</span>
-        <ScanLine size={17} color={COLORS.gold} />
-      </div>
-
-      <div onClick={onOpenRecipes} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
-        <BookOpen size={16} color={COLORS.gold} />
-        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.recipesButton}</span>
-      </div>
-
-      <div onClick={onOpenMyMeals} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
-        <Star size={16} color={COLORS.gold} />
-        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.myMealsButton}</span>
-      </div>
-
-      <div onClick={onOpenCheats} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
-        <span style={{ fontSize: 22 }}>🍕</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.cheatTitle}</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
-            {nextCheat ? (nextCheat.type === "day" ? t.cheatDay : t.cheatMeal) + " · " + (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : t.cheatNextNone}
-          </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div onClick={() => shiftDay(-1)} style={{ width: 34, height: 34, borderRadius: 10, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+          <ChevronLeft size={17} color={COLORS.text} />
+        </div>
+        <div onClick={() => dateInputRef.current?.showPicker ? dateInputRef.current.showPicker() : dateInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", position: "relative" }}>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text, textTransform: "capitalize" }}>{dateLabel}</span>
+          {!isToday && <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.gold, display: "inline-block" }} />}
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={viewDate}
+            max={today}
+            onChange={(e) => e.target.value && setViewDate(e.target.value)}
+            style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", border: "none" }}
+          />
+        </div>
+        <div onClick={() => !isToday && shiftDay(1)} style={{ width: 34, height: 34, borderRadius: 10, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", cursor: isToday ? "default" : "pointer", opacity: isToday ? 0.3 : 1, flexShrink: 0 }}>
+          <ChevronLeft size={17} color={COLORS.text} style={{ transform: "rotate(180deg)" }} />
         </div>
       </div>
 
-      {mealDefs.map((m) => {
-        const items = meals[m.key];
-        const kcal = items.reduce((s, it) => s + it.kcal, 0);
-        return (
-          <div key={m.key} style={{ marginBottom: 18 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{m.label}</span>
-              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{kcal > 0 ? `${kcal} kcal` : ""}</span>
-            </div>
-            <Card style={{ padding: 4 }}>
-              {items.map((it, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderBottom: `1px solid ${COLORS.border}`, fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
-                  <span>
-                    {it.name}
-                    {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}{it.unit || "g"}</span> : null}
-                  </span>
-                  <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>
-                    {it.kcal} kcal
-                    <span onClick={() => onSaveMyMeal(it)} title={t.saveMine} style={{ marginLeft: 10, cursor: "pointer", color: COLORS.gold, fontSize: 16 }}>
-                      {myMeals.some((x) => x.name === it.name) ? "★" : "☆"}
-                    </span>
-                  </span>
-                </div>
-              ))}
-              <div onClick={() => onOpenFoodSearch(m.key)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 0", color: COLORS.gold, fontFamily: "Inter, sans-serif", fontSize: 13, cursor: "pointer" }}>
-                <Plus size={14} /> {t.add}
-              </div>
-            </Card>
+      <Card style={{ marginBottom: 16 }}>
+        <MacroBar label={t.protein} value={sumMeals(viewMeals, "protein")} target={macroTargets.protein} color={COLORS.teal} />
+        <MacroBar label={t.carbs} value={sumMeals(viewMeals, "carbs")} target={macroTargets.carbs} color={COLORS.gold} />
+        <MacroBar label={t.fat} value={sumMeals(viewMeals, "fat")} target={macroTargets.fat} color={COLORS.coral} />
+      </Card>
+
+      {isToday && (
+        <>
+          <div onClick={() => onOpenFoodSearch("snacks")} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 12, cursor: "pointer" }}>
+            <Search size={16} color={COLORS.dim} />
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, flex: 1 }}>{t.searchPlaceholder}</span>
+            <ScanLine size={17} color={COLORS.gold} />
           </div>
-        );
-      })}
+
+          <div onClick={onOpenRecipes} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
+            <BookOpen size={16} color={COLORS.gold} />
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.recipesButton}</span>
+          </div>
+
+          <div onClick={onOpenMyMeals} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
+            <Star size={16} color={COLORS.gold} />
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.myMealsButton}</span>
+          </div>
+
+          <div onClick={onOpenCheats} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
+            <span style={{ fontSize: 22 }}>🍕</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.cheatTitle}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
+                {nextCheat ? (nextCheat.type === "day" ? t.cheatDay : t.cheatMeal) + " · " + (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : t.cheatNextNone}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {!isToday && !hasAnyItem ? (
+        <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24, marginBottom: 20 }}>{t.diaryNothing}</div>
+      ) : (
+        mealDefs.map((m) => {
+          const items = viewMeals[m.key];
+          const kcal = items.reduce((s, it) => s + it.kcal, 0);
+          if (!isToday && items.length === 0) return null;
+          return (
+            <div key={m.key} style={{ marginBottom: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{m.label}</span>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{kcal > 0 ? `${kcal} kcal` : ""}</span>
+              </div>
+              <Card style={{ padding: 4 }}>
+                {items.map((it, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderBottom: i < items.length - 1 || isToday ? `1px solid ${COLORS.border}` : "none", fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
+                    <span>
+                      {it.name}
+                      {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}{it.unit || "g"}</span> : null}
+                    </span>
+                    <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>
+                      {it.kcal} kcal
+                      {isToday && (
+                        <span onClick={() => onSaveMyMeal(it)} title={t.saveMine} style={{ marginLeft: 10, cursor: "pointer", color: COLORS.gold, fontSize: 16 }}>
+                          {myMeals.some((x) => x.name === it.name) ? "★" : "☆"}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+                {isToday && (
+                  <div onClick={() => onOpenFoodSearch(m.key)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 0", color: COLORS.gold, fontFamily: "Inter, sans-serif", fontSize: 13, cursor: "pointer" }}>
+                    <Plus size={14} /> {t.add}
+                  </div>
+                )}
+              </Card>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
@@ -6177,7 +6241,9 @@ export default function AsmarFitApp() {
       nutrition: (
         <NutritionScreen
           t={t}
+          lang={lang}
           meals={meals}
+          history={historyMap}
           macroTargets={profile.macroTargets}
           onOpenFoodSearch={(key) => {
             setActiveMealKey(key);
