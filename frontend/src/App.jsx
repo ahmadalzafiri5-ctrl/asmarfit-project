@@ -1728,9 +1728,9 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const [moreGoals, setMoreGoals] = useState([]);
   const [experience, setExperience] = useState(null);
   const [name, setName] = useState("");
-  const [weight, setWeight] = useState("84");
-  const [height, setHeight] = useState("180");
-  const [target, setTarget] = useState("80");
+  const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const [target, setTarget] = useState("");
   const [birth, setBirth] = useState({ d: "1", m: "1", y: "2000" });
   const [targetDate, setTargetDate] = useState(() => new Date(Date.now() + 84 * 86400000).toISOString().slice(0, 10));
   const [vision3Months, setVision3Months] = useState("");
@@ -1750,7 +1750,8 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const showsRate = ["cut", "gain", "bulk"].includes(goal) && Number(target) !== Number(weight);
 
   const LAST_STEP = 13;
-  const canContinue = !((step === 1 && !gender) || (step === 3 && !goal) || (step === 7 && !name.trim()));
+  const statsValid = Number(weight) > 0 && Number(height) > 0 && Number(target) > 0;
+  const canContinue = !((step === 1 && !gender) || (step === 3 && !goal) || (step === 7 && (!name.trim() || !statsValid)));
 
   // Language picker comes before everything else, including "Welcome" — a
   // brand-new visitor hasn't chosen DE/EN yet, so both language names are
@@ -3964,7 +3965,7 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
   const [found, setFound] = useState(null);
   // idle | scanning | loading | notFound | error | unsupported | moduleInstalling | webPermissionDenied | webUnsupported
   const [status, setStatus] = useState("idle");
-  const grams = 100;
+  const [grams, setGrams] = useState(100);
   const scaled = found ? scale(found.per100, grams) : null;
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
@@ -3991,6 +3992,7 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
           return;
         }
         setFound(data.result);
+        setGrams(100);
         setStatus("ok");
       })
       .catch(() => setStatus("error"));
@@ -4103,10 +4105,29 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
         <Card>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 6 }}>{t.foundProduct}</div>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{found.name}</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 16 }}>
-            {scaled.kcal} kcal · {grams} g
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 16 }}>{found.per100.kcal} kcal {t.per100g}</div>
+
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 8 }}>{t.amount}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <div onClick={() => setGrams((g) => Math.max(5, Math.round(g) - 10))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <Minus size={14} color={COLORS.text} />
+            </div>
+            <input type="number" inputMode="decimal" value={grams || ""} onChange={(e) => setGrams(Math.max(0, Math.min(5000, Number(e.target.value) || 0)))} style={{ ...numInputStyle, width: 90, textAlign: "center", fontWeight: 700 }} />
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>g</span>
+            <div onClick={() => setGrams((g) => Math.min(5000, Math.round(g) + 10))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <Plus size={14} color={COLORS.text} />
+            </div>
           </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+            {[50, 100, 150, 200, 250].map((g) => (
+              <div key={g} onClick={() => setGrams(g)} style={{ flex: 1, textAlign: "center", padding: "7px 0", borderRadius: 10, fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer", background: grams === g ? COLORS.goldSoft : COLORS.raised, color: grams === g ? COLORS.gold : COLORS.dim, border: `1px solid ${grams === g ? COLORS.gold : COLORS.border}` }}>{g}</div>
+            ))}
+          </div>
+
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text, marginBottom: 16 }}>{scaled.kcal} kcal · P {scaled.protein} · C {scaled.carbs} · F {scaled.fat}</div>
+
           <button
+            disabled={!(grams > 0)}
             onClick={() => {
               onAdd({ name: found.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, grams });
               onDone();
@@ -4239,6 +4260,14 @@ function PrivacyScreen({ t }) {
       ))}
     </div>
   );
+}
+
+// Impressum/Nutzungsbedingungen are full legal HTML pages (frontend/public/*.html) —
+// shown inside the app's own overlay chrome via iframe, so the back button always
+// works. Opening them with window.open() instead used to strand iOS users: an
+// installed home-screen PWA has no browser tabs or address bar to get back with.
+function LegalPageScreen({ src }) {
+  return <iframe src={src} title={src} style={{ width: "100%", height: "100%", border: "none", display: "block", background: COLORS.bg }} />;
 }
 
 /* ---------------- AI photo scan ---------------- */
@@ -5381,8 +5410,8 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
 
       <SettingsGroup title={t.setGroupLegal}>
         <SettingsRow icon={Shield} label={t.settingsPrivacy} onClick={() => onNav("privacy")} />
-        <SettingsRow icon={FileText} label={t.setTermsRow} onClick={() => window.open("/terms.html", "_blank")} />
-        <SettingsRow icon={Landmark} label={t.setImprintRow} onClick={() => window.open("/impressum.html", "_blank")} />
+        <SettingsRow icon={FileText} label={t.setTermsRow} onClick={() => onNav("terms")} />
+        <SettingsRow icon={Landmark} label={t.setImprintRow} onClick={() => onNav("impressum")} />
       </SettingsGroup>
 
       <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>
@@ -6127,6 +6156,14 @@ export default function AsmarFitApp() {
   } else if (overlay === "privacy") {
     content = <PrivacyScreen t={t} />;
     topTitle = t.privacyTitle;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "terms") {
+    content = <LegalPageScreen src="/terms.html" />;
+    topTitle = t.setTermsRow;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "impressum") {
+    content = <LegalPageScreen src="/impressum.html" />;
+    topTitle = t.setImprintRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "assistant") {
     content = <AssistantScreen t={t} lang={lang} />;

@@ -118,6 +118,20 @@ const RAW = [
   ["Gummibärchen", "Gummy bears", 343, 6.9, 77, 0.5, "gummibaerchen fruchtgummi"],
   ["Vanilleeis", "Vanilla ice cream", 207, 3.5, 24, 11, "eis eiscreme glace"],
   ["Lasagne", "Lasagna", 135, 7.5, 12, 6, ""],
+  // Backen & Zutaten
+  ["Sauerteig (Anstellgut)", "Sourdough starter", 105, 4, 21, 0.5, "sauerteigstarter sourdough starter"],
+  ["Weizenmehl Type 405", "Wheat flour, all-purpose", 348, 10, 73, 1, "mehl flour"],
+  ["Vollkornmehl", "Whole wheat flour", 340, 13, 65, 2.5, "mehl flour"],
+  ["Hefe, frisch", "Yeast, fresh", 105, 12, 4, 1.1, "hefewürfel yeast"],
+  ["Backpulver", "Baking powder", 53, 0, 28, 0, ""],
+  ["Speisestärke", "Cornstarch", 381, 0.6, 91, 0.1, "maizena starch"],
+  // Saucen & Würzen
+  ["Senf", "Mustard", 66, 4.4, 6, 3.3, "mustard"],
+  ["Ketchup", "Ketchup", 100, 1.2, 24, 0.2, ""],
+  ["Mayonnaise", "Mayonnaise", 680, 1.1, 1, 75, ""],
+  ["Sojasauce", "Soy sauce", 53, 8, 5, 0, "soja soy"],
+  ["Essig", "Vinegar", 21, 0, 0.4, 0, "vinegar"],
+  ["Pesto (Basilikum)", "Pesto (basil)", 450, 4, 5, 46, ""],
   // Getränke (pro 100 ml)
   ["Wasser", "Water", 0, 0, 0, 0, "mineralwasser leitungswasser", "ml"],
   ["Cola", "Cola", 42, 0, 10.6, 0, "coca coke pepsi", "ml"],
@@ -167,9 +181,12 @@ function searchBasics(query, lang) {
     const first = tokens[0];
     // exact name / name starts with query rank ahead of keyword-only matches
     const score = nameFold === tokens.join(" ") ? 0 : nameFold.startsWith(first) ? 1 : nameFold.includes(first) ? 2 : 3;
+    // Tagged like a generic/homemade entry (the way Yazio marks its own generic
+    // foods) so it reads clearly as "the plain version" next to branded results.
+    const brand = lang === "de" ? "Hausgemacht" : "Homemade";
     hits.push({
       score,
-      item: { source: "basic", name, brand: null, unit: b.unit, per100: b.per100, isSupplement: false, note: null },
+      item: { source: "basic", name, brand, unit: b.unit, per100: b.per100, isSupplement: false, note: null },
     });
   }
   return hits.sort((a, b) => a.score - b.score).map((h) => h.item);

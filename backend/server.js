@@ -248,7 +248,7 @@ async function searchOpenFoodFacts(query, lang) {
  * full of near-identical copies of the same product), capped so the response
  * stays a reasonable size.
  */
-function mergeSearchResults(...lists) {
+function mergeSearchResults(limit, ...lists) {
   const seen = new Set();
   const seenNutrition = new Set();
   const merged = [];
@@ -268,7 +268,7 @@ function mergeSearchResults(...lists) {
     seenNutrition.add(key2);
     merged.push(item);
   }
-  return merged.slice(0, 40);
+  return merged.slice(0, limit);
 }
 
 /* ---------- GET /api/food/search?q=banana&lang=de ---------- */
@@ -293,7 +293,9 @@ app.get("/api/food/search", async (req, res) => {
     off = await searchOpenFoodFacts(query, lang);
   }
 
-  const results = mergeSearchResults(basics, usda.results, off.results);
+  // Once a curated basic already answers the query cleanly, a long tail of
+  // near-identical branded results just buries it — keep the list tighter.
+  const results = mergeSearchResults(basics.length > 0 ? 18 : 40, basics, usda.results, off.results);
 
   // Only fail (and skip caching) when there's nothing to show AND a source actually
   // errored — never when a source came back genuinely empty.
