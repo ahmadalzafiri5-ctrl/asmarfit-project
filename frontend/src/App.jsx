@@ -221,7 +221,7 @@ const STR = {
     obStatsTitle: "A few numbers",
     obStatsSub: "Used to calculate your daily targets.",
     obNameLabel: "Your name",
-    obNamePlaceholder: "e.g. Alex",
+    obNamePlaceholder: "Alex",
     obWeight: "Current weight (kg)",
     obHeight: "Height (cm)",
     obTarget: "Target weight (kg)",
@@ -312,6 +312,9 @@ const STR = {
     obAiScan2Title: "Good choice! You're on the fast track.",
     obAiScan2Sub: "With AI you get nutrition info instantly, which makes it easier to stay on course and see results.",
     obExample: "Example",
+    obStepsTitle: "How many steps a day?",
+    obStepsSub: "A daily step goal, on top of your training. You can change this anytime in Settings.",
+    obStepsSkip: "Skip for now",
     stepsTitle: "Steps",
     stepsBurned: "burned",
     stepsConnect: "Connect Health Connect",
@@ -415,14 +418,8 @@ const STR = {
     recipeSave: "Save recipe",
     recipeDelete: "Delete recipe",
     recipeCancel: "Cancel",
-    recipeImageToggle: "Create an image too",
-    recipeImageAi: "Generate image with AI",
-    recipeImageNew: "New AI image",
     recipeImageOwn: "Own photo",
     recipeImageRemove: "Remove image",
-    recipeImageNote: "AI illustration — just for inspiration, may differ from the real dish.",
-    recipeImageBusy: "Creating image … (can take up to 30 s)",
-    recipeImageFail: "Couldn't create the image. Tap \"New AI image\" to try again.",
     myMealsButton: "My meals & snacks",
     myMealsTitle: "My meals",
     myMealsHint: "Save what you eat often — then add it with one tap.",
@@ -517,6 +514,8 @@ const STR = {
     setHelpRow: "Help & FAQ",
     setShareRow: "Recommend ASFIT",
     setAboutRow: "About ASFIT",
+    setAvatarChange: "Change photo",
+    setAvatarRemove: "Remove photo",
     setName: "Name",
     setGender: "Gender",
     setBirth: "Birthday",
@@ -715,7 +714,7 @@ const STR = {
     obStatsTitle: "Ein paar Zahlen",
     obStatsSub: "Damit berechnen wir deine Tagesziele.",
     obNameLabel: "Dein Name",
-    obNamePlaceholder: "z. B. Alex",
+    obNamePlaceholder: "Alex",
     obWeight: "Aktuelles Gewicht (kg)",
     obHeight: "Größe (cm)",
     obTarget: "Zielgewicht (kg)",
@@ -806,6 +805,9 @@ const STR = {
     obAiScan2Title: "Gute Wahl! Du bist auf der Überholspur.",
     obAiScan2Sub: "Mit KI bekommst du sofort Nährwertinfos — so bleibst du leichter auf Kurs und siehst Ergebnisse.",
     obExample: "Beispiel",
+    obStepsTitle: "Wie viele Schritte am Tag?",
+    obStepsSub: "Ein Tagesziel für Schritte, zusätzlich zum Training. Du kannst das jederzeit in den Einstellungen ändern.",
+    obStepsSkip: "Später festlegen",
     stepsTitle: "Schritte",
     stepsBurned: "verbrannt",
     stepsConnect: "Mit Health Connect verbinden",
@@ -909,14 +911,8 @@ const STR = {
     recipeSave: "Rezept speichern",
     recipeDelete: "Rezept löschen",
     recipeCancel: "Abbrechen",
-    recipeImageToggle: "Bild dazu erstellen",
-    recipeImageAi: "Bild mit KI erzeugen",
-    recipeImageNew: "Neues KI-Bild",
     recipeImageOwn: "Eigenes Foto",
     recipeImageRemove: "Bild entfernen",
-    recipeImageNote: "KI-Illustration — nur zur Inspiration, kann vom echten Gericht abweichen.",
-    recipeImageBusy: "Bild wird erstellt … (kann bis zu 30 s dauern)",
-    recipeImageFail: "Bild konnte nicht erstellt werden. Tippe auf „Neues KI-Bild“, um es nochmal zu versuchen.",
     myMealsButton: "Meine Gerichte & Snacks",
     myMealsTitle: "Meine Gerichte",
     myMealsHint: "Speichere, was du oft isst — dann fügst du es mit einem Tipp hinzu.",
@@ -1011,6 +1007,8 @@ const STR = {
     setHelpRow: "Hilfe & FAQ",
     setShareRow: "ASFIT weiterempfehlen",
     setAboutRow: "Über ASFIT",
+    setAvatarChange: "Foto ändern",
+    setAvatarRemove: "Foto entfernen",
     setName: "Name",
     setGender: "Geschlecht",
     setBirth: "Geburtstag",
@@ -1724,6 +1722,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const [targetDate, setTargetDate] = useState(() => new Date(Date.now() + 84 * 86400000).toISOString().slice(0, 10));
   const [vision3Months, setVision3Months] = useState("");
   const [visionWhy, setVisionWhy] = useState("");
+  const [stepsGoal, setStepsGoal] = useState(10000);
 
   const toggleMoreGoal = (key) => {
     setMoreGoals((g) => (g.includes(key) ? g.filter((x) => x !== key) : [...g, key]));
@@ -1737,7 +1736,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const kgPerWeek = Math.abs(Number(target) - Number(weight)) / (daysToGoal / 7);
   const showsRate = ["cut", "gain", "bulk"].includes(goal) && Number(target) !== Number(weight);
 
-  const LAST_STEP = 12;
+  const LAST_STEP = 13;
   const canContinue = !((step === 1 && !gender) || (step === 3 && !goal) || (step === 7 && !name.trim()));
 
   // Language picker comes before everything else, including "Welcome" — a
@@ -2000,6 +1999,28 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
         {step === 12 && (
           <div style={{ textAlign: "center" }}>
+            <Footprints size={40} color={COLORS.gold} style={{ marginBottom: 18 }} />
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obStepsTitle}</h2>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 26px" }}>{t.obStepsSub}</p>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+              <Stepper value={stepsGoal} onChange={(v) => setStepsGoal(Math.max(2000, Math.min(30000, v)))} step={500} />
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              {[6000, 8000, 10000, 12000].map((v) => (
+                <div
+                  key={v}
+                  onClick={() => setStepsGoal(v)}
+                  style={{ padding: "8px 14px", borderRadius: 999, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, background: stepsGoal === v ? COLORS.goldSoft : COLORS.raised, color: stepsGoal === v ? COLORS.gold : COLORS.dim, border: `1px solid ${stepsGoal === v ? COLORS.gold : COLORS.border}` }}
+                >
+                  {v.toLocaleString("de-DE")}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 13 && (
+          <div style={{ textAlign: "center" }}>
             <div style={{ width: 64, height: 64, borderRadius: "50%", background: COLORS.goldSoft, margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Check size={28} color={COLORS.gold} />
             </div>
@@ -2057,6 +2078,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
                   macroTargets: computeMacroTargets(kcalGoal),
                   vision3Months: vision3Months.trim(),
                   visionWhy: visionWhy.trim(),
+                  stepsGoal,
                 })
               : setStep(step + 1)
           }
@@ -2076,6 +2098,11 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           {step === 0 ? t.obStart : step === LAST_STEP ? t.obFinish : t.next}
         </button>
       </div>
+      {step === 12 && (
+        <div onClick={() => setStep(step + 1)} style={{ textAlign: "center", marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
+          {t.obStepsSkip}
+        </div>
+      )}
     </div>
   );
 }
@@ -2175,9 +2202,14 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
 
   return (
     <div style={{ padding: "4px 20px 24px" }}>
-      <p style={{ color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 14, marginTop: -4, marginBottom: 22 }}>
-        {new Date().getHours() < 11 ? t.greetingPrefix : new Date().getHours() < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
-      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: -4, marginBottom: 22 }}>
+        {profile.avatarUrl ? (
+          <img src={profile.avatarUrl} alt="" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+        ) : null}
+        <p style={{ color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 14, margin: 0 }}>
+          {new Date().getHours() < 11 ? t.greetingPrefix : new Date().getHours() < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
+        </p>
+      </div>
 
       {activeWorkout && (
         <Card onClick={onResumeWorkout} style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", background: COLORS.goldSoft, border: `1px solid ${COLORS.gold}` }}>
@@ -4545,10 +4577,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
   const [mode, setMode] = useState("list"); // list | form
-  const emptyForm = { name: "", category: "lunch", kcal: "", protein: "", carbs: "", fat: "", ingredients: "", image: "", imageAi: false };
-  const [imgBusy, setImgBusy] = useState(false);
-  const [imgFail, setImgFail] = useState(false);
-  const [wantImage, setWantImage] = usePersisted("recipeWantImage", true);
+  const emptyForm = { name: "", category: "lunch", kcal: "", protein: "", carbs: "", fat: "", ingredients: "", image: "" };
   const ownPhotoRef = useRef(null);
   const [form, setForm] = useState(emptyForm);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -4577,27 +4606,6 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
 
   const num = (v) => Math.max(0, Math.round(parseFloat(String(v).replace(",", ".")) || 0));
 
-  // Fetches the AI picture once and stores it as a data URL with the recipe,
-  // so it works offline afterwards and is never generated a second time.
-  const makeAiImage = async (name, ingredientsText) => {
-    setImgBusy(true);
-    setImgFail(false);
-    try {
-      const res = await fetch(API_BASE + "/api/recipe-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, ingredients: String(ingredientsText || "").split("\n") }),
-      });
-      if (!res.ok) throw new Error("http " + res.status);
-      const data = await res.json();
-      setForm((f) => ({ ...f, image: data.image, imageAi: true }));
-    } catch {
-      setImgFail(true);
-    } finally {
-      setImgBusy(false);
-    }
-  };
-
   const generate = async () => {
     const wish = aiPrompt.trim();
     if (!wish || aiBusy) return;
@@ -4613,8 +4621,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       else if (!res.ok) setAiError(t.assistantError);
       else {
         const r = await res.json();
-        setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n"), image: "", imageAi: false });
-        if (wantImage) makeAiImage(r.name, r.ingredients.join("\n"));
+        setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n"), image: "" });
       }
     } catch {
       setAiError(t.serverError);
@@ -4638,7 +4645,6 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       ingredients,
       ingredientsDe: ingredients,
       image: form.image || "",
-      imageAi: !!form.imageAi,
       custom: true,
     });
     setForm(emptyForm);
@@ -4657,11 +4663,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
         <>
           <Card style={{ marginBottom: 14 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>✨ {t.recipeCreateAi}</div>
-            <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder={t.recipeAiPrompt} rows={2} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 8, fontFamily: "Inter, sans-serif" }} />
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{t.recipeImageToggle}</span>
-              <Switch checked={wantImage} onChange={setWantImage} />
-            </div>
+            <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder={t.recipeAiPrompt} rows={2} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
             <button onClick={generate} disabled={aiBusy || !aiPrompt.trim()} style={{ width: "100%", background: aiBusy || !aiPrompt.trim() ? COLORS.raised : COLORS.gold, color: aiBusy || !aiPrompt.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: aiBusy ? "default" : "pointer" }}>
               {aiBusy ? t.recipeAiBusy : t.recipeAiGo}
             </button>
@@ -4686,25 +4688,16 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
             <input ref={ownPhotoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
               const f = e.target.files && e.target.files[0];
               e.target.value = "";
-              if (f) setForm({ ...form, image: await downscaleImage(f, 640), imageAi: false });
+              if (f) setForm({ ...form, image: await downscaleImage(f, 640) });
             }} />
-            {form.image ? (
+            {form.image && (
               <div style={{ marginBottom: 10 }}>
                 <img src={form.image} alt="" style={{ width: "100%", height: 180, objectFit: "cover", objectPosition: "center top", borderRadius: 12, display: "block", background: COLORS.raised }} />
-                {form.imageAi && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 6 }}>{t.recipeImageNote}</div>}
               </div>
-            ) : imgBusy ? (
-              <div style={{ height: 180, borderRadius: 12, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 20px", marginBottom: 10, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.recipeImageBusy}</div>
-            ) : imgFail ? (
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 10 }}>{t.recipeImageFail}</div>
-            ) : null}
+            )}
             <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-              <Chip label={form.imageAi || imgFail ? t.recipeImageNew : t.recipeImageAi} active={false} onClick={() => {
-                if (!form.name.trim() || imgBusy) return;
-                makeAiImage(form.name.trim(), form.ingredients);
-              }} />
               <Chip label={t.recipeImageOwn} active={false} onClick={() => ownPhotoRef.current && ownPhotoRef.current.click()} />
-              {form.image && <Chip label={t.recipeImageRemove} active={false} onClick={() => setForm({ ...form, image: "", imageAi: false })} />}
+              {form.image && <Chip label={t.recipeImageRemove} active={false} onClick={() => setForm({ ...form, image: "" })} />}
             </div>
             <textarea value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder={t.recipeIngredientsHint} rows={5} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
             <button onClick={saveForm} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
@@ -4756,7 +4749,6 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
           {selected.image && (
             <div style={{ marginBottom: 14 }}>
               <img src={selected.image} alt="" style={{ width: "100%", height: 200, objectFit: "cover", objectPosition: "center top", borderRadius: 14, display: "block", background: COLORS.raised }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-              {selected.imageAi && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 6 }}>{t.recipeImageNote}</div>}
             </div>
           )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
@@ -5275,9 +5267,13 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
   return (
     <div style={{ padding: "0 20px 28px" }}>
       <Card onClick={() => onNav("settingsProfile")} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22, cursor: "pointer" }}>
-        <div style={{ width: 54, height: 54, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
-        </div>
+        {profile.avatarUrl ? (
+          <img src={profile.avatarUrl} alt="" style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 54, height: 54, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16.5, fontWeight: 700, color: COLORS.text }}>{profile.name}</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{profile.weight} kg · {profile.height} cm · {profile.kcalGoal} kcal</div>
@@ -5319,6 +5315,7 @@ function ProfileSettings({ t, profile, onSave }) {
   const [birth, setBirth] = useState(profile.birth || { d: "1", m: "1", y: "2000" });
   const [height, setHeight] = useState(String(profile.height || ""));
   const [saved, setSaved] = useState(false);
+  const avatarRef = useRef(null);
   const canSave = name.trim() && Number(height) > 100 && Number(height) < 250;
   const save = () => {
     if (!canSave) return;
@@ -5326,8 +5323,33 @@ function ProfileSettings({ t, profile, onSave }) {
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
+  const pickAvatar = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    onSave({ avatarUrl: await downscaleImage(file, 320) });
+  };
   return (
     <div style={{ padding: "0 20px 28px" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 8 }}>
+        <div onClick={() => avatarRef.current?.click()} style={{ position: "relative", width: 88, height: 88, cursor: "pointer" }}>
+          {profile.avatarUrl ? (
+            <img src={profile.avatarUrl} alt="" style={{ width: 88, height: 88, borderRadius: "50%", objectFit: "cover", display: "block" }} />
+          ) : (
+            <div style={{ width: 88, height: 88, borderRadius: "50%", background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <User size={36} color={COLORS.gold} />
+            </div>
+          )}
+          <div style={{ position: "absolute", right: -2, bottom: -2, width: 30, height: 30, borderRadius: "50%", background: COLORS.gold, border: `2px solid ${COLORS.bg}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Camera size={14} color={COLORS.bg} />
+          </div>
+        </div>
+        <input ref={avatarRef} type="file" accept="image/*" style={{ display: "none" }} onChange={pickAvatar} />
+        <span onClick={() => avatarRef.current?.click()} style={{ marginTop: 10, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.setAvatarChange}</span>
+        {profile.avatarUrl && (
+          <span onClick={() => onSave({ avatarUrl: null })} style={{ marginTop: 6, fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, cursor: "pointer" }}>{t.setAvatarRemove}</span>
+        )}
+      </div>
       <SettingsLabel>{t.setName}</SettingsLabel>
       <TextField value={name} onChange={setName} placeholder={t.setName} />
       <SettingsLabel>{t.setGender}</SettingsLabel>
@@ -5800,6 +5822,7 @@ export default function AsmarFitApp() {
   const finishOnboarding = (data) => {
     setProfile(data);
     setWeightLog([{ dateISO: new Date().toISOString(), kg: data.weight }]);
+    if (data.stepsGoal) setStepsGoal(data.stepsGoal);
     setOnboarded(true);
   };
 
@@ -5899,7 +5922,9 @@ export default function AsmarFitApp() {
 
   const saveProfileBasics = (v) =>
     setProfile((p) => {
-      const next = { ...p, ...v, age: ageFromBirth(v.birth) };
+      // v may be a partial update (e.g. just a new avatar) without a birth date —
+      // fall back to the profile's existing one instead of crashing on destructure.
+      const next = { ...p, ...v, age: ageFromBirth(v.birth || p.birth) };
       if (!p.kcalManual) {
         next.kcalGoal = computeKcalGoal({ gender: next.gender, age: next.age, height: next.height, weight: next.weight, target: next.target, goal: next.goal, targetDate: next.targetDate });
         next.macroTargets = computeMacroTargets(next.kcalGoal, next.macroSplit);
