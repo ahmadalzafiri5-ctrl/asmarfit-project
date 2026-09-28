@@ -1,52 +1,57 @@
-# AsmarFit Food API — Backend
+# ASFIT Backend
 
-Kleiner Node/Express-Server, der zwei externe Lebensmitteldatenbanken hinter
-einer sauberen, einheitlichen API zusammenführt:
+Node/Express-Server für die ASFIT-App. Bündelt externe Datenquellen und die
+KI-Features (Claude) hinter einer schlanken API, damit keine API-Keys im
+Frontend-Code landen. Läuft in Produktion auf Render (`asmarfit-backend`).
 
-- **USDA FoodData Central** — Textsuche (`/api/food/search?q=...`)
-- **Open Food Facts** — Barcode-Lookup (`/api/food/barcode/:code`)
+## Endpunkte
 
-Beide Antworten werden ins gleiche Format normalisiert, das die AsmarFit-App
-schon verwendet: `{ name, per100: { kcal, protein, carbs, fat } }`.
+- `GET /health` — Ping.
+- `GET /api/food/search?q=<text>&lang=de|en` — Lebensmittelsuche. Kombiniert
+  eine kuratierte Liste gängiger Lebensmittel (`basics.js`), USDA FoodData
+  Central (englisch) und Open Food Facts (deutsch, plus Fallback für
+  englisch), dedupliziert und gerankt. Cache: 6 Stunden pro Sprache+Begriff.
+- `GET /api/food/barcode/:code` — Barcode-Lookup über Open Food Facts. `code`
+  muss 6–14 Ziffern sein.
+- `POST /api/assistant` — In-App-Assistent (Chat). Braucht `ANTHROPIC_API_KEY`.
+- `POST /api/food/photo` — Kalorien/Makros aus einem Essensfoto schätzen
+  (Claude Vision). Braucht `ANTHROPIC_API_KEY`.
+- `POST /api/recipe` — Ein Rezept per KI generieren. Braucht `ANTHROPIC_API_KEY`.
+- `POST /api/recipe-image` — Bild zu einem Rezept generieren (pollinations.ai,
+  kein eigener Key nötig). Läuft auch ohne `ANTHROPIC_API_KEY`.
 
-## Setup (für Claude Code)
+Die drei letzten sowie `/api/assistant` sind pro IP auf 15 Anfragen/Minute
+begrenzt (`/api/recipe-image` auf 6/Minute), um Kosten zu deckeln.
+
+## Setup
 
 1. `npm install`
-2. `.env.example` zu `.env` kopieren und einen kostenlosen USDA-Key eintragen
-   (Signup: https://api.data.gov/signup — ein Formular, Key kommt per Mail)
-3. `npm run dev` (startet auf Port 3001, neu laden bei Dateiänderungen)
-4. Testen:
-   - `curl http://localhost:3001/health`
-   - `curl "http://localhost:3001/api/food/search?q=banana"`
-   - `curl http://localhost:3001/api/food/barcode/3017624010701`
+2. `.env.example` zu `.env` kopieren:
+   - `USDA_API_KEY` — kostenloser Key von https://api.data.gov/signup (ein
+     Formular, kommt per Mail). Ohne Key läuft die Suche trotzdem — sie nutzt
+     dann für Englisch automatisch Open Food Facts statt USDA.
+   - `ANTHROPIC_API_KEY` — optional, schaltet Assistent/Foto-Scan/Rezepte frei.
+     Ohne Key antworten diese Endpunkte mit `503 not_configured`, alles andere
+     bleibt nutzbar.
+3. `npm run dev` (Port 3001, Neustart bei Dateiänderungen).
+4. Testen: `curl http://localhost:3001/health`,
+   `curl "http://localhost:3001/api/food/search?q=banane&lang=de"`.
 
-## Was als Nächstes zu tun ist
+## Produktion
 
-Das Frontend (`AsmarFit-App-Prototype.jsx`) verwendet aktuell ein festes,
-lokales `FOOD_DB`-Array. Um es an diesen Server anzubinden:
-
-1. In `FoodSearchScreen` die lokale Filterung durch einen `fetch()`-Aufruf an
-   `GET /api/food/search?q=${query}` ersetzen (idealerweise mit Debounce,
-   z. B. 300ms nach dem letzten Tastendruck).
-2. In `BarcodeScanScreen` den simulierten Scan durch einen echten
-   Barcode-Scanner ersetzen (z. B. `react-native-vision-camera` +
-   `vision-camera-code-scanner` bei React Native, oder die `BarcodeDetector`
-   Web-API im Browser) und das Ergebnis an
-   `GET /api/food/barcode/:code` schicken.
-3. Ladezustand + Fehlerfall anzeigen (Netzwerk kann fehlschlagen, Barcode kann
-   unbekannt sein — aktuell gibt der Server dafür `404` mit `{ error: ... }`
-   zurück).
-4. Für Produktion: diesen Server irgendwo hosten (z. B. Render, Railway, Fly.io)
-   statt `localhost`, und `USDA_API_KEY` dort als Umgebungsvariable setzen —
-   niemals im Frontend-Code.
+Läuft auf Render (Free-Tier-Webservice) hinter dessen Reverse-Proxy — deshalb
+ist `trust proxy` gesetzt, sonst würden alle Nutzer für die Rate-Limits als
+eine einzige IP erscheinen. Secrets werden ausschließlich als Render-
+Umgebungsvariablen gesetzt, nie im Repo.
 
 ## Bekannte Einschränkungen
 
-- USDA-Werte sind bei den meisten Einträgen pro 100g, aber bei manchen
-  Markenprodukten (`dataType: "Branded"`) pro Portion vom Etikett — der Server
-  markiert das über das `note`-Feld, das Frontend sollte es anzeigen statt
-  die Zahl unkommentiert als "pro 100g" auszugeben.
-- Rate-Limits: USDA ca. 1.000 Anfragen/Stunde pro Key, Open Food Facts hat
-  ein globales Limit mit 503-Antwort bei Überlastung — der eingebaute Cache
-  (6 Stunden) fängt wiederholte Suchen ab, sollte bei echten Nutzerzahlen
-  aber ggf. länger oder in einer echten Datenbank (Redis) laufen.
+- USDA-Werte sind meist pro 100 g, bei manchen Markenprodukten
+  (`dataType: "Branded"`) aber pro Portion vom Etikett — dafür gibt es das
+  `note`-Feld, das Frontend zeigt es als Hinweis an.
+- Rate-Limits der externen Quellen: USDA ca. 1.000 Anfragen/Stunde pro Key,
+  Open Food Facts drosselt bei Überlastung mit `503`. Der eingebaute Cache
+  (6 Stunden) fängt wiederholte Suchen ab.
+- Die per-IP-Rate-Limits liegen in einer In-Memory-Map (kein Redis) und
+  setzen sich bei jedem Neustart/Deploy zurück — für den aktuellen Umfang
+  ausreichend, aber kein Schutz gegen gezielten Missbrauch mit wechselnden IPs.
