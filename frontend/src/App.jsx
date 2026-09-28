@@ -432,6 +432,7 @@ const STR = {
     myMealsEmpty: "Nothing saved yet.",
     saveMine: "Save to my meals",
     delete: "Delete",
+    dateLabel: "Date",
     cheatTitle: "Cheat meal / cheat day",
     cheatNextNone: "Plan your next cheat meal or cheat day",
     cheatMeal: "Cheat meal",
@@ -931,6 +932,7 @@ const STR = {
     myMealsEmpty: "Noch nichts gespeichert.",
     saveMine: "In Meine Gerichte speichern",
     delete: "Löschen",
+    dateLabel: "Datum",
     cheatTitle: "Cheat Meal / Cheat Day",
     cheatNextNone: "Plane dein nächstes Cheat Meal oder deinen Cheat Day",
     cheatMeal: "Cheat Meal",
@@ -1960,7 +1962,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           <div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obTargetDateTitle}</h2>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obTargetDateSub}</p>
-            <input type="date" value={targetDate} min={new Date().toISOString().slice(0, 10)} onChange={(e) => e.target.value && setTargetDate(e.target.value)} style={{ ...numInputStyle, padding: "14px 14px", fontSize: 15 }} />
+            <input type="date" value={targetDate} min={new Date().toISOString().slice(0, 10)} onChange={(e) => e.target.value && setTargetDate(e.target.value)} style={{ ...numInputStyle, padding: "14px 14px", fontSize: 15, colorScheme: "dark" }} />
             {showsRate && (
               <div style={{ marginTop: 18, fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: kgPerWeek > 1 ? COLORS.coral : COLORS.gold }}>
                 {kgPerWeek.toFixed(2)} kg {t.obPerWeek}
@@ -2281,8 +2283,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <Card>
-          <Dumbbell size={17} color={COLORS.gold} />
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10 }}>{t.lastWorkout}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>{t.lastWorkout}</div>
           {lastWorkout ? (
             <>
               <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 600, color: COLORS.text, marginTop: 2 }}>{formatDuration(lastWorkout.durationSec)}</div>
@@ -2293,8 +2294,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
           )}
         </Card>
         <Card>
-          <TrendingUp size={17} color={COLORS.teal} />
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10 }}>{t.currentWeight}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>{t.currentWeight}</div>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 600, color: COLORS.text, marginTop: 2 }}>{latestWeight ? `${latestWeight.kg} kg` : "–"}</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.teal, marginTop: 2 }}>
             {weightLog.length > 1
@@ -2305,10 +2305,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
       </div>
 
       <Card style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <NotebookPen size={16} color={COLORS.dim} />
-          <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>{t.todaysNote}</span>
-        </div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 6 }}>{t.todaysNote}</div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: latestNote ? COLORS.text : COLORS.dim }}>{latestNote ? latestNote.text : t.noNoteToday}</div>
       </Card>
 
@@ -4657,13 +4654,21 @@ function CheatScreen({ t, cheats, onAdd, onDelete }) {
     <div style={{ padding: "0 20px 24px" }}>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginBottom: 12 }}>{t.cheatTip}</div>
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <Chip label={t.cheatMeal} active={type === "meal"} onClick={() => setType("meal")} />
           <Chip label={t.cheatDay} active={type === "day"} onClick={() => setType("day")} />
         </div>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.cheatNote} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />
-        <button onClick={add} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.dateLabel}</div>
+        <input
+          type="date"
+          value={date}
+          min={new Date().toISOString().slice(0, 10)}
+          onChange={(e) => setDate(e.target.value)}
+          style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 14, colorScheme: "dark" }}
+        />
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.cheatNote}</div>
+        <input value={note} onChange={(e) => setNote(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 14 }} />
+        <button onClick={add} disabled={!date} style={{ width: "100%", opacity: date ? 1 : 0.5, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: date ? "pointer" : "default" }}>
           {t.cheatAdd}
         </button>
       </Card>
@@ -5532,7 +5537,7 @@ function GoalsSettings({ t, profile, stepsGoal, onSave }) {
       <SettingsLabel>{t.setTargetWeight}</SettingsLabel>
       <input type="number" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
       <SettingsLabel>{t.setTargetDate}</SettingsLabel>
-      <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+      <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", colorScheme: "dark" }} />
 
       <SettingsLabel>{t.setKcal}</SettingsLabel>
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
