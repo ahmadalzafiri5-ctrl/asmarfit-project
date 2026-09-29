@@ -147,11 +147,7 @@ const STR = {
     weeksLabel: "weeks",
     notLoggedYet: "Not logged yet",
     avgSession: "avg. session",
-    quickLog: "Quick log",
-    logFood: "Log food",
-    logWeight: "Log weight",
     startWorkout: "Start workout",
-    addNote: "Add note",
     protein: "Protein",
     carbs: "Carbs",
     fat: "Fat",
@@ -647,11 +643,7 @@ const STR = {
     notLoggedYet: "Noch nicht trainiert",
     avgSession: "Ø Sitzung",
     todaysNote: "Heutige Notiz",
-    quickLog: "Schnell erfassen",
-    logFood: "Essen loggen",
-    logWeight: "Gewicht loggen",
     startWorkout: "Workout starten",
-    addNote: "Notiz hinzufügen",
     protein: "Protein",
     carbs: "Kohlenhydrate",
     fat: "Fett",
@@ -2196,7 +2188,7 @@ function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, onLogFood, onStartWorkout, onAddNote, onGoProgress, activeWorkout, onResumeWorkout, history, streak, onOpenHistory }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, activeWorkout, onResumeWorkout, history, streak, onOpenHistory }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2304,27 +2296,10 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
         </Card>
       </div>
 
-      <Card style={{ marginBottom: 20 }}>
+      <Card>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 6 }}>{t.todaysNote}</div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: latestNote ? COLORS.text : COLORS.dim }}>{latestNote ? latestNote.text : t.noNoteToday}</div>
       </Card>
-
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.quickLog}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-        {[
-          { icon: UtensilsCrossed, label: t.logFood, onClick: onLogFood },
-          { icon: TrendingUp, label: t.logWeight, onClick: onGoProgress },
-          { icon: Dumbbell, label: t.startWorkout, onClick: onStartWorkout },
-          { icon: NotebookPen, label: t.addNote, onClick: onAddNote },
-        ].map(({ icon: Icon, label, onClick }, i) => (
-          <div key={i} onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: COLORS.surface, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon size={20} color={COLORS.gold} />
-            </div>
-            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim, textAlign: "center" }}>{label}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -6287,13 +6262,6 @@ export default function AsmarFitApp() {
           onSaveSteps={(v) => setSteps(v)}
           stepsGoal={stepsGoal}
           onSaveStepsGoal={setStepsGoal}
-          onLogFood={() => {
-            setActiveMealKey("snacks");
-            setOverlay("foodSearch");
-          }}
-          onStartWorkout={startOrResumeWorkout}
-          onAddNote={() => setOverlay("noteComposer")}
-          onGoProgress={() => setTab("progress")}
           history={historyMap}
           streak={streak}
           onOpenHistory={() => setOverlay("history")}
