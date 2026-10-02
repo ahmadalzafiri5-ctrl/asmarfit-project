@@ -4,3 +4,5 @@ node_modules/
 *.log
 dist/
 .idea/
+
+asfit-backup-*.json
