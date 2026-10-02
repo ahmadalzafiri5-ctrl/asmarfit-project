@@ -67,6 +67,18 @@ const NUTRIENT_IDS = {
   fat: 1004,
 };
 
+// Like pickNutrient, but null when the source doesn't report it (0 would claim "none").
+function pickOptional(foodNutrients, ids) {
+  for (const id of ids) {
+    const hit = (foodNutrients || []).find((n) => n.nutrientId === id || n.nutrient?.id === id);
+    const val = hit && (hit.amount ?? hit.value);
+    if (val != null && !Number.isNaN(Number(val))) return Number(val);
+  }
+  return null;
+}
+const round1 = (v) => (v == null || Number.isNaN(Number(v)) ? undefined : Math.round(Number(v) * 10) / 10);
+const round2 = (v) => (v == null || Number.isNaN(Number(v)) ? undefined : Math.round(Number(v) * 100) / 100);
+
 function pickNutrient(foodNutrients, id) {
   const hit = (foodNutrients || []).find(
     (n) => n.nutrientId === id || n.nutrient?.id === id
@@ -92,6 +104,13 @@ function normalizeUsdaFood(food) {
     carbs: pickNutrient(food.foodNutrients, NUTRIENT_IDS.carbs),
     fat: pickNutrient(food.foodNutrients, NUTRIENT_IDS.fat),
   };
+  const sodiumMg = pickOptional(food.foodNutrients, [1093]);
+  const fiber = round1(pickOptional(food.foodNutrients, [1079]));
+  const sugar = round1(pickOptional(food.foodNutrients, [2000, 1063]));
+  const salt = sodiumMg == null ? undefined : round2((sodiumMg * 2.5) / 1000); // sodium mg -> salt g
+  if (fiber !== undefined) per100.fiber = fiber;
+  if (sugar !== undefined) per100.sugar = sugar;
+  if (salt !== undefined) per100.salt = salt;
   return {
     source: "usda",
     fdcId: food.fdcId,
@@ -132,6 +151,11 @@ function normalizeOffProduct(product) {
       protein: Math.round((n["proteins_100g"] ?? 0) * 10) / 10,
       carbs: Math.round((n["carbohydrates_100g"] ?? 0) * 10) / 10,
       fat: Math.round((n["fat_100g"] ?? 0) * 10) / 10,
+      ...(round1(n["fiber_100g"]) !== undefined ? { fiber: round1(n["fiber_100g"]) } : {}),
+      ...(round1(n["sugars_100g"]) !== undefined ? { sugar: round1(n["sugars_100g"]) } : {}),
+      ...((n["salt_100g"] ?? (n["sodium_100g"] != null ? n["sodium_100g"] * 2.5 : undefined)) !== undefined
+        ? { salt: round2(n["salt_100g"] ?? n["sodium_100g"] * 2.5) }
+        : {}),
     },
     isSupplement: looksLikeSupplement(product),
     nutriScore: product.nutrition_grades || null,

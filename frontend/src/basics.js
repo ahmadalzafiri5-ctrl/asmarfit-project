@@ -144,6 +144,41 @@ const RAW = [
   ["Energy Drink", "Energy drink", 45, 0, 11, 0, "redbull monster", "ml"],
 ];
 
+// Fibre, sugar and salt per 100 g / 100 ml: [fiber g, sugar g, salt g] — typical reference
+// values, keyed by the German name. Foods not listed simply show no such values.
+const MICRO = {
+  "Hähnchenbrust, gegart": [0, 0, 0.2], "Hähnchenbrust, roh": [0, 0, 0.15], "Hähnchenschenkel, gegart": [0, 0, 0.25],
+  "Putenbrust, roh": [0, 0, 0.15], "Rinderhack (5% Fett), roh": [0, 0, 0.15], "Rindersteak, gebraten": [0, 0, 0.2],
+  "Schweinefilet, roh": [0, 0, 0.15], "Schweinehack, roh": [0, 0, 0.15], "Lachs, roh": [0, 0, 0.1],
+  "Thunfisch (Dose, natur)": [0, 0, 0.9], "Kabeljau, roh": [0, 0, 0.2], "Garnelen, gegart": [0, 0, 0.9], "Schinken (Kochschinken)": [0, 0.5, 2.5],
+  "Ei (ganz)": [0, 1.1, 0.35], "Eiweiß (Eiklar)": [0, 0.7, 0.4], "Tofu": [1.2, 0.6, 0.02], "Tempeh": [5, 0.5, 0.02], "Whey Protein Pulver": [0, 5, 0.5],
+  "Reis, gekocht": [0.4, 0, 0.01], "Reis, roh": [1.3, 0, 0.01], "Vollkornreis, gekocht": [1.8, 0.2, 0.01], "Haferflocken": [10, 1, 0.02],
+  "Quinoa, gekocht": [2.8, 0.9, 0.02], "Nudeln, gekocht": [1.8, 0.6, 0.01], "Nudeln, roh": [3, 2.7, 0.02], "Vollkornnudeln, gekocht": [3.9, 0.8, 0.01],
+  "Couscous, gekocht": [1.4, 0.1, 0.01], "Kartoffeln, gekocht": [1.8, 0.8, 0.01], "Süßkartoffel, gekocht": [3, 6, 0.1],
+  "Vollkornbrot": [7, 3, 1.2], "Weißbrot": [2.7, 5, 1.2], "Brötchen": [3, 2, 1.3], "Wrap (Tortilla)": [3, 3, 1.5], "Knäckebrot": [14, 2, 1.2],
+  "Reiswaffeln": [3, 0.5, 0.4], "Cornflakes": [3, 8, 1.8], "Müsli": [8, 15, 0.05],
+  "Milch 1,5 % Fett": [0, 4.8, 0.1], "Vollmilch 3,5 % Fett": [0, 4.8, 0.1], "Hafermilch": [0.8, 3.5, 0.1], "Magerquark": [0, 4, 0.1],
+  "Speisequark 20 % Fett i.Tr.": [0, 3.5, 0.1], "Skyr natur": [0, 4, 0.1], "Naturjoghurt 3,5 %": [0, 4.7, 0.15], "Griechischer Joghurt": [0, 4, 0.1],
+  "Hüttenkäse": [0, 3.4, 0.9], "Mozzarella": [0, 1, 0.6], "Gouda": [0, 0, 1.8], "Parmesan": [0, 0, 1.8], "Feta": [0, 0.5, 2.8],
+  "Frischkäse": [0, 3.5, 0.7], "Butter": [0, 0.6, 0.02], "Sahne 30 %": [0, 3.3, 0.08],
+  "Apfel": [2.4, 10, 0], "Banane": [2.6, 12, 0], "Orange": [2.4, 9.4, 0], "Erdbeeren": [2, 4.9, 0], "Blaubeeren": [2.4, 10, 0], "Himbeeren": [6.5, 4.4, 0],
+  "Weintrauben": [0.9, 16, 0], "Ananas": [1.4, 10, 0], "Mango": [1.6, 14, 0], "Birne": [3.1, 9.8, 0], "Kiwi": [3, 9, 0], "Wassermelone": [0.4, 6, 0],
+  "Datteln": [8, 63, 0], "Avocado": [6.7, 0.7, 0.02],
+  "Brokkoli": [2.6, 1.7, 0.05], "Tomate": [1.2, 2.6, 0.01], "Gurke": [0.5, 1.7, 0.01], "Karotte": [2.8, 4.7, 0.15], "Paprika": [2.1, 4.2, 0.01],
+  "Spinat": [2.2, 0.4, 0.2], "Zucchini": [1, 2.5, 0.01], "Zwiebel": [1.7, 4.2, 0.01], "Salat (Eisberg)": [1.2, 1.8, 0.02], "Champignons": [1, 2, 0.01], "Blumenkohl": [2, 1.9, 0.08],
+  "Linsen, gekocht": [7.9, 1.8, 0.01], "Kichererbsen, gekocht": [7.6, 4.8, 0.02], "Kidneybohnen, gekocht": [6.4, 0.3, 0.01],
+  "Mandeln": [12, 4, 0.01], "Walnüsse": [6.7, 2.6, 0.01], "Erdnüsse": [8.5, 4, 0.02], "Cashewnüsse": [3.3, 6, 0.03], "Erdnussbutter": [6, 9, 1.1],
+  "Olivenöl": [0, 0, 0], "Kokosöl": [0, 0, 0], "Honig": [0.2, 82, 0.01], "Zucker": [0, 100, 0], "Marmelade": [1, 55, 0.02],
+  "Nutella (Nuss-Nougat-Creme)": [3.4, 56, 0.1], "Zartbitterschokolade": [11, 30, 0.02], "Vollmilchschokolade": [3, 56, 0.2], "Chiasamen": [34, 0, 0.05], "Leinsamen": [27, 1.5, 0.1],
+  "Pizza Margherita": [2.3, 3.5, 1.3], "Döner Kebab": [2, 3, 1.6], "Pommes frites": [3.8, 0.5, 0.9], "Hamburger": [1.5, 5, 1.3], "Croissant": [2.5, 10, 1.2],
+  "Kartoffelchips": [4.5, 0.5, 1.6], "Gummibärchen": [0, 46, 0.05], "Vanilleeis": [0.5, 21, 0.2], "Lasagne": [1.2, 3, 0.9],
+  "Sauerteig (Anstellgut)": [1.5, 1, 0.7], "Weizenmehl Type 405": [3.5, 0.5, 0.01], "Vollkornmehl": [10, 1, 0.01], "Hefe, frisch": [8, 0, 0.1],
+  "Speisestärke": [0.9, 0, 0.02], "Senf": [3, 3, 3.5], "Ketchup": [0.9, 22, 2.7], "Mayonnaise": [0, 2, 1.5], "Sojasauce": [0.8, 0.4, 15],
+  "Essig": [0, 0.4, 0.05], "Pesto (Basilikum)": [3, 2, 1.5],
+  "Wasser": [0, 0, 0], "Cola": [0, 10.6, 0], "Cola Zero / Light": [0, 0, 0.02], "Orangensaft": [0.2, 8.5, 0], "Apfelsaft": [0.2, 10, 0],
+  "Kaffee, schwarz": [0, 0, 0], "Bier": [0, 0.3, 0], "Rotwein": [0, 0.6, 0], "Energy Drink": [0, 11, 0.07],
+};
+
 // Fold for accent-/case-insensitive matching (ä→a, ö→o, ü→u, ß→ss, ae→a ...).
 // Applied to both the query and the entries, so it only has to be consistent.
 function fold(s) {
@@ -162,7 +197,7 @@ const tokensOf = (q) => fold(q).split(/[^a-z0-9]+/).filter(Boolean);
 const BASICS = RAW.map(([de, en, kcal, protein, carbs, fat, kw, unit]) => ({
   de,
   en,
-  per100: { kcal, protein, carbs, fat },
+  per100: { kcal, protein, carbs, fat, ...(MICRO[de] ? { fiber: MICRO[de][0], sugar: MICRO[de][1], salt: MICRO[de][2] } : {}) },
   unit: unit || "g",
   words: tokensOf(`${de} ${en} ${kw || ""}`),
   deFold: fold(de),

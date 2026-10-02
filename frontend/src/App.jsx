@@ -190,9 +190,19 @@ const STR = {
     quickAddTitle: "Add calories directly",
     quickAddName: "Name (optional)",
     quickAddDefault: "Quick entry",
-    chartTitle: "Calories · last 14 days",
+    chartTitle: "Calories",
     chartAvg: "Average per tracked day",
     chartGoal: "Goal",
+    fiber: "Fiber",
+    sugar: "Sugar",
+    salt: "Salt",
+    superset: "Superset",
+    e1rm: "Estimated 1RM",
+    chartProtein: "Avg protein",
+    backupShare: "Save to Files / iCloud",
+    backupDone: "Backup saved",
+    backupDueTitle: "Time for a backup",
+    backupDueText: "Your data only lives on this device. Save a copy to Files or iCloud.",
     diaryToday: "Today",
     diaryYesterday: "Yesterday",
     diaryNothing: "Nothing logged on this day.",
@@ -717,9 +727,19 @@ const STR = {
     quickAddTitle: "Kalorien direkt eintragen",
     quickAddName: "Name (optional)",
     quickAddDefault: "Schnell-Eintrag",
-    chartTitle: "Kalorien · letzte 14 Tage",
+    chartTitle: "Kalorien",
     chartAvg: "Durchschnitt pro getracktem Tag",
     chartGoal: "Ziel",
+    fiber: "Ballaststoffe",
+    sugar: "Zucker",
+    salt: "Salz",
+    superset: "Superset",
+    e1rm: "Geschätztes 1RM",
+    chartProtein: "Ø Protein",
+    backupShare: "In Dateien / iCloud sichern",
+    backupDone: "Backup gespeichert",
+    backupDueTitle: "Zeit für ein Backup",
+    backupDueText: "Deine Daten liegen nur auf diesem Gerät. Sichere eine Kopie in Dateien oder iCloud.",
     diaryToday: "Heute",
     diaryYesterday: "Gestern",
     diaryNothing: "An diesem Tag wurde nichts eingetragen.",
@@ -1540,12 +1560,24 @@ const RECIPES = [
 
 function scale(per100, grams) {
   const f = grams / 100;
+  const opt = (v, d) => (v == null ? undefined : Math.round(v * f * d) / d);
   return {
     kcal: Math.round(per100.kcal * f),
     protein: Math.round(per100.protein * f * 10) / 10,
     carbs: Math.round(per100.carbs * f * 10) / 10,
     fat: Math.round(per100.fat * f * 10) / 10,
+    // not every source reports these — undefined means "unknown", not zero
+    fiber: opt(per100.fiber, 10),
+    sugar: opt(per100.sugar, 10),
+    salt: opt(per100.salt, 100),
   };
+}
+
+// "Ballaststoffe 2.6 g · Zucker 12 g · Salz 0.1 g" for whatever is known.
+function MicroLine({ t, v, mb = 16 }) {
+  const parts = v ? [["fiber", v.fiber], ["sugar", v.sugar], ["salt", v.salt]].filter(([, x]) => x != null) : [];
+  if (!parts.length) return null;
+  return <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: mb, lineHeight: 1.5 }}>{parts.map(([k, x]) => t[k] + " " + x + " g").join(" · ")}</div>;
 }
 
 // Simple standard macro split (30% protein / 40% carbs / 30% fat) derived
@@ -2254,7 +2286,16 @@ function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory }) {
+function BackupReminder({ t, onOpen }) {
+  return (
+    <Card onClick={onOpen} style={{ marginBottom: 12, cursor: "pointer", border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.backupDueTitle}</div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3, lineHeight: 1.45 }}>{t.backupDueText}</div>
+    </Card>
+  );
+}
+
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2312,6 +2353,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
         ))}
       </div>
 
+      {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
       <StreakCard t={t} streak={streak} history={history} onOpen={onOpenHistory} />
       <StepsCard t={t} steps={steps} source={stepsSource} weightKg={profile.weight} goal={stepsGoal} onSaveGoal={onSaveStepsGoal} onConnect={onConnectSteps} onSaveManual={onSaveSteps} />
 
@@ -2424,6 +2466,20 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
         <MacroBar label={t.protein} value={sumMeals(viewMeals, "protein")} target={macroTargets.protein} color={COLORS.teal} />
         <MacroBar label={t.carbs} value={sumMeals(viewMeals, "carbs")} target={macroTargets.carbs} color={COLORS.gold} />
         <MacroBar label={t.fat} value={sumMeals(viewMeals, "fat")} target={macroTargets.fat} color={COLORS.coral} />
+        {(() => {
+          const fiber = sumMeals(viewMeals, "fiber");
+          const sugar = sumMeals(viewMeals, "sugar");
+          const salt = sumMeals(viewMeals, "salt");
+          if (!(fiber > 0 || sugar > 0 || salt > 0)) return null;
+          const r1 = (v) => Math.round(v * 10) / 10;
+          return (
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 12, paddingTop: 12, borderTop: "1px solid " + COLORS.border, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>
+              <span>{t.fiber} <b style={{ color: COLORS.text }}>{r1(fiber)} g</b></span>
+              <span>{t.sugar} <b style={{ color: COLORS.text }}>{r1(sugar)} g</b></span>
+              <span>{t.salt} <b style={{ color: salt > 6 ? COLORS.coral : COLORS.text }}>{r1(salt)} g</b></span>
+            </div>
+          );
+        })()}
       </Card>
 
       {isToday && (
@@ -3153,6 +3209,9 @@ function WorkoutLongPrompt({ t, aw, onEnd }) {
   );
 }
 
+// Epley estimate of the one-rep max from a set (only meaningful up to ~12 reps).
+const estimate1RM = (w, r) => (w > 0 && r > 0 && r <= 12 ? Math.round((r === 1 ? w : w * (1 + r / 30)) * 2) / 2 : 0);
+
 function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onTogglePause, entries, onChangeEntries, onFinish, onDiscard, workoutHistory = [] }) {
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
@@ -3246,9 +3305,12 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
     unlockAudio();
     const was = entries[ei].sets[si].done;
     updateSet(ei, si, "done", !was);
-    if (!was) startRest(restDefault);
-    else setRestEnd(null);
+    // exercises linked as a superset only rest after the last exercise of the group
+    if (!was) {
+      if (!entries[ei + 1]?.ss) startRest(restDefault);
+    } else setRestEnd(null);
   };
+  const toggleSuperset = (ei) => onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, ss: !en.ss })));
   const removeSet = (ei, si) =>
     onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.filter((_, j) => j !== si) })).filter((en) => en.cardio || en.sets.length > 0));
   const updateMinutes = (ei, value) => onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, minutes: value })));
@@ -3343,9 +3405,14 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
       {entries.map((en, ei) => {
         const ex = EXERCISE_LIBRARY.find((e) => e.key === en.key);
         return (
-          <Card key={ei} style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{ex ? nameOf(ex) : en.key}</span>
+          <Card key={ei} style={{ marginBottom: 14, borderLeft: en.ss || entries[ei + 1]?.ss ? "3px solid " + COLORS.gold : undefined }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <span style={{ flex: 1, fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{ex ? nameOf(ex) : en.key}</span>
+              {ei > 0 && !en.cardio && !entries[ei - 1].cardio && (
+                <span onClick={() => toggleSuperset(ei)} style={{ padding: "4px 10px", borderRadius: 999, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, background: en.ss ? COLORS.gold : COLORS.raised, color: en.ss ? COLORS.bg : COLORS.dim, border: "1px solid " + (en.ss ? COLORS.gold : COLORS.border) }}>
+                  {t.superset}
+                </span>
+              )}
               {en.cardio && (
                 <div onClick={() => removeEntry(ei)} style={{ cursor: "pointer", display: "flex" }}>
                   <X size={16} color={COLORS.dim} />
@@ -3371,6 +3438,10 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
                 </div>
               </div>
             ))}
+            {!en.cardio && (() => {
+              const best = Math.max(0, ...(en.sets || []).map((x) => estimate1RM(parseFloat(String(x.weight).replace(",", ".")), parseInt(x.reps, 10))));
+              return best > 0 ? <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, margin: "2px 0 8px" }}>{t.e1rm}: <b style={{ color: COLORS.text }}>{best} kg</b></div> : null;
+            })()}
             {!en.cardio && (
               <div onClick={() => addSet(ei)} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer", marginTop: 4 }}>
                 + {t.addSet}
@@ -3732,7 +3803,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
   const scaled = selected ? scale(selected.per100, grams) : null;
 
   const confirmAdd = () => {
-    onAdd({ name: selected.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, grams, unit });
+    onAdd({ name: selected.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, fiber: scaled.fiber, sugar: scaled.sugar, salt: scaled.salt, grams, unit });
     setToast(selected.name);
     setSelected(null);
     setTimeout(() => setToast(null), 1400);
@@ -3931,6 +4002,8 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             ))}
           </div>
 
+          <MicroLine t={t} v={scaled} mb={18} />
+
           <button onClick={confirmAdd} disabled={!(grams > 0)} style={{ width: "100%", opacity: grams > 0 ? 1 : 0.5, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             {t.addItem}
           </button>
@@ -4124,6 +4197,7 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
   const todayKey = dateKey(now);
   const [monthOffset, setMonthOffset] = useState(0);
   const [selected, setSelected] = useState(todayKey);
+  const [chartRange, setChartRange] = useState(14);
   const locale = lang === "de" ? "de-DE" : "en-US";
 
   const view = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
@@ -4143,15 +4217,16 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
   );
 
   // last 14 days of calories (bars) against the goal
-  const chartDays = Array.from({ length: 14 }, (_, i) => {
+  const chartDays = Array.from({ length: chartRange }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() - (13 - i));
+    d.setDate(d.getDate() - (chartRange - 1 - i));
     const k = dateKey(d);
     const day = history[k];
-    return { k, d, kcal: dayHasFood(day) ? Math.round(sumMeals(day.meals, "kcal")) : 0 };
+    return { k, d, kcal: dayHasFood(day) ? Math.round(sumMeals(day.meals, "kcal")) : 0, protein: dayHasFood(day) ? sumMeals(day.meals, "protein") : 0 };
   });
   const trackedChart = chartDays.filter((c) => c.kcal > 0);
   const chartAvg = trackedChart.length ? Math.round(trackedChart.reduce((a, c) => a + c.kcal, 0) / trackedChart.length) : 0;
+  const chartAvgProtein = trackedChart.length ? Math.round(trackedChart.reduce((a, c) => a + c.protein, 0) / trackedChart.length) : 0;
   const chartMax = Math.max(kcalGoal || 0, ...chartDays.map((c) => c.kcal), 1) * 1.1;
 
   const selDay = history[selected];
@@ -4217,8 +4292,17 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
       </Card>
 
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 12 }}>{t.chartTitle}</div>
-        <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 4, height: 96 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.chartTitle}</span>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[14, 30, 90].map((n) => (
+              <span key={n} onClick={() => setChartRange(n)} style={{ padding: "4px 10px", borderRadius: 999, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, background: chartRange === n ? COLORS.goldSoft : COLORS.raised, color: chartRange === n ? COLORS.gold : COLORS.dim, border: "1px solid " + (chartRange === n ? COLORS.gold : COLORS.border) }}>
+                {n} {lang === "de" ? "T" : "d"}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: chartRange > 30 ? 1 : chartRange > 14 ? 2 : 4, height: 96 }}>
           {kcalGoal ? <div style={{ position: "absolute", left: 0, right: 0, bottom: (kcalGoal / chartMax) * 96, borderTop: "1.5px dashed " + COLORS.dim, opacity: 0.6 }} /> : null}
           {chartDays.map((c) => (
             <div key={c.k} onClick={() => setSelected(c.k)} style={{ flex: 1, height: Math.max(3, (c.kcal / chartMax) * 96), borderRadius: 4, cursor: "pointer", background: c.kcal === 0 ? COLORS.raised : kcalGoal && c.kcal > kcalGoal * 1.1 ? COLORS.coral : HIST_GREEN, outline: c.k === selected ? "2px solid " + COLORS.gold : "none" }} />
@@ -4226,11 +4310,14 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim }}>
           <span>{chartDays[0].d.getDate()}.{chartDays[0].d.getMonth() + 1}.</span>
-          <span>{chartDays[13].d.getDate()}.{chartDays[13].d.getMonth() + 1}.</span>
+          <span>{chartDays[chartDays.length - 1].d.getDate()}.{chartDays[chartDays.length - 1].d.getMonth() + 1}.</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>
           <span>{t.chartAvg}: <b style={{ color: COLORS.text }}>{chartAvg ? chartAvg.toLocaleString(locale) + " kcal" : "–"}</b></span>
           {kcalGoal ? <span>{t.chartGoal}: {kcalGoal.toLocaleString(locale)}</span> : null}
+        </div>
+        <div style={{ marginTop: 6, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>
+          {t.chartProtein}: <b style={{ color: COLORS.text }}>{chartAvgProtein ? chartAvgProtein + " g" : "–"}</b>
         </div>
       </Card>
 
@@ -4489,11 +4576,12 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
           </div>
 
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text, marginBottom: 16 }}>{scaled.kcal} kcal · P {scaled.protein} · C {scaled.carbs} · F {scaled.fat}</div>
+          <MicroLine t={t} v={scaled} />
 
           <button
             disabled={!(grams > 0)}
             onClick={() => {
-              onAdd({ name: found.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, grams });
+              onAdd({ name: found.name, kcal: scaled.kcal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat, fiber: scaled.fiber, sugar: scaled.sugar, salt: scaled.salt, grams });
               onDone();
             }}
             style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
@@ -5629,7 +5717,24 @@ function BackupCard({ t }) {
     setMsg(m);
     setTimeout(() => setMsg(null), 2500);
   };
+  const markBackup = () => localStorage.setItem("asfit.lastBackup", String(Date.now()));
+  // iPhone: the share sheet offers "Save to Files" / iCloud Drive — the practical cloud copy.
+  const shareFile = async () => {
+    try {
+      const file = new File([collect()], "asfit-backup-" + new Date().toLocaleDateString("sv") + ".json", { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "ASFIT Backup" });
+        markBackup();
+        flash(t.backupDone);
+      } else {
+        exportFile();
+      }
+    } catch (err) {
+      if (err && err.name !== "AbortError") exportFile();
+    }
+  };
   const exportFile = () => {
+    markBackup();
     const blob = new Blob([collect()], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -5641,6 +5746,7 @@ function BackupCard({ t }) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(collect());
+      markBackup();
       flash(t.backupCopied);
     } catch {
       flash(t.backupCopyFailed);
@@ -5666,6 +5772,7 @@ function BackupCard({ t }) {
   return (
     <div style={{ padding: "13px 4px", borderTop: "1px solid " + COLORS.border }}>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, marginBottom: 10 }}>{t.backupTitle}</div>
+      <button onClick={shareFile} style={{ ...btn, width: "100%", flex: "none", marginBottom: 8, background: COLORS.gold, color: COLORS.bg, border: "none" }}>{t.backupShare}</button>
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <button onClick={exportFile} style={btn}>{t.backupExport}</button>
         <button onClick={copy} style={btn}>{t.backupCopy}</button>
@@ -6203,6 +6310,9 @@ export default function AsmarFitApp() {
   const [progressPhotos, setProgressPhotos] = usePersisted("progressPhotos", []);
   const [myMeals, setMyMeals] = usePersisted("myMeals", []);
   const [recentFoods, setRecentFoods] = usePersisted("recentFoods", []);
+  const [firstSeen] = usePersisted("firstSeen", Date.now());
+  // nudge for a backup once a week — the data only lives on this device
+  const backupDue = onboarded && Date.now() - (Number(localStorage.getItem("asfit.lastBackup")) || firstSeen) > 7 * 86400000;
   const [customRecipes, setCustomRecipes] = usePersisted("customRecipes", []);
   const [cheats, setCheats] = usePersisted("cheats", []);
   const [celebrate, setCelebrate] = useState(null);
@@ -6433,7 +6543,17 @@ export default function AsmarFitApp() {
         if (i !== index || !it.grams || !(grams > 0)) return it;
         const r = grams / it.grams;
         const f1 = (v) => Math.round((v || 0) * r * 10) / 10;
-        return { ...it, grams: Math.round(grams * 10) / 10, kcal: Math.round((it.kcal || 0) * r), protein: f1(it.protein), carbs: f1(it.carbs), fat: f1(it.fat) };
+        return {
+          ...it,
+          grams: Math.round(grams * 10) / 10,
+          kcal: Math.round((it.kcal || 0) * r),
+          protein: f1(it.protein),
+          carbs: f1(it.carbs),
+          fat: f1(it.fat),
+          ...(it.fiber != null ? { fiber: f1(it.fiber) } : {}),
+          ...(it.sugar != null ? { sugar: f1(it.sugar) } : {}),
+          ...(it.salt != null ? { salt: Math.round(it.salt * r * 100) / 100 } : {}),
+        };
       }),
     }));
 
@@ -6738,6 +6858,8 @@ export default function AsmarFitApp() {
           history={historyMap}
           streak={streak}
           onOpenHistory={() => setOverlay("history")}
+          backupDue={backupDue}
+          onOpenBackup={() => setOverlay("settingsData")}
         />
       ),
       nutrition: (
