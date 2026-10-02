@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="ASFIT" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" href="/icon-192.png" />
     <title>ASFIT</title>
@@ -21,6 +21,15 @@
       }
       #root {
         min-height: 100vh;
+      }
+      /* iOS Safari zooms the whole page when an input with a font below 16px gets focus,
+         and the installed home-screen app stays zoomed in. 16px on phones prevents that. */
+      @media (max-width: 520px) {
+        input,
+        textarea,
+        select {
+          font-size: 16px !important;
+        }
       }
     </style>
   </head>

@@ -92,19 +92,19 @@ const COLORS = {
 
 const THEMES = {
   neutral: {
-    light: { bg: "#FFFFFF", surface: "#F6F7F8", raised: "#EEF1F3", border: "#E1E4E8", text: "#161A1D", dim: "#68707A", gold: "#00BF8F", goldSoft: "rgba(0,191,143,0.14)", teal: "#2F80ED", coral: "#E2694F", coralSoft: "rgba(226,105,79,0.14)" },
+    light: { bg: "#FFFFFF", surface: "#F6F7F8", raised: "#EEF1F3", border: "#E1E4E8", text: "#161A1D", dim: "#656D76", gold: "#008563", goldSoft: "rgba(0,133,99,0.14)", teal: "#2F80ED", coral: "#E2694F", coralSoft: "rgba(226,105,79,0.14)" },
     dark: { bg: "#111416", surface: "#1A1E21", raised: "#242A2E", border: "#2F363B", text: "#F1F4F5", dim: "#9AA5AC", gold: "#1FD1A2", goldSoft: "rgba(31,209,162,0.16)", teal: "#5B9DF5", coral: "#F0806A", coralSoft: "rgba(240,128,106,0.18)" },
   },
   female: {
-    light: { bg: "#FFFFFF", surface: "#FDF4F8", raised: "#FBE8F0", border: "#F3D6E2", text: "#2B1A24", dim: "#8A6E7C", gold: "#E5548A", goldSoft: "rgba(229,84,138,0.13)", teal: "#9B6FE0", coral: "#F08A5D", coralSoft: "rgba(240,138,93,0.16)" },
+    light: { bg: "#FFFFFF", surface: "#FDF4F8", raised: "#FBE8F0", border: "#F3D6E2", text: "#2B1A24", dim: "#7A616E", gold: "#C54877", goldSoft: "rgba(197,72,119,0.13)", teal: "#9B6FE0", coral: "#F08A5D", coralSoft: "rgba(240,138,93,0.16)" },
     dark: { bg: "#171015", surface: "#22171E", raised: "#2D1F27", border: "#3D2A35", text: "#FAEFF4", dim: "#B79CAA", gold: "#F26AA0", goldSoft: "rgba(242,106,160,0.17)", teal: "#B08AF0", coral: "#F59B70", coralSoft: "rgba(245,155,112,0.18)" },
   },
   male: {
-    light: { bg: "#FFFFFF", surface: "#F2F5FB", raised: "#E8EEF9", border: "#D6E0F0", text: "#0F1729", dim: "#5F6C86", gold: "#2563EB", goldSoft: "rgba(37,99,235,0.12)", teal: "#0E9F9A", coral: "#F0782E", coralSoft: "rgba(240,120,46,0.14)" },
+    light: { bg: "#FFFFFF", surface: "#F2F5FB", raised: "#E8EEF9", border: "#D6E0F0", text: "#0F1729", dim: "#5C6982", gold: "#2563EB", goldSoft: "rgba(37,99,235,0.12)", teal: "#0E9F9A", coral: "#F0782E", coralSoft: "rgba(240,120,46,0.14)" },
     dark: { bg: "#0D1220", surface: "#151C2E", raised: "#1E2740", border: "#2A3550", text: "#EBF1FF", dim: "#94A1BE", gold: "#5B8DF6", goldSoft: "rgba(91,141,246,0.18)", teal: "#2CC4BE", coral: "#F58F4C", coralSoft: "rgba(245,143,76,0.18)" },
   },
   diverse: {
-    light: { bg: "#FFFFFF", surface: "#F8F6F1", raised: "#F0EBDF", border: "#E2DAC8", text: "#171512", dim: "#7A7364", gold: "#B8860B", goldSoft: "rgba(184,134,11,0.14)", teal: "#2B2B2B", coral: "#A63D40", coralSoft: "rgba(166,61,64,0.16)" },
+    light: { bg: "#FFFFFF", surface: "#F8F6F1", raised: "#F0EBDF", border: "#E2DAC8", text: "#171512", dim: "#6C6659", gold: "#956C09", goldSoft: "rgba(149,108,9,0.14)", teal: "#2B2B2B", coral: "#A63D40", coralSoft: "rgba(166,61,64,0.16)" },
     dark: { bg: "#0B0B0A", surface: "#161513", raised: "#201E1A", border: "#2E2B24", text: "#F5EFE0", dim: "#A79C87", gold: "#D4AF37", goldSoft: "rgba(212,175,55,0.18)", teal: "#B7AE9C", coral: "#E0726F", coralSoft: "rgba(224,114,111,0.18)" },
   },
 };
@@ -3028,8 +3028,21 @@ function MoodFace({ mood, size = 20 }) {
   return <Icon size={size} color={m.color} />;
 }
 
-function NotesScreen({ t, notes, filter, setFilter, onAddNote }) {
+// Icons are looked up from the note type at render time. They used to be saved inside
+// the note, but a component can't be stored as JSON — after a reload the note came back
+// with a broken icon and opening the Notes tab crashed the whole app to a blank screen.
+const NOTE_ICONS = { 1: Dumbbell, 2: UtensilsCrossed, 3: Smile };
+
+function NotesScreen({ t, lang, notes, filter, setFilter, onAddNote }) {
   const shown = filter === 0 ? notes : notes.filter((e) => e.type === filter);
+  const noteDate = (e) => {
+    if (!e.dateISO) return e.date;
+    const d = new Date(e.dateISO);
+    const k = dateKey(d);
+    if (k === dateKey(new Date())) return t.diaryToday;
+    if (k === dateKey(new Date(Date.now() - 86400000))) return t.diaryYesterday;
+    return d.toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
+  };
 
   return (
     <div style={{ padding: "0 20px 24px" }}>
@@ -3050,11 +3063,14 @@ function NotesScreen({ t, notes, filter, setFilter, onAddNote }) {
         shown.map((e) => (
           <Card key={e.id} style={{ marginBottom: 12, display: "flex", gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <e.icon size={16} color={COLORS.gold} />
+              {(() => {
+                const Icon = NOTE_ICONS[e.type] || NotebookPen;
+                return <Icon size={16} color={COLORS.gold} />;
+              })()}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.text }}>{e.date}</span>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.text }}>{noteDate(e)}</span>
                 <MoodFace mood={e.mood} size={20} />
               </div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, lineHeight: 1.5 }}>{e.text}</div>
@@ -3122,7 +3138,6 @@ function NoteComposer({ t, onSave }) {
             type: category,
             text: text.trim(),
             mood,
-            icon: categories.find((c) => c.type === category).icon,
           })
         }
         style={{ width: "100%", background: !category || !text.trim() ? COLORS.raised : COLORS.gold, color: !category || !text.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: !category || !text.trim() ? "default" : "pointer" }}
@@ -4625,6 +4640,17 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
 
 /* ---------------- Assistant (support / questions) ---------------- */
 
+// The chat shows plain text, so strip the markdown the model sometimes adds
+// (**bold**, *italic*, # headings, `code`, "* " bullets) instead of showing asterisks.
+function plainChat(text) {
+  return String(text || "")
+    .replace(/\*\*(.+?)\*\*/gs, "$1")
+    .replace(/(^|\s)\*(\S[^*\n]*?)\*(?=\s|[.,!?;:]|$)/g, "$1$2")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[*-]\s+/gm, "• ")
+    .replace(/`([^`]+)`/g, "$1");
+}
+
 function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -4681,7 +4707,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
           border: m.role === "user" ? "none" : "1px solid " + COLORS.border,
         }}
       >
-        {m.content}
+        {m.role === "assistant" ? plainChat(m.content) : m.content}
       </div>
     </div>
   );
@@ -6566,7 +6592,9 @@ export default function AsmarFitApp() {
   };
 
   const addNoteEntry = (entry) => {
-    setNotes((n) => [{ id: Date.now(), date: t.today, ...entry }, ...n]);
+    // dateISO (not a pre-translated "Today" string) so the label stays right on later days
+    // and in either language; "date" is kept for notes saved before this change.
+    setNotes((n) => [{ id: Date.now(), date: t.today, dateISO: new Date().toISOString(), ...entry }, ...n]);
     setOverlay(null);
   };
 
@@ -6927,7 +6955,7 @@ export default function AsmarFitApp() {
           onDeletePhoto={(id) => setProgressPhotos((ph) => ph.filter((p) => p.id !== id))}
         />
       ),
-      notes: <NotesScreen t={t} notes={notes} filter={notesFilter} setFilter={setNotesFilter} onAddNote={() => setOverlay("noteComposer")} />,
+      notes: <NotesScreen t={t} lang={lang} notes={notes} filter={notesFilter} setFilter={setNotesFilter} onAddNote={() => setOverlay("noteComposer")} />,
     };
     content = screens[tab];
     topTitle = t.tabs[tab];
