@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, Children, cloneElement } from "react";
 import { Capacitor } from "@capacitor/core";
+import { searchBasics } from "./basics.js";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 // @zxing/* (the browser barcode fallback) is loaded lazily inside scanWeb()
@@ -157,6 +158,17 @@ const STR = {
     snacks: "Snacks",
     add: "Add",
     searchPlaceholder: "Search food",
+    searchWaking: "The server is waking up — the first search can take up to a minute …",
+    searchMore: "Looking for more results …",
+    searchShowingFor: "Showing results for",
+    barcodeManualPh: "Or type the number under the barcode",
+    barcodeManualGo: "Look up",
+    workoutNothingToSave: "Nothing logged yet — finishing now just ends the workout without saving.",
+    workoutLongTitle: "Is your workout still running?",
+    workoutLongText: "Your workout has been running for",
+    workoutLongEnd: "Finish workout",
+    workoutLongKeep: "Still training",
+    workoutLongBody: "Your workout is still running — do not forget to finish it.",
     diaryToday: "Today",
     diaryYesterday: "Yesterday",
     diaryNothing: "Nothing logged on this day.",
@@ -270,7 +282,6 @@ const STR = {
     emptyWorkout: "Add your first exercise to begin.",
     discardWorkout: "Discard workout",
     workoutRunning: "Workout in progress",
-    workoutRunningSince: "Started at",
     resumeWorkout: "Resume",
     addExerciseBtn: "Add exercise",
     saveWeight: "Save",
@@ -653,6 +664,17 @@ const STR = {
     snacks: "Snacks",
     add: "Hinzufügen",
     searchPlaceholder: "Lebensmittel suchen",
+    searchWaking: "Der Server wacht auf — die erste Suche kann bis zu einer Minute dauern …",
+    searchMore: "Suche weitere Treffer …",
+    searchShowingFor: "Ergebnisse für",
+    barcodeManualPh: "Oder die Nummer unter dem Barcode eintippen",
+    barcodeManualGo: "Suchen",
+    workoutNothingToSave: "Noch nichts eingetragen — Beenden schließt das Workout ohne Speichern ab.",
+    workoutLongTitle: "Läuft dein Workout noch?",
+    workoutLongText: "Dein Workout läuft seit",
+    workoutLongEnd: "Workout beenden",
+    workoutLongKeep: "Ich trainiere noch",
+    workoutLongBody: "Dein Workout läuft noch — vergiss nicht, es zu beenden.",
     diaryToday: "Heute",
     diaryYesterday: "Gestern",
     diaryNothing: "An diesem Tag wurde nichts eingetragen.",
@@ -766,7 +788,6 @@ const STR = {
     emptyWorkout: "Füge deine erste Übung hinzu.",
     discardWorkout: "Workout verwerfen",
     workoutRunning: "Workout läuft",
-    workoutRunningSince: "Gestartet um",
     resumeWorkout: "Fortsetzen",
     addExerciseBtn: "Übung hinzufügen",
     saveWeight: "Speichern",
@@ -2188,7 +2209,7 @@ function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, activeWorkout, onResumeWorkout, history, streak, onOpenHistory }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2218,21 +2239,6 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
           {new Date().getHours() < 11 ? t.greetingPrefix : new Date().getHours() < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
         </p>
       </div>
-
-      {activeWorkout && (
-        <Card onClick={onResumeWorkout} style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", background: COLORS.goldSoft, border: `1px solid ${COLORS.gold}` }}>
-          <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS.gold, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Timer size={17} color={COLORS.bg} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.workoutRunning}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
-              {t.workoutRunningSince} {new Date(activeWorkout.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </div>
-          </div>
-          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.gold, flexShrink: 0 }}>{t.resumeWorkout}</span>
-        </Card>
-      )}
 
       <Card style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
         <Ring pct={kcalGoal ? (kcalEaten / (kcalGoal + kcalBurned)) * 100 : 0} size={132} stroke={11}>
@@ -2989,6 +2995,62 @@ const numInputStyle = {
   outline: "none",
 };
 
+// Visible on every screen while a workout runs, so the timer can't be forgotten.
+function WorkoutBanner({ t, startedAt, onOpen }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div onClick={onOpen} style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 20px 10px", padding: "10px 14px", borderRadius: 14, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, cursor: "pointer" }}>
+      <Timer size={16} color={COLORS.gold} />
+      <span style={{ flex: 1, fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>
+        {t.workoutRunning} · <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatDuration(Math.max(0, Math.round((now - startedAt) / 1000)))}</span>
+      </span>
+      <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.gold }}>{t.resumeWorkout}</span>
+    </div>
+  );
+}
+
+// "Did you forget to stop it?" — asks once a workout has been running 2 h, whenever the
+// app is open or comes back to the foreground; "still training" snoozes it for an hour.
+function WorkoutLongPrompt({ t, startedAt, onEnd }) {
+  const [open, setOpen] = useState(false);
+  const snoozeUntil = useRef(0);
+  useEffect(() => {
+    const check = () => {
+      if (Date.now() - startedAt > 2 * 3600_000 && Date.now() > snoozeUntil.current) setOpen(true);
+    };
+    check();
+    const id = setInterval(check, 30_000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [startedAt]);
+  if (!open) return null;
+  const mins = Math.round((Date.now() - startedAt) / 60000);
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ background: COLORS.bg, borderRadius: 24, padding: "26px 22px", width: "100%", maxWidth: 340, textAlign: "center" }}>
+        <Timer size={34} color={COLORS.gold} />
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 800, color: COLORS.text, margin: "10px 0 6px" }}>{t.workoutLongTitle}</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, lineHeight: 1.5 }}>
+          {t.workoutLongText} {Math.floor(mins / 60)}:{String(mins % 60).padStart(2, "0")} h.
+        </div>
+        <button onClick={() => { setOpen(false); onEnd(); }} style={{ width: "100%", marginTop: 18, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          {t.workoutLongEnd}
+        </button>
+        <div onClick={() => { snoozeUntil.current = Date.now() + 3600_000; setOpen(false); }} style={{ marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
+          {t.workoutLongKeep}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish, onDiscard }) {
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
@@ -3117,13 +3179,15 @@ function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish
         <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.gold }}>{t.addExerciseBtn}</span>
       </div>
 
+      {/* Always tappable: with nothing valid logged (e.g. only weights, no reps) it just
+          ends the workout instead of leaving the user stuck in a running session. */}
       <button
-        disabled={!canFinish}
-        onClick={finish}
-        style={{ width: "100%", background: canFinish ? COLORS.gold : COLORS.raised, color: canFinish ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: canFinish ? "pointer" : "default" }}
+        onClick={canFinish ? finish : onDiscard}
+        style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}
       >
         {t.finishWorkout}
       </button>
+      {!canFinish && <div style={{ textAlign: "center", marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, lineHeight: 1.45 }}>{t.workoutNothingToSave}</div>}
 
       <div onClick={onDiscard} style={{ textAlign: "center", marginTop: 16, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
         {t.discardWorkout}
@@ -3408,11 +3472,25 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
   // so this is a plain text search — see backend/README.md.
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState("tooShort"); // tooShort | loading | ok | error
+  const [corrected, setCorrected] = useState(null);
+  const [slow, setSlow] = useState(false);
+  // Common foods are answered instantly from the bundled list (typo-tolerant), so the
+  // screen is never empty while the server is still waking up / searching.
+  const local = useMemo(() => (query.trim().length >= 2 ? searchBasics(query.trim(), lang) : []), [query, lang]);
+  useEffect(() => {
+    if (status !== "loading") {
+      setSlow(false);
+      return undefined;
+    }
+    const id = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(id);
+  }, [status]);
 
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) {
       setResults([]);
+      setCorrected(null);
       setStatus("tooShort");
       return;
     }
@@ -3426,6 +3504,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
         })
         .then((data) => {
           setResults(Array.isArray(data.results) ? data.results : []);
+          setCorrected(data.corrected || null);
           setStatus("ok");
         })
         .catch((err) => {
@@ -3433,13 +3512,14 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
           setResults([]);
           setStatus("error");
         });
-    }, 300);
+    }, 250);
     return () => {
       clearTimeout(debounce);
       controller.abort();
     };
   }, [query, lang, retryTick]);
 
+  const listToShow = status === "ok" ? results : local;
   const unit = selected?.unit === "ml" ? "ml" : "g";
   const scaled = selected ? scale(selected.per100, grams) : null;
 
@@ -3469,11 +3549,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.scanBarcode}</span>
           </div>
 
-          {status === "loading" ? (
-            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.searchLoading}</div>
-          ) : status === "error" ? (
-            <div onClick={() => setRetryTick((n) => n + 1)} style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24, cursor: "pointer" }}>{t.serverError}<div style={{ color: COLORS.gold, fontWeight: 600, marginTop: 6 }}>{t.searchRetry}</div></div>
-          ) : status === "tooShort" ? (
+          {status === "tooShort" ? (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>★ {t.myMealsTitle}</span>
@@ -3505,18 +3581,30 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                 </Card>
               )}
             </>
-          ) : results.length === 0 ? (
-            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.noResults}</div>
+          ) : listToShow.length === 0 ? (
+            status === "loading" ? (
+              <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24, lineHeight: 1.5 }}>{slow ? t.searchWaking : t.searchLoading}</div>
+            ) : status === "error" ? (
+              <div onClick={() => setRetryTick((n) => n + 1)} style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24, cursor: "pointer" }}>{t.serverError}<div style={{ color: COLORS.gold, fontWeight: 600, marginTop: 6 }}>{t.searchRetry}</div></div>
+            ) : (
+              <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24 }}>{t.noResults}</div>
+            )
           ) : (
+            <>
+            {status === "ok" && corrected && (
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "0 2px 8px" }}>
+                {t.searchShowingFor} <span style={{ color: COLORS.gold, fontWeight: 600 }}>{corrected}</span>
+              </div>
+            )}
             <Card style={{ padding: 4, maxHeight: 380, overflowY: "auto" }}>
-              {results.map((f, i) => (
+              {listToShow.map((f, i) => (
                 <div
                   key={(f.fdcId ?? f.barcode ?? "") + "-" + i}
                   onClick={() => {
                     setSelected(f);
                     setGrams(100);
                   }}
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? `1px solid ${COLORS.border}` : "none", cursor: "pointer" }}
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < listToShow.length - 1 ? `1px solid ${COLORS.border}` : "none", cursor: "pointer" }}
                 >
                   <div>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{f.name}</div>
@@ -3531,6 +3619,11 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                 </div>
               ))}
             </Card>
+            {status === "loading" && <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 12.5, marginTop: 10 }}>{slow ? t.searchWaking : t.searchMore}</div>}
+            {status === "error" && (
+              <div onClick={() => setRetryTick((n) => n + 1)} style={{ textAlign: "center", color: COLORS.gold, fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 600, marginTop: 10, cursor: "pointer" }}>{t.serverError} · {t.searchRetry}</div>
+            )}
+            </>
           )}
         </>
       ) : (
@@ -3938,6 +4031,8 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
   // idle | scanning | loading | notFound | error | unsupported | moduleInstalling | webPermissionDenied | webUnsupported
   const [status, setStatus] = useState("idle");
   const [grams, setGrams] = useState(100);
+  const [manualCode, setManualCode] = useState("");
+  const manualCodeOk = /^\d{6,14}$/.test(manualCode);
   const scaled = found ? scale(found.per100, grams) : null;
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
@@ -4012,9 +4107,13 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
     try {
       const [{ BrowserMultiFormatReader }, { BarcodeFormat: ZBarcodeFormat, DecodeHintType, NotFoundException }] = await Promise.all([import("@zxing/browser"), import("@zxing/library")]);
       const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [ZBarcodeFormat.EAN_13, ZBarcodeFormat.EAN_8, ZBarcodeFormat.UPC_A, ZBarcodeFormat.UPC_E, ZBarcodeFormat.CODE_128]);
-      const reader = new BrowserMultiFormatReader(hints);
-      const controls = await reader.decodeFromConstraints({ video: { facingMode: "environment" } }, videoRef.current, (result, err) => {
+      // Food barcodes are EAN/UPC only; fewer formats + TRY_HARDER = faster, more reliable reads.
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [ZBarcodeFormat.EAN_13, ZBarcodeFormat.EAN_8, ZBarcodeFormat.UPC_A, ZBarcodeFormat.UPC_E]);
+      hints.set(DecodeHintType.TRY_HARDER, true);
+      // Default is a ~640px camera image tried every 500 ms — too blurry/slow for thin
+      // bars. Ask for HD and try ~12x per second.
+      const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 80, delayBetweenScanSuccess: 400 });
+      const controls = await reader.decodeFromConstraints({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } }, videoRef.current, (result, err) => {
         if (result) {
           stopWebScan();
           lookupBarcode(result.getText());
@@ -4024,6 +4123,12 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
         }
       });
       controlsRef.current = controls;
+      try {
+        const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
+        await track?.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+      } catch {
+        /* autofocus control isn't available on every phone */
+      }
     } catch (err) {
       setStatus(err && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") ? "webPermissionDenied" : "webUnsupported");
     }
@@ -4119,6 +4224,24 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
           <button onClick={IS_NATIVE_APP ? scanReal : scanWeb} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             {status === "idle" ? t.scanBarcode : t.scanAgain}
           </button>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value.replace(/\D/g, "").slice(0, 14))}
+              onKeyDown={(e) => { if (e.key === "Enter" && manualCodeOk) lookupBarcode(manualCode); }}
+              placeholder={t.barcodeManualPh}
+              style={{ ...numInputStyle, flex: 1, minWidth: 0 }}
+            />
+            <button
+              disabled={!manualCodeOk}
+              onClick={() => lookupBarcode(manualCode)}
+              style={{ background: manualCodeOk ? COLORS.raised : COLORS.surface, color: manualCodeOk ? COLORS.gold : COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}
+            >
+              {t.barcodeManualGo}
+            </button>
+          </div>
         </>
       )}
     </div>
@@ -4304,7 +4427,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
     setSlow(false);
     const slowTimer = setTimeout(() => setSlow(true), 7000);
     try {
-      const dataUrl = await downscaleImage(file);
+      const dataUrl = await downscaleImage(file, 800);
       setPreview(dataUrl);
       const out = await postPhoto(dataUrl);
       if (out.notConfigured) return setStatus("notConfigured");
@@ -5909,6 +6032,22 @@ export default function AsmarFitApp() {
 
   const t = useMemo(() => STR[lang], [lang]);
 
+  // The free server sleeps when idle and needs ~30 s to wake. Poke it as soon as the
+  // app opens (and whenever it returns to the foreground after a while), so it is
+  // already awake by the time someone searches, scans or asks the assistant.
+  useEffect(() => {
+    let last = 0;
+    const wake = () => {
+      if (Date.now() - last < 4 * 60_000) return;
+      last = Date.now();
+      fetch(API_BASE + "/health").catch(() => {});
+    };
+    wake();
+    const onVis = () => document.visibilityState === "visible" && wake();
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
   const finishOnboarding = (data) => {
     setProfile(data);
     setWeightLog([{ dateISO: new Date().toISOString(), kg: data.weight }]);
@@ -6070,6 +6209,25 @@ export default function AsmarFitApp() {
       }
     })();
   }, [reminders, reminderTimes, onboarded, lang]);
+
+  // Installed app: also nudge via notification once a workout has been running 2 h.
+  const workoutStartedAt = activeWorkout?.startedAt;
+  useEffect(() => {
+    if (!IS_NATIVE_APP) return;
+    (async () => {
+      try {
+        const { LocalNotifications } = await import("@capacitor/local-notifications");
+        await LocalNotifications.cancel({ notifications: [{ id: 4 }] });
+        if (!workoutStartedAt) return;
+        const at = new Date(Math.max(workoutStartedAt + 2 * 3600_000, Date.now() + 60_000));
+        const perm = await LocalNotifications.requestPermissions();
+        if (perm.display !== "granted") return;
+        await LocalNotifications.schedule({ notifications: [{ id: 4, title: "ASFIT", body: t.workoutLongBody, schedule: { at, allowWhileIdle: true } }] });
+      } catch {
+        /* notifications are optional */
+      }
+    })();
+  }, [workoutStartedAt, lang]);
 
   let content, topTitle, showBack, onSettingsBtn;
 
@@ -6265,8 +6423,6 @@ export default function AsmarFitApp() {
           history={historyMap}
           streak={streak}
           onOpenHistory={() => setOverlay("history")}
-          activeWorkout={activeWorkout}
-          onResumeWorkout={startOrResumeWorkout}
         />
       ),
       nutrition: (
@@ -6362,6 +6518,8 @@ export default function AsmarFitApp() {
         ) : (
           <>
             <TopBar title={topTitle} lang={lang} setLang={setLang} onBack={showBack} onSettings={!showBack ? () => setOverlay("settings") : null} />
+            {activeWorkout && overlay !== "workout" && <WorkoutBanner t={t} startedAt={activeWorkout.startedAt} onOpen={() => startOrResumeWorkout()} />}
+            {activeWorkout && <WorkoutLongPrompt t={t} startedAt={activeWorkout.startedAt} onEnd={() => startOrResumeWorkout()} />}
             <div style={isPhone ? { flex: 1, minHeight: 0, overflowY: "auto" } : { height: 700, overflowY: "auto" }}>{content}</div>
             <div style={{ display: "flex", justifyContent: "space-around", padding: isPhone ? "10px 6px calc(12px + env(safe-area-inset-bottom))" : "10px 6px 20px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
               {nav.map(({ key, icon: Icon, label }) => {

@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import NodeCache from "node-cache";
-import { searchBasics, fold, tokensOf } from "./basics.js";
+import { searchBasics, correctQuery, fold, tokensOf } from "./basics.js";
 
 dotenv.config();
 
@@ -279,18 +279,22 @@ app.get("/api/food/search", async (req, res) => {
   // list plus USDA (Open Food Facts fills in when USDA has too little / is unavailable).
   const lang = req.query.lang === "de" ? "de" : "en";
   if (!query) return res.status(400).json({ error: "Missing ?q= search term" });
-  const cacheKey = "search2:" + lang + ":" + query.toLowerCase();
+  const cacheKey = "search3:" + lang + ":" + query.toLowerCase();
   const cached = cache.get(cacheKey);
-  if (cached) return res.json({ cached: true, results: cached });
+  if (cached) return res.json({ cached: true, ...cached });
 
+  // Typos ("bannane") make USDA / Open Food Facts return junk or nothing, so the
+  // text we forward upstream is first repaired against our own food vocabulary.
   const basics = searchBasics(query, lang);
+  const fixed = correctQuery(query);
+  const corrected = fixed.toLowerCase() !== query.toLowerCase() ? fixed : null;
   let usda = { results: [], error: null };
   let off = { results: [], error: null };
   if (lang === "en" && USDA_API_KEY) {
-    usda = await searchUsda(query);
-    if (usda.results.length < 8) off = await searchOpenFoodFacts(query, lang);
+    usda = await searchUsda(fixed);
+    if (usda.results.length < 8) off = await searchOpenFoodFacts(fixed, lang);
   } else {
-    off = await searchOpenFoodFacts(query, lang);
+    off = await searchOpenFoodFacts(fixed, lang);
   }
 
   // Once a curated basic already answers the query cleanly, a long tail of
@@ -304,8 +308,8 @@ app.get("/api/food/search", async (req, res) => {
   }
 
   // Don't cache partial results caused by a failing source, so the next try can recover.
-  if (!usda.error && !off.error) cache.set(cacheKey, results);
-  res.json({ cached: false, results });
+  if (!usda.error && !off.error) cache.set(cacheKey, { results, corrected });
+  res.json({ cached: false, results, corrected });
 });
 
 /* ---------- POST /api/assistant ---------- */
@@ -472,15 +476,25 @@ app.get("/api/food/barcode/:code", async (req, res) => {
   if (cached) return res.json({ cached: true, result: cached });
 
   try {
-    const offRes = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
-    if (!offRes.ok) {
-      return res.status(offRes.status).json({ error: `Open Food Facts returned ${offRes.status}` });
-    }
-    const data = await offRes.json();
-    if (data.status !== 1 || !data.product) {
+    // Only the fields we use (the full product JSON is ~100 KB), a User-Agent (OFF
+    // throttles anonymous clients) and a timeout so a slow upstream can't hang the scan.
+    const fields = "code,product_name,generic_name,brands,nutriments,categories_tags,categories,nutrition_grades,image_front_small_url,image_url";
+    const lookup = async (c) => {
+      const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${c}.json?fields=${fields}`, {
+        headers: { "User-Agent": OFF_USER_AGENT },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (r.status === 404) return null;
+      if (!r.ok) throw Object.assign(new Error("off " + r.status), { status: r.status });
+      const d = await r.json();
+      return d.status === 1 && d.product ? d.product : null;
+    };
+    // UPC-A scans (12 digits) are stored under their EAN-13 form with a leading 0.
+    const product = (await lookup(code)) || (code.length === 12 ? await lookup("0" + code) : null);
+    if (!product) {
       return res.status(404).json({ error: "Product not found for this barcode" });
     }
-    const result = normalizeOffProduct(data.product);
+    const result = normalizeOffProduct(product);
     cache.set(cacheKey, result);
     res.json({ cached: false, result });
   } catch (err) {
