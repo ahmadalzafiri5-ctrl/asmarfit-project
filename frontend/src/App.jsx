@@ -54,6 +54,9 @@ import {
   ChevronDown,
   FileText,
   Landmark,
+  Pause,
+  Play,
+  Pencil,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -178,6 +181,18 @@ const STR = {
     restSkip: "Skip",
     restDone: "Rest is over — next set!",
     lastTime: "Last time",
+    restStart: "Start rest",
+    workoutPause: "Pause workout",
+    workoutResume: "Resume",
+    workoutPaused: "Workout paused",
+    editAmount: "Change amount",
+    saveAmount: "Save",
+    quickAddTitle: "Add calories directly",
+    quickAddName: "Name (optional)",
+    quickAddDefault: "Quick entry",
+    chartTitle: "Calories · last 14 days",
+    chartAvg: "Average per tracked day",
+    chartGoal: "Goal",
     diaryToday: "Today",
     diaryYesterday: "Yesterday",
     diaryNothing: "Nothing logged on this day.",
@@ -693,6 +708,18 @@ const STR = {
     restSkip: "Überspringen",
     restDone: "Pause vorbei — nächster Satz!",
     lastTime: "Letztes Mal",
+    restStart: "Pause starten",
+    workoutPause: "Workout pausieren",
+    workoutResume: "Weiter",
+    workoutPaused: "Workout pausiert",
+    editAmount: "Menge ändern",
+    saveAmount: "Speichern",
+    quickAddTitle: "Kalorien direkt eintragen",
+    quickAddName: "Name (optional)",
+    quickAddDefault: "Schnell-Eintrag",
+    chartTitle: "Kalorien · letzte 14 Tage",
+    chartAvg: "Durchschnitt pro getracktem Tag",
+    chartGoal: "Ziel",
     diaryToday: "Heute",
     diaryYesterday: "Gestern",
     diaryNothing: "An diesem Tag wurde nichts eingetragen.",
@@ -2328,7 +2355,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem }) {
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
   const mealDefs = [
@@ -2349,6 +2376,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
   const hasAnyItem = Object.values(viewMeals).some((a) => a.length > 0);
   const yesterdayMeals = history?.[dateKey(new Date(Date.now() - 86400000))]?.meals;
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(null); // { slot, idx, grams }
   const copy = (slot, items) => {
     onCopyItems(slot, items);
     setCopied(true);
@@ -2457,7 +2485,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
               <Card style={{ padding: 4 }}>
                 {items.map((it, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderBottom: i < items.length - 1 || isToday ? `1px solid ${COLORS.border}` : "none", fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
-                    <span>
+                    <span onClick={isToday && it.grams ? () => setEditing({ slot: m.key, idx: i, grams: it.grams }) : undefined} style={{ cursor: isToday && it.grams ? "pointer" : "default" }}>
                       {it.name}
                       {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}{it.unit || "g"}</span> : null}
                     </span>
@@ -2465,6 +2493,11 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
                       {it.kcal} kcal
                       {isToday && (
                         <>
+                          {it.grams ? (
+                            <span onClick={() => setEditing({ slot: m.key, idx: i, grams: it.grams })} title={t.editAmount} style={{ marginLeft: 10, cursor: "pointer", color: COLORS.dim, display: "inline-flex" }}>
+                              <Pencil size={13} />
+                            </span>
+                          ) : null}
                           <span onClick={() => onSaveMyMeal(it)} title={t.saveMine} style={{ marginLeft: 10, cursor: "pointer", color: COLORS.gold, fontSize: 16 }}>
                             {myMeals.some((x) => x.name === it.name) ? "★" : "☆"}
                           </span>
@@ -2485,6 +2518,30 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
             </div>
           );
         })
+      )}
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 22, padding: "22px 20px", width: "100%", maxWidth: 330 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 14 }}>{t.editAmount}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div onClick={() => setEditing((e) => ({ ...e, grams: Math.max(5, Math.round(e.grams) - 10) }))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <Minus size={14} color={COLORS.text} />
+              </div>
+              <input type="number" inputMode="decimal" value={editing.grams || ""} onChange={(e) => setEditing((x) => ({ ...x, grams: Math.max(0, Math.min(5000, Number(e.target.value) || 0)) }))} style={{ ...numInputStyle, width: 100, textAlign: "center", fontWeight: 700 }} />
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{viewMeals[editing.slot][editing.idx]?.unit || "g"}</span>
+              <div onClick={() => setEditing((e) => ({ ...e, grams: Math.min(5000, Math.round(e.grams) + 10) }))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <Plus size={14} color={COLORS.text} />
+              </div>
+            </div>
+            <button
+              disabled={!(editing.grams > 0)}
+              onClick={() => { onEditItem(editing.slot, editing.idx, editing.grams); setEditing(null); }}
+              style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: editing.grams > 0 ? 1 : 0.5 }}
+            >
+              {t.saveAmount}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -3034,8 +3091,11 @@ const numInputStyle = {
   outline: "none",
 };
 
+// Training time without paused periods: while paused the clock stands still.
+const workoutElapsedMs = (aw, now) => Math.max(0, (aw.pausedAt || now) - aw.startedAt - (aw.pausedMs || 0));
+
 // Visible on every screen while a workout runs, so the timer can't be forgotten.
-function WorkoutBanner({ t, startedAt, onOpen }) {
+function WorkoutBanner({ t, aw, onOpen }) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -3045,7 +3105,7 @@ function WorkoutBanner({ t, startedAt, onOpen }) {
     <div onClick={onOpen} style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 20px 10px", padding: "10px 14px", borderRadius: 14, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, cursor: "pointer" }}>
       <Timer size={16} color={COLORS.gold} />
       <span style={{ flex: 1, fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>
-        {t.workoutRunning} · <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatDuration(Math.max(0, Math.round((now - startedAt) / 1000)))}</span>
+        {aw.pausedAt ? t.workoutPaused : t.workoutRunning} · <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatDuration(Math.round(workoutElapsedMs(aw, now) / 1000))}</span>
       </span>
       <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.gold }}>{t.resumeWorkout}</span>
     </div>
@@ -3054,12 +3114,15 @@ function WorkoutBanner({ t, startedAt, onOpen }) {
 
 // "Did you forget to stop it?" — asks once a workout has been running 2 h, whenever the
 // app is open or comes back to the foreground; "still training" snoozes it for an hour.
-function WorkoutLongPrompt({ t, startedAt, onEnd }) {
+function WorkoutLongPrompt({ t, aw, onEnd }) {
   const [open, setOpen] = useState(false);
   const snoozeUntil = useRef(0);
+  const awRef = useRef(aw);
+  awRef.current = aw;
   useEffect(() => {
     const check = () => {
-      if (Date.now() - startedAt > 2 * 3600_000 && Date.now() > snoozeUntil.current) setOpen(true);
+      const a = awRef.current;
+      if (!a.pausedAt && workoutElapsedMs(a, Date.now()) > 2 * 3600_000 && Date.now() > snoozeUntil.current) setOpen(true);
     };
     check();
     const id = setInterval(check, 30_000);
@@ -3068,9 +3131,9 @@ function WorkoutLongPrompt({ t, startedAt, onEnd }) {
       clearInterval(id);
       document.removeEventListener("visibilitychange", check);
     };
-  }, [startedAt]);
+  }, []);
   if (!open) return null;
-  const mins = Math.round((Date.now() - startedAt) / 60000);
+  const mins = Math.round(workoutElapsedMs(aw, Date.now()) / 60000);
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ background: COLORS.bg, borderRadius: 24, padding: "26px 22px", width: "100%", maxWidth: 340, textAlign: "center" }}>
@@ -3090,7 +3153,7 @@ function WorkoutLongPrompt({ t, startedAt, onEnd }) {
   );
 }
 
-function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish, onDiscard, workoutHistory = [] }) {
+function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onTogglePause, entries, onChangeEntries, onFinish, onDiscard, workoutHistory = [] }) {
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
   const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
@@ -3104,7 +3167,7 @@ function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const elapsedSec = Math.max(0, Math.round((now - startedAt) / 1000));
+  const elapsedSec = Math.round(workoutElapsedMs({ startedAt, pausedAt, pausedMs }, now) / 1000);
 
   // Rest timer between sets: ticking a set as done starts it. Counts down from a wall-clock
   // end time (so it stays right if the phone sleeps) and beeps/vibrates when it is over.
@@ -3241,10 +3304,14 @@ function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish
 
   return (
     <div style={{ padding: "0 20px 24px" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: COLORS.goldSoft, borderRadius: 999, padding: "8px 18px" }}>
-          <Timer size={15} color={COLORS.gold} />
-          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.gold, fontVariantNumeric: "tabular-nums" }}>{formatDuration(elapsedSec)}</span>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: pausedAt ? COLORS.raised : COLORS.goldSoft, borderRadius: 999, padding: "8px 18px", opacity: pausedAt ? 0.8 : 1 }}>
+          <Timer size={15} color={pausedAt ? COLORS.dim : COLORS.gold} />
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: pausedAt ? COLORS.dim : COLORS.gold, fontVariantNumeric: "tabular-nums" }}>{formatDuration(elapsedSec)}</span>
+        </div>
+        <div onClick={onTogglePause} title={pausedAt ? t.workoutResume : t.workoutPause} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 999, cursor: "pointer", border: "1px solid " + (pausedAt ? COLORS.gold : COLORS.border), background: pausedAt ? COLORS.gold : COLORS.raised, color: pausedAt ? COLORS.bg : COLORS.dim, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700 }}>
+          {pausedAt ? <Play size={14} /> : <Pause size={14} />}
+          {pausedAt ? t.workoutResume : t.workoutPause}
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14, flexWrap: "wrap", justifyContent: "center" }}>
@@ -3254,6 +3321,11 @@ function WorkoutSession({ t, lang, startedAt, entries, onChangeEntries, onFinish
             {sec === 0 ? t.restOff : sec + " s"}
           </div>
         ))}
+        {restDefault > 0 && !restEnd && (
+          <div onClick={() => { unlockAudio(); startRest(restDefault); }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 999, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, background: COLORS.gold, color: COLORS.bg }}>
+            <Play size={12} /> {t.restStart}
+          </div>
+        )}
       </div>
       {restEnd && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 14, padding: "10px 14px", marginBottom: 14 }}>
@@ -3600,6 +3672,8 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
   const [grams, setGrams] = useState(100);
   const [toast, setToast] = useState(null);
   const [retryTick, setRetryTick] = useState(0);
+  const [quickName, setQuickName] = useState("");
+  const [quickKcal, setQuickKcal] = useState("");
 
   // Live text search against the backend proxy (USDA FoodData Central).
   // The category chips are hidden for now: the API has no category field,
@@ -3713,6 +3787,27 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                   </Card>
                 </>
               )}
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 8 }}>{t.quickAddTitle}</div>
+              <Card style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={quickName} onChange={(e) => setQuickName(e.target.value)} placeholder={t.quickAddName} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                  <input type="number" inputMode="numeric" value={quickKcal} onChange={(e) => setQuickKcal(e.target.value)} placeholder="kcal" style={{ ...numInputStyle, width: 84 }} />
+                  <button
+                    disabled={!(Number(quickKcal) > 0)}
+                    onClick={() => {
+                      const name = quickName.trim() || t.quickAddDefault;
+                      onAdd({ name, kcal: Math.round(Number(quickKcal)), protein: 0, carbs: 0, fat: 0 });
+                      setToast(name);
+                      setQuickName("");
+                      setQuickKcal("");
+                      setTimeout(() => setToast(null), 1400);
+                    }}
+                    style={{ background: Number(quickKcal) > 0 ? COLORS.gold : COLORS.raised, color: Number(quickKcal) > 0 ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 10, padding: "0 14px", cursor: "pointer", display: "flex", alignItems: "center" }}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </Card>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>★ {t.myMealsTitle}</span>
                 <span onClick={onOpenMyMeals} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>+ {t.myMealSave}</span>
@@ -4047,6 +4142,18 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
     </div>
   );
 
+  // last 14 days of calories (bars) against the goal
+  const chartDays = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (13 - i));
+    const k = dateKey(d);
+    const day = history[k];
+    return { k, d, kcal: dayHasFood(day) ? Math.round(sumMeals(day.meals, "kcal")) : 0 };
+  });
+  const trackedChart = chartDays.filter((c) => c.kcal > 0);
+  const chartAvg = trackedChart.length ? Math.round(trackedChart.reduce((a, c) => a + c.kcal, 0) / trackedChart.length) : 0;
+  const chartMax = Math.max(kcalGoal || 0, ...chartDays.map((c) => c.kcal), 1) * 1.1;
+
   const selDay = history[selected];
   const selDate = new Date(selected + "T12:00:00");
   const isFuture = selected > todayKey;
@@ -4106,6 +4213,24 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
               {l}
             </div>
           ))}
+        </div>
+      </Card>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 12 }}>{t.chartTitle}</div>
+        <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 4, height: 96 }}>
+          {kcalGoal ? <div style={{ position: "absolute", left: 0, right: 0, bottom: (kcalGoal / chartMax) * 96, borderTop: "1.5px dashed " + COLORS.dim, opacity: 0.6 }} /> : null}
+          {chartDays.map((c) => (
+            <div key={c.k} onClick={() => setSelected(c.k)} style={{ flex: 1, height: Math.max(3, (c.kcal / chartMax) * 96), borderRadius: 4, cursor: "pointer", background: c.kcal === 0 ? COLORS.raised : kcalGoal && c.kcal > kcalGoal * 1.1 ? COLORS.coral : HIST_GREEN, outline: c.k === selected ? "2px solid " + COLORS.gold : "none" }} />
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim }}>
+          <span>{chartDays[0].d.getDate()}.{chartDays[0].d.getMonth() + 1}.</span>
+          <span>{chartDays[13].d.getDate()}.{chartDays[13].d.getMonth() + 1}.</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>
+          <span>{t.chartAvg}: <b style={{ color: COLORS.text }}>{chartAvg ? chartAvg.toLocaleString(locale) + " kcal" : "–"}</b></span>
+          {kcalGoal ? <span>{t.chartGoal}: {kcalGoal.toLocaleString(locale)}</span> : null}
         </div>
       </Card>
 
@@ -6300,6 +6425,18 @@ export default function AsmarFitApp() {
   // Copy a meal (from yesterday, or from any past day being viewed) into today's meal.
   const copyItems = (slot, items) => setMeals((m) => ({ ...m, [slot]: [...m[slot], ...items.map((it) => ({ ...it }))] }));
 
+  // Change the portion of an already logged food — calories and macros scale with it.
+  const editFoodItem = (mealKey, index, grams) =>
+    setMeals((m) => ({
+      ...m,
+      [mealKey]: m[mealKey].map((it, i) => {
+        if (i !== index || !it.grams || !(grams > 0)) return it;
+        const r = grams / it.grams;
+        const f1 = (v) => Math.round((v || 0) * r * 10) / 10;
+        return { ...it, grams: Math.round(grams * 10) / 10, kcal: Math.round((it.kcal || 0) * r), protein: f1(it.protein), carbs: f1(it.carbs), fat: f1(it.fat) };
+      }),
+    }));
+
   const deleteFoodItem = (mealKey, index) => {
     setMeals((m) => ({ ...m, [mealKey]: m[mealKey].filter((_, i) => i !== index) }));
   };
@@ -6405,9 +6542,18 @@ export default function AsmarFitApp() {
         t={t}
         lang={lang}
         startedAt={activeWorkout?.startedAt || Date.now()}
+        pausedAt={activeWorkout?.pausedAt || null}
+        pausedMs={activeWorkout?.pausedMs || 0}
+        onTogglePause={() =>
+          setActiveWorkout((w) => {
+            if (!w) return w;
+            const n = Date.now();
+            return w.pausedAt ? { ...w, pausedMs: (w.pausedMs || 0) + (n - w.pausedAt), pausedAt: null } : { ...w, pausedAt: n };
+          })
+        }
         entries={activeWorkout?.entries || []}
         workoutHistory={workoutHistory}
-        onChangeEntries={(entries) => setActiveWorkout((w) => ({ startedAt: w?.startedAt || Date.now(), entries }))}
+        onChangeEntries={(entries) => setActiveWorkout((w) => ({ ...(w || { startedAt: Date.now() }), entries }))}
         onFinish={(summary) => {
           finishWorkout(summary);
           setActiveWorkout(null);
@@ -6615,6 +6761,7 @@ export default function AsmarFitApp() {
           onOpenCheats={() => setOverlay("cheats")}
           onSaveMyMeal={addMyMeal}
           onDeleteItem={deleteFoodItem}
+          onEditItem={editFoodItem}
           onCopyItems={copyItems}
         />
       ),
@@ -6688,8 +6835,8 @@ export default function AsmarFitApp() {
         ) : (
           <>
             <TopBar title={topTitle} lang={lang} setLang={setLang} onBack={showBack} onSettings={!showBack ? () => setOverlay("settings") : null} />
-            {activeWorkout && overlay !== "workout" && <WorkoutBanner t={t} startedAt={activeWorkout.startedAt} onOpen={() => startOrResumeWorkout()} />}
-            {activeWorkout && <WorkoutLongPrompt t={t} startedAt={activeWorkout.startedAt} onEnd={() => startOrResumeWorkout()} />}
+            {activeWorkout && overlay !== "workout" && <WorkoutBanner t={t} aw={activeWorkout} onOpen={() => startOrResumeWorkout()} />}
+            {activeWorkout && <WorkoutLongPrompt t={t} aw={activeWorkout} onEnd={() => startOrResumeWorkout()} />}
             <div style={isPhone ? { flex: 1, minHeight: 0, overflowY: "auto" } : { height: 700, overflowY: "auto" }}>{content}</div>
             <div style={{ display: "flex", justifyContent: "space-around", padding: isPhone ? "10px 6px calc(12px + env(safe-area-inset-bottom))" : "10px 6px 20px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
               {nav.map(({ key, icon: Icon, label }) => {
