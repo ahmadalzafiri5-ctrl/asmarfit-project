@@ -512,7 +512,6 @@ const STR = {
     introSetting: "Start animation",
     introOn: "On",
     introOff: "Off",
-    introTag: "Food · Training · Progress",
     setSmall: "Small",
     setNormal: "Normal",
     setLarge: "Large",
@@ -1053,7 +1052,6 @@ const STR = {
     introSetting: "Start-Animation",
     introOn: "An",
     introOff: "Aus",
-    introTag: "Essen · Training · Fortschritt",
     setSmall: "Klein",
     setNormal: "Normal",
     setLarge: "Groß",
@@ -6137,28 +6135,68 @@ function DisplaySettings({ t, lang, setLang, display }) {
   );
 }
 
-// Opening animation: the ASFIT logo drops in, an accent-coloured blob spreads
-// out behind it and food / training icons pop up and orbit around it. Tap to
-// skip; it ends by itself after ~3 s and can be switched off in the settings.
-const INTRO_ITEMS = ["🥗", "🍎", "🍚", "🥑", "🍗", "👟", "🏋️", "🥚"];
-const INTRO_MS = 3000;
+// Opening animation in the style of the "paint splash" app openers: the logo
+// slides in, an accent-coloured splat bursts out behind it, food / training
+// icons fly out of the middle and pop around it, then the colour floods the
+// screen and the app appears. Tap to skip; it ends by itself after ~3 s and
+// can be switched off in the settings.
+const INTRO_ITEMS = [
+  { e: "🏋️", a: 0, s: 0.17 },
+  { e: "🍎", a: 40, s: 0.24 },
+  { e: "🥑", a: 86, s: 0.17 },
+  { e: "🥛", a: 130, s: 0.16 },
+  { e: "🍗", a: 172, s: 0.22 },
+  { e: "👟", a: 218, s: 0.2 },
+  { e: "⌚", a: 262, s: 0.15 },
+  { e: "🍚", a: 294, s: 0.17 },
+  { e: "🥗", a: 332, s: 0.24 },
+];
+const INTRO_GHOSTS = [
+  { e: "🍌", a: 22, s: 0.09 },
+  { e: "🏃", a: 112, s: 0.09 },
+  { e: "🥄", a: 196, s: 0.08 },
+  { e: "⏱️", a: 246, s: 0.09 },
+  { e: "🍋", a: 318, s: 0.08 },
+];
+// circles of the gooey splat (SVG units, viewBox 100 x 120) and the spray drops around it
+const INTRO_SPLAT = [
+  [50, 60, 26],
+  [36, 47, 17],
+  [64, 49, 18],
+  [34, 76, 17],
+  [66, 74, 18],
+  [50, 35, 14],
+  [50, 86, 14],
+  [27, 62, 13],
+  [73, 62, 13],
+];
+const INTRO_DROPS = [
+  [13, 38, 3],
+  [89, 84, 3.5],
+  [19, 94, 2.4],
+  [87, 28, 2.8],
+];
+const INTRO_MS = 2100;
 
-function StartIntro({ t, onDone }) {
-  const [leaving, setLeaving] = useState(false);
+function StartIntro({ onDone, accent }) {
+  const [phase, setPhase] = useState("play"); // play → exit (colour floods the screen) or skip (quick fade)
   const doneRef = useRef(false);
-  const finish = () => {
+  const timers = useRef([]);
+  const leave = (mode) => {
     if (doneRef.current) return;
     doneRef.current = true;
-    setLeaving(true);
-    setTimeout(onDone, 400);
+    setPhase(mode);
+    timers.current.push(setTimeout(onDone, mode === "exit" ? 950 : 320));
   };
   useEffect(() => {
-    const id = setTimeout(finish, INTRO_MS);
-    return () => clearTimeout(id);
+    timers.current.push(setTimeout(() => leave("exit"), INTRO_MS));
+    return () => timers.current.forEach(clearTimeout);
   }, []);
+  const exit = phase === "exit";
+  const skip = phase === "skip";
   return (
     <div
-      onClick={finish}
+      onClick={() => leave("skip")}
       aria-hidden="true"
       style={{
         position: "fixed",
@@ -6166,64 +6204,99 @@ function StartIntro({ t, onDone }) {
         zIndex: 10000,
         background: COLORS.bg,
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: "5vh",
         overflow: "hidden",
-        opacity: leaving ? 0 : 1,
-        transition: "opacity 0.4s ease",
-        "--s": "min(76vw, 46vh, 380px)",
+        opacity: exit || skip ? 0 : 1,
+        transition: exit ? "opacity 0.4s ease 0.5s" : skip ? "opacity 0.3s ease" : "none",
+        "--s": "min(86vw, 46vh, 440px)",
       }}
     >
       <style>{`
-        @keyframes introBlob { 0% { transform: scale(0); opacity: 0; } 55% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-        @keyframes introMorph { 0%,100% { border-radius: 50% 50% 48% 52% / 52% 48% 52% 48%; } 50% { border-radius: 46% 54% 53% 47% / 48% 54% 46% 52%; } }
-        @keyframes introLogo { 0% { transform: scale(0.2) rotate(-14deg); opacity: 0; } 60% { transform: scale(1.12) rotate(3deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
-        @keyframes introPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
-        @keyframes introRipple { 0% { transform: scale(0.35); opacity: 0.7; } 100% { transform: scale(1.12); opacity: 0; } }
-        @keyframes introPop { 0% { transform: scale(0) rotate(-40deg); opacity: 0; } 70% { transform: scale(1.25) rotate(8deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
-        @keyframes introSpin { to { transform: rotate(360deg); } }
-        @keyframes introUnspin { to { transform: rotate(-360deg); } }
-        @keyframes introBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-        @keyframes introText { 0% { transform: translateY(14px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        @keyframes introSplat { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @keyframes introWobble { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(0.6px, -0.8px) scale(1.04); } }
+        @keyframes introLogoIn { 0% { transform: translateX(70vw) rotate(-12deg); opacity: 0; filter: blur(6px); } 65% { transform: translateX(-1.5vw) rotate(1.5deg); opacity: 1; filter: blur(0); } 100% { transform: translateX(0) rotate(0); opacity: 1; filter: blur(0); } }
+        @keyframes introPunch { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
+        @keyframes introRipple { 0% { transform: scale(0.35); opacity: 0; } 15% { opacity: 0.8; } 100% { transform: scale(1.35); opacity: 0; } }
+        @keyframes introFly { 0% { transform: translate(var(--fx), var(--fy)) scale(0.15) rotate(-35deg); opacity: 0; } 55% { transform: translate(0, 0) scale(1.22) rotate(7deg); opacity: 1; } 100% { transform: translate(0, 0) scale(1) rotate(0); opacity: 1; } }
+        @keyframes introGhost { 0% { transform: scale(0) rotate(-30deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 0.5; } }
+        @keyframes introBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
       `}</style>
-      <div style={{ position: "relative", width: "var(--s)", height: "var(--s)" }}>
+      <div style={{ position: "relative", width: "var(--s)", height: "calc(var(--s) * 1.2)" }}>
+        <svg viewBox="0 0 100 120" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible" }}>
+          <defs>
+            <filter id="introGoo" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="b" />
+              <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" />
+            </filter>
+          </defs>
+          <g filter="url(#introGoo)" style={{ fill: accent }}>
+            {INTRO_SPLAT.map(([cx, cy, r], i) => (
+              <circle
+                key={i}
+                cx={cx}
+                cy={cy}
+                r={r}
+                style={{ transformBox: "fill-box", transformOrigin: "center", animation: `introSplat 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.25) ${0.7 + (i % 4) * 0.06}s both, introWobble 1.4s ease-in-out ${1.4 + (i % 3) * 0.1}s 1` }}
+              />
+            ))}
+            {INTRO_DROPS.map(([cx, cy, r], i) => (
+              <circle key={"d" + i} cx={cx} cy={cy} r={r} style={{ transformBox: "fill-box", transformOrigin: "center", animation: `introSplat 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4) ${0.95 + i * 0.07}s both` }} />
+            ))}
+          </g>
+        </svg>
+        {[0, 0.4, 0.8].map((d) => (
+          <div key={d} style={{ position: "absolute", left: "20%", right: "20%", top: "43%", height: "14%", borderRadius: "50%", border: "2px solid rgba(0,0,0,0.5)", animation: `introRipple 1.5s ease-out ${0.85 + d}s infinite both` }} />
+        ))}
+        {INTRO_GHOSTS.map((g, i) => {
+          const a = (g.a * Math.PI) / 180;
+          return (
+            <div key={g.e} style={{ position: "absolute", left: `${50 + 47 * Math.sin(a)}%`, top: `${50 - 50 * Math.cos(a)}%`, width: 0, height: 0 }}>
+              <div style={{ position: "absolute", transform: "translate(-50%, -50%)" }}>
+                <div style={{ fontSize: `calc(var(--s) * ${g.s})`, lineHeight: 1, filter: "grayscale(1)", animation: `introGhost 0.5s ease-out ${1.2 + i * 0.07}s both` }}>{g.e}</div>
+              </div>
+            </div>
+          );
+        })}
+        {INTRO_ITEMS.map((it, i) => {
+          const a = (it.a * Math.PI) / 180;
+          const x = Math.sin(a);
+          const y = Math.cos(a);
+          return (
+            <div key={it.e} style={{ position: "absolute", left: `${50 + 44 * x}%`, top: `${50 - 46 * y}%`, width: 0, height: 0 }}>
+              <div style={{ position: "absolute", transform: "translate(-50%, -50%)" }}>
+                <div style={{ "--fx": `calc(var(--s) * ${-0.44 * x})`, "--fy": `calc(var(--s) * ${0.552 * y})`, fontSize: `calc(var(--s) * ${it.s})`, lineHeight: 1, animation: `introFly 0.6s cubic-bezier(0.25, 1.2, 0.4, 1) ${0.85 + i * 0.06}s both` }}>
+                  <div style={{ animation: `introBob ${2.2 + (i % 3) * 0.4}s ease-in-out ${1.6 + i * 0.15}s infinite` }}>{it.e}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
         <div
           style={{
             position: "absolute",
-            inset: "4%",
+            left: "50%",
+            top: "50%",
+            width: "40vmax",
+            height: "40vmax",
+            marginLeft: "-20vmax",
+            marginTop: "-20vmax",
             borderRadius: "50%",
-            background: COLORS.gold,
-            animation: "introBlob 0.85s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.1s both, introMorph 4s ease-in-out 0.9s infinite",
+            background: accent,
+            transform: exit ? "scale(7)" : "scale(0)",
+            transition: exit ? "transform 0.55s cubic-bezier(0.5, 0, 0.2, 1)" : "none",
+            pointerEvents: "none",
           }}
         />
-        {[0, 0.5].map((d) => (
-          <div key={d} style={{ position: "absolute", inset: "14%", borderRadius: "50%", border: `2px solid ${COLORS.bg}`, animation: `introRipple 1.8s ease-out ${0.7 + d}s infinite` }} />
-        ))}
-        <div style={{ position: "absolute", inset: 0, animation: "introSpin 16s linear 0.9s infinite" }}>
-          {INTRO_ITEMS.map((emoji, i) => {
-            const a = (i / INTRO_ITEMS.length) * Math.PI * 2 - Math.PI / 2;
-            return (
-              <div key={emoji} style={{ position: "absolute", left: `${50 + 47 * Math.cos(a)}%`, top: `${50 + 47 * Math.sin(a)}%`, width: 0, height: 0 }}>
-                <div style={{ position: "absolute", transform: "translate(-50%, -50%)", animation: "introUnspin 16s linear 0.9s infinite" }}>
-                  <div style={{ fontSize: "calc(var(--s) * 0.15)", lineHeight: 1, animation: `introPop 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) ${0.55 + i * 0.09}s both` }}>
-                    <div style={{ animation: `introBob 2.4s ease-in-out ${1.3 + i * 0.2}s infinite` }}>{emoji}</div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ animation: "introLogo 0.8s cubic-bezier(0.3, 1.3, 0.5, 1) 0.25s both" }}>
-            <img src="/icon-192.png" alt="" style={{ display: "block", width: "calc(var(--s) * 0.34)", height: "calc(var(--s) * 0.34)", borderRadius: "24%", boxShadow: "0 10px 30px rgba(0,0,0,0.35)", animation: "introPulse 1.6s ease-in-out 1.2s infinite" }} />
+          <div style={{ transition: "transform 0.5s cubic-bezier(0.55, 0, 0.9, 0.5), opacity 0.4s ease 0.1s", transform: exit ? "scale(5)" : "scale(1)", opacity: exit ? 0 : 1 }}>
+            <div style={{ animation: "introLogoIn 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) 0.05s both" }}>
+              <div style={{ animation: "introPunch 0.4s ease-out 0.7s both" }}>
+                <img src="/icon-192.png" alt="" style={{ display: "block", width: "calc(var(--s) * 0.34)", height: "calc(var(--s) * 0.34)", borderRadius: "24%", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }} />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div style={{ textAlign: "center", animation: "introText 0.6s ease 1.1s both" }}>
-        <div style={{ fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 30, letterSpacing: "0.22em", color: COLORS.text, paddingLeft: "0.22em" }}>ASFIT</div>
-        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, marginTop: 6 }}>{t.introTag}</div>
       </div>
     </div>
   );
@@ -7140,7 +7213,7 @@ export default function AsmarFitApp() {
           </>
         )}
         <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
-        {introOn && !introDone && <StartIntro t={t} onDone={finishIntro} />}
+        {introOn && !introDone && <StartIntro onDone={finishIntro} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
       </div>
     </div>
   );
