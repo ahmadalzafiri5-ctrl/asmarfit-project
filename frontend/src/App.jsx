@@ -512,6 +512,7 @@ const STR = {
     introSetting: "Start animation",
     introOn: "On",
     introOff: "Off",
+    introHint: "Full version once a day, a quick one after that.",
     setSmall: "Small",
     setNormal: "Normal",
     setLarge: "Large",
@@ -1052,6 +1053,7 @@ const STR = {
     introSetting: "Start-Animation",
     introOn: "An",
     introOff: "Aus",
+    introHint: "Einmal täglich ganz, danach nur kurz.",
     setSmall: "Klein",
     setNormal: "Normal",
     setLarge: "Groß",
@@ -6126,6 +6128,7 @@ function DisplaySettings({ t, lang, setLang, display }) {
         <Chip label={t.introOn} active={display.intro} onClick={() => display.setIntro(true)} />
         <Chip label={t.introOff} active={!display.intro} onClick={() => display.setIntro(false)} />
       </div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 8 }}>{t.introHint}</div>
       <SettingsLabel>{t.language}</SettingsLabel>
       <div style={{ display: "flex", gap: 8 }}>
         <Chip label="Deutsch" active={lang === "de"} onClick={() => setLang("de")} />
@@ -6161,6 +6164,9 @@ const INTRO_DROPS = [
 // small badges for what the app can do; they pop up around the splat one after another
 const INTRO_CHIPS = [UtensilsCrossed, Barcode, Camera, BookOpen, Droplets, Footprints, Timer, Dumbbell, Flame, TrendingUp];
 const INTRO_MS = 2300;
+// quick version for every further launch on the same day: same show, played faster, without the badges
+const INTRO_MS_SHORT = 950;
+const INTRO_SHORT_RATE = 2.2;
 // the logo glyph (same shapes as public/logo.svg) with a dark edge so it reads on every colour
 const LOGO_EDGE = { stroke: "#0D0D0D", strokeWidth: 9, strokeLinejoin: "round", paintOrder: "stroke" };
 
@@ -6183,24 +6189,34 @@ function IntroLogo() {
   );
 }
 
-function StartIntro({ onDone, accent }) {
+// full = the whole show (very first start and first open of each day), otherwise the quick version
+function StartIntro({ onDone, accent, full }) {
   const [phase, setPhase] = useState("play"); // play → exit (colour floods the screen) or skip (quick fade)
   const doneRef = useRef(false);
   const timers = useRef([]);
+  const rootRef = useRef(null);
+  const k = full ? 1 : 1 / INTRO_SHORT_RATE; // time scale of the exit transitions
   const leave = (mode) => {
     if (doneRef.current) return;
     doneRef.current = true;
     setPhase(mode);
-    timers.current.push(setTimeout(onDone, mode === "exit" ? 950 : 320));
+    timers.current.push(setTimeout(onDone, mode === "exit" ? 950 * k : 320));
   };
   useEffect(() => {
-    timers.current.push(setTimeout(() => leave("exit"), INTRO_MS));
+    if (!full && document.getAnimations) {
+      document.getAnimations().forEach((a) => {
+        const el = a.effect && a.effect.target;
+        if (el && rootRef.current && rootRef.current.contains(el)) a.playbackRate = INTRO_SHORT_RATE;
+      });
+    }
+    timers.current.push(setTimeout(() => leave("exit"), full ? INTRO_MS : INTRO_MS_SHORT));
     return () => timers.current.forEach(clearTimeout);
   }, []);
   const exit = phase === "exit";
   const skip = phase === "skip";
   return (
     <div
+      ref={rootRef}
       onClick={() => leave("skip")}
       aria-hidden="true"
       style={{
@@ -6213,7 +6229,7 @@ function StartIntro({ onDone, accent }) {
         justifyContent: "center",
         overflow: "hidden",
         opacity: exit || skip ? 0 : 1,
-        transition: exit ? "opacity 0.4s ease 0.5s" : skip ? "opacity 0.3s ease" : "none",
+        transition: exit ? `opacity ${0.4 * k}s ease ${0.5 * k}s` : skip ? "opacity 0.3s ease" : "none",
         "--s": "min(86vw, 46vh, 440px)",
       }}
     >
@@ -6253,7 +6269,7 @@ function StartIntro({ onDone, accent }) {
         {[0, 0.4, 0.8].map((d) => (
           <div key={d} style={{ position: "absolute", left: "20%", right: "20%", top: "43%", height: "14%", borderRadius: "50%", border: "2px solid rgba(0,0,0,0.5)", animation: `introRipple 1.5s ease-out ${0.85 + d}s infinite both` }} />
         ))}
-        {INTRO_CHIPS.map((Icon, i) => {
+        {full && INTRO_CHIPS.map((Icon, i) => {
           const a = (i / INTRO_CHIPS.length) * Math.PI * 2;
           const x = Math.sin(a);
           const y = Math.cos(a);
@@ -6294,12 +6310,12 @@ function StartIntro({ onDone, accent }) {
             borderRadius: "50%",
             background: accent,
             transform: exit ? "scale(7)" : "scale(0)",
-            transition: exit ? "transform 0.55s cubic-bezier(0.5, 0, 0.2, 1)" : "none",
+            transition: exit ? `transform ${0.55 * k}s cubic-bezier(0.5, 0, 0.2, 1)` : "none",
             pointerEvents: "none",
           }}
         />
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ transition: "transform 0.5s cubic-bezier(0.55, 0, 0.9, 0.5), opacity 0.4s ease 0.1s", transform: exit ? "scale(5)" : "scale(1)", opacity: exit ? 0 : 1 }}>
+          <div style={{ transition: `transform ${0.5 * k}s cubic-bezier(0.55, 0, 0.9, 0.5), opacity ${0.4 * k}s ease ${0.1 * k}s`, transform: exit ? "scale(5)" : "scale(1)", opacity: exit ? 0 : 1 }}>
             <div style={{ animation: "introLogoIn 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) 0.05s both" }}>
               <div style={{ animation: "introPunch 0.4s ease-out 0.7s both" }}>
                 <IntroLogo />
@@ -6501,6 +6517,21 @@ export default function AsmarFitApp() {
     }
     return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   });
+  // whole show on the very first start and the first open of each day, quick version after that
+  const [introFull] = useState(() => {
+    try {
+      return localStorage.getItem("asfit.introDay") !== todayStamp();
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("asfit.introDay", todayStamp());
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
   const finishIntro = () => {
     try {
       sessionStorage.setItem("asfit.introShown", "1");
@@ -7223,7 +7254,7 @@ export default function AsmarFitApp() {
           </>
         )}
         <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
-        {introOn && !introDone && <StartIntro onDone={finishIntro} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
+        {introOn && !introDone && <StartIntro onDone={finishIntro} full={introFull} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
       </div>
     </div>
   );
