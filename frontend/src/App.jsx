@@ -558,6 +558,16 @@ const STR = {
     importNoRecipe: "I can't find a recipe in this content.",
     importTooMany: "Too many requests, please try again in a minute.",
     recipeLogNow: "Log it right away",
+    shareTypeEx: "Exercise",
+    libFavs: "Favorites",
+    libAddFav: "Add to favorites",
+    libTargetMuscles: "Target muscles",
+    libPrimary: "Primary muscles",
+    libSecondary: "Secondary muscles",
+    libFront: "Front",
+    libBack: "Back",
+    libYoutube: "Technique on YouTube",
+    libBoard: "Leaderboard",
     shareTypePlan: "Training plan",
     shareTypeMeal: "Meal",
     shareTypeDay: "Nutrition day",
@@ -1221,6 +1231,16 @@ const STR = {
     importNoRecipe: "Ich finde in diesem Inhalt kein Rezept.",
     importTooMany: "Zu viele Anfragen, versuche es in einer Minute noch einmal.",
     recipeLogNow: "Direkt ins Tagebuch",
+    shareTypeEx: "Übung",
+    libFavs: "Favoriten",
+    libAddFav: "Zu Favoriten hinzufügen",
+    libTargetMuscles: "Zielmuskeln",
+    libPrimary: "Hauptmuskeln",
+    libSecondary: "Nebenmuskeln",
+    libFront: "Vorne",
+    libBack: "Hinten",
+    libYoutube: "Technik auf YouTube",
+    libBoard: "Rangliste",
     shareTypePlan: "Trainingsplan",
     shareTypeMeal: "Mahlzeit",
     shareTypeDay: "Ernährungstag",
@@ -6427,7 +6447,141 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
 }
 
 /* ---------------- Exercise library */
-function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests = {}, workoutHistory = [], onQuickLog }) {
+// ---------- Target muscles: which muscles an exercise trains (front / back body map) ----------
+const MUSCLE_NAMES = {
+  chest: { de: "Brust", en: "Chest" },
+  shoulders: { de: "Schultern", en: "Shoulders" },
+  biceps: { de: "Bizeps", en: "Biceps" },
+  triceps: { de: "Trizeps", en: "Triceps" },
+  forearms: { de: "Unterarme", en: "Forearms" },
+  abs: { de: "Bauch", en: "Abs" },
+  obliques: { de: "Seitlicher Bauch", en: "Obliques" },
+  quads: { de: "Oberschenkel vorne", en: "Quadriceps" },
+  adductors: { de: "Innenschenkel", en: "Adductors" },
+  hamstrings: { de: "Beinbeuger", en: "Hamstrings" },
+  glutes: { de: "Gesäß", en: "Glutes" },
+  calves: { de: "Waden", en: "Calves" },
+  traps: { de: "Trapez", en: "Traps" },
+  lats: { de: "Latissimus", en: "Lats" },
+  lower_back: { de: "Unterer Rücken", en: "Lower back" },
+};
+
+// default muscles per library group, [primary, secondary]
+const MUSCLE_GROUP_DEFAULT = {
+  chest: ["chest", "shoulders,triceps"],
+  back: ["lats", "biceps,traps,forearms"],
+  legs: ["quads", "glutes,hamstrings,calves"],
+  shoulders: ["shoulders", "triceps,traps"],
+  arms: ["biceps", "forearms"],
+  core: ["abs", "obliques"],
+  glutes: ["glutes", "hamstrings,quads"],
+  cardio: ["quads,calves", "hamstrings,glutes,abs"],
+  full: ["quads,glutes,lower_back", "shoulders,traps,hamstrings,abs,lats,triceps"],
+};
+
+// exercises whose muscles differ from their group default: key -> [primary, secondary]
+const MUSCLE_OVERRIDES = {
+  // chest
+  dips: ["chest,triceps", "shoulders"], machine_dip: ["chest,triceps", "shoulders"], diamond_pushup: ["triceps,chest", "shoulders"],
+  cable_fly: ["chest", "shoulders"], pec_deck: ["chest", "shoulders"], db_fly: ["chest", "shoulders"], low_cable_fly: ["chest", "shoulders"], high_cable_fly: ["chest", "shoulders"],
+  svend_press: ["chest", "shoulders,triceps"],
+  // back
+  deadlift: ["lower_back,glutes,hamstrings", "traps,lats,forearms,quads"], rack_pull: ["lower_back,glutes,hamstrings", "traps,lats,forearms"], sumo_deadlift: ["glutes,hamstrings,quads", "lower_back,traps,adductors,forearms"], trapbar_deadlift: ["quads,glutes,hamstrings", "lower_back,traps,forearms"],
+  good_morning: ["hamstrings,lower_back", "glutes"], back_extension: ["lower_back", "glutes,hamstrings"], hyperextension: ["lower_back", "glutes,hamstrings"],
+  barbell_shrug: ["traps", "forearms,shoulders"], db_shrug: ["traps", "forearms,shoulders"], db_pullover: ["lats", "triceps,chest"], straight_arm_pulldown: ["lats", "triceps"],
+  row: ["lats,traps", "biceps,shoulders,forearms"], pendlay_row: ["lats,traps", "biceps,lower_back"], db_row: ["lats,traps", "biceps,forearms"], chest_supported_row: ["lats,traps", "biceps,shoulders"], wide_cable_row: ["traps,lats", "biceps,shoulders"], machine_row: ["lats,traps", "biceps,shoulders"], seatedrow: ["lats,traps", "biceps,shoulders"], tbarrow: ["lats,traps", "biceps,lower_back"], meadows_row: ["lats,traps", "biceps,forearms"], inverted_row: ["lats,traps", "biceps,abs"],
+  chinup: ["lats,biceps", "forearms,traps"],
+  // legs
+  rdl: ["hamstrings,glutes", "lower_back,forearms"], db_rdl: ["hamstrings,glutes", "lower_back,forearms"], stiff_leg_dl: ["hamstrings,glutes", "lower_back,forearms"],
+  legcurl: ["hamstrings", "calves"], seated_legcurl: ["hamstrings", "calves"], lying_legcurl: ["hamstrings", "calves"], nordic_curl: ["hamstrings", "glutes,calves"],
+  legext: ["quads", ""], sissy_squat: ["quads", "abs"],
+  calfraise: ["calves", ""], seated_calf: ["calves", ""], legpress_calf: ["calves", ""],
+  adductor: ["adductors", ""], abductor: ["glutes", ""],
+  lunge: ["quads,glutes", "hamstrings,adductors,calves"], reverse_lunge: ["quads,glutes", "hamstrings,adductors"], step_up: ["quads,glutes", "hamstrings,calves"], bulgarian_split: ["quads,glutes", "hamstrings,adductors"], side_lunge: ["quads,glutes,adductors", "hamstrings"], pistol_squat: ["quads,glutes", "hamstrings,calves,abs"],
+  wall_sit: ["quads", "glutes,calves"], jump_squat: ["quads,glutes", "calves,hamstrings"], box_jump: ["quads,glutes", "calves,hamstrings"],
+  squat: ["quads,glutes", "hamstrings,lower_back,abs"], front_squat: ["quads", "glutes,abs,lower_back"], goblet_squat: ["quads,glutes", "abs,adductors"], hack_squat: ["quads", "glutes,hamstrings"], smith_squat: ["quads,glutes", "hamstrings"], legpress: ["quads,glutes", "hamstrings,calves"],
+  // shoulders
+  facepull: ["shoulders", "traps,lats"], reardelt: ["shoulders", "traps,lats"], rear_delt_cable: ["shoulders", "traps"], reverse_pecdeck: ["shoulders", "traps"], y_raise: ["shoulders", "traps"], band_pullapart: ["shoulders", "traps"], db_external_rotation: ["shoulders", ""],
+  upright_row: ["shoulders,traps", "biceps"], pike_pushup: ["shoulders", "triceps,chest"], handstand_pushup: ["shoulders", "triceps,traps"],
+  // arms
+  pushdown: ["triceps", ""], rope_pushdown: ["triceps", ""], skullcrusher: ["triceps", ""], overhead_ext: ["triceps", ""], tricep_kickback: ["triceps", ""],
+  bench_dip: ["triceps", "chest,shoulders"], close_grip_bench: ["triceps", "chest,shoulders"], jm_press: ["triceps", "chest,shoulders"],
+  wrist_curl: ["forearms", ""], reverse_curl: ["forearms,biceps", ""], farmers_walk: ["forearms,traps", "abs,glutes"],
+  // core
+  russiantwist: ["obliques", "abs"], woodchop: ["obliques", "abs,shoulders"], side_plank: ["obliques", "abs,shoulders"], pallof_press: ["obliques", "abs,shoulders"], bicycle_crunch: ["abs,obliques", ""], suitcase_carry: ["obliques", "forearms,traps,abs"],
+  hanginglegraise: ["abs", "forearms,obliques"], toes_to_bar: ["abs", "forearms,lats"], lying_leg_raise: ["abs", "obliques"], v_up: ["abs", "obliques"], flutter_kicks: ["abs", "quads"], l_sit: ["abs", "triceps,quads"],
+  bird_dog: ["abs,lower_back", "glutes,shoulders"], dead_bug: ["abs", "obliques"], mountain_climber: ["abs", "quads,shoulders"], plank: ["abs", "shoulders,glutes"], hollow_hold: ["abs", "quads"], ab_wheel: ["abs", "shoulders,lats"],
+  // glutes
+  clamshell: ["glutes", ""], fire_hydrant: ["glutes", ""], donkey_kick: ["glutes", "hamstrings"], cable_kickback: ["glutes", "hamstrings"], good_morning_glute: ["glutes", "obliques"],
+  kb_swing: ["glutes,hamstrings", "lower_back,shoulders,abs"], curtsy_lunge: ["glutes,quads", "adductors,hamstrings"],
+  // full body
+  turkish_getup: ["shoulders,abs", "glutes,quads,triceps"], medball_slam: ["abs,shoulders", "lats,triceps"], bear_crawl: ["shoulders,abs", "quads,triceps"],
+  power_clean: ["quads,glutes,traps", "shoulders,hamstrings,lower_back"], snatch: ["quads,glutes,traps,shoulders", "hamstrings,lower_back,triceps"], clean_jerk: ["quads,glutes,shoulders", "traps,hamstrings,triceps"], thruster: ["quads,shoulders", "glutes,triceps,abs"], clean_press: ["quads,shoulders", "glutes,traps,triceps"], man_maker: ["shoulders,quads", "chest,lats,abs,triceps"], kb_clean: ["glutes,hamstrings,traps", "shoulders,forearms,quads"],
+  // cardio
+  rowing_machine: ["lats,quads", "hamstrings,biceps,lower_back"], swimming: ["lats,shoulders", "triceps,abs,quads"], battle_ropes: ["shoulders", "abs,biceps,forearms"], sled_push: ["quads,glutes", "calves,shoulders"], boxing: ["shoulders", "abs,triceps,obliques,calves"],
+  jump_rope: ["calves,quads", "shoulders,abs"], burpees: ["quads,chest,shoulders", "triceps,abs,glutes"], jumping_jacks: ["calves,quads", "shoulders,abs"], hiit: ["quads,calves", "glutes,abs,shoulders"],
+};
+
+function exerciseMuscles(ex) {
+  const split = (s) => (s ? s.split(",") : []);
+  const [p, s] = MUSCLE_OVERRIDES[ex.key] || MUSCLE_GROUP_DEFAULT[ex.muscle] || ["", ""];
+  const primary = split(p);
+  return { primary, secondary: split(s).filter((m) => !primary.includes(m)) };
+}
+
+// Simple front and back body; each muscle is a shape that lights up red (primary) or blue (secondary).
+function MuscleMap({ primary = [], secondary = [] }) {
+  const fillOf = (id) => (primary.includes(id) ? "#E3262E" : secondary.includes(id) ? "#4A8DF6" : "rgba(128,128,128,0.28)");
+  const active = (id) => primary.includes(id) || secondary.includes(id);
+  const sil = { fill: "rgba(128,128,128,0.14)", stroke: "rgba(128,128,128,0.35)", strokeWidth: 0.8 };
+  const m = (id, node) => <g key={id + node.key} fill={fillOf(id)} opacity={active(id) ? 1 : 0.9}>{node}</g>;
+  const E = (cx, cy, rx, ry, rot = 0) => <ellipse key={cx + "-" + cy} cx={cx} cy={cy} rx={rx} ry={ry} transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined} />;
+  const body = (
+    <>
+      <ellipse cx="50" cy="14" rx="9" ry="11" {...sil} />
+      <rect x="45" y="24" width="10" height="9" rx="3" {...sil} />
+      <path d="M27 36 Q50 29 73 36 L69 70 Q67 96 62 110 L38 110 Q33 96 31 70 Z" {...sil} />
+      <ellipse cx="23" cy="58" rx="6.5" ry="21" transform="rotate(7 23 58)" {...sil} />
+      <ellipse cx="77" cy="58" rx="6.5" ry="21" transform="rotate(-7 77 58)" {...sil} />
+      <ellipse cx="18" cy="92" rx="5" ry="17" transform="rotate(5 18 92)" {...sil} />
+      <ellipse cx="82" cy="92" rx="5" ry="17" transform="rotate(-5 82 92)" {...sil} />
+      <ellipse cx="40" cy="138" rx="11.5" ry="29" {...sil} />
+      <ellipse cx="60" cy="138" rx="11.5" ry="29" {...sil} />
+      <ellipse cx="40" cy="185" rx="7.5" ry="24" {...sil} />
+      <ellipse cx="60" cy="185" rx="7.5" ry="24" {...sil} />
+    </>
+  );
+  return (
+    <svg viewBox="0 0 210 212" style={{ width: "100%", display: "block" }} role="img" aria-hidden="true">
+      <g>
+        {body}
+        {m("shoulders", <g key="a">{E(27, 43, 7, 8.5)}{E(73, 43, 7, 8.5)}</g>)}
+        {m("chest", <g key="b"><path d="M49 40 Q38 38 31 47 Q33 59 49 61 Z" /><path d="M51 40 Q62 38 69 47 Q67 59 51 61 Z" /></g>)}
+        {m("biceps", <g key="c">{E(22, 60, 5, 13, 7)}{E(78, 60, 5, 13, -7)}</g>)}
+        {m("forearms", <g key="d">{E(18, 92, 4.2, 15, 5)}{E(82, 92, 4.2, 15, -5)}</g>)}
+        {m("abs", <g key="e"><rect x="44" y="64" width="12" height="10" rx="3" /><rect x="44" y="76" width="12" height="10" rx="3" /><rect x="44" y="88" width="12" height="11" rx="3" /></g>)}
+        {m("obliques", <g key="f">{E(38, 82, 4.2, 15, -6)}{E(62, 82, 4.2, 15, 6)}</g>)}
+        {m("adductors", <g key="g">{E(50, 128, 3.6, 17)}</g>)}
+        {m("quads", <g key="h">{E(39.5, 135, 9, 25)}{E(60.5, 135, 9, 25)}</g>)}
+        {m("calves", <g key="i">{E(40, 182, 5.5, 19)}{E(60, 182, 5.5, 19)}</g>)}
+      </g>
+      <g transform="translate(110 0)">
+        {body}
+        {m("traps", <g key="j"><path d="M50 28 L38 35 Q40 45 50 55 Q60 45 62 35 Z" /></g>)}
+        {m("shoulders", <g key="k">{E(27, 43, 7, 8.5)}{E(73, 43, 7, 8.5)}</g>)}
+        {m("lats", <g key="l"><path d="M37 47 Q31 63 40 84 L49 82 L49 56 Z" /><path d="M63 47 Q69 63 60 84 L51 82 L51 56 Z" /></g>)}
+        {m("triceps", <g key="m">{E(22, 60, 5.2, 13, 7)}{E(78, 60, 5.2, 13, -7)}</g>)}
+        {m("forearms", <g key="n">{E(18, 92, 4.2, 15, 5)}{E(82, 92, 4.2, 15, -5)}</g>)}
+        {m("lower_back", <g key="o"><rect x="42" y="86" width="16" height="15" rx="4" /></g>)}
+        {m("glutes", <g key="p">{E(42, 110, 9.5, 9)}{E(58, 110, 9.5, 9)}</g>)}
+        {m("hamstrings", <g key="q">{E(39.5, 140, 9, 22)}{E(60.5, 140, 9, 22)}</g>)}
+        {m("calves", <g key="r">{E(40, 182, 6.3, 19)}{E(60, 182, 6.3, 19)}</g>)}
+      </g>
+    </svg>
+  );
+}
+
+function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests = {}, workoutHistory = [], onQuickLog, favs = [], onToggleFav, rivals = [], meLabel = "", onShareEx }) {
   const [query, setQuery] = useState("");
   const [muscle, setMuscle] = useState("all");
   const [selected, setSelected] = useState(null);
@@ -6437,6 +6591,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
 
   const muscles = [
     { key: "all", label: t.muscleAll },
+    { key: "fav", label: "★ " + t.libFavs },
     { key: "chest", label: t.muscleChest },
     { key: "back", label: t.muscleBack },
     { key: "legs", label: t.muscleLegs },
@@ -6462,7 +6617,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
       return targets.some((tgt) => tgt.includes(tok) || tgt.includes(alt));
     });
   };
-  const results = EXERCISE_LIBRARY.filter((ex) => (muscle === "all" || ex.muscle === muscle) && matchesQuery(ex));
+  const results = EXERCISE_LIBRARY.filter((ex) => (muscle === "all" || (muscle === "fav" ? favs.includes(ex.key) : ex.muscle === muscle)) && matchesQuery(ex));
 
   if (selected && mode !== "pick") {
     const isCardio = selected.muscle === "cardio";
@@ -6515,8 +6670,13 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
               <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.text }}>{nameOf(selected)}</div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.gold, marginTop: 3 }}>{muscles.find((m) => m.key === selected.muscle)?.label}</div>
             </div>
-            <div onClick={() => setSelected(null)} style={{ cursor: "pointer" }}>
-              <X size={18} color={COLORS.dim} />
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <span onClick={() => onToggleFav(selected.key)} aria-label={t.libFavs} style={{ cursor: "pointer", fontSize: 22, lineHeight: 1, color: favs.includes(selected.key) ? COLORS.gold : COLORS.dim }}>
+                {favs.includes(selected.key) ? "★" : "☆"}
+              </span>
+              <div onClick={() => setSelected(null)} style={{ cursor: "pointer" }}>
+                <X size={18} color={COLORS.dim} />
+              </div>
             </div>
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "12px 0" }}>{cueOf(selected)}</div>
@@ -6525,6 +6685,57 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
             {maxReps ? <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.teal }}>{t.exerciseMaxReps}: {maxReps}</div> : null}
           </div>
         </Card>
+
+        {(() => {
+          const mus = exerciseMuscles(selected);
+          const names = (ids) => ids.map((id) => MUSCLE_NAMES[id][lang === "de" ? "de" : "en"]).join(", ");
+          const board = [{ name: meLabel || t.duelYou, kg: personalBests[selected.key] || 0, me: true }, ...rivals.map((r) => ({ name: r.name, kg: (r.bests && r.bests[selected.key]) || 0 }))].filter((r) => r.kg > 0).sort((a, b) => b.kg - a.kg);
+          const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+          return (
+            <>
+              {(mus.primary.length > 0 || mus.secondary.length > 0) && (
+                <Card style={{ marginBottom: 14 }}>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>{t.libTargetMuscles}</div>
+                  <MuscleMap primary={mus.primary} secondary={mus.secondary} />
+                  <div style={{ display: "flex", justifyContent: "space-around", ...small, fontSize: 11.5, margin: "2px 0 12px" }}>
+                    <span>{t.libFront}</span>
+                    <span>{t.libBack}</span>
+                  </div>
+                  {mus.primary.length > 0 && (
+                    <div style={{ ...small, color: COLORS.text, marginBottom: 6 }}>
+                      <span style={{ color: "#E3262E" }}>●</span> <b style={{ fontWeight: 600 }}>{t.libPrimary}:</b> <span style={{ color: COLORS.dim }}>{names(mus.primary)}</span>
+                    </div>
+                  )}
+                  {mus.secondary.length > 0 && (
+                    <div style={{ ...small, color: COLORS.text }}>
+                      <span style={{ color: "#4A8DF6" }}>●</span> <b style={{ fontWeight: 600 }}>{t.libSecondary}:</b> <span style={{ color: COLORS.dim }}>{names(mus.secondary)}</span>
+                    </div>
+                  )}
+                </Card>
+              )}
+              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                <button onClick={() => window.open("https://www.youtube.com/results?search_query=" + encodeURIComponent(nameOf(selected) + (lang === "de" ? " Technik" : " form")), "_blank", "noopener")} style={{ flex: 1, background: COLORS.raised, color: COLORS.text, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 10px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                  ▶ {t.libYoutube}
+                </button>
+                <button onClick={() => onShareEx(selected.key, nameOf(selected))} style={{ flex: 1, background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 10px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                  {t.shareButton}
+                </button>
+              </div>
+              {board.some((r) => !r.me) && (
+                <Card style={{ marginBottom: 14 }}>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>🏆 {t.libBoard}</div>
+                  {board.map((r, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderTop: i ? "1px solid " + COLORS.border : "none" }}>
+                      <span style={{ width: 22, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: i === 0 ? COLORS.gold : COLORS.dim }}>{i === 0 ? "👑" : i + 1}</span>
+                      <span style={{ flex: 1, fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, fontWeight: r.me ? 700 : 400 }}>{r.name}</span>
+                      <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: r.me ? COLORS.gold : COLORS.text }}>{r.kg} kg</span>
+                    </div>
+                  ))}
+                </Card>
+              )}
+            </>
+          );
+        })()}
 
         <Card style={{ marginBottom: 14 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 12 }}>{t.exerciseLogTitle}</div>
@@ -6592,7 +6803,12 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                 <Plus size={15} color={COLORS.gold} />
               </div>
             ) : (
-              <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                <span onClick={(e) => { e.stopPropagation(); onToggleFav(ex.key); }} aria-label={t.libFavs} style={{ cursor: "pointer", fontSize: 18, lineHeight: 1, color: favs.includes(ex.key) ? COLORS.gold : COLORS.dim }}>
+                  {favs.includes(ex.key) ? "★" : "☆"}
+                </span>
+                <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)" }} />
+              </div>
             )}
           </div>
         ))}
@@ -6978,6 +7194,10 @@ function sanitizeShare(o) {
       const items = (Array.isArray(f.items) ? f.items : []).slice(0, 60).map((i) => ({ name: shStr(i && i.n, 80), per100: { kcal: shNum(i && i.p && i.p.kcal, 2000), protein: shNum(i && i.p && i.p.protein, 200), carbs: shNum(i && i.p && i.p.carbs, 200), fat: shNum(i && i.p && i.p.fat, 200) }, unit: i && i.u === "ml" ? "ml" : "g", grams: Math.max(1, shNum(i && i.g, 5000)) })).filter((i) => i.name);
       return items.length ? { t: "pantry", from, folder: { name: shStr(f.name, 40) || "Pantry", emoji: PANTRY_EMOJIS.includes(f.emoji) ? f.emoji : "🥫", items } } : null;
     }
+    case "ex": {
+      const e = EXERCISE_LIBRARY.find((x) => x.key === o.k);
+      return e ? { t: "ex", from, key: e.key } : null;
+    }
     case "duel": {
       const s = o.s || {};
       const bests = {};
@@ -6994,7 +7214,7 @@ function sanitizeShare(o) {
 const sumKcal = (items) => items.reduce((s, i) => s + (i.kcal || 0), 0);
 
 // Asks what to do with something somebody shared.
-function ShareImportModal({ t, item, onImport, onClose }) {
+function ShareImportModal({ t, lang, item, onImport, onClose }) {
   const [slot, setSlot] = useState(item.slot || mealKeyForNow());
   const needsSlot = item.t === "meal" || item.t === "day";
   const slots = [
@@ -7003,7 +7223,7 @@ function ShareImportModal({ t, item, onImport, onClose }) {
     { key: "dinner", label: t.dinner },
     { key: "snacks", label: t.snacks },
   ];
-  const typeLabel = { plan: t.shareTypePlan, meal: t.shareTypeMeal, day: t.shareTypeDay, recipe: t.shareTypeRecipe, pantry: t.shareTypePantry, duel: t.shareTypeDuel }[item.t];
+  const typeLabel = { plan: t.shareTypePlan, meal: t.shareTypeMeal, day: t.shareTypeDay, recipe: t.shareTypeRecipe, pantry: t.shareTypePantry, duel: t.shareTypeDuel, ex: t.shareTypeEx }[item.t];
   let lines = [];
   if (item.t === "plan") lines = [item.name, ...item.days.map((d) => d.name + " · " + d.exercises.length + " " + t.exercises)];
   else if (item.t === "meal") lines = [item.title || t.shareTypeMeal, item.items.length + " " + t.pantryItemMany + " · " + sumKcal(item.items) + " kcal"];
@@ -7013,6 +7233,10 @@ function ShareImportModal({ t, item, onImport, onClose }) {
   } else if (item.t === "recipe") lines = [item.r.name, item.r.kcal + " kcal " + t.perServing];
   else if (item.t === "pantry") lines = [item.folder.emoji + " " + item.folder.name, item.folder.items.length + " " + t.pantryItemMany];
   else if (item.t === "duel") lines = [item.from || "?", item.stats.tr + "× " + t.duelTrainings + " · " + item.stats.vol + " kg"];
+  else if (item.t === "ex") {
+    const e = EXERCISE_LIBRARY.find((x) => x.key === item.key);
+    lines = e ? [lang === "de" ? e.nameDe : e.name, lang === "de" ? e.cueDe : e.cue] : [];
+  }
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "24px 22px", width: "100%", maxWidth: 340 }}>
@@ -7033,7 +7257,7 @@ function ShareImportModal({ t, item, onImport, onClose }) {
           </>
         )}
         <button onClick={() => onImport(item, slot)} style={{ width: "100%", marginTop: 18, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
-          {t.shareImport}
+          {item.t === "ex" ? t.libAddFav : t.shareImport}
         </button>
         <button onClick={onClose} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.dim, border: "none", padding: "10px 18px", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
           {t.shareDiscard}
@@ -8237,6 +8461,7 @@ export default function AsmarFitApp() {
   const [intake, setIntake] = usePersisted("intake", { subs: [], log: [], card: true });
   const [intakeReturn, setIntakeReturn] = useState("settings"); // where "back" goes from the intake log
   const [rivals, setRivals] = usePersisted("rivals", []);
+  const [favEx, setFavEx] = usePersisted("favEx", []);
   const [myName, setMyName] = usePersisted("myName", "");
   const [myId] = usePersisted("myId", newPantryId() + newPantryId());
   const [incomingShare, setIncomingShare] = useState(null); // something a friend shared, waiting for "import"
@@ -8583,6 +8808,8 @@ export default function AsmarFitApp() {
       saveRecipe({ key: "c" + Date.now(), name: r.name, nameDe: r.name, category: r.category, kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat, ingredients: r.ingredients, ingredientsDe: r.ingredients, image: "", custom: true });
     } else if (item.t === "pantry") {
       setPantry((l) => [...l, { id: newPantryId(), name: item.folder.name, emoji: item.folder.emoji, items: item.folder.items.map((i) => ({ id: newPantryId(), uses: 0, ...i })) }]);
+    } else if (item.t === "ex") {
+      setFavEx((l) => (l.includes(item.key) ? l : [...l, item.key]));
     } else if (item.t === "duel") {
       setRivals((l) => [...l.filter((r) => r.id !== item.id), { id: item.id, name: item.from || "?", ts: item.ts, stats: item.stats, bests: item.bests }].slice(-20));
       setFriendsReturn(null);
@@ -8931,6 +9158,11 @@ export default function AsmarFitApp() {
         workoutHistory={workoutHistory}
         onQuickLog={quickLogExercise}
         onFinishPicking={() => setOverlay("planBuilder")}
+        favs={favEx}
+        onToggleFav={(k) => setFavEx((l) => (l.includes(k) ? l.filter((x) => x !== k) : [...l, k]))}
+        rivals={rivals}
+        meLabel={myName || profile.name || ""}
+        onShareEx={(k, n) => doShare({ t: "ex", k }, t.shareTypeEx + ": " + n)}
       />
     );
     topTitle = t.viewLibrary;
@@ -9158,7 +9390,7 @@ export default function AsmarFitApp() {
           </>
         )}
         <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
-        {onboarded && incomingShare && <ShareImportModal t={t} item={incomingShare} onImport={applyShare} onClose={() => setIncomingShare(null)} />}
+        {onboarded && incomingShare && <ShareImportModal t={t} lang={lang} item={incomingShare} onImport={applyShare} onClose={() => setIncomingShare(null)} />}
         {shareToast && (
           <div style={{ position: "fixed", left: 20, right: 20, bottom: 96, maxWidth: 350, margin: "0 auto", background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 1100 }}>
             <Check size={15} /> {shareToast}
