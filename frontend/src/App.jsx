@@ -559,6 +559,9 @@ const STR = {
     importTooMany: "Too many requests, please try again in a minute.",
     recipeLogNow: "Log it right away",
     shareTypeEx: "Exercise",
+    libHowTo: "How to do it",
+    libStartEnd: "Start and end position alternate. Tap to pause the animation.",
+    libSource: "Pictures and instructions: free-exercise-db (public domain).",
     libFavs: "Favorites",
     libAddFav: "Add to favorites",
     libTargetMuscles: "Target muscles",
@@ -1232,6 +1235,9 @@ const STR = {
     importTooMany: "Zu viele Anfragen, versuche es in einer Minute noch einmal.",
     recipeLogNow: "Direkt ins Tagebuch",
     shareTypeEx: "Übung",
+    libHowTo: "So geht's",
+    libStartEnd: "Start und Ende im Wechsel. Tippen hält die Animation an.",
+    libSource: "Bilder und englische Anleitung: free-exercise-db (gemeinfrei). Deutsche Schritte: ASFIT.",
     libFavs: "Favoriten",
     libAddFav: "Zu Favoriten hinzufügen",
     libTargetMuscles: "Zielmuskeln",
@@ -6447,6 +6453,70 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
 }
 
 /* ---------------- Exercise library */
+// ---------- Exercise demo: start / end pictures that flip back and forth, plus the steps ----------
+// Pictures and English instructions come from the public-domain "free-exercise-db"
+// (https://github.com/yuhonas/free-exercise-db, Unlicense); the German steps are our own.
+let exerciseMediaPromise = null;
+function loadExerciseMedia() {
+  if (!exerciseMediaPromise) exerciseMediaPromise = fetch("/exercise-media.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  return exerciseMediaPromise;
+}
+const EQUIP_LABELS = {
+  "body only": { de: "Körpergewicht", en: "Bodyweight" },
+  barbell: { de: "Langhantel", en: "Barbell" },
+  dumbbell: { de: "Kurzhantel", en: "Dumbbell" },
+  cable: { de: "Kabelzug", en: "Cable" },
+  machine: { de: "Maschine", en: "Machine" },
+  kettlebells: { de: "Kettlebell", en: "Kettlebell" },
+  bands: { de: "Band", en: "Bands" },
+  "e-z curl bar": { de: "SZ-Stange", en: "EZ bar" },
+  "medicine ball": { de: "Medizinball", en: "Medicine ball" },
+  "exercise ball": { de: "Gymnastikball", en: "Exercise ball" },
+  other: { de: "Sonstiges", en: "Other" },
+};
+const LEVEL_LABELS = { beginner: { de: "Anfänger", en: "Beginner" }, intermediate: { de: "Fortgeschritten", en: "Intermediate" }, expert: { de: "Profi", en: "Expert" } };
+
+function ExerciseDemo({ t, lang, media, item }) {
+  const [paused, setPaused] = useState(false);
+  const [imgOk, setImgOk] = useState(true);
+  const l = lang === "de" ? "de" : "en";
+  const steps = (lang === "de" ? item.de : item.en) || [];
+  const url = (n) => media.base + item.id + "/" + n + ".jpg";
+  const chips = [EQUIP_LABELS[item.eq] && EQUIP_LABELS[item.eq][l], LEVEL_LABELS[item.lv] && LEVEL_LABELS[item.lv][l]].filter(Boolean);
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim };
+  return (
+    <Card style={{ marginBottom: 14 }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libHowTo}</div>
+      {imgOk && (
+        <>
+          <div onClick={() => setPaused((p) => !p)} style={{ position: "relative", borderRadius: 12, overflow: "hidden", background: "#fff", cursor: "pointer" }}>
+            <style>{"@keyframes demoFlip { 0%, 42% { opacity: 0; } 50%, 92% { opacity: 1; } 100% { opacity: 0; } }"}</style>
+            <img src={url(0)} alt="" loading="lazy" onError={() => setImgOk(false)} style={{ display: "block", width: "100%" }} />
+            <img src={url(1)} alt="" loading="lazy" onError={() => setImgOk(false)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: 0, animation: "demoFlip 2.6s ease-in-out infinite", animationPlayState: paused ? "paused" : "running" }} />
+          </div>
+          <div style={{ ...small, fontSize: 11.5, margin: "6px 0 10px" }}>{t.libStartEnd}</div>
+        </>
+      )}
+      {chips.length > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+          {chips.map((c) => (
+            <span key={c} style={{ background: COLORS.raised, border: "1px solid " + COLORS.border, borderRadius: 999, padding: "4px 10px", fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.text }}>{c}</span>
+          ))}
+        </div>
+      )}
+      <div>
+        {steps.map((s, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, padding: "5px 0", fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text, lineHeight: 1.45 }}>
+            <span style={{ width: 20, height: 20, borderRadius: "50%", background: COLORS.goldSoft, color: COLORS.gold, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+            <span>{s}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ ...small, fontSize: 11, marginTop: 10 }}>{t.libSource}</div>
+    </Card>
+  );
+}
+
 // ---------- Target muscles: which muscles an exercise trains (front / back body map) ----------
 const MUSCLE_NAMES = {
   chest: { de: "Brust", en: "Chest" },
@@ -6588,6 +6658,16 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
   const [wInput, setWInput] = useState("");
   const [rInput, setRInput] = useState("");
   const [saved, setSaved] = useState(false);
+  const [media, setMedia] = useState(null); // pictures + steps for the "how to do it" card
+  useEffect(() => {
+    let alive = true;
+    loadExerciseMedia().then((m) => {
+      if (alive) setMedia(m);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const muscles = [
     { key: "all", label: t.muscleAll },
@@ -6693,6 +6773,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
           return (
             <>
+              {media && media.items && media.items[selected.key] && <ExerciseDemo t={t} lang={lang} media={media} item={media.items[selected.key]} />}
               {(mus.primary.length > 0 || mus.secondary.length > 0) && (
                 <Card style={{ marginBottom: 14 }}>
                   <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>{t.libTargetMuscles}</div>
