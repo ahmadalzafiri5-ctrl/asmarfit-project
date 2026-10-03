@@ -6158,7 +6158,9 @@ const INTRO_DROPS = [
   [19, 94, 2.4],
   [87, 28, 2.8],
 ];
-const INTRO_MS = 2000;
+// small badges for what the app can do; they pop up around the splat one after another
+const INTRO_CHIPS = [UtensilsCrossed, Barcode, Camera, BookOpen, Droplets, Footprints, Timer, Dumbbell, Flame, TrendingUp];
+const INTRO_MS = 2300;
 // the logo glyph (same shapes as public/logo.svg) with a dark edge so it reads on every colour
 const LOGO_EDGE = { stroke: "#0D0D0D", strokeWidth: 9, strokeLinejoin: "round", paintOrder: "stroke" };
 
@@ -6221,6 +6223,7 @@ function StartIntro({ onDone, accent }) {
         @keyframes introLogoIn { 0% { transform: translateX(70vw) rotate(-12deg); opacity: 0; filter: blur(6px); } 65% { transform: translateX(-1.5vw) rotate(1.5deg); opacity: 1; filter: blur(0); } 100% { transform: translateX(0) rotate(0); opacity: 1; filter: blur(0); } }
         @keyframes introPunch { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
         @keyframes introRipple { 0% { transform: scale(0.35); opacity: 0; } 15% { opacity: 0.8; } 100% { transform: scale(1.35); opacity: 0; } }
+        @keyframes introFly { 0% { transform: translate(var(--fx), var(--fy)) scale(0.15); opacity: 0; } 55% { transform: translate(0, 0) scale(1.18); opacity: 1; } 100% { transform: translate(0, 0) scale(1); opacity: 1; } }
         @keyframes introSprout { 0% { transform: translate(0, 0) rotate(0); } 100% { transform: translate(-6px, -58px) rotate(-7deg); } }
         @keyframes introBell { 0% { transform: translate(0, 0); } 100% { transform: translate(0, 46px); } }
       `}</style>
@@ -6250,6 +6253,35 @@ function StartIntro({ onDone, accent }) {
         {[0, 0.4, 0.8].map((d) => (
           <div key={d} style={{ position: "absolute", left: "20%", right: "20%", top: "43%", height: "14%", borderRadius: "50%", border: "2px solid rgba(0,0,0,0.5)", animation: `introRipple 1.5s ease-out ${0.85 + d}s infinite both` }} />
         ))}
+        {INTRO_CHIPS.map((Icon, i) => {
+          const a = (i / INTRO_CHIPS.length) * Math.PI * 2;
+          const x = Math.sin(a);
+          const y = Math.cos(a);
+          return (
+            <div key={i} style={{ position: "absolute", left: `${50 + 47 * x}%`, top: `${50 - 50 * y}%`, width: 0, height: 0 }}>
+              <div style={{ position: "absolute", transform: "translate(-50%, -50%)" }}>
+                <div
+                  style={{
+                    "--fx": `calc(var(--s) * ${-0.47 * x})`,
+                    "--fy": `calc(var(--s) * ${0.6 * y})`,
+                    width: "calc(var(--s) * 0.13)",
+                    height: "calc(var(--s) * 0.13)",
+                    borderRadius: "50%",
+                    background: COLORS.bg,
+                    border: `2px solid ${accent}`,
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.18)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    animation: `introFly 0.5s cubic-bezier(0.25, 1.2, 0.4, 1) ${1.15 + i * 0.06}s both`,
+                  }}
+                >
+                  <Icon size="56%" color={COLORS.text} strokeWidth={2.1} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
         <div
           style={{
             position: "absolute",
