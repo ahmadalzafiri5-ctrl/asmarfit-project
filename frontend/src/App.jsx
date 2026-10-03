@@ -417,6 +417,11 @@ const STR = {
     streakBest: "Best streak",
     streakThisMonth: "This month",
     streakNone: "Log a meal today to start your streak",
+    streakWeak: "Sprout is worn out – log something today and he gets strong again",
+    streakLostTitle: "Your streak is gone",
+    streakLostMsg: "{n} days in a row, then a day was missed. Sprout is worn out. No drama: log something today and he'll bounce back.",
+    streakLostCta: "Start again today",
+    streakLostLater: "Later",
     streakKeep: "Log something today to keep your streak alive",
     legendTracked: "Tracked",
     legendMissed: "Missed",
@@ -958,6 +963,11 @@ const STR = {
     streakBest: "Beste Serie",
     streakThisMonth: "Diesen Monat",
     streakNone: "Trage heute eine Mahlzeit ein, um deine Serie zu starten",
+    streakWeak: "Sprout ist erschöpft – trag heute etwas ein, dann wird er wieder stark",
+    streakLostTitle: "Deine Serie ist gerissen",
+    streakLostMsg: "{n} Tage am Stück, dann ist ein Tag ausgefallen. Sprout ist erschöpft. Kein Drama: Trag heute etwas ein, dann baut er sich wieder auf.",
+    streakLostCta: "Heute neu starten",
+    streakLostLater: "Später",
     streakKeep: "Trage heute etwas ein, damit deine Serie weiterläuft",
     legendTracked: "Getrackt",
     legendMissed: "Verpasst",
@@ -3524,8 +3534,134 @@ function Confetti() {
   );
 }
 
+// The streak mascot "Sprout": strong on a long streak, friendly while it runs,
+// worn out (pale, leaves hanging, dumbbell on the floor) once the streak is lost.
+function Sprout({ mood = "ok", size = 64 }) {
+  const weak = mood === "weak";
+  const strong = mood === "strong";
+  const body = weak ? "#B9A6A6" : "#E3262E";
+  const dark = weak ? "#8F7E7F" : "#9E1219";
+  const belly = weak ? "#DDD1D0" : "#F7B9A8";
+  const leaf = weak ? "#A39D5C" : "#35B26B";
+  const ink = "#2A1416";
+  const arm = { fill: "none", stroke: body, strokeWidth: 13, strokeLinecap: "round" };
+  const motion = weak ? "sproutSag 3.4s ease-in-out infinite" : strong ? "sproutBounce 1.2s ease-in-out infinite" : "sproutSway 3.2s ease-in-out infinite";
+  const bell = (cx, cy, w, rot = 0) => (
+    <g transform={`rotate(${rot} ${cx} ${cy})`}>
+      <rect x={cx - w / 2} y={cy - 2.5} width={w} height="5" fill="#4A4A4F" />
+      <rect x={cx - w / 2 - 5} y={cy - 9} width="6" height="18" rx="2" fill="#2E2E33" />
+      <rect x={cx + w / 2 - 1} y={cy - 9} width="6" height="18" rx="2" fill="#2E2E33" />
+    </g>
+  );
+  return (
+    <svg viewBox="0 0 150 150" width={size} height={size} aria-hidden="true" style={{ display: "block", overflow: "visible" }}>
+      <style>{`
+        @keyframes sproutBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        @keyframes sproutSway { 0%,100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+        @keyframes sproutSag { 0%,100% { transform: scale(1, 0.98); } 50% { transform: scale(1, 0.93); } }
+        @keyframes sproutDrop { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(18px); opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) { .sprout-anim, .sprout-drop { animation: none !important; } }
+      `}</style>
+      <ellipse cx="75" cy="142" rx={weak ? 32 : 36} ry="6" fill="rgba(0,0,0,0.18)" />
+      <g className="sprout-anim" style={{ transformBox: "fill-box", transformOrigin: "50% 100%", animation: motion }}>
+        <ellipse cx="58" cy="136" rx="13" ry="6" fill={dark} />
+        <ellipse cx="92" cy="136" rx="13" ry="6" fill={dark} />
+        {strong ? (
+          <>
+            <path d="M36 100 Q10 96 16 66" style={arm} />
+            <path d="M114 100 Q140 96 132 66" style={arm} />
+          </>
+        ) : weak ? (
+          <>
+            <path d="M36 104 Q30 122 36 134" style={arm} />
+            <path d="M114 104 Q120 122 114 134" style={arm} />
+          </>
+        ) : (
+          <>
+            <path d="M36 102 Q26 116 30 128" style={arm} />
+            <path d="M114 102 Q124 116 120 126" style={arm} />
+          </>
+        )}
+        <ellipse cx="75" cy={weak ? 98 : 96} rx="44" ry={weak ? 40 : 42} fill={body} />
+        <ellipse cx="75" cy="108" rx="28" ry="24" fill={belly} />
+        <path d="M75 60 L75 46" stroke={leaf} strokeWidth="5" strokeLinecap="round" fill="none" />
+        <g transform={weak ? "rotate(-30 75 48)" : undefined}>
+          <path d="M75 48 C 58 24, 32 22, 22 32 C 30 52, 58 58, 75 48 Z" fill={leaf} />
+        </g>
+        <g transform={weak ? "rotate(30 75 48)" : undefined}>
+          <path d="M75 48 C 92 24, 118 22, 128 32 C 120 52, 92 58, 75 48 Z" fill={leaf} />
+        </g>
+        <ellipse cx="60" cy="88" rx="9" ry="10" fill="#fff" />
+        <ellipse cx="90" cy="88" rx="9" ry="10" fill="#fff" />
+        <circle cx="61" cy={weak ? 92 : 90} r="4.6" fill={ink} />
+        <circle cx="89" cy={weak ? 92 : 90} r="4.6" fill={ink} />
+        {!weak && <circle cx="62.6" cy="87.6" r="1.6" fill="#fff" />}
+        {!weak && <circle cx="90.6" cy="87.6" r="1.6" fill="#fff" />}
+        {weak && (
+          <>
+            <path d="M51 88 A9 10 0 0 1 69 88 Z" fill={body} />
+            <path d="M81 88 A9 10 0 0 1 99 88 Z" fill={body} />
+            <path d="M51 88 L69 88 M81 88 L99 88" stroke={ink} strokeWidth="2.4" strokeLinecap="round" />
+            <path d="M48 80 L68 72 M102 80 L82 72" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+            <path d="M62 119 Q75 107 88 119" stroke={ink} strokeWidth="4" strokeLinecap="round" fill="none" />
+            <path className="sprout-drop" d="M110 66 C 114 74, 118 78, 110 86 C 102 78, 106 74, 110 66 Z" fill="#7CC8F0" style={{ animation: "sproutDrop 2.4s ease-in infinite" }} />
+          </>
+        )}
+        {strong && (
+          <>
+            <path d="M47 75 L68 81 M103 75 L82 81" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+            <path d="M58 108 Q75 130 92 108 Z" fill={ink} />
+            <ellipse cx="75" cy="117" rx="7" ry="3.4" fill="#F27A8A" />
+          </>
+        )}
+        {mood === "ok" && <path d="M62 108 Q75 121 88 108" stroke={ink} strokeWidth="4" strokeLinecap="round" fill="none" />}
+        {!weak && (
+          <>
+            <ellipse cx="46" cy="104" rx="7" ry="4.5" fill="#FF8A8A" opacity="0.45" />
+            <ellipse cx="104" cy="104" rx="7" ry="4.5" fill="#FF8A8A" opacity="0.45" />
+          </>
+        )}
+        {strong && (
+          <>
+            {bell(132, 58, 24)}
+            <circle cx="16" cy="64" r="7.5" fill={body} />
+            <circle cx="132" cy="64" r="7.5" fill={body} />
+          </>
+        )}
+        {mood === "ok" && bell(122, 128, 20)}
+        {weak && bell(128, 138, 18, 10)}
+      </g>
+    </svg>
+  );
+}
+
 function Celebration({ t, data, onClose }) {
   if (!data) return null;
+  if (data.kind === "lost") {
+    return (
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "24px 24px 22px", width: "100%", maxWidth: 340, textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+            <Sprout mood="weak" size={140} />
+          </div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 800, color: COLORS.text, margin: "4px 0 8px" }}>{t.streakLostTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, lineHeight: 1.5 }}>{t.streakLostMsg.replace("{n}", data.days)}</div>
+          <button
+            onClick={() => {
+              onClose();
+              if (data.onStart) data.onStart();
+            }}
+            style={{ width: "100%", marginTop: 18, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}
+          >
+            {t.streakLostCta}
+          </button>
+          <button onClick={onClose} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.dim, border: "none", padding: "10px 18px", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+            {t.streakLostLater}
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (data.kind === "streak") {
     return (
       <>
@@ -4190,16 +4326,19 @@ function StreakCard({ t, streak, history, onOpen }) {
     const missed = !tracked && i > 0 && streak.first && k >= streak.first;
     week.push({ k, tracked, missed, isToday: i === 0 });
   }
+  const mood = streak.current >= 7 ? "strong" : streak.current > 0 || !streak.first ? "ok" : "weak";
   return (
     <Card onClick={onOpen} style={{ marginBottom: 12, cursor: "pointer" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ fontSize: 26 }}>{streak.current > 0 ? "🔥" : "📅"}</div>
+        <div style={{ flexShrink: 0, width: 52 }}>
+          <Sprout mood={mood} size={52} />
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>
             {streak.current > 0 ? streak.current + " " + t.streakDaysLabel : t.historyTitle}
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
-            {streak.current === 0 ? t.streakNone : !streak.trackedToday ? t.streakKeep : t.historyCardSub}
+            {streak.current === 0 ? (streak.first ? t.streakWeak : t.streakNone) : !streak.trackedToday ? t.streakKeep : t.historyCardSub}
           </div>
         </div>
         <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
@@ -6596,6 +6735,24 @@ export default function AsmarFitApp() {
       setStreakCelebrated(reached);
     }
   }, [streak.current]);
+  // A streak of at least two days that drops to zero: Sprout gets worn out, once.
+  const [streakPeak, setStreakPeak] = usePersisted("streakPeak", 0);
+  useEffect(() => {
+    if (!onboarded) return;
+    if (streak.current > streakPeak) {
+      setStreakPeak(streak.current);
+    } else if (streak.current === 0 && streakPeak >= 2) {
+      setCelebrate({
+        kind: "lost",
+        days: streakPeak,
+        onStart: () => {
+          setOverlay(null);
+          setTab("nutrition");
+        },
+      });
+      setStreakPeak(0);
+    }
+  }, [streak.current, onboarded]);
   // connect = native, not authorised yet | health = auto from Health Connect
   // manual = typed in (web) | unavailable = native but no Health Connect
   const [stepsSource, setStepsSource] = useState(IS_NATIVE_APP ? "connect" : "manual");
