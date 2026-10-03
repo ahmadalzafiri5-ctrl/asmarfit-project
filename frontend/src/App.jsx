@@ -58,6 +58,7 @@ import {
   Play,
   Pencil,
   Pill,
+  Users,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -557,6 +558,45 @@ const STR = {
     importNoRecipe: "I can't find a recipe in this content.",
     importTooMany: "Too many requests, please try again in a minute.",
     recipeLogNow: "Log it right away",
+    shareTypePlan: "Training plan",
+    shareTypeMeal: "Meal",
+    shareTypeDay: "Nutrition day",
+    shareTypeRecipe: "Recipe",
+    shareTypePantry: "Pantry folder",
+    shareTypeDuel: "Week duel",
+    shareFrom: "{n} shares with you",
+    sharePlanReplace: "This replaces your current training plan.",
+    shareImport: "Import",
+    shareDiscard: "Discard",
+    shareImported: "Imported",
+    shareCopied: "Link copied, now paste and send it",
+    shareCodeHint: "If the link doesn't open: paste the code below into ASFIT (Settings, Friends & duel).",
+    shareButton: "Share",
+    shareDayLink: "Share day",
+    sharePlanLink: "Share plan",
+    shareRecipeBtn: "Share recipe",
+    friendsTitle: "Friends & duel",
+    friendsCardSub: "Share plans and compare the week with friends",
+    friendsIntro: "Send a friend your week code. When they import it and send you theirs, you both see who did better in the last 7 days. No account needed, just a link or code.",
+    friendsName: "Your name (how friends see you)",
+    friendsShareMine: "Share my week code",
+    friendsPaste: "Paste a friend's link or code",
+    friendsImport: "Import",
+    friendsBadCode: "That is not a valid ASFIT link or code.",
+    friendsNone: "No friends yet. Send your code and ask your friend for theirs.",
+    friendsRematch: "Rematch: send a fresh code",
+    friendsRemove: "Remove",
+    friendsAsOf: "As of: {d}",
+    duelYou: "You",
+    duelYouLead: "You lead",
+    duelTheyLead: "{n} leads",
+    duelTie: "Tie",
+    duelTrainings: "Workouts",
+    duelVolume: "Training volume",
+    duelMinutes: "Training time",
+    duelTracked: "Tracked days",
+    duelStreak: "Streak (days)",
+    duelSteps: "Steps per day",
     nutriLinkPlaceholder: "Paste a link or text",
     nutriLinkHint: "Instagram, TikTok, a recipe site or the copied caption. The app gets the nutrition values.",
     importGoShort: "Get",
@@ -1181,6 +1221,45 @@ const STR = {
     importNoRecipe: "Ich finde in diesem Inhalt kein Rezept.",
     importTooMany: "Zu viele Anfragen, versuche es in einer Minute noch einmal.",
     recipeLogNow: "Direkt ins Tagebuch",
+    shareTypePlan: "Trainingsplan",
+    shareTypeMeal: "Mahlzeit",
+    shareTypeDay: "Ernährungstag",
+    shareTypeRecipe: "Rezept",
+    shareTypePantry: "Speisekammer-Ordner",
+    shareTypeDuel: "Wochen-Duell",
+    shareFrom: "{n} teilt mit dir",
+    sharePlanReplace: "Ersetzt deinen aktuellen Trainingsplan.",
+    shareImport: "Importieren",
+    shareDiscard: "Verwerfen",
+    shareImported: "Importiert",
+    shareCopied: "Link kopiert, jetzt einfügen und senden",
+    shareCodeHint: "Falls der Link nicht öffnet: den Code unten in ASFIT einfügen (Einstellungen, Freunde & Duell).",
+    shareButton: "Teilen",
+    shareDayLink: "Tag teilen",
+    sharePlanLink: "Plan teilen",
+    shareRecipeBtn: "Rezept teilen",
+    friendsTitle: "Freunde & Duell",
+    friendsCardSub: "Teile Pläne und vergleiche die Woche mit Freunden",
+    friendsIntro: "Schick einem Freund deinen Wochen-Code. Importiert er ihn und schickt dir seinen, seht ihr beide, wer in den letzten 7 Tagen besser war. Läuft ohne Konto, nur über Link oder Code.",
+    friendsName: "Dein Name (so sehen dich Freunde)",
+    friendsShareMine: "Meinen Wochen-Code teilen",
+    friendsPaste: "Link oder Code von einem Freund einfügen",
+    friendsImport: "Importieren",
+    friendsBadCode: "Das ist kein gültiger ASFIT-Link oder -Code.",
+    friendsNone: "Noch keine Freunde. Schick deinen Code und lass dir den deines Freundes schicken.",
+    friendsRematch: "Revanche: neuen Code senden",
+    friendsRemove: "Entfernen",
+    friendsAsOf: "Stand: {d}",
+    duelYou: "Du",
+    duelYouLead: "Du führst",
+    duelTheyLead: "{n} führt",
+    duelTie: "Gleichstand",
+    duelTrainings: "Trainings",
+    duelVolume: "Trainingsvolumen",
+    duelMinutes: "Trainingszeit",
+    duelTracked: "Getrackte Tage",
+    duelStreak: "Serie (Tage)",
+    duelSteps: "Schritte pro Tag",
     nutriLinkPlaceholder: "Link oder Text einfügen",
     nutriLinkHint: "Instagram, TikTok, Rezeptseite oder die kopierte Beschreibung. Die App holt die Nährwerte.",
     importGoShort: "Holen",
@@ -2580,7 +2659,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare }) {
   const [linkText, setLinkText] = useState("");
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
@@ -2733,6 +2812,14 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
         </>
       )}
 
+      {hasAnyItem && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+          <span onClick={() => onShare({ t: "day", m: Object.fromEntries(Object.entries(viewMeals).map(([k, arr]) => [k, arr.map(shFoodOut)])) }, t.shareTypeDay)} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+            <Share2 size={14} /> {t.shareDayLink}
+          </span>
+        </div>
+      )}
+
       {!isToday && !hasAnyItem ? (
         <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24, marginBottom: 20 }}>{t.diaryNothing}</div>
       ) : (
@@ -2757,6 +2844,11 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
                     ) : null;
                   })()}
                   {kcal > 0 ? `${kcal} kcal` : ""}
+                  {items.length > 0 && (
+                    <span onClick={() => onShare({ t: "meal", title: m.label, slot: m.key, f: items.map(shFoodOut) }, m.label)} title={t.shareButton} style={{ marginLeft: 10, cursor: "pointer", color: COLORS.gold, display: "inline-flex", verticalAlign: "middle" }}>
+                      <Share2 size={14} />
+                    </span>
+                  )}
                 </span>
               </div>
               <Card style={{ padding: 4 }}>
@@ -2824,7 +2916,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
   );
 }
 
-function TrainingScreen({ t, lang, planName, planDays = [], personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout }) {
+function TrainingScreen({ t, lang, planName, planDays = [], personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout, onSharePlan, onOpenFriends }) {
   const timed = workoutHistory.filter((w) => w.durationSec > 0);
   const avgSessionSec = timed.length ? Math.round(timed.reduce((s, w) => s + w.durationSec, 0) / timed.length) : null;
   const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
@@ -2870,6 +2962,22 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
             ))}
           </div>
         )}
+        {hasPlanDays && (
+          <div onClick={onSharePlan} style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 12, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+            <Share2 size={14} /> {t.sharePlanLink}
+          </div>
+        )}
+      </Card>
+
+      <Card style={{ marginBottom: 18, cursor: "pointer" }}>
+        <div onClick={onOpenFriends} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ fontSize: 26 }}>⚔️</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{t.friendsTitle}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{t.friendsCardSub}</div>
+          </div>
+          <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+        </div>
       </Card>
 
       <Card style={{ marginBottom: 18, cursor: "pointer" }}>
@@ -5629,7 +5737,7 @@ function PantryPicker({ t, lang, pantry, onSave }) {
   );
 }
 
-function PantryScreen({ t, lang, pantry, initialSlot, openId, onAddTo, onCreateFolder, onRenameFolder, onDeleteFolder, onDeleteItem, onAddFoods }) {
+function PantryScreen({ t, lang, pantry, initialSlot, openId, onAddTo, onCreateFolder, onRenameFolder, onDeleteFolder, onDeleteItem, onAddFoods, onShare }) {
   const [slot, setSlot] = useState(initialSlot);
   const [open, setOpen] = useState(openId || (pantry[0] ? pantry[0].id : null));
   const [amounts, setAmounts] = useState({});
@@ -5768,6 +5876,11 @@ function PantryScreen({ t, lang, pantry, initialSlot, openId, onAddTo, onCreateF
 
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 14 }}>
                   <span onClick={() => onAddFoods(f.id)} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.pantryAddFoods}</span>
+                  {!edit && f.items.length > 0 && (
+                    <span onClick={() => onShare({ t: "pantry", f: { name: f.name, emoji: f.emoji, items: f.items.map((it) => ({ n: it.name, p: it.per100, u: it.unit, g: it.grams })) } }, t.shareTypePantry)} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, cursor: "pointer" }}>
+                      <Share2 size={13} /> {t.shareButton}
+                    </span>
+                  )}
                   {edit && (
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <span onClick={() => setRenaming({ id: f.id, name: f.name })} style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, cursor: "pointer" }}>
@@ -5981,7 +6094,7 @@ function CheatScreen({ t, cheats, onAdd, onDelete }) {
   );
 }
 
-function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecipe, onDeleteRecipe, initialImport = null }) {
+function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecipe, onDeleteRecipe, initialImport = null, onShare }) {
   const [cat, setCat] = useState("all");
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
@@ -6265,6 +6378,15 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
 
           <button onClick={confirmAdd} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             {t.logRecipe}
+          </button>
+          <button
+            onClick={() => {
+              const ing = (lang === "de" ? selected.ingredientsDe : selected.ingredients) || [];
+              onShare({ t: "recipe", r: { name: lang === "de" ? selected.nameDe : selected.name, category: selected.category, kcal: selected.kcal, protein: selected.protein, carbs: selected.carbs, fat: selected.fat, i: ing } }, t.shareTypeRecipe);
+            }}
+            style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}
+          >
+            {t.shareRecipeBtn}
           </button>
           {selected.custom && (
             <div
@@ -6737,6 +6859,323 @@ function SettingsGroup({ title, children }) {
   );
 }
 
+// ---------- Sharing: plans, meals, days, recipes, pantry folders and the week duel ----------
+// No account and no server: whatever is shared becomes a link / code that the other person imports in
+// the app. Everything that comes in is treated as untrusted and cleaned in sanitizeShare().
+const SHARE_BASE = "https://asmarfit-project.onrender.com/";
+
+async function encodeShare(obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj));
+  let bytes = raw;
+  let prefix = "j";
+  if (typeof CompressionStream !== "undefined") {
+    try {
+      const cs = new CompressionStream("deflate-raw");
+      const w = cs.writable.getWriter();
+      w.write(raw);
+      w.close();
+      const out = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+      if (out.length < raw.length) {
+        bytes = out;
+        prefix = "z";
+      }
+    } catch {
+      /* uncompressed is fine */
+    }
+  }
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return prefix + btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function decodeShare(code) {
+  const c = String(code || "").trim();
+  const prefix = c[0];
+  const body = c.slice(1);
+  if ((prefix !== "j" && prefix !== "z") || !/^[A-Za-z0-9_-]{8,60000}$/.test(body)) throw new Error("bad");
+  const bin = atob(body.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (body.length % 4)) % 4));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  let raw = bytes;
+  if (prefix === "z") {
+    if (typeof DecompressionStream === "undefined") throw new Error("bad");
+    const ds = new DecompressionStream("deflate-raw");
+    const w = ds.writable.getWriter();
+    w.write(bytes).catch(() => {});
+    w.close().catch(() => {});
+    const reader = ds.readable.getReader();
+    const chunks = [];
+    let size = 0;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > 300000) throw new Error("too_big"); // guards against zip-bomb style codes
+      chunks.push(value);
+    }
+    raw = new Uint8Array(size);
+    let off = 0;
+    for (const ch of chunks) {
+      raw.set(ch, off);
+      off += ch.length;
+    }
+  }
+  const obj = JSON.parse(new TextDecoder().decode(raw));
+  if (!obj || obj.v !== 1 || typeof obj.t !== "string") throw new Error("bad");
+  return obj;
+}
+
+// finds the code in a pasted link or message (…#s=CODE, or a bare code)
+function extractShareCode(text) {
+  const s = String(text || "");
+  const m = s.match(/#s=([A-Za-z0-9_-]+)/);
+  if (m) return m[1];
+  const bare = s.trim().match(/^([jz][A-Za-z0-9_-]{12,})$/);
+  if (bare) return bare[1];
+  const last = s.trim().split(/\s+/).pop() || "";
+  return /^[jz][A-Za-z0-9_-]{20,}$/.test(last) ? last : null;
+}
+
+const shStr = (v, n) => String(v == null ? "" : v).slice(0, n);
+const shNum = (v, max) => Math.max(0, Math.min(max, Number(v) || 0));
+const shFoodIn = (x) => ({ name: shStr(x && x.n, 80) || "?", kcal: Math.round(shNum(x && x.k, 20000)), protein: Math.round(shNum(x && x.p, 2000) * 10) / 10, carbs: Math.round(shNum(x && x.c, 5000) * 10) / 10, fat: Math.round(shNum(x && x.f, 2000) * 10) / 10, ...(x && x.g > 0 ? { grams: shNum(x.g, 5000), unit: x.u === "ml" ? "ml" : "g" } : {}) });
+const shFoodOut = (f) => ({ n: shStr(f.name, 80), k: Math.round(f.kcal || 0), p: f.protein || 0, c: f.carbs || 0, f: f.fat || 0, g: f.grams || 0, u: f.unit === "ml" ? "ml" : "g" });
+
+// Cleans anything that arrives from outside into the shapes the app uses; null = not usable.
+function sanitizeShare(o) {
+  if (!o || o.v !== 1) return null;
+  const from = shStr(o.n, 30);
+  const foods = (arr) => (Array.isArray(arr) ? arr : []).slice(0, 60).map(shFoodIn);
+  switch (o.t) {
+    case "plan": {
+      const days = (Array.isArray(o.d) ? o.d : [])
+        .slice(0, 14)
+        .map((d, i) => ({ id: "d" + i + Date.now().toString(36), name: shStr(d && d.n, 30) || "Day " + (i + 1), exercises: (Array.isArray(d && d.e) ? d.e : []).slice(0, 30).map((k) => EXERCISE_LIBRARY.find((e) => e.key === k)).filter(Boolean) }))
+        .filter((d) => d.exercises.length);
+      return days.length ? { t: "plan", from, name: shStr(o.p, 40) || "Plan", days } : null;
+    }
+    case "meal": {
+      const items = foods(o.f);
+      return items.length ? { t: "meal", from, title: shStr(o.title, 40), slot: ["breakfast", "lunch", "dinner", "snacks"].includes(o.slot) ? o.slot : null, items } : null;
+    }
+    case "day": {
+      const slots = {};
+      let n = 0;
+      for (const k of ["breakfast", "lunch", "dinner", "snacks"]) {
+        slots[k] = foods(o.m && o.m[k]);
+        n += slots[k].length;
+      }
+      return n ? { t: "day", from, slots } : null;
+    }
+    case "recipe": {
+      const r = o.r || {};
+      const ingredients = (Array.isArray(r.i) ? r.i : []).slice(0, 40).map((x) => shStr(x, 120)).filter(Boolean);
+      if (!r.name || !ingredients.length) return null;
+      return { t: "recipe", from, r: { name: shStr(r.name, 80), category: ["breakfast", "lunch", "dinner", "snacks"].includes(r.category) ? r.category : "lunch", kcal: Math.round(shNum(r.kcal, 20000)), protein: Math.round(shNum(r.protein, 2000)), carbs: Math.round(shNum(r.carbs, 5000)), fat: Math.round(shNum(r.fat, 2000)), ingredients } };
+    }
+    case "pantry": {
+      const f = o.f || {};
+      const items = (Array.isArray(f.items) ? f.items : []).slice(0, 60).map((i) => ({ name: shStr(i && i.n, 80), per100: { kcal: shNum(i && i.p && i.p.kcal, 2000), protein: shNum(i && i.p && i.p.protein, 200), carbs: shNum(i && i.p && i.p.carbs, 200), fat: shNum(i && i.p && i.p.fat, 200) }, unit: i && i.u === "ml" ? "ml" : "g", grams: Math.max(1, shNum(i && i.g, 5000)) })).filter((i) => i.name);
+      return items.length ? { t: "pantry", from, folder: { name: shStr(f.name, 40) || "Pantry", emoji: PANTRY_EMOJIS.includes(f.emoji) ? f.emoji : "🥫", items } } : null;
+    }
+    case "duel": {
+      const s = o.s || {};
+      const bests = {};
+      Object.entries(o.b && typeof o.b === "object" ? o.b : {}).slice(0, 80).forEach(([k, v]) => {
+        if (/^[A-Za-z0-9_]{1,40}$/.test(k) && Number(v) > 0) bests[k] = Math.min(2000, Number(v));
+      });
+      return { t: "duel", from, id: shStr(o.id, 24) || shStr(o.n, 30), ts: Number(o.ts) || Date.now(), stats: { tr: Math.round(shNum(s.tr, 100)), vol: Math.round(shNum(s.vol, 1000000)), min: Math.round(shNum(s.min, 20000)), str: Math.round(shNum(s.str, 5000)), days: Math.round(shNum(s.days, 7)), steps: Math.round(shNum(s.steps, 200000)) }, bests };
+    }
+    default:
+      return null;
+  }
+}
+
+const sumKcal = (items) => items.reduce((s, i) => s + (i.kcal || 0), 0);
+
+// Asks what to do with something somebody shared.
+function ShareImportModal({ t, item, onImport, onClose }) {
+  const [slot, setSlot] = useState(item.slot || mealKeyForNow());
+  const needsSlot = item.t === "meal" || item.t === "day";
+  const slots = [
+    { key: "breakfast", label: t.breakfast },
+    { key: "lunch", label: t.lunch },
+    { key: "dinner", label: t.dinner },
+    { key: "snacks", label: t.snacks },
+  ];
+  const typeLabel = { plan: t.shareTypePlan, meal: t.shareTypeMeal, day: t.shareTypeDay, recipe: t.shareTypeRecipe, pantry: t.shareTypePantry, duel: t.shareTypeDuel }[item.t];
+  let lines = [];
+  if (item.t === "plan") lines = [item.name, ...item.days.map((d) => d.name + " · " + d.exercises.length + " " + t.exercises)];
+  else if (item.t === "meal") lines = [item.title || t.shareTypeMeal, item.items.length + " " + t.pantryItemMany + " · " + sumKcal(item.items) + " kcal"];
+  else if (item.t === "day") {
+    const all = Object.values(item.slots).flat();
+    lines = [all.length + " " + t.pantryItemMany + " · " + sumKcal(all) + " kcal"];
+  } else if (item.t === "recipe") lines = [item.r.name, item.r.kcal + " kcal " + t.perServing];
+  else if (item.t === "pantry") lines = [item.folder.emoji + " " + item.folder.name, item.folder.items.length + " " + t.pantryItemMany];
+  else if (item.t === "duel") lines = [item.from || "?", item.stats.tr + "× " + t.duelTrainings + " · " + item.stats.vol + " kg"];
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "24px 22px", width: "100%", maxWidth: 340 }}>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.shareFrom.replace("{n}", item.from || "?")}</div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 800, color: COLORS.text, margin: "4px 0 10px" }}>{typeLabel}</div>
+        {lines.map((l, i) => (
+          <div key={i} style={{ fontFamily: i === 0 ? "Sora, sans-serif" : "Inter, sans-serif", fontSize: i === 0 ? 14 : 13, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? COLORS.text : COLORS.dim, marginBottom: 3 }}>{l}</div>
+        ))}
+        {item.t === "plan" && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.coral, marginTop: 8 }}>{t.sharePlanReplace}</div>}
+        {needsSlot && (
+          <>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "14px 0 8px" }}>{t.myMealsPick}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {slots.map((sl) => (
+                <Chip key={sl.key} label={sl.label} active={slot === sl.key} onClick={() => setSlot(sl.key)} />
+              ))}
+            </div>
+          </>
+        )}
+        <button onClick={() => onImport(item, slot)} style={{ width: "100%", marginTop: 18, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
+          {t.shareImport}
+        </button>
+        <button onClick={onClose} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.dim, border: "none", padding: "10px 18px", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+          {t.shareDiscard}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const DUEL_CATS = [
+  { k: "tr", label: "duelTrainings", unit: "" },
+  { k: "vol", label: "duelVolume", unit: "kg" },
+  { k: "min", label: "duelMinutes", unit: "min" },
+  { k: "days", label: "duelTracked", unit: "/7" },
+  { k: "str", label: "duelStreak", unit: "" },
+  { k: "steps", label: "duelSteps", unit: "" },
+];
+
+function duelScore(mine, theirs) {
+  let me = 0;
+  let them = 0;
+  DUEL_CATS.forEach((c) => {
+    const a = mine[c.k] || 0;
+    const b = theirs[c.k] || 0;
+    if (a > b) me += 1;
+    else if (b > a) them += 1;
+    else {
+      me += 0.5;
+      them += 0.5;
+    }
+  });
+  return { me, them };
+}
+
+function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMine, onImportText, onRemove }) {
+  const [text, setText] = useState("");
+  const [msg, setMsg] = useState(null);
+  const ageText = (ts) => {
+    const d = Math.floor((Date.now() - ts) / 86400000);
+    return d <= 0 ? t.diaryToday : d === 1 ? t.diaryYesterday : lang === "de" ? "vor " + d + " Tagen" : d + " days ago";
+  };
+  const doImport = async () => {
+    const res = await onImportText(text);
+    if (res && res.ok) {
+      setText("");
+      setMsg(null);
+    } else setMsg(t.friendsBadCode);
+  };
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <div style={{ ...small, lineHeight: 1.5, marginBottom: 14 }}>{t.friendsIntro}</div>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ ...small, marginBottom: 6 }}>{t.friendsName}</div>
+        <input value={myName} onChange={(e) => setMyName(e.target.value.slice(0, 30))} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 12 }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
+          {[
+            [myStats.tr, t.duelTrainings],
+            [myStats.vol, "kg"],
+            [myStats.days + "/7", t.duelTracked],
+          ].map(([v, l], i) => (
+            <div key={i} style={{ background: COLORS.raised, borderRadius: 12, padding: "9px 4px", textAlign: "center" }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{v}</div>
+              <div style={{ ...small, fontSize: 10.5, marginTop: 2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onShareMine} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          {t.friendsShareMine}
+        </button>
+      </Card>
+
+      <Card style={{ marginBottom: 18 }}>
+        <textarea value={text} onChange={(e) => { setText(e.target.value); setMsg(null); }} placeholder={t.friendsPaste} rows={2} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
+        <button onClick={doImport} disabled={!text.trim()} style={{ width: "100%", background: text.trim() ? COLORS.raised : COLORS.surface, color: text.trim() ? COLORS.gold : COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          {t.friendsImport}
+        </button>
+        {msg && <div style={{ ...small, color: COLORS.coral, marginTop: 8 }}>{msg}</div>}
+      </Card>
+
+      {rivals.length === 0 ? (
+        <div style={{ ...small, textAlign: "center", lineHeight: 1.5, padding: "0 12px" }}>{t.friendsNone}</div>
+      ) : (
+        rivals.map((r) => {
+          const sc = duelScore(myStats, r.stats);
+          const leading = sc.me > sc.them ? t.duelYouLead : sc.them > sc.me ? t.duelTheyLead.replace("{n}", r.name) : t.duelTie;
+          return (
+            <Card key={r.id} style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>
+                  {t.duelYou} vs {r.name}
+                </div>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 800, color: sc.me >= sc.them ? COLORS.gold : COLORS.coral }}>
+                  {sc.me} : {sc.them}
+                </div>
+              </div>
+              <div style={{ ...small, marginBottom: 12 }}>
+                {sc.me > sc.them ? "👑 " : ""}
+                {leading} · {t.friendsAsOf.replace("{d}", ageText(r.ts))}
+              </div>
+              {DUEL_CATS.map((c) => {
+                const a = myStats[c.k] || 0;
+                const b = r.stats[c.k] || 0;
+                const max = Math.max(a, b, 1);
+                const unit = c.unit ? " " + c.unit : "";
+                return (
+                  <div key={c.k} style={{ marginBottom: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", ...small, fontSize: 12, marginBottom: 4 }}>
+                      <span style={{ color: a > b ? COLORS.gold : COLORS.dim, fontWeight: a > b ? 700 : 400 }}>
+                        {a}
+                        {unit}
+                      </span>
+                      <span>{t[c.label]}</span>
+                      <span style={{ color: b > a ? COLORS.coral : COLORS.dim, fontWeight: b > a ? 700 : 400 }}>
+                        {b}
+                        {unit}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 4, height: 7 }}>
+                      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: COLORS.raised, borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ width: (a / max) * 100 + "%", background: COLORS.gold }} />
+                      </div>
+                      <div style={{ flex: 1, display: "flex", background: COLORS.raised, borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ width: (b / max) * 100 + "%", background: COLORS.coral }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+                <span onClick={onShareMine} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.friendsRematch}</span>
+                <span onClick={() => onRemove(r.id)} style={{ ...small, cursor: "pointer" }}>{t.friendsRemove}</span>
+              </div>
+            </Card>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
 // ---------- Intake log ("Einnahme-Tagebuch"): what was taken / injected when, with site rotation ----------
 // A plain diary of the user's own entries: no recommendations and no dosing advice.
 const INTAKE_ROUTES = [
@@ -7141,6 +7580,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
         <SettingsRow icon={Palette} label={t.setDisplayRow} onClick={() => onNav("settingsDisplay")} />
         <SettingsRow icon={Bell} label={t.reminders} sub={remOn + " / 3"} onClick={() => onNav("settingsReminders")} />
         <SettingsRow icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
+        <SettingsRow icon={Users} label={t.friendsTitle} onClick={() => onNav("friends")} />
         <SettingsRow icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />
       </SettingsGroup>
 
@@ -7796,6 +8236,12 @@ export default function AsmarFitApp() {
   const [recipeImport, setRecipeImport] = useState(null); // a pasted link that opens the recipe import straight away
   const [intake, setIntake] = usePersisted("intake", { subs: [], log: [], card: true });
   const [intakeReturn, setIntakeReturn] = useState("settings"); // where "back" goes from the intake log
+  const [rivals, setRivals] = usePersisted("rivals", []);
+  const [myName, setMyName] = usePersisted("myName", "");
+  const [myId] = usePersisted("myId", newPantryId() + newPantryId());
+  const [incomingShare, setIncomingShare] = useState(null); // something a friend shared, waiting for "import"
+  const [shareToast, setShareToast] = useState(null);
+  const [friendsReturn, setFriendsReturn] = useState(null);
   const intakeDue = intake.card === false ? [] : (intake.subs || []).map((s) => ({ name: s.name, n: intakeNext(s, intake.log || []) })).filter((x) => x.n && x.n.diff <= 0).map((x) => ({ name: x.name, diff: x.n.diff }));
   const [firstSeen] = usePersisted("firstSeen", Date.now());
   // nudge for a backup once a week — the data only lives on this device
@@ -8070,6 +8516,99 @@ export default function AsmarFitApp() {
     setOverlay("pantry");
   };
 
+  // ----- sharing and friends: plans, meals, recipes, pantry folders and the week duel -----
+  const flashShare = (m) => {
+    setShareToast(m);
+    setTimeout(() => setShareToast(null), 2200);
+  };
+  const sharerName = () => (myName || profile.name || "").trim().slice(0, 30);
+  // the last 7 days in numbers, for the duel
+  const myDuelStats = () => {
+    const now = Date.now();
+    const weekAgo = now - 7 * 86400000;
+    const ws = workoutHistory.filter((w) => new Date(w.dateISO).getTime() >= weekAgo);
+    const keys = Array.from({ length: 7 }, (_, i) => dateKey(new Date(now - i * 86400000)));
+    const steps = keys.reduce((s, k) => s + ((historyMap[k] && historyMap[k].steps) || 0), 0);
+    return {
+      tr: ws.length,
+      vol: Math.round(ws.reduce((s, w) => s + (w.volumeKg || 0), 0)),
+      min: Math.round(ws.reduce((s, w) => s + (w.durationSec || 0), 0) / 60),
+      str: streak.current,
+      days: keys.filter((k) => dayHasFood(historyMap[k])).length,
+      steps: Math.round(steps / 7),
+    };
+  };
+  const doShare = async (obj, title) => {
+    const code = await encodeShare({ v: 1, n: sharerName(), ...obj });
+    const link = SHARE_BASE + "#s=" + code;
+    const text = (sharerName() ? sharerName() + ": " : "") + title + "\n" + link + "\n\n" + t.shareCodeHint + "\n" + code;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "ASFIT", text });
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      flashShare(t.shareCopied);
+    } catch {
+      flashShare(link.slice(0, 60) + "…");
+    }
+  };
+  const shareMyDuel = () => doShare({ t: "duel", id: myId, ts: Date.now(), s: myDuelStats(), b: personalBests }, t.shareTypeDuel);
+  const importShareText = async (text) => {
+    const code = extractShareCode(text);
+    if (!code) return { ok: false };
+    try {
+      const item = sanitizeShare(await decodeShare(code));
+      if (!item) return { ok: false };
+      setIncomingShare(item);
+      return { ok: true };
+    } catch {
+      return { ok: false };
+    }
+  };
+  const applyShare = (item, slot) => {
+    if (item.t === "plan") {
+      setPlanName(item.name);
+      setPlanDays(item.days);
+    } else if (item.t === "meal") {
+      item.items.forEach((f) => addFoodTo(slot, f));
+    } else if (item.t === "day") {
+      Object.entries(item.slots).forEach(([k, arr]) => arr.forEach((f) => addFoodTo(k, f)));
+    } else if (item.t === "recipe") {
+      const r = item.r;
+      saveRecipe({ key: "c" + Date.now(), name: r.name, nameDe: r.name, category: r.category, kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat, ingredients: r.ingredients, ingredientsDe: r.ingredients, image: "", custom: true });
+    } else if (item.t === "pantry") {
+      setPantry((l) => [...l, { id: newPantryId(), name: item.folder.name, emoji: item.folder.emoji, items: item.folder.items.map((i) => ({ id: newPantryId(), uses: 0, ...i })) }]);
+    } else if (item.t === "duel") {
+      setRivals((l) => [...l.filter((r) => r.id !== item.id), { id: item.id, name: item.from || "?", ts: item.ts, stats: item.stats, bests: item.bests }].slice(-20));
+      setFriendsReturn(null);
+      setOverlay("friends");
+    }
+    setIncomingShare(null);
+    flashShare(t.shareImported);
+  };
+  // a link with #s=CODE (opened in the browser / Android app) is picked up right at the start
+  useEffect(() => {
+    const read = async () => {
+      const m = window.location.hash.match(/^#s=([A-Za-z0-9_-]+)/);
+      if (!m) return;
+      try {
+        const item = sanitizeShare(await decodeShare(m[1]));
+        if (item) setIncomingShare(item);
+      } catch {
+        /* not a valid code */
+      }
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    };
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, []);
+
   // Copy a meal (from yesterday, or from any past day being viewed) into today's meal.
   const copyItems = (slot, items) => setMeals((m) => ({ ...m, [slot]: [...m[slot], ...items.map((it) => ({ ...it }))] }));
 
@@ -8265,6 +8804,10 @@ export default function AsmarFitApp() {
           setOverlay("pantry");
         }
       : () => setOverlay(null);
+  } else if (overlay === "friends") {
+    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myStats={myDuelStats()} rivals={rivals} onShareMine={shareMyDuel} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} />;
+    topTitle = t.friendsTitle;
+    showBack = () => setOverlay(friendsReturn);
   } else if (overlay === "intake") {
     content = <IntakeScreen t={t} lang={lang} data={intake} setData={setIntake} />;
     topTitle = t.intakeTitle;
@@ -8287,6 +8830,7 @@ export default function AsmarFitApp() {
           setPantryTarget(fid);
           setOverlay("foodSearch");
         }}
+        onShare={doShare}
       />
     );
     topTitle = t.pantryTitle;
@@ -8303,7 +8847,7 @@ export default function AsmarFitApp() {
     topTitle = t.photoTitle;
     showBack = () => setOverlay("foodSearch");
   } else if (overlay === "recipes") {
-    content = <RecipesScreen key={recipeImport || "recipes"} t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} customRecipes={customRecipes} onSaveRecipe={saveRecipe} onDeleteRecipe={deleteRecipe} initialImport={recipeImport} />;
+    content = <RecipesScreen key={recipeImport || "recipes"} t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} customRecipes={customRecipes} onSaveRecipe={saveRecipe} onDeleteRecipe={deleteRecipe} initialImport={recipeImport} onShare={doShare} />;
     topTitle = t.recipesTitle;
     showBack = () => {
       setRecipeImport(null);
@@ -8403,6 +8947,7 @@ export default function AsmarFitApp() {
         reminders={reminders}
         onNav={(k) => {
           if (k === "intake") setIntakeReturn("settings");
+          if (k === "friends") setFriendsReturn("settings");
           setOverlay(k);
         }}
         onShare={shareApp}
@@ -8504,6 +9049,7 @@ export default function AsmarFitApp() {
             setRecipeImport(txt);
             setOverlay("recipes");
           }}
+          onShare={doShare}
           cheats={cheats}
           onOpenMyMeals={() => setOverlay("myMeals")}
           onOpenCheats={() => setOverlay("cheats")}
@@ -8529,6 +9075,11 @@ export default function AsmarFitApp() {
             setOverlay("exerciseLibrary");
           }}
           activeWorkout={activeWorkout}
+          onSharePlan={() => doShare({ t: "plan", p: planName, d: planDays.map((d) => ({ n: d.name, e: d.exercises.map((e) => e.key) })) }, t.shareTypePlan + (planName ? ": " + planName : ""))}
+          onOpenFriends={() => {
+            setFriendsReturn(null);
+            setOverlay("friends");
+          }}
         />
       ),
       progress: (
@@ -8607,6 +9158,12 @@ export default function AsmarFitApp() {
           </>
         )}
         <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
+        {onboarded && incomingShare && <ShareImportModal t={t} item={incomingShare} onImport={applyShare} onClose={() => setIncomingShare(null)} />}
+        {shareToast && (
+          <div style={{ position: "fixed", left: 20, right: 20, bottom: 96, maxWidth: 350, margin: "0 auto", background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 1100 }}>
+            <Check size={15} /> {shareToast}
+          </div>
+        )}
         {introOn && !introDone && <StartIntro onDone={finishIntro} full={introFull} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
       </div>
     </div>
