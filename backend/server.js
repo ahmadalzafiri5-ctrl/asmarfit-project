@@ -573,6 +573,54 @@ app.post("/api/recipe", async (req, res) => {
   }
 });
 
+/* ---------- GET /api/exercise-video ---------- */
+// Finds one embeddable technique video for an exercise via the YouTube Data API. Needs
+// YOUTUBE_API_KEY on the server (the key never reaches the app); without it the app simply
+// falls back to opening a YouTube search. Results are cached so one exercise costs one lookup.
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+const YOUTUBE_API_BASE = process.env.YOUTUBE_API_BASE || "https://www.googleapis.com/youtube/v3";
+const videoCache = new Map(); // "lang|query" -> { at, data }
+const ytDecode = (s) => String(s || "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+
+app.get("/api/exercise-video", async (req, res) => {
+  if (!YOUTUBE_API_KEY) return res.status(503).json({ error: "not_configured" });
+  if (isRateLimited(assistantHits, req.ip, 10)) return res.status(429).json({ error: "rate_limited" });
+  const q = String(req.query.q || "").replace(/[^\p{L}\p{N} .'()+&-]/gu, "").trim().slice(0, 80);
+  const lang = req.query.lang === "en" ? "en" : "de";
+  if (q.length < 2) return res.status(400).json({ error: "Expected q" });
+  const cacheKey = lang + "|" + q.toLowerCase();
+  const hit = videoCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < 7 * 86400000) return res.json(hit.data);
+  try {
+    const params = new URLSearchParams({
+      part: "snippet",
+      type: "video",
+      maxResults: "5",
+      videoEmbeddable: "true",
+      videoSyndicated: "true",
+      safeSearch: "strict",
+      videoDuration: "short",
+      relevanceLanguage: lang,
+      q: q + (lang === "de" ? " Ausführung Technik" : " proper form technique"),
+      key: YOUTUBE_API_KEY,
+    });
+    const r = await fetch(`${YOUTUBE_API_BASE}/search?${params}`, { signal: AbortSignal.timeout(10_000) });
+    if (!r.ok) {
+      console.error("YouTube API returned", r.status); // never log the request URL: it contains the key
+      return res.status(r.status === 403 ? 503 : 502).json({ error: r.status === 403 ? "quota_or_forbidden" : "upstream_error" });
+    }
+    const j = await r.json();
+    const v = (j.items || []).find((i) => i && i.id && /^[\w-]{11}$/.test(i.id.videoId || ""));
+    const data = v ? { id: v.id.videoId, title: ytDecode(v.snippet && v.snippet.title).slice(0, 120), channel: ytDecode(v.snippet && v.snippet.channelTitle).slice(0, 60) } : { id: null };
+    videoCache.set(cacheKey, { at: Date.now(), data });
+    if (videoCache.size > 500) videoCache.delete(videoCache.keys().next().value);
+    res.json(data);
+  } catch (err) {
+    console.error("Video lookup failed:", err.message);
+    res.status(502).json({ error: "upstream_error" });
+  }
+});
+
 /* ---------- POST /api/recipe-import ---------- */
 // A recipe link (website, TikTok, public Instagram post) or a pasted caption in, a recipe with
 // nutrition values per serving out. Links are read on the server (see recipeImport.js for the
