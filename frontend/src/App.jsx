@@ -57,6 +57,7 @@ import {
   Pause,
   Play,
   Pencil,
+  Pill,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -543,6 +544,54 @@ const STR = {
     pantryManage: "Manage",
     pantryItemOne: "food",
     pantryItemMany: "foods",
+    importTitle: "Recipe from link or text",
+    importHint: "Paste a link (Instagram, TikTok, recipe site) or the copied caption text. The app reads the ingredients and gets the nutrition values per serving.",
+    importPlaceholder: "https://… or paste text",
+    importGo: "Get nutrition values",
+    importBusy: "Reading the recipe …",
+    importFound: "Found",
+    importPortions: "servings in the recipe",
+    importEstimated: "values estimated, please double-check",
+    importFromSource: "values from the source",
+    importUnreadable: "This page can't be read automatically, for example Instagram behind a login. Copy the caption of the post and paste the text here.",
+    importNoRecipe: "I can't find a recipe in this content.",
+    importTooMany: "Too many requests, please try again in a minute.",
+    recipeLogNow: "Log it right away",
+    foodLinkTitle: "Link detected: get the nutrition values from the recipe",
+    foodLinkSub: "Works with recipe sites and TikTok. For Instagram, copy the caption of the post and paste the text.",
+    intakeTitle: "Intake log",
+    intakeDisclaimer: "A plain diary for your own entries. No recommendation and no medical advice. Talk about anything you take, and your blood work, with a doctor. The data stays on your phone only.",
+    intakeIntro: "Add what you take and log when you took or injected it. The app shows what is due and suggests the next injection site.",
+    intakeNew: "New substance",
+    intakeChange: "Edit",
+    intakeName: "Name",
+    intakeRoute: "Type",
+    intakeDose: "Dose",
+    intakeSchedule: "Schedule",
+    intakeEvery: "Every X days",
+    intakeEveryPre: "Every",
+    intakeEveryPost: "days",
+    intakeEveryN: "every {n} days",
+    intakeWeekdaysLabel: "Weekdays",
+    intakeNeeded: "As needed",
+    intakeSave: "Save",
+    intakeCancel: "Cancel",
+    intakeTakeNow: "Taken now",
+    intakeSite: "Injection site",
+    intakeSuggest: "suggested next site (rotating the sites)",
+    intakeNote: "Note (optional)",
+    intakeLogged: "Logged",
+    intakeLast: "Last",
+    intakeNever: "never",
+    intakeDueToday: "due today",
+    intakeTomorrow: "due tomorrow",
+    intakeOverdue: "{n} d overdue",
+    intakeInDays: "in {n} days",
+    intakeHistory: "History",
+    intakeAll: "All",
+    intakeEmptyHistory: "No entries yet.",
+    intakeCardTitle: "Intake due",
+    intakeCardOn: "Remind me on the home screen",
     setSmall: "Small",
     setNormal: "Normal",
     setLarge: "Large",
@@ -1115,6 +1164,54 @@ const STR = {
     pantryManage: "Verwalten",
     pantryItemOne: "Lebensmittel",
     pantryItemMany: "Lebensmittel",
+    importTitle: "Rezept aus Link oder Text",
+    importHint: "Füge einen Link (Instagram, TikTok, Rezeptseite) oder den kopierten Beschreibungstext ein. Die App liest die Zutaten und holt die Nährwerte pro Portion.",
+    importPlaceholder: "https://… oder Text einfügen",
+    importGo: "Nährwerte holen",
+    importBusy: "Rezept wird gelesen …",
+    importFound: "Erkannt",
+    importPortions: "Portionen im Rezept",
+    importEstimated: "Werte geschätzt, bitte kurz prüfen",
+    importFromSource: "Werte laut Quelle",
+    importUnreadable: "Diese Seite lässt sich nicht automatisch lesen, zum Beispiel Instagram mit Login. Kopiere die Beschreibung des Beitrags und füge den Text hier ein.",
+    importNoRecipe: "Ich finde in diesem Inhalt kein Rezept.",
+    importTooMany: "Zu viele Anfragen, versuche es in einer Minute noch einmal.",
+    recipeLogNow: "Direkt ins Tagebuch",
+    foodLinkTitle: "Link erkannt: Nährwerte aus dem Rezept holen",
+    foodLinkSub: "Funktioniert mit Rezeptseiten und TikTok. Bei Instagram kopierst du die Beschreibung des Beitrags und fügst den Text ein.",
+    intakeTitle: "Einnahme-Tagebuch",
+    intakeDisclaimer: "Reines Tagebuch für deine eigenen Einträge. Keine Empfehlung und keine medizinische Beratung. Sprich Einnahmen und Blutwerte mit einer Ärztin oder einem Arzt ab. Die Daten bleiben nur auf deinem Handy.",
+    intakeIntro: "Lege an, was du nimmst, und trage ein, wann du es genommen oder gespritzt hast. Die App zeigt dir, was fällig ist, und schlägt die nächste Injektionsstelle vor.",
+    intakeNew: "Neue Substanz",
+    intakeChange: "Ändern",
+    intakeName: "Name",
+    intakeRoute: "Art",
+    intakeDose: "Dosis",
+    intakeSchedule: "Rhythmus",
+    intakeEvery: "Alle X Tage",
+    intakeEveryPre: "Alle",
+    intakeEveryPost: "Tage",
+    intakeEveryN: "alle {n} Tage",
+    intakeWeekdaysLabel: "Wochentage",
+    intakeNeeded: "Nach Bedarf",
+    intakeSave: "Speichern",
+    intakeCancel: "Abbrechen",
+    intakeTakeNow: "Jetzt eingenommen",
+    intakeSite: "Injektionsstelle",
+    intakeSuggest: "Vorschlag für die nächste Stelle (Wechsel der Stellen)",
+    intakeNote: "Notiz (optional)",
+    intakeLogged: "Eingetragen",
+    intakeLast: "Zuletzt",
+    intakeNever: "noch nie",
+    intakeDueToday: "heute fällig",
+    intakeTomorrow: "morgen fällig",
+    intakeOverdue: "seit {n} Tg. überfällig",
+    intakeInDays: "in {n} Tagen",
+    intakeHistory: "Verlauf",
+    intakeAll: "Alle",
+    intakeEmptyHistory: "Noch keine Einträge.",
+    intakeCardTitle: "Einnahme fällig",
+    intakeCardOn: "Auf der Startseite erinnern",
     setSmall: "Klein",
     setNormal: "Normal",
     setLarge: "Groß",
@@ -2365,7 +2462,7 @@ function BackupReminder({ t, onOpen }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2424,6 +2521,14 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
       </div>
 
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
+      {intakeDue.length > 0 && (
+        <Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer", border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeCardTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3, lineHeight: 1.45 }}>
+            {intakeDue.map((x) => x.name + (x.diff < 0 ? " (" + t.intakeOverdue.replace("{n}", -x.diff) + ")" : "")).join(" · ")}
+          </div>
+        </Card>
+      )}
       <StreakCard t={t} streak={streak} history={history} onOpen={onOpenHistory} />
       <StepsCard t={t} steps={steps} source={stepsSource} weightKg={profile.weight} goal={stepsGoal} onSaveGoal={onSaveStepsGoal} onConnect={onConnectSteps} onSaveManual={onSaveSteps} />
 
@@ -3959,7 +4064,7 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
 
 /* ---------------- Food flow ---------------- */
 
-function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals = [], onOpenMyMeals, recentFoods = [], pantry = [], pantryFolder = null, onPantrySave, onPantryDone, onOpenPantry }) {
+function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals = [], onOpenMyMeals, recentFoods = [], pantry = [], pantryFolder = null, onPantrySave, onPantryDone, onOpenPantry, onImportLink }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [pick, setPick] = useState(false); // folder chooser under the amount card
@@ -3995,9 +4100,10 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
     return () => clearTimeout(id);
   }, [status]);
 
+  const isLink = /^https?:\/\/\S+$/i.test(query.trim());
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) {
+    if (q.length < 2 || /^https?:\/\//i.test(q)) {
       setResults([]);
       setCorrected(null);
       setStatus("tooShort");
@@ -4073,7 +4179,16 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             </>
           )}
 
-          {status === "tooShort" && pantryFolder ? (
+          {isLink && !pantryFolder ? (
+            <div onClick={() => onImportLink(query.trim())} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 14, padding: "14px 16px", cursor: "pointer" }}>
+              <Link2 size={20} color={COLORS.gold} style={{ flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.foodLinkTitle}</div>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 3, lineHeight: 1.4 }}>{t.foodLinkSub}</div>
+              </div>
+              <ChevronLeft size={16} color={COLORS.gold} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+            </div>
+          ) : status === "tooShort" && pantryFolder ? (
             <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 16, lineHeight: 1.5 }}>{t.pantryPickHint}</div>
           ) : status === "tooShort" ? (
             <>
@@ -5831,11 +5946,16 @@ function CheatScreen({ t, cheats, onAdd, onDelete }) {
   );
 }
 
-function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecipe, onDeleteRecipe }) {
+function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecipe, onDeleteRecipe, initialImport = null }) {
   const [cat, setCat] = useState("all");
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
-  const [mode, setMode] = useState("list"); // list | form
+  const [mode, setMode] = useState(initialImport ? "form" : "list"); // list | form
+  // recipe from a link or pasted text (Instagram / TikTok caption, recipe website)
+  const [impText, setImpText] = useState(initialImport || "");
+  const [impBusy, setImpBusy] = useState(false);
+  const [impError, setImpError] = useState(null);
+  const [impInfo, setImpInfo] = useState(null);
   const emptyForm = { name: "", category: "lunch", kcal: "", protein: "", carbs: "", fat: "", ingredients: "", image: "" };
   const ownPhotoRef = useRef(null);
   const [form, setForm] = useState(emptyForm);
@@ -5889,6 +6009,39 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
     }
   };
 
+  const importRecipe = async (override) => {
+    const input = String(override != null ? override : impText).trim();
+    if (!input || impBusy) return;
+    setImpBusy(true);
+    setImpError(null);
+    setImpInfo(null);
+    try {
+      const res = await fetch(API_BASE + "/api/recipe-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input, lang }),
+      });
+      if (res.status === 503) setImpError(t.assistantNotConfigured);
+      else if (res.status === 429) setImpError(t.importTooMany);
+      else if (res.status === 422) {
+        const j = await res.json().catch(() => ({}));
+        setImpError(j.error === "unreadable" ? t.importUnreadable : t.importNoRecipe);
+      } else if (!res.ok) setImpError(t.assistantError);
+      else {
+        const r = await res.json();
+        setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n"), image: "" });
+        setImpInfo({ servings: r.servings, estimated: r.estimated });
+      }
+    } catch {
+      setImpError(t.serverError);
+    } finally {
+      setImpBusy(false);
+    }
+  };
+  useEffect(() => {
+    if (initialImport) importRecipe(initialImport);
+  }, []);
+
   const saveForm = () => {
     const ingredients = form.ingredients.split("\n").map((l) => l.trim()).filter(Boolean);
     if (!form.name.trim() || ingredients.length === 0) return;
@@ -5920,6 +6073,21 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
     <div style={{ padding: "0 20px 24px", position: "relative" }}>
       {mode === "form" && !selected ? (
         <>
+          <Card style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>🔗 {t.importTitle}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8, lineHeight: 1.45 }}>{t.importHint}</div>
+            <textarea value={impText} onChange={(e) => setImpText(e.target.value)} placeholder={t.importPlaceholder} rows={3} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
+            <button onClick={() => importRecipe()} disabled={impBusy || !impText.trim()} style={{ width: "100%", background: impBusy || !impText.trim() ? COLORS.raised : COLORS.gold, color: impBusy || !impText.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: impBusy ? "default" : "pointer" }}>
+              {impBusy ? t.importBusy : t.importGo}
+            </button>
+            {impError && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginTop: 8, lineHeight: 1.45 }}>{impError}</div>}
+            {impInfo && (
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 8, lineHeight: 1.45 }}>
+                ✓ {t.importFound}: {form.name} · {impInfo.servings} {t.importPortions} · {impInfo.estimated ? t.importEstimated : t.importFromSource}
+              </div>
+            )}
+          </Card>
+
           <Card style={{ marginBottom: 14 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>✨ {t.recipeCreateAi}</div>
             <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder={t.recipeAiPrompt} rows={2} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
@@ -5962,6 +6130,19 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
             <button onClick={saveForm} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               {t.recipeSave}
             </button>
+            {num(form.kcal) > 0 && (
+              <button
+                onClick={() => {
+                  const nm = form.name.trim() || t.quickAddDefault;
+                  onAdd({ name: nm, kcal: num(form.kcal), protein: num(form.protein), carbs: num(form.carbs), fat: num(form.fat) });
+                  setToast(nm);
+                  setTimeout(() => setToast(null), 1400);
+                }}
+                style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}
+              >
+                {t.recipeLogNow}
+              </button>
+            )}
             <div onClick={() => setMode("list")} style={{ textAlign: "center", marginTop: 12, fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.dim, cursor: "pointer" }}>{t.recipeCancel}</div>
           </Card>
         </>
@@ -5975,6 +6156,9 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
               + {t.recipeCreateOwn}
             </button>
           </div>
+          <button onClick={() => setMode("form")} style={{ width: "100%", marginBottom: 14, background: COLORS.surface, border: "1px solid " + COLORS.border, color: COLORS.text, borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+            🔗 {t.importTitle}
+          </button>
           <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto", paddingBottom: 2 }}>
             {categories.map((c) => (
               <Chip key={c.key} label={c.label} active={cat === c.key} onClick={() => setCat(c.key)} />
@@ -6518,6 +6702,360 @@ function SettingsGroup({ title, children }) {
   );
 }
 
+// ---------- Intake log ("Einnahme-Tagebuch"): what was taken / injected when, with site rotation ----------
+// A plain diary of the user's own entries: no recommendations and no dosing advice.
+const INTAKE_ROUTES = [
+  { k: "inject", de: "Spritze", en: "Injection" },
+  { k: "oral", de: "Tabletten / Kapseln", en: "Tablets / capsules" },
+  { k: "gel", de: "Gel / Creme", en: "Gel / cream" },
+  { k: "other", de: "Sonstiges", en: "Other" },
+];
+const INTAKE_UNITS = ["mg", "ml", "IE", "mcg", "Stk"];
+// ordered so the suggested next site alternates left / right and moves around the body
+const INTAKE_SITES = [
+  { k: "gl", de: "Gesäß links", en: "Glute left" },
+  { k: "gr", de: "Gesäß rechts", en: "Glute right" },
+  { k: "ol", de: "Oberschenkel links", en: "Thigh left" },
+  { k: "or", de: "Oberschenkel rechts", en: "Thigh right" },
+  { k: "sl", de: "Schulter links", en: "Shoulder left" },
+  { k: "sr", de: "Schulter rechts", en: "Shoulder right" },
+  { k: "bl", de: "Bauch links", en: "Belly left" },
+  { k: "br", de: "Bauch rechts", en: "Belly right" },
+];
+const INTAKE_WEEKDAYS = { de: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
+const dayStartMs = (ms) => {
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
+const addDaysMs = (ms, n) => {
+  const d = new Date(ms);
+  d.setDate(d.getDate() + n);
+  return dayStartMs(d.getTime());
+};
+const toLocalInput = (ms) => {
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+};
+
+// When the next intake of a substance is due: { diff } in days from today (negative = overdue), or null for "as needed".
+function intakeNext(sub, log) {
+  const s = sub.sched || { type: "needed" };
+  if (s.type === "needed") return null;
+  const mine = log.filter((e) => e.subId === sub.id);
+  const last = mine.length ? Math.max(...mine.map((e) => e.ts)) : null;
+  const today = dayStartMs(Date.now());
+  let due;
+  if (s.type === "interval") {
+    due = last == null ? today : addDaysMs(last, Math.max(1, s.days || 1));
+  } else {
+    const wd = s.weekdays && s.weekdays.length ? s.weekdays : [1];
+    due = last == null ? today : addDaysMs(last, 1);
+    for (let i = 0; i < 8 && !wd.includes(new Date(due).getDay()); i++) due = addDaysMs(due, 1);
+  }
+  return { diff: Math.round((due - today) / 86400000) };
+}
+
+// the injection site that follows the one used last (cycles through INTAKE_SITES)
+function nextSite(sub, log) {
+  const withSite = log.filter((e) => e.subId === sub.id && e.site).sort((a, b) => b.ts - a.ts);
+  if (!withSite.length) return INTAKE_SITES[0].k;
+  const i = INTAKE_SITES.findIndex((x) => x.k === withSite[0].site);
+  return INTAKE_SITES[(i + 1) % INTAKE_SITES.length].k;
+}
+
+function IntakeScreen({ t, lang, data, setData }) {
+  const subs = data.subs || [];
+  const log = data.log || [];
+  const [logging, setLogging] = useState(null); // substance id while the "taken now" form is open
+  const [lf, setLf] = useState({ dose: "", site: null, when: "", note: "" });
+  const [editing, setEditing] = useState(null); // "new" | substance id
+  const emptySub = { name: "", route: "inject", dose: "", unit: "mg", schedType: "interval", days: 7, weekdays: [1] };
+  const [sf, setSf] = useState(emptySub);
+  const [edit, setEdit] = useState(false);
+  const [sure, setSure] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const [toast, setToast] = useState(null);
+  const locale = lang === "de" ? "de-DE" : "en-US";
+  const flash = (m) => {
+    setToast(m);
+    setTimeout(() => setToast(null), 1500);
+  };
+  const lbl = (arr, k) => {
+    const x = arr.find((a) => a.k === k);
+    return x ? x[lang === "de" ? "de" : "en"] : "";
+  };
+  const wdNames = INTAKE_WEEKDAYS[lang] || INTAKE_WEEKDAYS.en;
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  const num = (v) => parseFloat(String(v).replace(",", "."));
+
+  const schedText = (s) => {
+    const sc = s.sched || { type: "needed" };
+    if (sc.type === "interval") return t.intakeEveryN.replace("{n}", sc.days);
+    if (sc.type === "weekdays") return (sc.weekdays || []).slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => wdNames[d]).join(", ");
+    return t.intakeNeeded;
+  };
+  const statusOf = (s) => {
+    const n = intakeNext(s, log);
+    if (!n) return { text: t.intakeNeeded, tone: "dim" };
+    if (n.diff < 0) return { text: t.intakeOverdue.replace("{n}", -n.diff), tone: "coral" };
+    if (n.diff === 0) return { text: t.intakeDueToday, tone: "gold" };
+    if (n.diff === 1) return { text: t.intakeTomorrow, tone: "dim" };
+    return { text: t.intakeInDays.replace("{n}", n.diff), tone: "dim" };
+  };
+  const fmtWhen = (ms) => new Date(ms).toLocaleString(locale, { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const lastOf = (s) => {
+    const mine = log.filter((e) => e.subId === s.id).sort((a, b) => b.ts - a.ts);
+    return mine[0] || null;
+  };
+
+  const openLog = (s) => {
+    setLogging(s.id);
+    setLf({ dose: String(s.dose || ""), site: s.route === "inject" ? nextSite(s, log) : null, when: toLocalInput(Date.now()), note: "" });
+  };
+  const saveLog = (s) => {
+    const dose = num(lf.dose);
+    if (!(dose > 0)) return;
+    const ts = lf.when ? new Date(lf.when).getTime() : Date.now();
+    const entry = { id: newPantryId(), subId: s.id, ts: isFinite(ts) ? ts : Date.now(), dose, unit: s.unit, site: s.route === "inject" ? lf.site : null, note: lf.note.trim().slice(0, 200) };
+    setData((d) => ({ ...d, log: [...(d.log || []), entry], subs: d.subs.map((x) => (x.id === s.id ? { ...x, dose } : x)) }));
+    setLogging(null);
+    flash(t.intakeLogged);
+  };
+
+  const startNew = () => {
+    setSf(emptySub);
+    setEditing("new");
+  };
+  const startEdit = (s) => {
+    const sc = s.sched || { type: "needed" };
+    setSf({ name: s.name, route: s.route, dose: String(s.dose || ""), unit: s.unit, schedType: sc.type, days: sc.days || 7, weekdays: sc.weekdays || [1] });
+    setEditing(s.id);
+  };
+  const saveSub = () => {
+    const name = sf.name.trim();
+    const dose = num(sf.dose);
+    if (!name || !(dose > 0)) return;
+    const sched = sf.schedType === "interval" ? { type: "interval", days: Math.max(1, Math.min(60, Math.round(Number(sf.days) || 1))) } : sf.schedType === "weekdays" ? { type: "weekdays", weekdays: sf.weekdays.length ? sf.weekdays : [1] } : { type: "needed" };
+    const base = { name: name.slice(0, 40), route: sf.route, dose, unit: sf.unit, sched };
+    setData((d) => ({ ...d, subs: editing === "new" ? [...d.subs, { id: newPantryId(), ...base }] : d.subs.map((x) => (x.id === editing ? { ...x, ...base } : x)) }));
+    setEditing(null);
+  };
+  const deleteSub = (id) => setData((d) => ({ ...d, subs: d.subs.filter((x) => x.id !== id), log: d.log.filter((e) => e.subId !== id) }));
+  const deleteEntry = (id) => setData((d) => ({ ...d, log: d.log.filter((e) => e.id !== id) }));
+
+  const entries = log.filter((e) => filter === "all" || e.subId === filter).sort((a, b) => b.ts - a.ts).slice(0, 60);
+  const subName = (id) => (subs.find((s) => s.id === id) || {}).name || "?";
+  const toneStyle = (tone) => (tone === "coral" ? { background: COLORS.coralSoft, color: COLORS.coral } : tone === "gold" ? { background: COLORS.goldSoft, color: COLORS.gold } : { background: COLORS.raised, color: COLORS.dim });
+
+  return (
+    <div style={{ padding: "0 20px 28px", position: "relative" }}>
+      <div style={{ ...small, fontSize: 12, lineHeight: 1.5, marginBottom: 14 }}>{t.intakeDisclaimer}</div>
+
+      {subs.length === 0 && editing === null && (
+        <Card style={{ marginBottom: 14 }}>
+          <div style={{ ...small, lineHeight: 1.5, marginBottom: 12 }}>{t.intakeIntro}</div>
+          <button onClick={startNew} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            + {t.intakeNew}
+          </button>
+        </Card>
+      )}
+
+      {subs.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <span onClick={() => { setEdit((e) => !e); setSure(null); }} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+            {edit ? t.pantryDone : t.pantryEdit}
+          </span>
+        </div>
+      )}
+
+      {subs.map((s) => {
+        const st = statusOf(s);
+        const last = lastOf(s);
+        return (
+          <Card key={s.id} style={{ marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{s.name}</div>
+                <div style={{ ...small, marginTop: 3 }}>
+                  {lbl(INTAKE_ROUTES, s.route)} · {s.dose} {s.unit} · {schedText(s)}
+                </div>
+              </div>
+              <span style={{ ...toneStyle(st.tone), fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, borderRadius: 10, padding: "5px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>{st.text}</span>
+            </div>
+            <div style={{ ...small, fontSize: 12, marginTop: 8 }}>
+              {t.intakeLast}: {last ? fmtWhen(last.ts) + " · " + last.dose + " " + last.unit + (last.site ? " · " + lbl(INTAKE_SITES, last.site) : "") : t.intakeNever}
+            </div>
+
+            {logging === s.id ? (
+              <div style={{ marginTop: 12, padding: 12, background: COLORS.raised, borderRadius: 12 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+                  <input type="number" inputMode="decimal" value={lf.dose} onChange={(e) => setLf({ ...lf, dose: e.target.value })} placeholder={t.intakeDose} style={{ ...numInputStyle, width: 110 }} />
+                  <span style={small}>{s.unit}</span>
+                </div>
+                <input type="datetime-local" value={lf.when} onChange={(e) => setLf({ ...lf, when: e.target.value })} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />
+                {s.route === "inject" && (
+                  <>
+                    <div style={{ ...small, marginBottom: 6 }}>{t.intakeSite}</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                      {INTAKE_SITES.map((x) => (
+                        <Chip key={x.k} label={(x.k === nextSite(s, log) ? "★ " : "") + x[lang === "de" ? "de" : "en"]} active={lf.site === x.k} onClick={() => setLf({ ...lf, site: lf.site === x.k ? null : x.k })} />
+                      ))}
+                    </div>
+                    <div style={{ ...small, fontSize: 11.5, marginBottom: 10 }}>★ {t.intakeSuggest}</div>
+                  </>
+                )}
+                <input value={lf.note} onChange={(e) => setLf({ ...lf, note: e.target.value })} placeholder={t.intakeNote} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => saveLog(s)} disabled={!(num(lf.dose) > 0)} style={{ flex: 1, background: num(lf.dose) > 0 ? COLORS.gold : COLORS.surface, color: num(lf.dose) > 0 ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "12px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+                    {t.intakeSave}
+                  </button>
+                  <button onClick={() => setLogging(null)} style={{ background: "transparent", color: COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+                    {t.intakeCancel}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              !edit && (
+                <button onClick={() => openLog(s)} style={{ width: "100%", marginTop: 12, background: COLORS.goldSoft, color: COLORS.gold, border: "1px solid " + COLORS.gold, borderRadius: 12, padding: "12px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                  ✓ {t.intakeTakeNow}
+                </button>
+              )
+            )}
+
+            {edit && (
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 18, marginTop: 12 }}>
+                <span onClick={() => startEdit(s)} style={{ display: "flex", alignItems: "center", gap: 4, ...small, cursor: "pointer" }}>
+                  <Pencil size={13} /> {t.intakeChange}
+                </span>
+                <span
+                  onClick={() => {
+                    if (sure === s.id) {
+                      deleteSub(s.id);
+                      setSure(null);
+                    } else {
+                      setSure(s.id);
+                      setTimeout(() => setSure((x) => (x === s.id ? null : x)), 3000);
+                    }
+                  }}
+                  style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: sure === s.id ? 700 : 400, color: COLORS.coral, cursor: "pointer" }}
+                >
+                  <Trash2 size={13} /> {sure === s.id ? t.pantryDeleteSure : t.delete}
+                </span>
+              </div>
+            )}
+          </Card>
+        );
+      })}
+
+      {editing !== null ? (
+        <Card style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{editing === "new" ? t.intakeNew : t.intakeChange}</div>
+          <input value={sf.name} onChange={(e) => setSf({ ...sf, name: e.target.value })} placeholder={t.intakeName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />
+          <div style={{ ...small, marginBottom: 6 }}>{t.intakeRoute}</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+            {INTAKE_ROUTES.map((r) => (
+              <Chip key={r.k} label={r[lang === "de" ? "de" : "en"]} active={sf.route === r.k} onClick={() => setSf({ ...sf, route: r.k })} />
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+            <input type="number" inputMode="decimal" value={sf.dose} onChange={(e) => setSf({ ...sf, dose: e.target.value })} placeholder={t.intakeDose} style={{ ...numInputStyle, width: 110 }} />
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {INTAKE_UNITS.map((u) => (
+                <Chip key={u} label={u} active={sf.unit === u} onClick={() => setSf({ ...sf, unit: u })} />
+              ))}
+            </div>
+          </div>
+          <div style={{ ...small, margin: "10px 0 6px" }}>{t.intakeSchedule}</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+            <Chip label={t.intakeEvery} active={sf.schedType === "interval"} onClick={() => setSf({ ...sf, schedType: "interval" })} />
+            <Chip label={t.intakeWeekdaysLabel} active={sf.schedType === "weekdays"} onClick={() => setSf({ ...sf, schedType: "weekdays" })} />
+            <Chip label={t.intakeNeeded} active={sf.schedType === "needed"} onClick={() => setSf({ ...sf, schedType: "needed" })} />
+          </div>
+          {sf.schedType === "interval" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={small}>{t.intakeEveryPre}</span>
+              <input type="number" inputMode="numeric" value={sf.days} onChange={(e) => setSf({ ...sf, days: e.target.value })} style={{ ...numInputStyle, width: 70, textAlign: "center" }} />
+              <span style={small}>{t.intakeEveryPost}</span>
+            </div>
+          )}
+          {sf.schedType === "weekdays" && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+              {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                <Chip key={d} label={wdNames[d]} active={sf.weekdays.includes(d)} onClick={() => setSf({ ...sf, weekdays: sf.weekdays.includes(d) ? sf.weekdays.filter((x) => x !== d) : [...sf.weekdays, d] })} />
+              ))}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={saveSub} disabled={!sf.name.trim() || !(num(sf.dose) > 0)} style={{ flex: 1, background: sf.name.trim() && num(sf.dose) > 0 ? COLORS.gold : COLORS.raised, color: sf.name.trim() && num(sf.dose) > 0 ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "12px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              {t.intakeSave}
+            </button>
+            <button onClick={() => setEditing(null)} style={{ background: "transparent", color: COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+              {t.intakeCancel}
+            </button>
+          </div>
+        </Card>
+      ) : (
+        subs.length > 0 && (
+          <button onClick={startNew} style={{ width: "100%", marginBottom: 18, background: COLORS.surface, border: "1px dashed " + COLORS.border, color: COLORS.gold, borderRadius: 12, padding: "12px 14px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+            + {t.intakeNew}
+          </button>
+        )
+      )}
+
+      {subs.length > 0 && (
+        <>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, margin: "6px 0 10px" }}>{t.intakeHistory}</div>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 10 }}>
+            <Chip label={t.intakeAll} active={filter === "all"} onClick={() => setFilter("all")} />
+            {subs.map((s) => (
+              <Chip key={s.id} label={s.name} active={filter === s.id} onClick={() => setFilter(s.id)} />
+            ))}
+          </div>
+          <Card style={{ padding: 4 }}>
+            {entries.length === 0 ? (
+              <div style={{ ...small, padding: 12 }}>{t.intakeEmptyHistory}</div>
+            ) : (
+              entries.map((e, i) => (
+                <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 12px", borderBottom: i < entries.length - 1 ? "1px solid " + COLORS.border : "none" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
+                      {subName(e.subId)} · {e.dose} {e.unit}
+                    </div>
+                    <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>
+                      {fmtWhen(e.ts)}
+                      {e.site ? " · " + lbl(INTAKE_SITES, e.site) : ""}
+                      {e.note ? " · " + e.note : ""}
+                    </div>
+                  </div>
+                  <div onClick={() => deleteEntry(e.id)} aria-label={t.delete} style={{ cursor: "pointer", padding: 6 }}>
+                    <Trash2 size={15} color={COLORS.dim} />
+                  </div>
+                </div>
+              ))
+            )}
+          </Card>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 18 }}>
+            <span style={{ ...small, flex: 1 }}>{t.intakeCardOn}</span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Chip label={t.introOn} active={data.card !== false} onClick={() => setData((d) => ({ ...d, card: true }))} />
+              <Chip label={t.introOff} active={data.card === false} onClick={() => setData((d) => ({ ...d, card: false }))} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {toast && (
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 90, maxWidth: 350, margin: "0 auto", background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 50 }}>
+          <Check size={15} /> {toast}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SettingsRow({ icon: Icon, tint = "gold", label, sub, onClick, right, first }) {
   const bg = tint === "coral" ? COLORS.coralSoft : tint === "dim" ? COLORS.raised : COLORS.goldSoft;
   const fg = tint === "coral" ? COLORS.coral : tint === "dim" ? COLORS.dim : COLORS.gold;
@@ -6568,6 +7106,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
         <SettingsRow icon={Palette} label={t.setDisplayRow} onClick={() => onNav("settingsDisplay")} />
         <SettingsRow icon={Bell} label={t.reminders} sub={remOn + " / 3"} onClick={() => onNav("settingsReminders")} />
         <SettingsRow icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
+        <SettingsRow icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />
       </SettingsGroup>
 
       <SettingsGroup title={t.setGroupData}>
@@ -7219,6 +7758,10 @@ export default function AsmarFitApp() {
   const [pantryTarget, setPantryTarget] = useState(null); // folder id while foods are being picked for it
   const [pantryOpenId, setPantryOpenId] = useState(null);
   const [pantryReturn, setPantryReturn] = useState(null); // where "back" goes from the pantry screen
+  const [recipeImport, setRecipeImport] = useState(null); // a pasted link that opens the recipe import straight away
+  const [intake, setIntake] = usePersisted("intake", { subs: [], log: [], card: true });
+  const [intakeReturn, setIntakeReturn] = useState("settings"); // where "back" goes from the intake log
+  const intakeDue = intake.card === false ? [] : (intake.subs || []).map((s) => ({ name: s.name, n: intakeNext(s, intake.log || []) })).filter((x) => x.n && x.n.diff <= 0).map((x) => ({ name: x.name, diff: x.n.diff }));
   const [firstSeen] = usePersisted("firstSeen", Date.now());
   // nudge for a backup once a week — the data only lives on this device
   const backupDue = onboarded && Date.now() - (Number(localStorage.getItem("asfit.lastBackup")) || firstSeen) > 7 * 86400000;
@@ -7673,6 +8216,10 @@ export default function AsmarFitApp() {
           setOverlay("pantry");
         }}
         onOpenPantry={() => openPantry("foodSearch")}
+        onImportLink={(url) => {
+          setRecipeImport(url);
+          setOverlay("recipes");
+        }}
       />
     );
     topTitle = targetFolder ? t.pantryTitle : t.foodSearchTitle;
@@ -7683,6 +8230,10 @@ export default function AsmarFitApp() {
           setOverlay("pantry");
         }
       : () => setOverlay(null);
+  } else if (overlay === "intake") {
+    content = <IntakeScreen t={t} lang={lang} data={intake} setData={setIntake} />;
+    topTitle = t.intakeTitle;
+    showBack = () => setOverlay(intakeReturn);
   } else if (overlay === "pantry") {
     content = (
       <PantryScreen
@@ -7717,9 +8268,12 @@ export default function AsmarFitApp() {
     topTitle = t.photoTitle;
     showBack = () => setOverlay("foodSearch");
   } else if (overlay === "recipes") {
-    content = <RecipesScreen t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} customRecipes={customRecipes} onSaveRecipe={saveRecipe} onDeleteRecipe={deleteRecipe} />;
+    content = <RecipesScreen key={recipeImport || "recipes"} t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} customRecipes={customRecipes} onSaveRecipe={saveRecipe} onDeleteRecipe={deleteRecipe} initialImport={recipeImport} />;
     topTitle = t.recipesTitle;
-    showBack = () => setOverlay(null);
+    showBack = () => {
+      setRecipeImport(null);
+      setOverlay(null);
+    };
   } else if (overlay === "connections") {
     content = <ConnectionsScreen t={t} info={healthInfo} native={IS_NATIVE_APP} onConnect={() => refreshSteps(true)} />;
     topTitle = t.connTitle;
@@ -7807,7 +8361,19 @@ export default function AsmarFitApp() {
     topTitle = t.newNote;
     showBack = () => setOverlay(null);
   } else if (overlay === "settings") {
-    content = <SettingsScreen t={t} profile={profile} reminders={reminders} onNav={setOverlay} onShare={shareApp} shareMsg={shareMsg} />;
+    content = (
+      <SettingsScreen
+        t={t}
+        profile={profile}
+        reminders={reminders}
+        onNav={(k) => {
+          if (k === "intake") setIntakeReturn("settings");
+          setOverlay(k);
+        }}
+        onShare={shareApp}
+        shareMsg={shareMsg}
+      />
+    );
     topTitle = t.settingsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "settingsProfile") {
@@ -7874,6 +8440,11 @@ export default function AsmarFitApp() {
           onOpenHistory={() => setOverlay("history")}
           backupDue={backupDue}
           onOpenBackup={() => setOverlay("settingsData")}
+          intakeDue={intakeDue}
+          onOpenIntake={() => {
+            setIntakeReturn(null);
+            setOverlay("intake");
+          }}
         />
       ),
       nutrition: (
