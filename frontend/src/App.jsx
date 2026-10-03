@@ -509,6 +509,10 @@ const STR = {
     setThemeMale: "Blue",
     setThemeDiverse: "Black & gold",
     setTextSize: "Text size",
+    introSetting: "Start animation",
+    introOn: "On",
+    introOff: "Off",
+    introTag: "Food · Training · Progress",
     setSmall: "Small",
     setNormal: "Normal",
     setLarge: "Large",
@@ -1046,6 +1050,10 @@ const STR = {
     setThemeMale: "Blau",
     setThemeDiverse: "Schwarz-Gold",
     setTextSize: "Schriftgröße",
+    introSetting: "Start-Animation",
+    introOn: "An",
+    introOff: "Aus",
+    introTag: "Essen · Training · Fortschritt",
     setSmall: "Klein",
     setNormal: "Normal",
     setLarge: "Groß",
@@ -6115,10 +6123,107 @@ function DisplaySettings({ t, lang, setLang, display }) {
         <Chip label={t.setNormal} active={display.textSize === "m"} onClick={() => display.setTextSize("m")} />
         <Chip label={t.setLarge} active={display.textSize === "l"} onClick={() => display.setTextSize("l")} />
       </div>
+      <SettingsLabel>{t.introSetting}</SettingsLabel>
+      <div style={{ display: "flex", gap: 8 }}>
+        <Chip label={t.introOn} active={display.intro} onClick={() => display.setIntro(true)} />
+        <Chip label={t.introOff} active={!display.intro} onClick={() => display.setIntro(false)} />
+      </div>
       <SettingsLabel>{t.language}</SettingsLabel>
       <div style={{ display: "flex", gap: 8 }}>
         <Chip label="Deutsch" active={lang === "de"} onClick={() => setLang("de")} />
         <Chip label="English" active={lang === "en"} onClick={() => setLang("en")} />
+      </div>
+    </div>
+  );
+}
+
+// Opening animation: the ASFIT logo drops in, an accent-coloured blob spreads
+// out behind it and food / training icons pop up and orbit around it. Tap to
+// skip; it ends by itself after ~3 s and can be switched off in the settings.
+const INTRO_ITEMS = ["🥗", "🍎", "🍚", "🥑", "🍗", "👟", "🏋️", "🥚"];
+const INTRO_MS = 3000;
+
+function StartIntro({ t, onDone }) {
+  const [leaving, setLeaving] = useState(false);
+  const doneRef = useRef(false);
+  const finish = () => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    setLeaving(true);
+    setTimeout(onDone, 400);
+  };
+  useEffect(() => {
+    const id = setTimeout(finish, INTRO_MS);
+    return () => clearTimeout(id);
+  }, []);
+  return (
+    <div
+      onClick={finish}
+      aria-hidden="true"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 10000,
+        background: COLORS.bg,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "5vh",
+        overflow: "hidden",
+        opacity: leaving ? 0 : 1,
+        transition: "opacity 0.4s ease",
+        "--s": "min(76vw, 46vh, 380px)",
+      }}
+    >
+      <style>{`
+        @keyframes introBlob { 0% { transform: scale(0); opacity: 0; } 55% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes introMorph { 0%,100% { border-radius: 50% 50% 48% 52% / 52% 48% 52% 48%; } 50% { border-radius: 46% 54% 53% 47% / 48% 54% 46% 52%; } }
+        @keyframes introLogo { 0% { transform: scale(0.2) rotate(-14deg); opacity: 0; } 60% { transform: scale(1.12) rotate(3deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+        @keyframes introPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+        @keyframes introRipple { 0% { transform: scale(0.35); opacity: 0.7; } 100% { transform: scale(1.12); opacity: 0; } }
+        @keyframes introPop { 0% { transform: scale(0) rotate(-40deg); opacity: 0; } 70% { transform: scale(1.25) rotate(8deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+        @keyframes introSpin { to { transform: rotate(360deg); } }
+        @keyframes introUnspin { to { transform: rotate(-360deg); } }
+        @keyframes introBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes introText { 0% { transform: translateY(14px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+      `}</style>
+      <div style={{ position: "relative", width: "var(--s)", height: "var(--s)" }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: "4%",
+            borderRadius: "50%",
+            background: COLORS.gold,
+            animation: "introBlob 0.85s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.1s both, introMorph 4s ease-in-out 0.9s infinite",
+          }}
+        />
+        {[0, 0.5].map((d) => (
+          <div key={d} style={{ position: "absolute", inset: "14%", borderRadius: "50%", border: `2px solid ${COLORS.bg}`, animation: `introRipple 1.8s ease-out ${0.7 + d}s infinite` }} />
+        ))}
+        <div style={{ position: "absolute", inset: 0, animation: "introSpin 16s linear 0.9s infinite" }}>
+          {INTRO_ITEMS.map((emoji, i) => {
+            const a = (i / INTRO_ITEMS.length) * Math.PI * 2 - Math.PI / 2;
+            return (
+              <div key={emoji} style={{ position: "absolute", left: `${50 + 47 * Math.cos(a)}%`, top: `${50 + 47 * Math.sin(a)}%`, width: 0, height: 0 }}>
+                <div style={{ position: "absolute", transform: "translate(-50%, -50%)", animation: "introUnspin 16s linear 0.9s infinite" }}>
+                  <div style={{ fontSize: "calc(var(--s) * 0.15)", lineHeight: 1, animation: `introPop 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) ${0.55 + i * 0.09}s both` }}>
+                    <div style={{ animation: `introBob 2.4s ease-in-out ${1.3 + i * 0.2}s infinite` }}>{emoji}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ animation: "introLogo 0.8s cubic-bezier(0.3, 1.3, 0.5, 1) 0.25s both" }}>
+            <img src="/icon-192.png" alt="" style={{ display: "block", width: "calc(var(--s) * 0.34)", height: "calc(var(--s) * 0.34)", borderRadius: "24%", boxShadow: "0 10px 30px rgba(0,0,0,0.35)", animation: "introPulse 1.6s ease-in-out 1.2s infinite" }} />
+          </div>
+        </div>
+      </div>
+      <div style={{ textAlign: "center", animation: "introText 0.6s ease 1.1s both" }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 30, letterSpacing: "0.22em", color: COLORS.text, paddingLeft: "0.22em" }}>ASFIT</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, marginTop: 6 }}>{t.introTag}</div>
       </div>
     </div>
   );
@@ -6303,6 +6408,24 @@ export default function AsmarFitApp() {
   const [appearance, setAppearance] = usePersisted("appearance", "system");
   const [colorTheme, setColorTheme] = usePersisted("colorTheme", "auto");
   const [textSize, setTextSize] = usePersisted("textSize", "m");
+  // Opening animation: once per app launch, never for people who asked the OS to reduce motion.
+  const [introOn, setIntroOn] = usePersisted("intro", true);
+  const [introDone, setIntroDone] = useState(() => {
+    try {
+      if (sessionStorage.getItem("asfit.introShown")) return true;
+    } catch {
+      /* storage unavailable */
+    }
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  });
+  const finishIntro = () => {
+    try {
+      sessionStorage.setItem("asfit.introShown", "1");
+    } catch {
+      /* storage unavailable */
+    }
+    setIntroDone(true);
+  };
   useEffect(() => {
     const resolve = () => applyTheme(colorTheme === "auto" ? profile.gender : colorTheme, appearance);
     resolve();
@@ -6841,7 +6964,7 @@ export default function AsmarFitApp() {
     topTitle = t.setGoalsRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsDisplay") {
-    content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize }} />;
+    content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize, intro: introOn, setIntro: setIntroOn }} />;
     topTitle = t.setDisplayRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsReminders") {
@@ -7017,6 +7140,7 @@ export default function AsmarFitApp() {
           </>
         )}
         <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
+        {introOn && !introDone && <StartIntro t={t} onDone={finishIntro} />}
       </div>
     </div>
   );
