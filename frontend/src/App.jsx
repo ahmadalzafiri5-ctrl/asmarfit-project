@@ -6136,28 +6136,10 @@ function DisplaySettings({ t, lang, setLang, display }) {
 }
 
 // Opening animation in the style of the "paint splash" app openers: the logo
-// slides in, an accent-coloured splat bursts out behind it, food / training
-// icons fly out of the middle and pop around it, then the colour floods the
-// screen and the app appears. Tap to skip; it ends by itself after ~3 s and
-// can be switched off in the settings.
-const INTRO_ITEMS = [
-  { e: "🏋️", a: 0, s: 0.17 },
-  { e: "🍎", a: 40, s: 0.24 },
-  { e: "🥑", a: 86, s: 0.17 },
-  { e: "🥛", a: 130, s: 0.16 },
-  { e: "🍗", a: 172, s: 0.22 },
-  { e: "👟", a: 218, s: 0.2 },
-  { e: "⌚", a: 262, s: 0.15 },
-  { e: "🍚", a: 294, s: 0.17 },
-  { e: "🥗", a: 332, s: 0.24 },
-];
-const INTRO_GHOSTS = [
-  { e: "🍌", a: 22, s: 0.09 },
-  { e: "🏃", a: 112, s: 0.09 },
-  { e: "🥄", a: 196, s: 0.08 },
-  { e: "⏱️", a: 246, s: 0.09 },
-  { e: "🍋", a: 318, s: 0.08 },
-];
+// slides in, an accent-coloured splat bursts out behind it while the sprout
+// and the dumbbell of the logo move apart, then the colour floods the screen
+// and the app appears. Tap to skip; it ends by itself after ~3 s and can be
+// switched off in the settings.
 // circles of the gooey splat (SVG units, viewBox 100 x 120) and the spray drops around it
 const INTRO_SPLAT = [
   [50, 60, 26],
@@ -6176,7 +6158,28 @@ const INTRO_DROPS = [
   [19, 94, 2.4],
   [87, 28, 2.8],
 ];
-const INTRO_MS = 2100;
+const INTRO_MS = 2000;
+// the logo glyph (same shapes as public/logo.svg) with a dark edge so it reads on every colour
+const LOGO_EDGE = { stroke: "#0D0D0D", strokeWidth: 9, strokeLinejoin: "round", paintOrder: "stroke" };
+
+function IntroLogo() {
+  return (
+    <svg viewBox="104 138 304 228" style={{ display: "block", width: "calc(var(--s) * 0.56)", overflow: "visible", filter: "drop-shadow(0 8px 14px rgba(0,0,0,0.25))" }}>
+      <g style={{ transformBox: "fill-box", transformOrigin: "50% 100%", animation: "introSprout 0.75s cubic-bezier(0.25, 1.3, 0.4, 1) 1s both" }}>
+        <rect x="252" y="196" width="8" height="106" rx="4" fill="#E3262E" style={LOGO_EDGE} />
+        <path d="M256 222 C 234 172, 186 164, 160 180 C 172 220, 220 240, 256 222 Z" fill="#E3262E" style={LOGO_EDGE} />
+        <path d="M261 212 C 278 170, 320 152, 354 160 C 344 202, 302 222, 261 212 Z" fill="#9E1219" style={LOGO_EDGE} />
+      </g>
+      <g style={{ animation: "introBell 0.75s cubic-bezier(0.25, 1.3, 0.4, 1) 1s both" }}>
+        <rect x="168" y="292" width="176" height="18" rx="6" fill="#E3262E" style={LOGO_EDGE} />
+        <rect x="118" y="270" width="24" height="62" rx="6" fill="#9E1219" style={LOGO_EDGE} />
+        <rect x="144" y="250" width="28" height="102" rx="7" fill="#E3262E" style={LOGO_EDGE} />
+        <rect x="370" y="270" width="24" height="62" rx="6" fill="#9E1219" style={LOGO_EDGE} />
+        <rect x="340" y="250" width="28" height="102" rx="7" fill="#E3262E" style={LOGO_EDGE} />
+      </g>
+    </svg>
+  );
+}
 
 function StartIntro({ onDone, accent }) {
   const [phase, setPhase] = useState("play"); // play → exit (colour floods the screen) or skip (quick fade)
@@ -6218,9 +6221,8 @@ function StartIntro({ onDone, accent }) {
         @keyframes introLogoIn { 0% { transform: translateX(70vw) rotate(-12deg); opacity: 0; filter: blur(6px); } 65% { transform: translateX(-1.5vw) rotate(1.5deg); opacity: 1; filter: blur(0); } 100% { transform: translateX(0) rotate(0); opacity: 1; filter: blur(0); } }
         @keyframes introPunch { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
         @keyframes introRipple { 0% { transform: scale(0.35); opacity: 0; } 15% { opacity: 0.8; } 100% { transform: scale(1.35); opacity: 0; } }
-        @keyframes introFly { 0% { transform: translate(var(--fx), var(--fy)) scale(0.15) rotate(-35deg); opacity: 0; } 55% { transform: translate(0, 0) scale(1.22) rotate(7deg); opacity: 1; } 100% { transform: translate(0, 0) scale(1) rotate(0); opacity: 1; } }
-        @keyframes introGhost { 0% { transform: scale(0) rotate(-30deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 0.5; } }
-        @keyframes introBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes introSprout { 0% { transform: translate(0, 0) rotate(0); } 100% { transform: translate(-6px, -58px) rotate(-7deg); } }
+        @keyframes introBell { 0% { transform: translate(0, 0); } 100% { transform: translate(0, 46px); } }
       `}</style>
       <div style={{ position: "relative", width: "var(--s)", height: "calc(var(--s) * 1.2)" }}>
         <svg viewBox="0 0 100 120" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible" }}>
@@ -6248,30 +6250,6 @@ function StartIntro({ onDone, accent }) {
         {[0, 0.4, 0.8].map((d) => (
           <div key={d} style={{ position: "absolute", left: "20%", right: "20%", top: "43%", height: "14%", borderRadius: "50%", border: "2px solid rgba(0,0,0,0.5)", animation: `introRipple 1.5s ease-out ${0.85 + d}s infinite both` }} />
         ))}
-        {INTRO_GHOSTS.map((g, i) => {
-          const a = (g.a * Math.PI) / 180;
-          return (
-            <div key={g.e} style={{ position: "absolute", left: `${50 + 47 * Math.sin(a)}%`, top: `${50 - 50 * Math.cos(a)}%`, width: 0, height: 0 }}>
-              <div style={{ position: "absolute", transform: "translate(-50%, -50%)" }}>
-                <div style={{ fontSize: `calc(var(--s) * ${g.s})`, lineHeight: 1, filter: "grayscale(1)", animation: `introGhost 0.5s ease-out ${1.2 + i * 0.07}s both` }}>{g.e}</div>
-              </div>
-            </div>
-          );
-        })}
-        {INTRO_ITEMS.map((it, i) => {
-          const a = (it.a * Math.PI) / 180;
-          const x = Math.sin(a);
-          const y = Math.cos(a);
-          return (
-            <div key={it.e} style={{ position: "absolute", left: `${50 + 44 * x}%`, top: `${50 - 46 * y}%`, width: 0, height: 0 }}>
-              <div style={{ position: "absolute", transform: "translate(-50%, -50%)" }}>
-                <div style={{ "--fx": `calc(var(--s) * ${-0.44 * x})`, "--fy": `calc(var(--s) * ${0.552 * y})`, fontSize: `calc(var(--s) * ${it.s})`, lineHeight: 1, animation: `introFly 0.6s cubic-bezier(0.25, 1.2, 0.4, 1) ${0.85 + i * 0.06}s both` }}>
-                  <div style={{ animation: `introBob ${2.2 + (i % 3) * 0.4}s ease-in-out ${1.6 + i * 0.15}s infinite` }}>{it.e}</div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
         <div
           style={{
             position: "absolute",
@@ -6292,7 +6270,7 @@ function StartIntro({ onDone, accent }) {
           <div style={{ transition: "transform 0.5s cubic-bezier(0.55, 0, 0.9, 0.5), opacity 0.4s ease 0.1s", transform: exit ? "scale(5)" : "scale(1)", opacity: exit ? 0 : 1 }}>
             <div style={{ animation: "introLogoIn 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) 0.05s both" }}>
               <div style={{ animation: "introPunch 0.4s ease-out 0.7s both" }}>
-                <img src="/icon-192.png" alt="" style={{ display: "block", width: "calc(var(--s) * 0.34)", height: "calc(var(--s) * 0.34)", borderRadius: "24%", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }} />
+                <IntroLogo />
               </div>
             </div>
           </div>
