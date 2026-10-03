@@ -645,6 +645,7 @@ const STR = {
     barcodeWebUnsupported: "Your browser can't scan barcodes. Try updating it, or use the search instead.",
     cancelScan: "Cancel",
     scanAgain: "Scan again",
+    scanNext: "Scan next product",
     // Exercise library
     libSearchPlaceholder: "Search exercises",
     muscleAll: "All",
@@ -1191,6 +1192,7 @@ const STR = {
     barcodeWebUnsupported: "Dein Browser kann keine Barcodes scannen. Aktualisiere ihn oder nutze stattdessen die Suche.",
     cancelScan: "Abbrechen",
     scanAgain: "Erneut scannen",
+    scanNext: "Nächstes Produkt scannen",
     // Exercise library
     libSearchPlaceholder: "Übungen suchen",
     muscleAll: "Alle",
@@ -4572,16 +4574,34 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
   const scaled = found ? scale(found.per100, grams) : null;
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
+  const streamRef = useRef(null);
+  const aliveRef = useRef(true);
+  const runRef = useRef(0); // bumped on every start and on leaving, so a late camera answer can tell it is stale
+  const pausedRef = useRef(false); // the camera keeps running, but reads are ignored while a result is shown
+  const [camOn, setCamOn] = useState(false);
 
   const stopWebScan = () => {
     if (controlsRef.current) {
       controlsRef.current.stop();
       controlsRef.current = null;
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((tr) => tr.stop());
+      streamRef.current = null;
+    }
+    setCamOn(false);
   };
-  useEffect(() => stopWebScan, []);
+
+  // After a miss the camera stays on: ignore reads for a moment so the message can be read, then listen again.
+  const resumeSoon = () => setTimeout(() => { pausedRef.current = false; }, 1500);
+  const resumeScan = () => {
+    pausedRef.current = false;
+    setFound(null);
+    setStatus("scanning");
+  };
 
   const lookupBarcode = (code) => {
+    pausedRef.current = true;
     setStatus("loading");
     fetch(`${API_BASE}/api/food/barcode/${code}`)
       .then((res) => {
@@ -4592,13 +4612,17 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
       .then((data) => {
         if (data.notFound || !data.result) {
           setStatus("notFound");
+          resumeSoon();
           return;
         }
         setFound(data.result);
         setGrams(100);
         setStatus("ok");
       })
-      .catch(() => setStatus("error"));
+      .catch(() => {
+        setStatus("error");
+        resumeSoon();
+      });
   };
 
   // Opens Google ML Kit's ready-made full-screen scanner (no custom camera
@@ -4639,9 +4663,32 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
   // a plain JS decoder against the live camera feed via getUserMedia instead.
   // Less robust than the native scanner, but works anywhere with a camera.
   const scanWeb = async () => {
+    if (controlsRef.current) {
+      resumeScan();
+      return;
+    }
+    const run = ++runRef.current;
+    const live = () => aliveRef.current && run === runRef.current;
     setStatus("scanning");
+    pausedRef.current = false;
     try {
-      const [{ BrowserMultiFormatReader }, { BarcodeFormat: ZBarcodeFormat, DecodeHintType, NotFoundException }] = await Promise.all([import("@zxing/browser"), import("@zxing/library")]);
+      // Open the camera first so the picture is there at once; the decoder loads while it warms up.
+      const libP = Promise.all([import("@zxing/browser"), import("@zxing/library")]);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
+      if (!live()) {
+        stream.getTracks().forEach((tr) => tr.stop());
+        return;
+      }
+      streamRef.current = stream;
+      const video = videoRef.current;
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+      setCamOn(true);
+      const [{ BrowserMultiFormatReader }, { BarcodeFormat: ZBarcodeFormat, DecodeHintType, NotFoundException }] = await libP;
+      if (!live()) {
+        stopWebScan();
+        return;
+      }
       const hints = new Map();
       // Food barcodes are EAN/UPC only; fewer formats + TRY_HARDER = faster, more reliable reads.
       hints.set(DecodeHintType.POSSIBLE_FORMATS, [ZBarcodeFormat.EAN_13, ZBarcodeFormat.EAN_8, ZBarcodeFormat.UPC_A, ZBarcodeFormat.UPC_E]);
@@ -4649,26 +4696,45 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
       // Default is a ~640px camera image tried every 500 ms — too blurry/slow for thin
       // bars. Ask for HD and try ~12x per second.
       const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 80, delayBetweenScanSuccess: 400 });
-      const controls = await reader.decodeFromConstraints({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } }, videoRef.current, (result, err) => {
+      const controls = await reader.decodeFromStream(stream, video, (result, err) => {
         if (result) {
-          stopWebScan();
+          if (pausedRef.current) return;
           lookupBarcode(result.getText());
         } else if (err && !(err instanceof NotFoundException)) {
           stopWebScan();
           setStatus("error");
         }
       });
+      if (!live()) {
+        controls.stop();
+        stopWebScan();
+        return;
+      }
       controlsRef.current = controls;
       try {
-        const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
+        const track = stream.getVideoTracks()[0];
         await track?.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
       } catch {
         /* autofocus control isn't available on every phone */
       }
     } catch (err) {
+      if (!live()) return;
+      stopWebScan();
       setStatus(err && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") ? "webPermissionDenied" : "webUnsupported");
     }
   };
+
+  // The camera opens as soon as the screen does — no extra tap.
+  useEffect(() => {
+    aliveRef.current = true;
+    if (IS_NATIVE_APP) scanReal();
+    else scanWeb();
+    return () => {
+      aliveRef.current = false;
+      runRef.current++;
+      stopWebScan();
+    };
+  }, []);
 
   const errorText = {
     error: t.serverError,
@@ -4684,9 +4750,9 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
       <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginTop: 0, marginBottom: 16 }}>{t.barcodeHint}</p>
       <div style={{ position: "relative", height: 220, borderRadius: 18, background: "linear-gradient(160deg,#1c1d20,#0e0f11)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, overflow: "hidden" }}>
         {!IS_NATIVE_APP && (
-          <video ref={videoRef} muted playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: status === "scanning" ? "block" : "none" }} />
+          <video ref={videoRef} muted playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: camOn ? "block" : "none" }} />
         )}
-        {status !== "scanning" || IS_NATIVE_APP ? <Barcode size={48} strokeWidth={1.2} color={COLORS.dim} /> : null}
+        {!camOn ? <Barcode size={48} strokeWidth={1.2} color={COLORS.dim} /> : null}
         {[
           { top: 14, left: 14, rotate: 0 },
           { top: 14, right: 14, rotate: 90 },
@@ -4697,22 +4763,7 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
         ))}
       </div>
 
-      {status === "scanning" && !IS_NATIVE_APP ? (
-        <>
-          <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginBottom: 14 }}>{t.barcodeScanning}</div>
-          <button
-            onClick={() => {
-              stopWebScan();
-              setStatus("idle");
-            }}
-            style={{ width: "100%", background: COLORS.raised, border: `1px solid ${COLORS.border}`, color: COLORS.text, borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
-          >
-            {t.cancelScan}
-          </button>
-        </>
-      ) : status === "scanning" ? (
-        <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8 }}>{t.barcodeScanning}</div>
-      ) : status === "loading" ? (
+      {status === "loading" ? (
         <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8 }}>{t.barcodeLoading}</div>
       ) : found ? (
         <Card>
@@ -4750,17 +4801,27 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
           >
             {t.addItem}
           </button>
+          {camOn && (
+            <button onClick={resumeScan} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.dim, border: "none", padding: "10px 18px", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+              {t.scanNext}
+            </button>
+          )}
         </Card>
       ) : (
         <>
+          {status === "scanning" && !camOn && (
+            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginBottom: 14 }}>{t.barcodeScanning}</div>
+          )}
           {errorText && (
             <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginBottom: 14 }}>
               {errorText}
             </div>
           )}
-          <button onClick={IS_NATIVE_APP ? scanReal : scanWeb} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-            {status === "idle" ? t.scanBarcode : t.scanAgain}
-          </button>
+          {!camOn && status !== "scanning" && (
+            <button onClick={IS_NATIVE_APP ? scanReal : scanWeb} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              {status === "idle" ? t.scanBarcode : t.scanAgain}
+            </button>
+          )}
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <input
               type="number"
