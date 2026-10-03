@@ -518,6 +518,31 @@ const STR = {
     introOn: "On",
     introOff: "Off",
     introHint: "Full version once a day, a quick one after that.",
+    pantryTitle: "Pantry",
+    pantryButton: "My pantry",
+    pantryButtonSub: "Oats, pasta & co. always at hand",
+    pantryIntro: "Create folders, for example Breakfast or Carbs, and save what you always buy. Then you log it with one tap, without searching.",
+    pantryAddTo: "Entries go into the selected meal.",
+    pantryEmpty: "Nothing in this folder yet.",
+    pantryAddFoods: "+ Add foods",
+    pantryAddAll: "Add all",
+    pantryNewFolder: "New folder",
+    pantryFolderName: "Folder name",
+    pantryCreate: "Create",
+    pantryEdit: "Edit",
+    pantryDone: "Done",
+    pantryRename: "Rename",
+    pantryDeleteFolder: "Delete folder",
+    pantryDeleteSure: "Really delete?",
+    pantrySaveBtn: "Save to folder",
+    pantrySaveTo: "Save to pantry",
+    pantrySaved: "Saved in {f}",
+    pantryPickHint: "Search for a food you buy often. It goes into this folder with the amount you enter.",
+    pantryPickBanner: "Saving to",
+    pantryChooseFolder: "Which folder?",
+    pantryManage: "Manage",
+    pantryItemOne: "food",
+    pantryItemMany: "foods",
     setSmall: "Small",
     setNormal: "Normal",
     setLarge: "Large",
@@ -1065,6 +1090,31 @@ const STR = {
     introOn: "An",
     introOff: "Aus",
     introHint: "Einmal täglich ganz, danach nur kurz.",
+    pantryTitle: "Speisekammer",
+    pantryButton: "Meine Speisekammer",
+    pantryButtonSub: "Haferflocken, Nudeln & Co. immer griffbereit",
+    pantryIntro: "Lege Ordner an, zum Beispiel Frühstück oder Carbs, und speichere dort, was du immer kaufst. Dann trackst du es mit einem Tipp, ohne zu suchen.",
+    pantryAddTo: "Einträge landen in der gewählten Mahlzeit.",
+    pantryEmpty: "Noch nichts in diesem Ordner.",
+    pantryAddFoods: "+ Lebensmittel hinzufügen",
+    pantryAddAll: "Alle hinzufügen",
+    pantryNewFolder: "Neuer Ordner",
+    pantryFolderName: "Name des Ordners",
+    pantryCreate: "Anlegen",
+    pantryEdit: "Bearbeiten",
+    pantryDone: "Fertig",
+    pantryRename: "Umbenennen",
+    pantryDeleteFolder: "Ordner löschen",
+    pantryDeleteSure: "Wirklich löschen?",
+    pantrySaveBtn: "In Ordner speichern",
+    pantrySaveTo: "In Speisekammer speichern",
+    pantrySaved: "Gespeichert in {f}",
+    pantryPickHint: "Suche ein Lebensmittel, das du oft kaufst. Es landet in diesem Ordner, mit der Menge, die du eingibst.",
+    pantryPickBanner: "Speichern in",
+    pantryChooseFolder: "In welchen Ordner?",
+    pantryManage: "Verwalten",
+    pantryItemOne: "Lebensmittel",
+    pantryItemMany: "Lebensmittel",
     setSmall: "Klein",
     setNormal: "Normal",
     setLarge: "Groß",
@@ -2417,7 +2467,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry }) {
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
   const mealDefs = [
@@ -2513,6 +2563,17 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
           <div onClick={onOpenRecipes} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
             <BookOpen size={16} color={COLORS.gold} />
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.recipesButton}</span>
+          </div>
+
+          <div onClick={onOpenPantry} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
+            <span style={{ fontSize: 22 }}>🥫</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.pantryButton}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {pantry.length ? pantry.map((f) => f.emoji + " " + f.name).join(" · ") : t.pantryButtonSub}
+              </div>
+            </div>
+            <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
           </div>
 
           <div onClick={onOpenMyMeals} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
@@ -3898,9 +3959,17 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
 
 /* ---------------- Food flow ---------------- */
 
-function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals = [], onOpenMyMeals, recentFoods = [] }) {
+function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals = [], onOpenMyMeals, recentFoods = [], pantry = [], pantryFolder = null, onPantrySave, onPantryDone, onOpenPantry }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
+  const [pick, setPick] = useState(false); // folder chooser under the amount card
+  const [shelf, setShelf] = useState(null); // pantry folder opened inline
+  const [pantryToast, setPantryToast] = useState(null);
+  useEffect(() => setPick(false), [selected]);
+  const flashPantry = (msg) => {
+    setPantryToast(msg);
+    setTimeout(() => setPantryToast(null), 1600);
+  };
   const [grams, setGrams] = useState(100);
   const [toast, setToast] = useState(null);
   const [retryTick, setRetryTick] = useState(0);
@@ -3979,18 +4048,80 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
           </div>
 
-          <div onClick={onOpenPhoto} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.goldSoft, border: `1px solid ${COLORS.gold}`, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
-            <Camera size={16} color={COLORS.gold} />
-            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.photoScanBtn}</span>
-          </div>
+          {pantryFolder && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 14, padding: "11px 14px", marginBottom: 12 }}>
+              <span style={{ fontSize: 22 }}>{pantryFolder.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.pantryPickBanner}</div>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{pantryFolder.name}</div>
+              </div>
+              <span onClick={onPantryDone} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.gold, cursor: "pointer" }}>{t.pantryDone}</span>
+            </div>
+          )}
 
-          <div onClick={onOpenBarcode} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 16, cursor: "pointer" }}>
-            <Barcode size={16} color={COLORS.gold} />
-            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.scanBarcode}</span>
-          </div>
-
-          {status === "tooShort" ? (
+          {!pantryFolder && (
             <>
+              <div onClick={onOpenPhoto} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.goldSoft, border: `1px solid ${COLORS.gold}`, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
+                <Camera size={16} color={COLORS.gold} />
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.photoScanBtn}</span>
+              </div>
+
+              <div onClick={onOpenBarcode} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 16, cursor: "pointer" }}>
+                <Barcode size={16} color={COLORS.gold} />
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.scanBarcode}</span>
+              </div>
+            </>
+          )}
+
+          {status === "tooShort" && pantryFolder ? (
+            <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 16, lineHeight: 1.5 }}>{t.pantryPickHint}</div>
+          ) : status === "tooShort" ? (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>🥫 {t.pantryTitle}</span>
+                <span onClick={onOpenPantry} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{pantry.length ? t.pantryManage : "+ " + t.pantryNewFolder}</span>
+              </div>
+              {pantry.length === 0 ? (
+                <div onClick={onOpenPantry} style={{ background: COLORS.surface, border: "1px dashed " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 16, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, lineHeight: 1.45 }}>{t.pantryButtonSub}</div>
+              ) : (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+                    {pantry.map((f) => (
+                      <Chip key={f.id} label={f.emoji + " " + f.name} active={shelf === f.id} onClick={() => setShelf(shelf === f.id ? null : f.id)} />
+                    ))}
+                  </div>
+                  {pantry.filter((f) => f.id === shelf).map((f) => (
+                    <Card key={f.id} style={{ padding: 4, marginTop: 8 }}>
+                      {f.items.length === 0 ? (
+                        <div style={{ padding: 12, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.pantryEmpty}</div>
+                      ) : (
+                        f.items.map((it, i) => {
+                          const food = pantryFood(it, it.grams);
+                          return (
+                            <div
+                              key={it.id}
+                              onClick={() => {
+                                onAdd(food);
+                                setToast(it.name);
+                                setTimeout(() => setToast(null), 1400);
+                              }}
+                              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 12px", borderBottom: i < f.items.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}
+                            >
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{it.name}</div>
+                                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{it.grams}{food.unit} · {food.kcal} kcal</div>
+                              </div>
+                              <div style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <Plus size={15} color={COLORS.gold} />
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              )}
               {recentFoods.length > 0 && (
                 <>
                   <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 8 }}>{t.recentTitle}</div>
@@ -4165,10 +4296,49 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
 
           <MicroLine t={t} v={scaled} mb={18} />
 
-          <button onClick={confirmAdd} disabled={!(grams > 0)} style={{ width: "100%", opacity: grams > 0 ? 1 : 0.5, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-            {t.addItem}
-          </button>
+          {pantryFolder ? (
+            <button
+              onClick={() => {
+                onPantrySave(pantryFolder.id, { name: selected.name, per100: selected.per100, unit, grams }, null);
+                flashPantry(selected.name + " → " + pantryFolder.emoji + " " + pantryFolder.name);
+                setSelected(null);
+                setQuery("");
+              }}
+              disabled={!(grams > 0)}
+              style={{ width: "100%", opacity: grams > 0 ? 1 : 0.5, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+            >
+              {t.pantrySaveBtn}
+            </button>
+          ) : (
+            <>
+              <button onClick={confirmAdd} disabled={!(grams > 0)} style={{ width: "100%", opacity: grams > 0 ? 1 : 0.5, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                {t.addItem}
+              </button>
+              <button onClick={() => setPick((p) => !p)} disabled={!(grams > 0)} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+                🥫 {t.pantrySaveTo}
+              </button>
+              {pick && (
+                <PantryPicker
+                  t={t}
+                  lang={lang}
+                  pantry={pantry}
+                  onSave={(id, newName) => {
+                    const folderName = id ? (pantry.find((f) => f.id === id) || {}).name : newName;
+                    onPantrySave(id, { name: selected.name, per100: selected.per100, unit, grams }, newName);
+                    setPick(false);
+                    flashPantry(t.pantrySaved.replace("{f}", folderName || ""));
+                  }}
+                />
+              )}
+            </>
+          )}
         </Card>
+      )}
+
+      {pantryToast && (
+        <div style={{ position: "absolute", left: 20, right: 20, bottom: 14, background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)" }}>
+          <Check size={15} /> {pantryToast}
+        </div>
       )}
 
       {toast && (
@@ -4564,8 +4734,10 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
   );
 }
 
-function BarcodeScanScreen({ t, onAdd, onDone }) {
+function BarcodeScanScreen({ t, lang, onAdd, onDone, pantry = [], onPantrySave }) {
   const [found, setFound] = useState(null);
+  const [pickP, setPickP] = useState(false);
+  const [savedMsg, setSavedMsg] = useState(null);
   // idle | scanning | loading | notFound | error | unsupported | moduleInstalling | webPermissionDenied | webUnsupported
   const [status, setStatus] = useState("idle");
   const [grams, setGrams] = useState(100);
@@ -4801,8 +4973,28 @@ function BarcodeScanScreen({ t, onAdd, onDone }) {
           >
             {t.addItem}
           </button>
+          {savedMsg ? (
+            <div style={{ marginTop: 10, textAlign: "center", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>✓ {savedMsg}</div>
+          ) : (
+            <button onClick={() => setPickP((p) => !p)} disabled={!(grams > 0)} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+              🥫 {t.pantrySaveTo}
+            </button>
+          )}
+          {pickP && !savedMsg && (
+            <PantryPicker
+              t={t}
+              lang={lang}
+              pantry={pantry}
+              onSave={(id, newName) => {
+                const folderName = id ? (pantry.find((f) => f.id === id) || {}).name : newName;
+                onPantrySave(id, { name: found.name, per100: found.per100, unit: found.unit === "ml" ? "ml" : "g", grams }, newName);
+                setPickP(false);
+                setSavedMsg(t.pantrySaved.replace("{f}", folderName || ""));
+              }}
+            />
+          )}
           {camOn && (
-            <button onClick={resumeScan} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.dim, border: "none", padding: "10px 18px", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+            <button onClick={() => { setSavedMsg(null); setPickP(false); resumeScan(); }} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.dim, border: "none", padding: "10px 18px", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
               {t.scanNext}
             </button>
           )}
@@ -5234,6 +5426,256 @@ function StepsCard({ t, steps, source, weightKg, goal, onSaveGoal, onConnect, on
 }
 
 /* ---------------- Recipes ---------------- */
+
+// ---------- Pantry ("Speisekammer"): folders with the foods you buy again and again ----------
+const PANTRY_EMOJIS = ["🥣", "🍝", "🥩", "🥦", "🍎", "🥛", "🍫", "🥜", "🧀", "🍞", "🥚", "🧂"];
+const PANTRY_SUGGEST = { de: ["Frühstück", "Carbs", "Protein", "Snacks", "Gemüse"], en: ["Breakfast", "Carbs", "Protein", "Snacks", "Veggies"] };
+const newPantryId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const pantryEmojiFor = (name) => {
+  const n = String(name || "").toLowerCase();
+  if (/früh|break/.test(n)) return "🥣";
+  if (/carb|nudel|reis|pasta|brot|bread/.test(n)) return "🍝";
+  if (/prot|fleisch|meat|fisch|fish|\bei(er)?\b|egg/.test(n)) return "🥩";
+  if (/snack|süß|sweet|riegel|\bbar\b/.test(n)) return "🍫";
+  if (/gemüse|veg|salat|obst|fruit|frucht|beere/.test(n)) return "🥦";
+  if (/milch|joghurt|dairy|käse|cheese|quark/.test(n)) return "🥛";
+  return "🥫";
+};
+const mealKeyForNow = () => {
+  const h = new Date().getHours();
+  return h < 10 ? "breakfast" : h < 15 ? "lunch" : h < 17 ? "snacks" : "dinner";
+};
+const pantryStep = (g) => (g < 30 ? 5 : 10);
+// a pantry item at a given amount, in the shape the diary expects
+const pantryFood = (it, grams) => ({ name: it.name, ...scale(it.per100, grams), grams, unit: it.unit === "ml" ? "ml" : "g" });
+
+// Small chooser used after picking a food (search / barcode): which folder should it go to?
+function PantryPicker({ t, lang, pantry, onSave }) {
+  const [name, setName] = useState("");
+  const ok = name.trim().length > 0;
+  return (
+    <div style={{ marginTop: 10, padding: 12, background: COLORS.raised, borderRadius: 12 }}>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 8 }}>{t.pantryChooseFolder}</div>
+      {pantry.length > 0 ? (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+          {pantry.map((f) => (
+            <Chip key={f.id} label={f.emoji + " " + f.name} onClick={() => onSave(f.id, null)} />
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+          {(PANTRY_SUGGEST[lang] || PANTRY_SUGGEST.en).map((s) => (
+            <Chip key={s} label={pantryEmojiFor(s) + " " + s} onClick={() => onSave(null, s)} />
+          ))}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8 }}>
+        <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && ok) onSave(null, name.trim()); }} placeholder={t.pantryNewFolder} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+        <button disabled={!ok} onClick={() => onSave(null, name.trim())} aria-label={t.pantryCreate} style={{ background: ok ? COLORS.gold : COLORS.surface, color: ok ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 10, padding: "0 14px", cursor: "pointer", display: "flex", alignItems: "center" }}>
+          <Plus size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PantryScreen({ t, lang, pantry, initialSlot, openId, onAddTo, onCreateFolder, onRenameFolder, onDeleteFolder, onDeleteItem, onAddFoods }) {
+  const [slot, setSlot] = useState(initialSlot);
+  const [open, setOpen] = useState(openId || (pantry[0] ? pantry[0].id : null));
+  const [amounts, setAmounts] = useState({});
+  const [toast, setToast] = useState(null);
+  const [edit, setEdit] = useState(false);
+  const [name, setName] = useState("");
+  const [emoji, setEmoji] = useState(null);
+  const [renaming, setRenaming] = useState(null); // { id, name }
+  const [sure, setSure] = useState(null); // folder id waiting for the second tap
+  const slots = [
+    { key: "breakfast", label: t.breakfast },
+    { key: "lunch", label: t.lunch },
+    { key: "dinner", label: t.dinner },
+    { key: "snacks", label: t.snacks },
+  ];
+  const amountOf = (it) => (amounts[it.id] != null ? amounts[it.id] : it.grams);
+  const setAmount = (it, g) => setAmounts((a) => ({ ...a, [it.id]: Math.max(0, Math.min(5000, Math.round(g))) }));
+  const flash = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 1500);
+  };
+  const addItem = (f, it) => {
+    const g = amountOf(it);
+    if (!(g > 0)) return false;
+    onAddTo(slot, pantryFood(it, g), f.id, it.id, g);
+    return true;
+  };
+  const addAll = (f) => {
+    const n = f.items.filter((it) => addItem(f, it)).length;
+    if (n) flash(f.emoji + " " + f.name + " (" + n + ")");
+  };
+  const create = (nm) => {
+    const clean = String(nm).trim();
+    if (!clean) return;
+    const id = newPantryId();
+    onCreateFolder(id, clean, emoji || pantryEmojiFor(clean));
+    setOpen(id);
+    setName("");
+    setEmoji(null);
+  };
+  const suggestions = (PANTRY_SUGGEST[lang] || PANTRY_SUGGEST.en).filter((s) => !pantry.some((f) => f.name.toLowerCase() === s.toLowerCase()));
+  const kcalOf = (f) => f.items.reduce((s, it) => s + pantryFood(it, amountOf(it)).kcal, 0);
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  const box = { width: 32, height: 32, borderRadius: 9, background: COLORS.raised, border: "1px solid " + COLORS.border, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 };
+
+  return (
+    <div style={{ padding: "0 20px 28px", position: "relative" }}>
+      <div style={{ ...small, marginBottom: 12, lineHeight: 1.5 }}>{t.pantryIntro}</div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 6, overflowX: "auto" }}>
+        {slots.map((sl) => (
+          <Chip key={sl.key} label={sl.label} active={slot === sl.key} onClick={() => setSlot(sl.key)} />
+        ))}
+      </div>
+      <div style={{ ...small, fontSize: 11.5, marginBottom: 14 }}>{t.pantryAddTo}</div>
+
+      {pantry.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <span onClick={() => { setEdit((e) => !e); setSure(null); setRenaming(null); }} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+            {edit ? t.pantryDone : t.pantryEdit}
+          </span>
+        </div>
+      )}
+
+      {pantry.map((f) => {
+        const isOpen = open === f.id;
+        return (
+          <Card key={f.id} style={{ padding: 0, marginBottom: 12, overflow: "hidden" }}>
+            <div onClick={() => setOpen(isOpen ? null : f.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", cursor: "pointer" }}>
+              <span style={{ fontSize: 26, lineHeight: 1 }}>{f.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {renaming && renaming.id === f.id ? (
+                  <input
+                    autoFocus
+                    value={renaming.name}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setRenaming({ id: f.id, name: e.target.value })}
+                    onKeyDown={(e) => { if (e.key === "Enter") { if (renaming.name.trim()) onRenameFolder(f.id, renaming.name.trim()); setRenaming(null); } }}
+                    onBlur={() => { if (renaming && renaming.name.trim()) onRenameFolder(f.id, renaming.name.trim()); setRenaming(null); }}
+                    style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }}
+                  />
+                ) : (
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{f.name}</div>
+                )}
+                <div style={{ ...small, fontSize: 12, marginTop: 2 }}>
+                  {f.items.length} {f.items.length === 1 ? t.pantryItemOne : t.pantryItemMany}
+                  {f.items.length > 0 ? " · " + kcalOf(f) + " kcal" : ""}
+                </div>
+              </div>
+              <ChevronDown size={18} color={COLORS.dim} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s", flexShrink: 0 }} />
+            </div>
+
+            {isOpen && (
+              <div style={{ borderTop: "1px solid " + COLORS.border, padding: "6px 12px 14px" }}>
+                {f.items.length === 0 ? (
+                  <div style={{ ...small, padding: "12px 4px" }}>{t.pantryEmpty}</div>
+                ) : (
+                  f.items.map((it, i) => {
+                    const g = amountOf(it);
+                    const unit = it.unit === "ml" ? "ml" : "g";
+                    return (
+                      <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 4px", borderBottom: i < f.items.length - 1 ? "1px solid " + COLORS.border : "none" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.name}</div>
+                          <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>{pantryFood(it, g).kcal} kcal</div>
+                        </div>
+                        {edit ? (
+                          <div onClick={() => onDeleteItem(f.id, it.id)} style={{ ...box, background: "transparent", border: "none" }} aria-label={t.delete || "Delete"}>
+                            <Trash2 size={17} color={COLORS.coral} />
+                          </div>
+                        ) : (
+                          <>
+                            <div onClick={() => setAmount(it, g - pantryStep(g))} style={box}>
+                              <Minus size={13} color={COLORS.text} />
+                            </div>
+                            <input type="number" inputMode="decimal" value={g || ""} onChange={(e) => setAmount(it, Number(e.target.value) || 0)} style={{ ...numInputStyle, width: 58, textAlign: "center", fontWeight: 700, padding: "7px 4px" }} />
+                            <span style={{ ...small, width: 14 }}>{unit}</span>
+                            <div onClick={() => setAmount(it, g + pantryStep(g))} style={box}>
+                              <Plus size={13} color={COLORS.text} />
+                            </div>
+                            <div onClick={() => { if (addItem(f, it)) flash(it.name); }} aria-label={t.addItem} style={{ ...box, width: 36, height: 36, background: COLORS.gold, border: "none", opacity: g > 0 ? 1 : 0.4 }}>
+                              <Check size={17} color={COLORS.bg} />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+
+                {!edit && f.items.length > 1 && (
+                  <button onClick={() => addAll(f)} style={{ width: "100%", marginTop: 12, background: COLORS.goldSoft, color: COLORS.gold, border: "1px solid " + COLORS.gold, borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+                    {t.pantryAddAll} · {kcalOf(f)} kcal
+                  </button>
+                )}
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 14 }}>
+                  <span onClick={() => onAddFoods(f.id)} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.pantryAddFoods}</span>
+                  {edit && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <span onClick={() => setRenaming({ id: f.id, name: f.name })} style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, cursor: "pointer" }}>
+                        <Pencil size={13} /> {t.pantryRename}
+                      </span>
+                      <span
+                        onClick={() => {
+                          if (sure === f.id) {
+                            onDeleteFolder(f.id);
+                            setSure(null);
+                          } else {
+                            setSure(f.id);
+                            setTimeout(() => setSure((s) => (s === f.id ? null : s)), 3000);
+                          }
+                        }}
+                        style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: sure === f.id ? 700 : 400, color: COLORS.coral, cursor: "pointer" }}
+                      >
+                        <Trash2 size={13} /> {sure === f.id ? t.pantryDeleteSure : t.pantryDeleteFolder}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </Card>
+        );
+      })}
+
+      <Card style={{ marginTop: pantry.length ? 4 : 0 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.pantryNewFolder}</div>
+        {suggestions.length > 0 && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+            {suggestions.map((s) => (
+              <Chip key={s} label={pantryEmojiFor(s) + " " + s} onClick={() => create(s)} />
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 10 }}>
+          {PANTRY_EMOJIS.map((e) => (
+            <div key={e} onClick={() => setEmoji(emoji === e ? null : e)} style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, cursor: "pointer", flexShrink: 0, background: (emoji || pantryEmojiFor(name)) === e ? COLORS.goldSoft : COLORS.raised, border: "1px solid " + ((emoji || pantryEmojiFor(name)) === e ? COLORS.gold : COLORS.border) }}>{e}</div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") create(name); }} placeholder={t.pantryFolderName} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+          <button disabled={!name.trim()} onClick={() => create(name)} style={{ background: name.trim() ? COLORS.gold : COLORS.raised, color: name.trim() ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            {t.pantryCreate}
+          </button>
+        </div>
+      </Card>
+
+      {toast && (
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 90, maxWidth: 350, margin: "0 auto", background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 50 }}>
+          <Check size={15} /> {toast} — {t.addedToast}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function MyMealsScreen({ t, myMeals, onSave, onDelete, onAddTo, initialSlot = "snacks" }) {
   const [slot, setSlot] = useState(initialSlot);
@@ -6773,6 +7215,10 @@ export default function AsmarFitApp() {
   const [progressPhotos, setProgressPhotos] = usePersisted("progressPhotos", []);
   const [myMeals, setMyMeals] = usePersisted("myMeals", []);
   const [recentFoods, setRecentFoods] = usePersisted("recentFoods", []);
+  const [pantry, setPantry] = usePersisted("pantry", []);
+  const [pantryTarget, setPantryTarget] = useState(null); // folder id while foods are being picked for it
+  const [pantryOpenId, setPantryOpenId] = useState(null);
+  const [pantryReturn, setPantryReturn] = useState(null); // where "back" goes from the pantry screen
   const [firstSeen] = usePersisted("firstSeen", Date.now());
   // nudge for a backup once a week — the data only lives on this device
   const backupDue = onboarded && Date.now() - (Number(localStorage.getItem("asfit.lastBackup")) || firstSeen) > 7 * 86400000;
@@ -7015,10 +7461,35 @@ export default function AsmarFitApp() {
   const saveRecipe = (r) => setCustomRecipes((l) => [r, ...l]);
   const deleteRecipe = (key) => setCustomRecipes((l) => l.filter((r) => r.key !== key));
 
-  const addFoodItem = (food) => {
-    setMeals((m) => ({ ...m, [activeMealKey]: [...m[activeMealKey], food] }));
+  const addFoodTo = (key, food) => {
+    setMeals((m) => ({ ...m, [key]: [...m[key], food] }));
     // remember the exact portion for one-tap re-logging ("recently used")
     setRecentFoods((l) => [food, ...l.filter((x) => x.name !== food.name)].slice(0, 12));
+  };
+  const addFoodItem = (food) => addFoodTo(activeMealKey, food);
+
+  // ----- pantry ("Speisekammer"): folders of the foods you buy again and again -----
+  // Saves a food (per-100 values + usual amount) into a folder; folderId null = create the folder first.
+  const pantrySaveItem = (folderId, item, newName) => {
+    const id = folderId || newPantryId();
+    setPantry((list) => {
+      const base = list.some((f) => f.id === id) ? list : [...list, { id, name: newName || "Speisekammer", emoji: pantryEmojiFor(newName), items: [] }];
+      return base.map((f) => {
+        if (f.id !== id) return f;
+        const known = f.items.some((i) => i.name === item.name);
+        return { ...f, items: known ? f.items.map((i) => (i.name === item.name ? { ...i, per100: item.per100, unit: item.unit, grams: item.grams } : i)) : [...f.items, { id: newPantryId(), uses: 0, ...item }] };
+      });
+    });
+    return id;
+  };
+  // Adds a pantry food to the diary and remembers the amount that was used as the new default.
+  const pantryAddToMeal = (key, food, folderId, itemId, grams) => {
+    addFoodTo(key, food);
+    setPantry((list) => list.map((f) => (f.id !== folderId ? f : { ...f, items: f.items.map((i) => (i.id !== itemId ? i : { ...i, grams, uses: (i.uses || 0) + 1 })) })));
+  };
+  const openPantry = (from) => {
+    setPantryReturn(from || null);
+    setOverlay("pantry");
   };
 
   // Copy a meal (from yesterday, or from any past day being viewed) into today's meal.
@@ -7182,11 +7653,63 @@ export default function AsmarFitApp() {
     topTitle = t.workoutDone;
     showBack = () => setOverlay(null);
   } else if (overlay === "foodSearch") {
-    content = <FoodSearchScreen t={t} lang={lang} recentFoods={recentFoods} onAdd={addFoodItem} onOpenBarcode={() => setOverlay("barcode")} onOpenPhoto={() => setOverlay("photo")} myMeals={myMeals} onOpenMyMeals={() => setOverlay("myMeals")} />;
-    topTitle = t.foodSearchTitle;
-    showBack = () => setOverlay(null);
+    const targetFolder = pantryTarget ? pantry.find((f) => f.id === pantryTarget) || null : null;
+    content = (
+      <FoodSearchScreen
+        t={t}
+        lang={lang}
+        recentFoods={recentFoods}
+        onAdd={addFoodItem}
+        onOpenBarcode={() => setOverlay("barcode")}
+        onOpenPhoto={() => setOverlay("photo")}
+        myMeals={myMeals}
+        onOpenMyMeals={() => setOverlay("myMeals")}
+        pantry={pantry}
+        pantryFolder={targetFolder}
+        onPantrySave={pantrySaveItem}
+        onPantryDone={() => {
+          setPantryOpenId(pantryTarget);
+          setPantryTarget(null);
+          setOverlay("pantry");
+        }}
+        onOpenPantry={() => openPantry("foodSearch")}
+      />
+    );
+    topTitle = targetFolder ? t.pantryTitle : t.foodSearchTitle;
+    showBack = targetFolder
+      ? () => {
+          setPantryOpenId(pantryTarget);
+          setPantryTarget(null);
+          setOverlay("pantry");
+        }
+      : () => setOverlay(null);
+  } else if (overlay === "pantry") {
+    content = (
+      <PantryScreen
+        key={pantryOpenId || "pantry"}
+        t={t}
+        lang={lang}
+        pantry={pantry}
+        initialSlot={pantryReturn ? activeMealKey : mealKeyForNow()}
+        openId={pantryOpenId}
+        onAddTo={pantryAddToMeal}
+        onCreateFolder={(id, name, emoji) => setPantry((l) => [...l, { id, name, emoji, items: [] }])}
+        onRenameFolder={(id, name) => setPantry((l) => l.map((f) => (f.id === id ? { ...f, name } : f)))}
+        onDeleteFolder={(id) => setPantry((l) => l.filter((f) => f.id !== id))}
+        onDeleteItem={(fid, iid) => setPantry((l) => l.map((f) => (f.id === fid ? { ...f, items: f.items.filter((i) => i.id !== iid) } : f)))}
+        onAddFoods={(fid) => {
+          setPantryTarget(fid);
+          setOverlay("foodSearch");
+        }}
+      />
+    );
+    topTitle = t.pantryTitle;
+    showBack = () => {
+      setPantryOpenId(null);
+      setOverlay(pantryReturn);
+    };
   } else if (overlay === "barcode") {
-    content = <BarcodeScanScreen t={t} onAdd={addFoodItem} onDone={() => setOverlay(null)} />;
+    content = <BarcodeScanScreen t={t} lang={lang} pantry={pantry} onPantrySave={pantrySaveItem} onAdd={addFoodItem} onDone={() => setOverlay(null)} />;
     topTitle = t.barcodeTitle;
     showBack = () => setOverlay("foodSearch");
   } else if (overlay === "photo") {
@@ -7369,6 +7892,8 @@ export default function AsmarFitApp() {
             setOverlay("recipes");
           }}
           myMeals={myMeals}
+          pantry={pantry}
+          onOpenPantry={() => openPantry(null)}
           cheats={cheats}
           onOpenMyMeals={() => setOverlay("myMeals")}
           onOpenCheats={() => setOverlay("cheats")}
