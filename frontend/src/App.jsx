@@ -2540,8 +2540,8 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
               </div>
               <Card style={{ padding: 4 }}>
                 {items.map((it, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderBottom: i < items.length - 1 || isToday ? `1px solid ${COLORS.border}` : "none", fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
-                    <span onClick={isToday && it.grams ? () => setEditing({ slot: m.key, idx: i, grams: it.grams }) : undefined} style={{ cursor: isToday && it.grams ? "pointer" : "default" }}>
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: i < items.length - 1 || isToday ? `1px solid ${COLORS.border}` : "none", fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
+                    <span onClick={isToday && it.grams ? () => setEditing({ slot: m.key, idx: i, grams: it.grams }) : undefined} style={{ cursor: isToday && it.grams ? "pointer" : "default", minWidth: 0 }}>
                       {it.name}
                       {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}{it.unit || "g"}</span> : null}
                     </span>
@@ -6456,6 +6456,14 @@ export default function AsmarFitApp() {
 
   const t = useMemo(() => STR[lang], [lang]);
 
+  // One scroll container serves every tab and overlay, so a screen used to open at
+  // whatever scroll position the previous one had (e.g. Nutrition landing half-way down
+  // after scrolling Home). Every screen change starts at the top.
+  const scrollRef = useRef(null);
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [tab, overlay]);
+
   // The free server sleeps when idle and needs ~30 s to wake. Poke it as soon as the
   // app opens (and whenever it returns to the foreground after a while), so it is
   // already awake by the time someone searches, scans or asks the assistant.
@@ -6987,7 +6995,7 @@ export default function AsmarFitApp() {
             <TopBar title={topTitle} lang={lang} setLang={setLang} onBack={showBack} onSettings={!showBack ? () => setOverlay("settings") : null} />
             {activeWorkout && overlay !== "workout" && <WorkoutBanner t={t} aw={activeWorkout} onOpen={() => startOrResumeWorkout()} />}
             {activeWorkout && <WorkoutLongPrompt t={t} aw={activeWorkout} onEnd={() => startOrResumeWorkout()} />}
-            <div style={isPhone ? { flex: 1, minHeight: 0, overflowY: "auto" } : { height: 700, overflowY: "auto" }}>{content}</div>
+            <div ref={scrollRef} style={isPhone ? { flex: 1, minHeight: 0, overflowY: "auto" } : { height: 700, overflowY: "auto" }}>{content}</div>
             <div style={{ display: "flex", justifyContent: "space-around", padding: isPhone ? "10px 6px calc(12px + env(safe-area-inset-bottom))" : "10px 6px 20px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
               {nav.map(({ key, icon: Icon, label }) => {
                 const active = tab === key && !overlay;
