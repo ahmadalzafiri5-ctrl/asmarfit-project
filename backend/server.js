@@ -609,7 +609,8 @@ app.post("/api/recipe-import", async (req, res) => {
           '{"found": boolean, "name": string, "category": "breakfast"|"lunch"|"dinner"|"snacks", "servings": number, "ingredients": [string], "kcal": number, "protein": number, "carbs": number, "fat": number, "estimated": boolean} ' +
           "found=false if the text contains no recipe or no food at all. servings = how many portions the recipe makes (1 if unknown). " +
           "kcal/protein/carbs/fat are per ONE serving (whole numbers, grams for macros). If the text states nutrition values, use them and set estimated=false; " +
-          "otherwise estimate from the ingredients and amounts and set estimated=true. Ingredients are short strings with their amounts. Use " + lang + " for name and ingredients.",
+          "otherwise estimate and set estimated=true: add up the energy and macros of EVERY ingredient (use typical values per 100 g for the stated amount; a whole egg is about 60 g, a medium banana about 120 g), " +
+          "then divide the total by servings. Do not forget oil, butter, sugar or sauces. Ingredients are short strings with their amounts. Use " + lang + " for name and ingredients.",
         messages: [{ role: "user", content: "<source>" + source.replace(/</g, "&lt;") + "</source>" }],
       }),
     });
