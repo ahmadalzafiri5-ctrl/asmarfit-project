@@ -557,6 +557,10 @@ const STR = {
     importNoRecipe: "I can't find a recipe in this content.",
     importTooMany: "Too many requests, please try again in a minute.",
     recipeLogNow: "Log it right away",
+    nutriLinkPlaceholder: "Paste a link or text",
+    nutriLinkHint: "Instagram, TikTok, a recipe site or the copied caption. The app gets the nutrition values.",
+    importGoShort: "Get",
+    importPaste: "Paste",
     foodLinkTitle: "Link detected: get the nutrition values from the recipe",
     foodLinkSub: "Works with recipe sites and TikTok. For Instagram, copy the caption of the post and paste the text.",
     intakeTitle: "Intake log",
@@ -1177,6 +1181,10 @@ const STR = {
     importNoRecipe: "Ich finde in diesem Inhalt kein Rezept.",
     importTooMany: "Zu viele Anfragen, versuche es in einer Minute noch einmal.",
     recipeLogNow: "Direkt ins Tagebuch",
+    nutriLinkPlaceholder: "Link oder Text einfügen",
+    nutriLinkHint: "Instagram, TikTok, Rezeptseite oder die kopierte Beschreibung. Die App holt die Nährwerte.",
+    importGoShort: "Holen",
+    importPaste: "Einfügen",
     foodLinkTitle: "Link erkannt: Nährwerte aus dem Rezept holen",
     foodLinkSub: "Funktioniert mit Rezeptseiten und TikTok. Bei Instagram kopierst du die Beschreibung des Beitrags und fügst den Text ein.",
     intakeTitle: "Einnahme-Tagebuch",
@@ -2572,7 +2580,8 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText }) {
+  const [linkText, setLinkText] = useState("");
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
   const mealDefs = [
@@ -2665,9 +2674,35 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
             <ScanLine size={17} color={COLORS.gold} />
           </div>
 
-          <div onClick={onOpenRecipes} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
+          <div onClick={onOpenRecipes} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
             <BookOpen size={16} color={COLORS.gold} />
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.recipesButton}</span>
+          </div>
+
+          <div style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <Link2 size={16} color={COLORS.gold} />
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.importTitle}</span>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && linkText.trim()) onImportText(linkText.trim()); }}
+                placeholder={t.nutriLinkPlaceholder}
+                style={{ ...numInputStyle, flex: 1, minWidth: 0 }}
+              />
+              {!linkText.trim() && navigator.clipboard && navigator.clipboard.readText ? (
+                <button onClick={() => navigator.clipboard.readText().then((x) => setLinkText(String(x || "").slice(0, 8000))).catch(() => {})} style={{ background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "0 12px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  {t.importPaste}
+                </button>
+              ) : (
+                <button disabled={!linkText.trim()} onClick={() => onImportText(linkText.trim())} style={{ background: linkText.trim() ? COLORS.gold : COLORS.raised, color: linkText.trim() ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 10, padding: "0 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  {t.importGoShort}
+                </button>
+              )}
+            </div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 8, lineHeight: 1.4 }}>{t.nutriLinkHint}</div>
           </div>
 
           <div onClick={onOpenPantry} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
@@ -8465,6 +8500,10 @@ export default function AsmarFitApp() {
           myMeals={myMeals}
           pantry={pantry}
           onOpenPantry={() => openPantry(null)}
+          onImportText={(txt) => {
+            setRecipeImport(txt);
+            setOverlay("recipes");
+          }}
           cheats={cheats}
           onOpenMyMeals={() => setOverlay("myMeals")}
           onOpenCheats={() => setOverlay("cheats")}
