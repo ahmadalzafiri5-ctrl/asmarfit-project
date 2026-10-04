@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, Children, cloneElement } from "react";
 import { Capacitor } from "@capacitor/core";
 import { searchBasics } from "./basics.js";
+import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal } from "./fastfood.js";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 // @zxing/* (the browser barcode fallback) is loaded lazily inside scanWeb()
@@ -523,6 +524,47 @@ const STR = {
     pantryTitle: "Pantry",
     pantryButton: "My pantry",
     pantryButtonSub: "Oats, pasta & co. always at hand",
+    ffTitle: "Eating out",
+    ffButton: "Eating out – protein first",
+    ffButtonSub: "McDonald's, Subway, doner & co. matched to your calories",
+    ffWhere: "Where are you going?",
+    ffWhereSub: "Tap a place. ASFIT then finds the order with the most protein that fits your budget.",
+    ffLast: "Last",
+    ffItems: "items",
+    ffOtherPlace: "Other place",
+    ffHowMuch: "How much do you want to eat?",
+    ffOver: "{n} kcal over your daily goal",
+    ffFits: "Fits your daily goal",
+    ffLeftToday: "Left today",
+    ffLeftGoal: "What's left of your daily goal",
+    ffProteinFirst: "Protein first",
+    ffProteinFirstSub: "The highest-protein option comes first",
+    ffCalc: "Work out my order",
+    ffBackBudget: "Change budget",
+    ffNothing: "Nothing sensible fits in {n} kcal here (the smallest meal is {m} kcal). Raise the budget.",
+    ffBestProtein: "Most protein",
+    ffBestRatio: "Protein per kcal",
+    ffLowFat: "Lower fat",
+    ffFitsIn: "Fits in {n} kcal",
+    ffOf: "of",
+    ffWater: "Water",
+    ffFreeDrink: "drink, added automatically",
+    ffAddItem: "Add an item",
+    ffSum: "Total vs your budget",
+    ffAfter: "Today after this",
+    ffLogTo: "Log to",
+    ffLog: "Log it",
+    ffLogged: "Logged",
+    ffOrderView: "Order view",
+    ffOrderHint: "Show this at the counter or say it when you order.",
+    ffCat_main: "Mains",
+    ffCat_starter: "Starters",
+    ffCat_salad: "Salads",
+    ffCat_side: "Sides",
+    ffCat_extra: "Extras",
+    ffCat_dessert: "Desserts",
+    ffCat_drink: "Drinks",
+    ffDisclaimer: "Estimates for Europe (Oct 2026), not the chains' official figures. Portions and recipes may differ.",
     pantryIntro: "Create folders, for example Breakfast or Carbs, and save what you always buy. Then you log it with one tap, without searching.",
     pantryAddTo: "Entries go into the selected meal.",
     pantryEmpty: "Nothing in this folder yet.",
@@ -1199,6 +1241,47 @@ const STR = {
     pantryTitle: "Speisekammer",
     pantryButton: "Meine Speisekammer",
     pantryButtonSub: "Haferflocken, Nudeln & Co. immer griffbereit",
+    ffTitle: "Unterwegs essen",
+    ffButton: "Unterwegs essen – Eiweiß zuerst",
+    ffButtonSub: "McDonald's, Subway, Döner & Co. passend zu deinen Kalorien",
+    ffWhere: "Wohin fährst du?",
+    ffWhereSub: "Tippe eine Kette an. ASFIT sucht dir danach die Bestellung mit dem meisten Eiweiß, die in dein Budget passt.",
+    ffLast: "Zuletzt",
+    ffItems: "Artikel",
+    ffOtherPlace: "Anderer Ort",
+    ffHowMuch: "Wie viel darf's sein?",
+    ffOver: "Liegt {n} kcal über deinem Tagesziel",
+    ffFits: "Passt in dein Tagesziel",
+    ffLeftToday: "Übrig heute",
+    ffLeftGoal: "Dein Rest bis zum Tagesziel",
+    ffProteinFirst: "Eiweiß zuerst",
+    ffProteinFirstSub: "Die proteinreichste Variante liegt vorn",
+    ffCalc: "Vorschlag rechnen",
+    ffBackBudget: "Budget ändern",
+    ffNothing: "Mit {n} kcal findet sich hier nichts Sinnvolles (die kleinste Mahlzeit hat {m} kcal). Erhöhe das Budget.",
+    ffBestProtein: "Meiste Eiweiß",
+    ffBestRatio: "Eiweiß pro kcal",
+    ffLowFat: "Wenig Fett",
+    ffFitsIn: "Das passt in {n} kcal",
+    ffOf: "von",
+    ffWater: "Wasser",
+    ffFreeDrink: "Getränk, automatisch dazu",
+    ffAddItem: "Artikel dazunehmen",
+    ffSum: "Summe gegen dein Budget",
+    ffAfter: "Heute danach",
+    ffLogTo: "Eintragen in",
+    ffLog: "Eintragen",
+    ffLogged: "Eingetragen",
+    ffOrderView: "Bestellansicht",
+    ffOrderHint: "Zeig das an der Kasse oder sag es beim Bestellen.",
+    ffCat_main: "Hauptgerichte",
+    ffCat_starter: "Vorspeisen",
+    ffCat_salad: "Salate",
+    ffCat_side: "Beilagen",
+    ffCat_extra: "Extras",
+    ffCat_dessert: "Desserts",
+    ffCat_drink: "Getränke",
+    ffDisclaimer: "Richtwerte für Europa (Stand Okt. 2026), nicht die offiziellen Angaben der Ketten. Portionen und Rezepte können abweichen.",
     pantryIntro: "Lege Ordner an, zum Beispiel Frühstück oder Carbs, und speichere dort, was du immer kaufst. Dann trackst du es mit einem Tipp, ohne zu suchen.",
     pantryAddTo: "Einträge landen in der gewählten Mahlzeit.",
     pantryEmpty: "Noch nichts in diesem Ordner.",
@@ -2685,7 +2768,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood }) {
   const [linkText, setLinkText] = useState("");
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
@@ -2817,6 +2900,15 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {pantry.length ? pantry.map((f) => f.emoji + " " + f.name).join(" · ") : t.pantryButtonSub}
               </div>
+            </div>
+            <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+          </div>
+
+          <div data-fastfood onClick={onOpenFastFood} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
+            <span style={{ fontSize: 22 }}>🍔</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.ffButton}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.ffButtonSub}</div>
             </div>
             <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
           </div>
@@ -5709,6 +5801,351 @@ function StepsCard({ t, steps, source, weightKg, goal, onSaveGoal, onConnect, on
   );
 }
 
+/* ---------------- Eating out: fast food with protein first ---------------- */
+
+const FF_MIN = 200;
+const FF_MAX = 1500;
+const FF_RING = { cx: 110, cy: 110, r: 86, start: 135, sweep: 270 };
+const ffPolar = (deg) => {
+  const a = (deg * Math.PI) / 180;
+  return [FF_RING.cx + FF_RING.r * Math.cos(a), FF_RING.cy + FF_RING.r * Math.sin(a)];
+};
+const ffArc = (from, to) => {
+  const [x1, y1] = ffPolar(from);
+  const [x2, y2] = ffPolar(to);
+  return "M " + x1.toFixed(2) + " " + y1.toFixed(2) + " A " + FF_RING.r + " " + FF_RING.r + " 0 " + (to - from > 180 ? 1 : 0) + " 1 " + x2.toFixed(2) + " " + y2.toFixed(2);
+};
+const ffR1 = (v) => Math.round(v * 10) / 10;
+
+function FastFoodScreen({ t, lang, last, goalKcal, eatenKcal, eatenProtein, proteinTarget, onPickChain, onLog }) {
+  const [chainId, setChainId] = useState(null);
+  const [step, setStep] = useState("chain"); // chain -> budget -> result
+  const leftKcal = Math.max(0, Math.round(goalKcal - eatenKcal));
+  const [budget, setBudget] = useState(Math.min(FF_MAX, Math.max(300, Math.round(leftKcal / 10) * 10)));
+  const [proteinFirst, setProteinFirst] = useState(true);
+  const [variantIdx, setVariantIdx] = useState(0);
+  const [edited, setEdited] = useState(null); // lines the user changed, null = as suggested
+  const [adding, setAdding] = useState(false);
+  const [orderView, setOrderView] = useState(false);
+  const [slot, setSlot] = useState(mealKeyForNow());
+  const [done, setDone] = useState(false);
+  const svgRef = useRef(null);
+  const chain = CHAINS.find((c) => c.id === chainId) || null;
+  const nm = (it) => (lang === "de" ? it.de : it.en);
+  const variants = useMemo(() => (chain && step === "result" ? suggest(chain, budget, proteinFirst) : []), [chain, step, budget, proteinFirst]);
+  const base = variants[Math.min(variantIdx, Math.max(0, variants.length - 1))] || null;
+  const lines = edited || (base ? base.lines : []);
+  const tot = sumLines(lines);
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  const slots = [
+    { key: "breakfast", label: t.breakfast },
+    { key: "lunch", label: t.lunch },
+    { key: "dinner", label: t.dinner },
+    { key: "snacks", label: t.snacks },
+  ];
+
+  const pickChain = (c) => {
+    setChainId(c.id);
+    onPickChain(c.id);
+    setStep("budget");
+  };
+  const calc = () => {
+    setVariantIdx(0);
+    setEdited(null);
+    setAdding(false);
+    setOrderView(false);
+    setDone(false);
+    setStep("result");
+  };
+  const fromPointer = (e) => {
+    const r = svgRef.current.getBoundingClientRect();
+    const deg = (Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+    let rel = (deg - FF_RING.start + 720) % 360;
+    if (rel > FF_RING.sweep) rel = rel - FF_RING.sweep < (360 - FF_RING.sweep) / 2 ? FF_RING.sweep : 0;
+    setBudget(Math.min(FF_MAX, Math.max(FF_MIN, Math.round((FF_MIN + (rel / FF_RING.sweep) * (FF_MAX - FF_MIN)) / 10) * 10)));
+  };
+  const nudge = (d) => setBudget((b) => Math.min(FF_MAX, Math.max(FF_MIN, b + d)));
+  const frac = (budget - FF_MIN) / (FF_MAX - FF_MIN);
+  const [kx, ky] = ffPolar(FF_RING.start + FF_RING.sweep * frac);
+
+  const changeQty = (id, d) => {
+    const cur = (edited || base.lines).map((l) => ({ it: l.it, qty: l.qty }));
+    const next = cur.map((l) => (l.it.id === id ? { ...l, qty: Math.min(9, l.qty + d) } : l)).filter((l) => l.qty > 0);
+    setEdited(next);
+  };
+  const addItem = (it) => {
+    const cur = (edited || base.lines).map((l) => ({ it: l.it, qty: l.qty }));
+    setEdited(cur.some((l) => l.it.id === it.id) ? cur.map((l) => (l.it.id === it.id ? { ...l, qty: Math.min(9, l.qty + 1) } : l)) : [...cur, { it, qty: 1 }]);
+  };
+  const log = () => {
+    if (!lines.length || done) return;
+    onLog(
+      slot,
+      lines.map((l) => ({
+        name: chain.name + " · " + (l.qty > 1 ? l.qty + "× " : "") + nm(l.it),
+        kcal: Math.round(l.it.kcal * l.qty),
+        protein: ffR1(l.it.p * l.qty),
+        carbs: ffR1(l.it.c * l.qty),
+        fat: ffR1(l.it.f * l.qty),
+      }))
+    );
+    setDone(true);
+  };
+
+  const backLink = (label, to) => (
+    <div onClick={() => setStep(to)} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer", marginBottom: 12 }}>
+      <ChevronLeft size={14} /> {label}
+    </div>
+  );
+  const dots = (n) => (
+    <div style={{ display: "flex", gap: 5, justifyContent: "center", marginBottom: 14 }}>
+      {["chain", "budget", "result"].map((s, i) => (
+        <span key={s} style={{ width: i === n ? 22 : 7, height: 7, borderRadius: 4, background: i === n ? COLORS.gold : COLORS.border }} />
+      ))}
+    </div>
+  );
+
+  if (step === "chain") {
+    return (
+      <div style={{ padding: "0 20px 28px" }}>
+        {dots(0)}
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>{t.ffWhere}</div>
+        <div style={{ ...small, lineHeight: 1.5, marginBottom: 16 }}>{t.ffWhereSub}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {CHAINS.map((c) => (
+            <div key={c.id} data-chain={c.id} onClick={() => pickChain(c)} style={{ position: "relative", borderRadius: 18, padding: "16px 14px 14px", cursor: "pointer", minHeight: 118, background: "linear-gradient(145deg, " + c.color + "38, " + c.color + "10)", border: "1px solid " + c.color + "66", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              {last === c.id && <span style={{ position: "absolute", top: 10, right: 10, background: COLORS.text, color: COLORS.bg, borderRadius: 999, padding: "2px 8px", fontFamily: "Sora, sans-serif", fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: "uppercase" }}>{t.ffLast}</span>}
+              <span style={{ fontSize: 30 }}>{c.emoji}</span>
+              <div>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 800, color: COLORS.text, lineHeight: 1.15 }}>{c.name}</div>
+                <div style={{ ...small, fontSize: 11.5, marginTop: 3 }}>{c.items.length} {t.ffItems}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ ...small, fontSize: 11.5, lineHeight: 1.5, marginTop: 18 }}>{t.ffDisclaimer}</div>
+      </div>
+    );
+  }
+
+  if (step === "budget") {
+    const over = budget - leftKcal;
+    return (
+      <div style={{ padding: "0 20px 28px" }}>
+        {dots(1)}
+        {backLink(t.ffOtherPlace, "chain")}
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text }}>{t.ffHowMuch}</div>
+        <div style={{ ...small, marginBottom: 6 }}>{chain.emoji} {chain.name}</div>
+
+        <div style={{ position: "relative", width: 240, height: 240, margin: "0 auto" }}>
+          <svg
+            ref={svgRef}
+            viewBox="0 0 220 220"
+            width="240"
+            height="240"
+            role="slider"
+            tabIndex={0}
+            aria-label={t.ffHowMuch}
+            aria-valuemin={FF_MIN}
+            aria-valuemax={FF_MAX}
+            aria-valuenow={budget}
+            onKeyDown={(e) => { if (e.key === "ArrowRight" || e.key === "ArrowUp") nudge(10); else if (e.key === "ArrowLeft" || e.key === "ArrowDown") nudge(-10); }}
+            onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); fromPointer(e); }}
+            onPointerMove={(e) => { if (e.buttons || e.pointerType === "touch") fromPointer(e); }}
+            style={{ touchAction: "none", cursor: "pointer", outline: "none" }}
+          >
+            <path d={ffArc(FF_RING.start, FF_RING.start + FF_RING.sweep)} fill="none" stroke="var(--c-raised)" strokeWidth="16" strokeLinecap="round" />
+            {frac > 0 && <path d={ffArc(FF_RING.start, FF_RING.start + FF_RING.sweep * frac)} fill="none" stroke="var(--c-gold)" strokeWidth="16" strokeLinecap="round" />}
+            <circle cx={kx} cy={ky} r="11" fill="var(--c-bg)" stroke="var(--c-gold)" strokeWidth="4" />
+          </svg>
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+            <div data-budget style={{ fontFamily: "Sora, sans-serif", fontSize: 50, fontWeight: 800, color: COLORS.text, lineHeight: 1 }}>{budget}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.gold, letterSpacing: 1, marginTop: 4 }}>KCAL</div>
+          </div>
+          <div onClick={() => nudge(-50)} aria-label="-50" style={{ position: "absolute", left: 14, bottom: 8, width: 38, height: 38, borderRadius: "50%", background: COLORS.raised, border: "1px solid " + COLORS.border, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <Minus size={16} color={COLORS.text} />
+          </div>
+          <div onClick={() => nudge(50)} aria-label="+50" style={{ position: "absolute", right: 14, bottom: 8, width: 38, height: 38, borderRadius: "50%", background: COLORS.raised, border: "1px solid " + COLORS.border, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <Plus size={16} color={COLORS.text} />
+          </div>
+        </div>
+
+        <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 600, color: over > 0 ? COLORS.coral : COLORS.gold, margin: "2px 0 14px" }}>
+          {over > 0 ? t.ffOver.replace("{n}", over) : t.ffFits}
+        </div>
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 14 }}>
+          {[300, 500, 800, 1000].map((v) => (
+            <Chip key={v} label={v + " kcal"} active={budget === v} onClick={() => setBudget(v)} />
+          ))}
+        </div>
+
+        <div onClick={() => leftKcal >= FF_MIN && setBudget(Math.min(FF_MAX, Math.round(leftKcal / 10) * 10))} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 10, cursor: leftKcal >= FF_MIN ? "pointer" : "default" }}>
+          <div>
+            <div style={{ ...small, fontSize: 11 }}>{t.ffLeftToday}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text, marginTop: 2 }}>{t.ffLeftGoal}</div>
+          </div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 800, color: COLORS.text }}>{leftKcal} kcal</div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 18 }}>
+          <div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.ffProteinFirst}</div>
+            <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>{t.ffProteinFirstSub}</div>
+          </div>
+          <Switch checked={proteinFirst} onChange={setProteinFirst} />
+        </div>
+
+        <button data-calc onClick={calc} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+          {t.ffCalc}
+        </button>
+      </div>
+    );
+  }
+
+  // result
+  if (!base) {
+    const small0 = smallestMeal(chain);
+    return (
+      <div style={{ padding: "0 20px 28px" }}>
+        {dots(2)}
+        {backLink(t.ffBackBudget, "budget")}
+        <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: 1.6, marginTop: 30 }}>
+          {t.ffNothing.replace("{n}", budget).replace("{m}", small0)}
+        </div>
+      </div>
+    );
+  }
+  const pShare = tot.kcal > 0 ? Math.round(((tot.p * 4) / tot.kcal) * 100) : 0;
+  const cShare = tot.kcal > 0 ? Math.round(((tot.c * 4) / tot.kcal) * 100) : 0;
+  const fShare = tot.kcal > 0 ? Math.round(((tot.f * 9) / tot.kcal) * 100) : 0;
+  const overBudget = tot.kcal > budget;
+  const bar = (label, text, pct, color) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
+      <span style={{ width: 96, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, color }}>{label}</span>
+      <div style={{ flex: 1, height: 7, borderRadius: 4, background: COLORS.raised, overflow: "hidden" }}>
+        <div style={{ width: Math.min(100, pct) + "%", height: "100%", borderRadius: 4, background: color }} />
+      </div>
+      <span style={{ width: 86, textAlign: "right", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, whiteSpace: "nowrap" }}>{text}</span>
+    </div>
+  );
+  const afterK = Math.round(eatenKcal + tot.kcal);
+  const afterP = Math.round(eatenProtein + tot.p);
+  const groups = CAT_KEYS.map((k) => ({ k, items: itemsOf(chain).filter((i) => i.cat === k) })).filter((g) => g.items.length);
+
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      {dots(2)}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div onClick={() => setStep("budget")} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+          <ChevronLeft size={14} /> {chain.name} · {budget} kcal
+        </div>
+        <div onClick={() => setOrderView((v) => !v)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 999, background: orderView ? COLORS.gold : COLORS.raised, color: orderView ? COLORS.bg : COLORS.dim, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}>
+          {t.ffOrderView}
+        </div>
+      </div>
+
+      {variants.length > 1 && (
+        <div style={{ display: "flex", alignItems: "stretch", gap: 8, marginBottom: 10 }}>
+          {variants.map((v, i) => (
+            <div key={v.key} data-variant={i} onClick={() => { setVariantIdx(i); setEdited(null); setDone(false); }} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "7px 4px", borderRadius: 10, fontFamily: "Sora, sans-serif", fontSize: 11, fontWeight: 600, lineHeight: 1.25, cursor: "pointer", background: i === variantIdx ? COLORS.gold : COLORS.surface, color: i === variantIdx ? COLORS.bg : COLORS.dim, border: "1px solid " + (i === variantIdx ? COLORS.gold : COLORS.border) }}>
+              {i + 1}/{variants.length} · {t[v.label]}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Card style={{ padding: "16px 16px 12px", marginBottom: 12 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 0.8, color: COLORS.coral, textTransform: "uppercase" }}>{t[base.label]}</div>
+        <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>{t.ffFitsIn.replace("{n}", budget)}</div>
+        <div style={{ textAlign: "center", margin: "10px 0 4px" }}>
+          <span data-protein style={{ fontFamily: "Sora, sans-serif", fontSize: 52, fontWeight: 800, color: COLORS.coral, lineHeight: 1 }}>{Math.round(tot.p)}</span>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 800, color: COLORS.coral }}> g</span>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 1, color: COLORS.dim }}>{t.protein.toUpperCase()}</div>
+          <div data-kcal style={{ ...small, marginTop: 4, color: overBudget ? COLORS.coral : COLORS.dim }}>{Math.round(tot.kcal)} {t.ffOf} {budget} kcal</div>
+        </div>
+
+        {orderView ? (
+          <div style={{ marginTop: 10, borderTop: "1px solid " + COLORS.border, paddingTop: 10 }}>
+            <div style={{ ...small, fontSize: 11.5, marginBottom: 8 }}>{t.ffOrderHint}</div>
+            {lines.map((l) => (
+              <div key={l.it.id} style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.text, padding: "7px 0", borderBottom: "1px solid " + COLORS.border }}>
+                {l.qty}× {nm(l.it)}
+              </div>
+            ))}
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.text, padding: "7px 0" }}>1× {t.ffWater}</div>
+          </div>
+        ) : (
+          <div style={{ marginTop: 8 }}>
+            {lines.map((l) => (
+              <div key={l.it.id} data-line={l.it.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderTop: "1px solid " + COLORS.border }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                  <span onClick={() => changeQty(l.it.id, -1)} aria-label={t.delete} style={{ width: 24, height: 24, borderRadius: 7, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    {l.qty === 1 ? <X size={12} color={COLORS.dim} /> : <Minus size={12} color={COLORS.text} />}
+                  </span>
+                  <span style={{ minWidth: 20, textAlign: "center", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text }}>{l.qty}×</span>
+                  <span onClick={() => changeQty(l.it.id, 1)} aria-label="+" style={{ width: 24, height: 24, borderRadius: 7, background: COLORS.raised, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <Plus size={12} color={COLORS.text} />
+                  </span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>{nm(l.it)}</div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.text }}>{Math.round(l.it.kcal * l.qty)} kcal</div>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600, color: COLORS.coral }}>{ffR1(l.it.p * l.qty)} g {t.protein}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderTop: "1px solid " + COLORS.border }}>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>💧 {t.ffWater}</span>
+              <span style={{ ...small, fontSize: 11.5 }}>{t.ffFreeDrink}</span>
+            </div>
+            <div onClick={() => setAdding((a) => !a)} data-add style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0 4px", borderTop: "1px solid " + COLORS.border, color: COLORS.gold, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
+              <Plus size={14} /> {t.ffAddItem}
+            </div>
+            {adding && (
+              <div style={{ marginTop: 6 }}>
+                {groups.map((g) => (
+                  <div key={g.k} style={{ marginBottom: 8 }}>
+                    <div style={{ ...small, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", margin: "6px 0 4px" }}>{t["ffCat_" + g.k]}</div>
+                    {g.items.map((it) => (
+                      <div key={it.id} onClick={() => addItem(it)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: COLORS.raised, marginBottom: 5, cursor: "pointer" }}>
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.text }}>{nm(it)}</span>
+                        <span style={{ ...small, fontSize: 11.5, whiteSpace: "nowrap" }}>{it.kcal} kcal · {ffR1(it.p)} g P</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      <Card style={{ padding: "14px 16px 10px", marginBottom: 12 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 0.8, color: COLORS.dim, textTransform: "uppercase", marginBottom: 10 }}>{t.ffSum}</div>
+        {bar("kcal", Math.round(tot.kcal) + " / " + budget, (tot.kcal / budget) * 100, overBudget ? COLORS.coral : COLORS.gold)}
+        {bar(t.protein, Math.round(tot.p) + " g · " + pShare + " %", pShare, COLORS.teal)}
+        {bar(t.carbs, Math.round(tot.c) + " g · " + cShare + " %", cShare, COLORS.gold)}
+        {bar(t.fat, Math.round(tot.f) + " g · " + fShare + " %", fShare, COLORS.coral)}
+        <div style={{ ...small, fontSize: 11.5, marginTop: 8, paddingTop: 8, borderTop: "1px solid " + COLORS.border }}>
+          {t.ffAfter}: {afterK}{goalKcal ? " " + t.ffOf + " " + goalKcal : ""} kcal · {afterP}{proteinTarget ? " " + t.ffOf + " " + proteinTarget : ""} g {t.protein}
+        </div>
+      </Card>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto", marginBottom: 10 }}>
+        <span style={{ ...small, fontSize: 11.5, whiteSpace: "nowrap" }}>{t.ffLogTo}</span>
+        {slots.map((sl) => (
+          <Chip key={sl.key} label={sl.label} active={slot === sl.key} onClick={() => setSlot(sl.key)} />
+        ))}
+      </div>
+      <button data-log disabled={!lines.length} onClick={log} style={{ width: "100%", background: done ? COLORS.raised : COLORS.gold, color: done ? COLORS.gold : COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: lines.length ? 1 : 0.5 }}>
+        {done ? "✓ " + t.ffLogged : t.ffLog + " · " + Math.round(tot.kcal) + " kcal"}
+      </button>
+      <div style={{ ...small, fontSize: 11, lineHeight: 1.5, marginTop: 14 }}>{t.ffDisclaimer}</div>
+    </div>
+  );
+}
+
 /* ---------------- Recipes ---------------- */
 
 // ---------- Pantry ("Speisekammer"): folders with the foods you buy again and again ----------
@@ -8538,6 +8975,7 @@ export default function AsmarFitApp() {
   const [pantryTarget, setPantryTarget] = useState(null); // folder id while foods are being picked for it
   const [pantryOpenId, setPantryOpenId] = useState(null);
   const [pantryReturn, setPantryReturn] = useState(null); // where "back" goes from the pantry screen
+  const [fastfood, setFastfood] = usePersisted("fastfood", { last: null }); // eating-out planner: last chain
   const [recipeImport, setRecipeImport] = useState(null); // a pasted link that opens the recipe import straight away
   const [intake, setIntake] = usePersisted("intake", { subs: [], log: [], card: true });
   const [intakeReturn, setIntakeReturn] = useState("settings"); // where "back" goes from the intake log
@@ -9116,6 +9554,22 @@ export default function AsmarFitApp() {
     content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myStats={myDuelStats()} rivals={rivals} onShareMine={shareMyDuel} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} />;
     topTitle = t.friendsTitle;
     showBack = () => setOverlay(friendsReturn);
+  } else if (overlay === "fastfood") {
+    content = (
+      <FastFoodScreen
+        t={t}
+        lang={lang}
+        last={fastfood.last}
+        goalKcal={profile.kcalGoal || 0}
+        eatenKcal={sumMeals(meals, "kcal")}
+        eatenProtein={sumMeals(meals, "protein")}
+        proteinTarget={profile.macroTargets ? profile.macroTargets.protein : 0}
+        onPickChain={(id) => setFastfood((f) => ({ ...f, last: id }))}
+        onLog={(slot, foods) => foods.forEach((f) => addFoodTo(slot, f))}
+      />
+    );
+    topTitle = t.ffTitle;
+    showBack = () => setOverlay(null);
   } else if (overlay === "intake") {
     content = <IntakeScreen t={t} lang={lang} data={intake} setData={setIntake} />;
     topTitle = t.intakeTitle;
@@ -9358,6 +9812,7 @@ export default function AsmarFitApp() {
           myMeals={myMeals}
           pantry={pantry}
           onOpenPantry={() => openPantry(null)}
+          onOpenFastFood={() => setOverlay("fastfood")}
           onImportText={(txt) => {
             setRecipeImport(txt);
             setOverlay("recipes");
