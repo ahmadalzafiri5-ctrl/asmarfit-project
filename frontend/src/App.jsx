@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useRef, Children, cloneElement } from "react";
+import { useState, useEffect, useMemo, useRef, Children, cloneElement, createContext, useContext } from "react";
 import { Capacitor } from "@capacitor/core";
 import { searchBasics } from "./basics.js";
 import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal } from "./fastfood.js";
 import { ExerciseAnimation } from "./exerciseAnim.jsx";
 import { sceneFor } from "./exerciseScenes.js";
+import { visibleFor } from "./genderContent.js";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 // @zxing/* (the browser barcode fallback) is loaded lazily inside scanWeb()
@@ -94,6 +95,10 @@ const COLORS = {
   coral: "var(--c-coral)",
   coralSoft: "var(--c-coralSoft)",
 };
+
+// who is using the app (the onboarding choice): decides the figures, the mascot and which exercises are shown first
+const GenderCtx = createContext({ gender: "diverse", showAll: false, setShowAll: () => {}, figure: "auto", setFigure: () => {} });
+const useGender = () => useContext(GenderCtx);
 
 const THEMES = {
   neutral: {
@@ -603,6 +608,15 @@ const STR = {
     importTooMany: "Too many requests, please try again in a minute.",
     recipeLogNow: "Log it right away",
     shareTypeEx: "Exercise",
+    libForYou: "For you",
+    libAllEx: "All exercises",
+    figFemale: "♀ Woman",
+    figNeutral: "⚧ Neutral",
+    figMale: "♂ Man",
+    libVideoTitle: "Technique video",
+    libVideoLoading: "Looking for a video …",
+    libVideoOpenYt: "Open on YouTube",
+    libVideoClose: "Close",
     libHowTo: "Step by step",
     libAnim: "How it works",
     libAnimHint: "The figure shows the movement. Red = the muscles that work. Tap to pause.",
@@ -618,7 +632,7 @@ const STR = {
     libSecondary: "Secondary muscles",
     libFront: "Front",
     libBack: "Back",
-    libYoutube: "Technique on YouTube",
+    libYoutube: "Watch technique video",
     libBoard: "Leaderboard",
     shareTypePlan: "Training plan",
     shareTypeMeal: "Meal",
@@ -1325,6 +1339,15 @@ const STR = {
     importTooMany: "Zu viele Anfragen, versuche es in einer Minute noch einmal.",
     recipeLogNow: "Direkt ins Tagebuch",
     shareTypeEx: "Übung",
+    libForYou: "Für dich",
+    libAllEx: "Alle Übungen",
+    figFemale: "♀ Frau",
+    figNeutral: "⚧ Neutral",
+    figMale: "♂ Mann",
+    libVideoTitle: "Technik-Video",
+    libVideoLoading: "Suche ein Video …",
+    libVideoOpenYt: "Auf YouTube öffnen",
+    libVideoClose: "Schließen",
     libHowTo: "Schritt für Schritt",
     libAnim: "So geht's",
     libAnimHint: "Die Figur zeigt die Bewegung. Rot = die Muskeln, die arbeiten. Tippen hält an.",
@@ -1340,7 +1363,7 @@ const STR = {
     libSecondary: "Nebenmuskeln",
     libFront: "Vorne",
     libBack: "Hinten",
-    libYoutube: "Technik auf YouTube",
+    libYoutube: "Technik-Video ansehen",
     libBoard: "Rangliste",
     shareTypePlan: "Trainingsplan",
     shareTypeMeal: "Mahlzeit",
@@ -3687,6 +3710,7 @@ function WorkoutLongPrompt({ t, aw, onEnd }) {
 const estimate1RM = (w, r) => (w > 0 && r > 0 && r <= 12 ? Math.round((r === 1 ? w : w * (1 + r / 30)) * 2) / 2 : 0);
 
 function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onTogglePause, entries, onChangeEntries, onFinish, onDiscard, workoutHistory = [] }) {
+  const gx = useGender();
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
   const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
@@ -3817,7 +3841,7 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
 
   if (picking) {
     const q = query.trim().toLowerCase();
-    const list = EXERCISE_LIBRARY.filter((ex) => !q || ex.name.toLowerCase().includes(q) || ex.nameDe.toLowerCase().includes(q));
+    const list = EXERCISE_LIBRARY.filter((ex) => (gx.gender === "diverse" || gx.showAll || visibleFor(ex.key, gx.gender)) && (!q || ex.name.toLowerCase().includes(q) || ex.nameDe.toLowerCase().includes(q)));
     return (
       <div style={{ padding: "0 20px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 14 }}>
@@ -3977,7 +4001,7 @@ function Confetti() {
 
 // The streak mascot "Sprout": strong on a long streak, friendly while it runs,
 // worn out (pale, leaves hanging, dumbbell on the floor) once the streak is lost.
-function Sprout({ mood = "ok", size = 64 }) {
+function Sprout({ mood = "ok", size = 64, who = "none" }) {
   const weak = mood === "weak";
   const strong = mood === "strong";
   const body = weak ? "#B9A6A6" : "#E3262E";
@@ -3995,7 +4019,7 @@ function Sprout({ mood = "ok", size = 64 }) {
     </g>
   );
   return (
-    <svg viewBox="0 0 150 150" width={size} height={size} aria-hidden="true" style={{ display: "block", overflow: "visible" }}>
+    <svg viewBox="0 0 150 150" width={size} height={size} aria-hidden="true" data-who={who} style={{ display: "block", overflow: "visible" }}>
       <style>{`
         @keyframes sproutBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         @keyframes sproutSway { 0%,100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
@@ -4025,6 +4049,13 @@ function Sprout({ mood = "ok", size = 64 }) {
         )}
         <ellipse cx="75" cy={weak ? 98 : 96} rx="44" ry={weak ? 40 : 42} fill={body} />
         <ellipse cx="75" cy="108" rx="28" ry="24" fill={belly} />
+        {who === "male" && (
+          <>
+            <path d="M34 76 Q75 60 116 76" stroke="#FFFFFF" strokeWidth="8" fill="none" strokeLinecap="round" />
+            <path d="M34 76 Q75 60 116 76" stroke="#2A63D8" strokeWidth="2.4" fill="none" strokeDasharray="4 6" />
+            <path d="M116 76 L130 68 M116 76 L129 86" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" />
+          </>
+        )}
         <path d="M75 60 L75 46" stroke={leaf} strokeWidth="5" strokeLinecap="round" fill="none" />
         <g transform={weak ? "rotate(-30 75 48)" : undefined}>
           <path d="M75 48 C 58 24, 32 22, 22 32 C 30 52, 58 58, 75 48 Z" fill={leaf} />
@@ -4032,10 +4063,18 @@ function Sprout({ mood = "ok", size = 64 }) {
         <g transform={weak ? "rotate(30 75 48)" : undefined}>
           <path d="M75 48 C 92 24, 118 22, 128 32 C 120 52, 92 58, 75 48 Z" fill={leaf} />
         </g>
+        {who === "female" && (
+          <g transform="translate(0 6)">
+            <path d="M75 52 C 60 40, 52 56, 64 59 C 69 60, 74 56, 75 52 Z" fill="#FF6FA3" />
+            <path d="M75 52 C 90 40, 98 56, 86 59 C 81 60, 76 56, 75 52 Z" fill="#FF6FA3" />
+            <circle cx="75" cy="54" r="3.6" fill="#E0457F" />
+          </g>
+        )}
         <ellipse cx="60" cy="88" rx="9" ry="10" fill="#fff" />
         <ellipse cx="90" cy="88" rx="9" ry="10" fill="#fff" />
         <circle cx="61" cy={weak ? 92 : 90} r="4.6" fill={ink} />
         <circle cx="89" cy={weak ? 92 : 90} r="4.6" fill={ink} />
+        {who === "female" && <path d="M51 83 L45 79 M53 78 L48 72 M99 83 L105 79 M97 78 L102 72" stroke={ink} strokeWidth="2.6" strokeLinecap="round" />}
         {!weak && <circle cx="62.6" cy="87.6" r="1.6" fill="#fff" />}
         {!weak && <circle cx="90.6" cy="87.6" r="1.6" fill="#fff" />}
         {weak && (
@@ -4076,6 +4115,22 @@ function Sprout({ mood = "ok", size = 64 }) {
   );
 }
 
+// the streak mascot follows the onboarding choice; "diverse" gets both
+function SproutMascot({ mood, size }) {
+  const { gender } = useGender();
+  if (gender === "diverse") {
+    return (
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div style={{ marginRight: -size * 0.1 }}>
+          <Sprout mood={mood} size={size * 0.86} who="female" />
+        </div>
+        <Sprout mood={mood} size={size * 0.86} who="male" />
+      </div>
+    );
+  }
+  return <Sprout mood={mood} size={size} who={gender === "female" ? "female" : "male"} />;
+}
+
 function Celebration({ t, data, onClose }) {
   if (!data) return null;
   if (data.kind === "lost") {
@@ -4083,7 +4138,7 @@ function Celebration({ t, data, onClose }) {
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
         <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "24px 24px 22px", width: "100%", maxWidth: 340, textAlign: "center" }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
-            <Sprout mood="weak" size={140} />
+            <SproutMascot mood="weak" size={140} />
           </div>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 800, color: COLORS.text, margin: "4px 0 8px" }}>{t.streakLostTitle}</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, lineHeight: 1.5 }}>{t.streakLostMsg.replace("{n}", data.days)}</div>
@@ -4890,8 +4945,8 @@ function StreakCard({ t, streak, history, onOpen }) {
   return (
     <Card onClick={onOpen} style={{ marginBottom: 12, cursor: "pointer" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ flexShrink: 0, width: 52 }}>
-          <Sprout mood={mood} size={52} />
+        <div style={{ flexShrink: 0, minWidth: 52 }}>
+          <SproutMascot mood={mood} size={52} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>
@@ -6925,6 +6980,90 @@ const EQUIP_LABELS = {
 };
 const LEVEL_LABELS = { beginner: { de: "Anfänger", en: "Beginner" }, intermediate: { de: "Fortgeschritten", en: "Intermediate" }, expert: { de: "Profi", en: "Expert" } };
 
+// ---------- Technique video: found by the server (YouTube Data API) and played in the app; without a key it opens the YouTube search ----------
+function ExerciseVideoRow({ t, lang, exKey, name, onShare }) {
+  const [v, setV] = useState(null); // { id, title, channel }
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    setV(null);
+    setBusy(false);
+  }, [exKey]);
+  const search = () => window.open("https://www.youtube.com/results?search_query=" + encodeURIComponent(name + (lang === "de" ? " Technik" : " form")), "_blank", "noopener");
+  const play = async () => {
+    if (busy) return;
+    const ck = exKey + ":" + lang;
+    try {
+      const hit = (JSON.parse(localStorage.getItem("asfit.exVideo") || "{}") || {})[ck];
+      if (hit && /^[\w-]{11}$/.test(hit.id || "")) {
+        setV(hit);
+        return;
+      }
+    } catch {
+      /* no cache */
+    }
+    setBusy(true);
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 25000);
+      const r = await fetch(API_BASE + "/api/exercise-video?q=" + encodeURIComponent(name) + "&lang=" + lang, { signal: ctl.signal });
+      clearTimeout(timer);
+      if (r.ok) {
+        const j = await r.json();
+        if (j && /^[\w-]{11}$/.test(j.id || "")) {
+          try {
+            const all = JSON.parse(localStorage.getItem("asfit.exVideo") || "{}") || {};
+            all[ck] = { id: j.id, title: String(j.title || "").slice(0, 120), channel: String(j.channel || "").slice(0, 60) };
+            localStorage.setItem("asfit.exVideo", JSON.stringify(all));
+          } catch {
+            /* cache is optional */
+          }
+          setV(j);
+          setBusy(false);
+          return;
+        }
+      }
+    } catch {
+      /* offline, quota or no key on the server: fall through to the search */
+    }
+    setBusy(false);
+    search();
+  };
+  const btn = { flex: 1, background: COLORS.raised, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 10px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" };
+  return (
+    <>
+      {v && (
+        <Card style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>▶ {t.libVideoTitle}</div>
+          <div style={{ position: "relative", paddingTop: "56.25%", borderRadius: 12, overflow: "hidden", background: "#000" }}>
+            <iframe
+              data-video
+              src={"https://www.youtube-nocookie.com/embed/" + v.id + "?rel=0&modestbranding=1&playsinline=1"}
+              title={v.title || name}
+              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
+            />
+          </div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, margin: "8px 0 6px", lineHeight: 1.4 }}>{v.title}{v.channel ? " · " + v.channel : ""}</div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span onClick={() => window.open("https://www.youtube.com/watch?v=" + v.id, "_blank", "noopener")} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.libVideoOpenYt}</span>
+            <span onClick={() => setV(null)} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>{t.libVideoClose}</span>
+          </div>
+        </Card>
+      )}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <button data-video-btn onClick={play} style={{ ...btn, color: COLORS.text, opacity: busy ? 0.7 : 1 }}>
+          {busy ? t.libVideoLoading : "▶ " + t.libYoutube}
+        </button>
+        <button onClick={onShare} style={{ ...btn, color: COLORS.gold }}>
+          {t.shareButton}
+        </button>
+      </div>
+    </>
+  );
+}
+
 function ExerciseDemo({ t, lang, media, item }) {
   const [paused, setPaused] = useState(false);
   const [imgOk, setImgOk] = useState(true);
@@ -7050,18 +7189,27 @@ function exerciseMuscles(ex) {
 
 // Simple front and back body; each muscle is a shape that lights up red (primary) or blue (secondary).
 function MuscleMap({ primary = [], secondary = [] }) {
+  const { gender } = useGender();
   const fillOf = (id) => (primary.includes(id) ? "#E3262E" : secondary.includes(id) ? "#4A8DF6" : "rgba(128,128,128,0.28)");
   const active = (id) => primary.includes(id) || secondary.includes(id);
   const sil = { fill: "rgba(128,128,128,0.14)", stroke: "rgba(128,128,128,0.35)", strokeWidth: 0.8 };
   const m = (id, node) => <g key={id + node.key} fill={fillOf(id)} opacity={active(id) ? 1 : 0.9}>{node}</g>;
   const E = (cx, cy, rx, ry, rot = 0) => <ellipse key={cx + "-" + cy} cx={cx} cy={cy} rx={rx} ry={ry} transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined} />;
+  // silhouette: broad shoulders for men, waist and hips for women, the neutral one for everybody else
+  const torso =
+    gender === "female"
+      ? "M29 37 Q50 31 71 37 L67 62 Q62 74 65 90 Q70 102 66 112 L34 112 Q30 102 35 90 Q38 74 33 62 Z"
+      : gender === "male"
+      ? "M23 36 Q50 28 77 36 L71 70 Q69 96 63 110 L37 110 Q31 96 29 70 Z"
+      : "M27 36 Q50 29 73 36 L69 70 Q67 96 62 110 L38 110 Q33 96 31 70 Z";
   const body = (
     <>
       <ellipse cx="50" cy="14" rx="9" ry="11" {...sil} />
+      {gender === "female" && <path d="M41 10 Q38 26 41 36 M59 10 Q62 26 59 36" fill="none" stroke="var(--c-gold)" strokeWidth="2.6" strokeLinecap="round" />}
       <rect x="45" y="24" width="10" height="9" rx="3" {...sil} />
-      <path d="M27 36 Q50 29 73 36 L69 70 Q67 96 62 110 L38 110 Q33 96 31 70 Z" {...sil} />
-      <ellipse cx="23" cy="58" rx="6.5" ry="21" transform="rotate(7 23 58)" {...sil} />
-      <ellipse cx="77" cy="58" rx="6.5" ry="21" transform="rotate(-7 77 58)" {...sil} />
+      <path d={torso} {...sil} />
+      <ellipse cx="23" cy="58" rx={gender === "male" ? 7.2 : gender === "female" ? 5.6 : 6.5} ry="21" transform="rotate(7 23 58)" {...sil} />
+      <ellipse cx="77" cy="58" rx={gender === "male" ? 7.2 : gender === "female" ? 5.6 : 6.5} ry="21" transform="rotate(-7 77 58)" {...sil} />
       <ellipse cx="18" cy="92" rx="5" ry="17" transform="rotate(5 18 92)" {...sil} />
       <ellipse cx="82" cy="92" rx="5" ry="17" transform="rotate(-5 82 92)" {...sil} />
       <ellipse cx="40" cy="138" rx="11.5" ry="29" {...sil} />
@@ -7071,7 +7219,7 @@ function MuscleMap({ primary = [], secondary = [] }) {
     </>
   );
   return (
-    <svg viewBox="0 0 210 212" style={{ width: "100%", display: "block" }} role="img" aria-hidden="true">
+    <svg viewBox="0 0 210 212" style={{ width: "100%", display: "block" }} role="img" aria-hidden="true" data-gender={gender}>
       <g>
         {body}
         {m("shoulders", <g key="a">{E(27, 43, 7, 8.5)}{E(73, 43, 7, 8.5)}</g>)}
@@ -7108,6 +7256,8 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
   const [rInput, setRInput] = useState("");
   const [saved, setSaved] = useState(false);
   const [media, setMedia] = useState(null); // pictures + steps for the "how to do it" card
+  const gx = useGender();
+  const gender = gx.gender;
   useEffect(() => {
     let alive = true;
     loadExerciseMedia().then((m) => {
@@ -7146,7 +7296,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
       return targets.some((tgt) => tgt.includes(tok) || tgt.includes(alt));
     });
   };
-  const results = EXERCISE_LIBRARY.filter((ex) => (muscle === "all" || (muscle === "fav" ? favs.includes(ex.key) : ex.muscle === muscle)) && matchesQuery(ex));
+  const results = EXERCISE_LIBRARY.filter((ex) => (muscle === "all" || (muscle === "fav" ? favs.includes(ex.key) : ex.muscle === muscle)) && (gender === "diverse" || gx.showAll || muscle === "fav" || visibleFor(ex.key, gender)) && matchesQuery(ex));
 
   if (selected && mode !== "pick") {
     const isCardio = selected.muscle === "cardio";
@@ -7227,7 +7377,14 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                 return scene ? (
                   <Card style={{ marginBottom: 14 }}>
                     <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libAnim}</div>
-                    <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} />
+                    <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} bodyStyle={gender === "diverse" ? (gx.figure === "auto" ? "neutral" : gx.figure) : gender} />
+                    {gender === "diverse" && (
+                      <div data-figpick style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <Chip label={t.figFemale} active={gx.figure === "female"} onClick={() => gx.setFigure("female")} />
+                        <Chip label={t.figNeutral} active={gx.figure === "auto" || gx.figure === "neutral"} onClick={() => gx.setFigure("neutral")} />
+                        <Chip label={t.figMale} active={gx.figure === "male"} onClick={() => gx.setFigure("male")} />
+                      </div>
+                    )}
                     <div style={{ ...small, fontSize: 11.5, marginTop: 6 }}>{t.libAnimHint}</div>
                   </Card>
                 ) : null;
@@ -7253,14 +7410,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                   )}
                 </Card>
               )}
-              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                <button onClick={() => window.open("https://www.youtube.com/results?search_query=" + encodeURIComponent(nameOf(selected) + (lang === "de" ? " Technik" : " form")), "_blank", "noopener")} style={{ flex: 1, background: COLORS.raised, color: COLORS.text, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 10px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                  ▶ {t.libYoutube}
-                </button>
-                <button onClick={() => onShareEx(selected.key, nameOf(selected))} style={{ flex: 1, background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 10px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                  {t.shareButton}
-                </button>
-              </div>
+              <ExerciseVideoRow t={t} lang={lang} exKey={selected.key} name={nameOf(selected)} onShare={() => onShareEx(selected.key, nameOf(selected))} />
               {board.some((r) => !r.me) && (
                 <Card style={{ marginBottom: 14 }}>
                   <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>🏆 {t.libBoard}</div>
@@ -7318,6 +7468,12 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.libSearchPlaceholder} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
       </div>
 
+      {gender !== "diverse" && (
+        <div data-foryou style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <Chip label={t.libForYou} active={!gx.showAll} onClick={() => gx.setShowAll(false)} />
+          <Chip label={t.libAllEx} active={gx.showAll} onClick={() => gx.setShowAll(true)} />
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", paddingBottom: 2 }}>
         {muscles.map((m) => (
           <Chip key={m.key} label={m.label} active={muscle === m.key} onClick={() => setMuscle(m.key)} />
@@ -8998,6 +9154,8 @@ export default function AsmarFitApp() {
   const [pantryOpenId, setPantryOpenId] = useState(null);
   const [pantryReturn, setPantryReturn] = useState(null); // where "back" goes from the pantry screen
   const [fastfood, setFastfood] = usePersisted("fastfood", { last: null }); // eating-out planner: last chain
+  const [showAllEx, setShowAllEx] = usePersisted("exAll", false); // library: false = only what fits the onboarding choice
+  const [figureStyle, setFigureStyle] = usePersisted("figure", "auto"); // exercise figure for "diverse"
   const [recipeImport, setRecipeImport] = useState(null); // a pasted link that opens the recipe import straight away
   const [intake, setIntake] = usePersisted("intake", { subs: [], log: [], card: true });
   const [intakeReturn, setIntakeReturn] = useState("settings"); // where "back" goes from the intake log
@@ -9901,7 +10059,9 @@ export default function AsmarFitApp() {
     showBack = null;
   }
 
+  const genderCtx = useMemo(() => ({ gender: profile.gender === "female" || profile.gender === "male" ? profile.gender : "diverse", showAll: showAllEx, setShowAll: setShowAllEx, figure: figureStyle, setFigure: setFigureStyle }), [profile.gender, showAllEx, figureStyle]);
   return (
+    <GenderCtx.Provider value={genderCtx}>
     <div style={{ display: "flex", justifyContent: "center", padding: isPhone ? 0 : "24px 12px", minHeight: "100%" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
@@ -9957,5 +10117,6 @@ export default function AsmarFitApp() {
         {introOn && !introDone && <StartIntro onDone={finishIntro} full={introFull} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
       </div>
     </div>
+    </GenderCtx.Provider>
   );
 }
