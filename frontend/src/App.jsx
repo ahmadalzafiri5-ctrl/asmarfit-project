@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef, Children, cloneElement } from "re
 import { Capacitor } from "@capacitor/core";
 import { searchBasics } from "./basics.js";
 import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal } from "./fastfood.js";
+import { ExerciseAnimation } from "./exerciseAnim.jsx";
+import { sceneFor } from "./exerciseScenes.js";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 // @zxing/* (the browser barcode fallback) is loaded lazily inside scanWeb()
@@ -601,7 +603,12 @@ const STR = {
     importTooMany: "Too many requests, please try again in a minute.",
     recipeLogNow: "Log it right away",
     shareTypeEx: "Exercise",
-    libHowTo: "How to do it",
+    libHowTo: "Step by step",
+    libAnim: "How it works",
+    libAnimHint: "The figure shows the movement. Red = the muscles that work. Tap to pause.",
+    libPause: "Pause",
+    libPlay: "Play",
+    libSlow: "Slow motion",
     libStartEnd: "Start and end position alternate. Tap to pause the animation.",
     libSource: "Pictures and instructions: free-exercise-db (public domain).",
     libFavs: "Favorites",
@@ -1318,7 +1325,12 @@ const STR = {
     importTooMany: "Zu viele Anfragen, versuche es in einer Minute noch einmal.",
     recipeLogNow: "Direkt ins Tagebuch",
     shareTypeEx: "Übung",
-    libHowTo: "So geht's",
+    libHowTo: "Schritt für Schritt",
+    libAnim: "So geht's",
+    libAnimHint: "Die Figur zeigt die Bewegung. Rot = die Muskeln, die arbeiten. Tippen hält an.",
+    libPause: "Pause",
+    libPlay: "Abspielen",
+    libSlow: "Zeitlupe",
     libStartEnd: "Start und Ende im Wechsel. Tippen hält die Animation an.",
     libSource: "Bilder und englische Anleitung: free-exercise-db (gemeinfrei). Deutsche Schritte: ASFIT.",
     libFavs: "Favoriten",
@@ -7210,6 +7222,16 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
           return (
             <>
+              {(() => {
+                const scene = sceneFor(selected.key);
+                return scene ? (
+                  <Card style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libAnim}</div>
+                    <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} />
+                    <div style={{ ...small, fontSize: 11.5, marginTop: 6 }}>{t.libAnimHint}</div>
+                  </Card>
+                ) : null;
+              })()}
               {media && media.items && media.items[selected.key] && <ExerciseDemo t={t} lang={lang} media={media} item={media.items[selected.key]} />}
               {(mus.primary.length > 0 || mus.secondary.length > 0) && (
                 <Card style={{ marginBottom: 14 }}>
