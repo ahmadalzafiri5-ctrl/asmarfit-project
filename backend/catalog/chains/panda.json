@@ -1,0 +1,24 @@
+{
+  "id": "panda",
+  "name": "Panda Express",
+  "emoji": "🥡",
+  "color": "#D2232A",
+  "type": "asian",
+  "region": "US",
+  "src": "estimate",
+  "pos": 16,
+  "items": [
+    ["orange","Orange Chicken","Orange chicken","main",490,25,51,23,2,0.7],
+    ["beijing","Beijing Beef","Beijing beef","main",480,14,46,27,2,0.7],
+    ["broccoli","Broccoli Beef","Broccoli beef","main",150,9,13,7,2,0.7],
+    ["teriyaki","Gegrilltes Teriyaki-Hähnchen","Grilled teriyaki chicken","main",275,33,14,10,2,0.7],
+    ["kungpao","Kung Pao Chicken","Kung Pao chicken","main",290,19,14,19,2,0.7],
+    ["bean","String Bean Chicken","String bean chicken","main",190,14,12,9,2,0.7],
+    ["shrimp","Honey Walnut Shrimp","Honey walnut shrimp","main",360,13,27,23,2,0.7],
+    ["rice","Gedämpfter Reis","Steamed white rice","side",380,7,87,0],
+    ["chowmein","Chow Mein","Chow mein","side",510,13,80,20],
+    ["greens","Super Greens","Super greens","salad",90,6,10,3],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

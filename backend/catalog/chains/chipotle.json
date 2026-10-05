@@ -1,0 +1,22 @@
+{
+  "id": "chipotle",
+  "name": "Chipotle",
+  "emoji": "🌯",
+  "color": "#A81612",
+  "type": "mexican",
+  "region": "US",
+  "src": "estimate",
+  "pos": 9,
+  "items": [
+    ["chicken","Poulet (115 g)","Chicken (4 oz)","main",180,32,0,7,2,0.5],
+    ["steak","Steak (115 g)","Steak (4 oz)","main",150,21,1,6,2,0.5],
+    ["carnitas","Carnitas (115 g)","Carnitas (4 oz)","main",210,23,0,12,2,0.5],
+    ["barbacoa","Barbacoa (115 g)","Barbacoa (4 oz)","main",170,24,2,7,2,0.5],
+    ["sofritas","Sofritas (115 g)","Sofritas (4 oz)","main",150,8,9,10,2,0.5],
+    ["rice","Weisser Reis","White rice","side",210,4,40,4],
+    ["beans","Schwarze Bohnen","Black beans","extra",130,8,22,1.5],
+    ["lettuce","Salat & Salsa","Lettuce & salsa","salad",40,2,8,0],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

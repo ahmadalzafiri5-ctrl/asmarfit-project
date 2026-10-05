@@ -1,0 +1,19 @@
+{
+  "id": "littlecaesars",
+  "name": "Little Caesars",
+  "emoji": "🍕",
+  "color": "#F58220",
+  "type": "pizza",
+  "region": "US",
+  "src": "estimate",
+  "pos": 18,
+  "items": [
+    ["cheese","Cheese (1 Stück)","Cheese (1 slice)","main",250,11,32,9,4,0.4],
+    ["pep","Pepperoni (1 Stück)","Pepperoni (1 slice)","main",280,12,31,12,4,0.4],
+    ["supreme","Supreme (1 Stück)","Supreme (1 slice)","main",300,13,31,14,4,0.4],
+    ["crazy","Crazy Bread (2 Stk.)","Crazy bread (2 pcs)","side",200,6,31,6],
+    ["wings","Chicken Wings (4 Stk.)","Chicken wings (4 pcs)","starter",300,24,5,20],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

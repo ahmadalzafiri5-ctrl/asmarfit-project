@@ -1,0 +1,30 @@
+{
+  "id": "bk",
+  "name": "Burger King",
+  "emoji": "👑",
+  "color": "#F5A623",
+  "type": "burger",
+  "region": "EU",
+  "src": "estimate",
+  "pos": 1,
+  "items": [
+    ["whopper","Whopper","Whopper","main",660,28,50,37,1],
+    ["dblwhopper","Double Whopper","Double Whopper","main",910,52,51,54,1],
+    ["whopperjr","Whopper Jr.","Whopper Jr.","main",370,17,33,19],
+    ["bigking","Big King","Big King","main",530,28,40,29],
+    ["cheese","Cheeseburger","Cheeseburger","main",305,16,30,13,3,0.7],
+    ["hamburger","Hamburger","Hamburger","main",255,14,30,9,3,0.6],
+    ["royale","Chicken Royale","Chicken Royale","main",580,25,52,30],
+    ["crispy","Crispy Chicken","Crispy Chicken","main",480,22,44,24],
+    ["longchicken","Long Chicken","Long Chicken","main",580,22,48,33],
+    ["plant","Plant-Based Whopper","Plant-Based Whopper","main",590,24,54,30],
+    ["nug6","Chicken Nuggets (6 Stk.)","Chicken Nuggets (6 pcs)","starter",260,15,17,15],
+    ["nug9","Chicken Nuggets (9 Stk.)","Chicken Nuggets (9 pcs)","starter",390,22,26,23],
+    ["chsalad","Crispy-Chicken-Salat","Crispy chicken salad","salad",330,21,20,18],
+    ["friesm","Pommes mittel","Fries medium","side",380,5,49,18],
+    ["rings","Onion Rings (9 Stk.)","Onion rings (9 pcs)","side",330,4,40,17],
+    ["sundae","Sundae","Sundae","dessert",230,5,38,6],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

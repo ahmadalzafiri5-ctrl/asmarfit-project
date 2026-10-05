@@ -1,0 +1,21 @@
+{
+  "id": "papajohns",
+  "name": "Papa John's",
+  "emoji": "🍕",
+  "color": "#007A33",
+  "type": "pizza",
+  "region": "US",
+  "src": "estimate",
+  "pos": 17,
+  "items": [
+    ["cheese","Cheese (1 Stück)","Cheese (1 slice)","main",290,12,36,10,4,0.4],
+    ["pep","Pepperoni (1 Stück)","Pepperoni (1 slice)","main",320,13,35,14,4,0.4],
+    ["sausage","Sausage (1 Stück)","Sausage (1 slice)","main",330,13,35,15,4,0.4],
+    ["bbq","BBQ Chicken & Bacon (1 Stück)","BBQ chicken & bacon (1 slice)","main",300,15,37,10,4,0.4],
+    ["garden","Garden Fresh (1 Stück)","Garden fresh (1 slice)","main",260,10,36,8,4,0.4],
+    ["wings","Chicken Wings (6 Stk.)","Chicken wings (6 pcs)","starter",440,33,5,32,1],
+    ["knots","Garlic Knots (2 Stk.)","Garlic knots (2 pcs)","side",200,5,32,6],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

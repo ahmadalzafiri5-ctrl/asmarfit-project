@@ -1,0 +1,20 @@
+{
+  "id": "shake",
+  "name": "Shake Shack",
+  "emoji": "🍔",
+  "color": "#3C8D40",
+  "type": "burger",
+  "region": "US",
+  "src": "estimate",
+  "pos": 14,
+  "items": [
+    ["shack","ShackBurger","ShackBurger","main",500,26,26,31],
+    ["double","Double ShackBurger","Double ShackBurger","main",770,46,27,49,1],
+    ["smoke","SmokeShack","SmokeShack","main",590,31,27,40],
+    ["chick","Chicken Shack","Chicken Shack","main",590,31,41,32],
+    ["fries","Pommes","Fries","side",470,6,59,23],
+    ["shake","Vanille-Shake","Vanilla shake","dessert",690,15,90,30],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

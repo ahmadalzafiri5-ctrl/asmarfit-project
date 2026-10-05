@@ -1,0 +1,26 @@
+{
+  "id": "dom",
+  "name": "Domino's",
+  "emoji": "🍕",
+  "color": "#006491",
+  "type": "pizza",
+  "region": "EU",
+  "src": "estimate",
+  "pos": 4,
+  "items": [
+    ["marg","Margherita (1 Stück)","Margherita (1 slice)","main",195,8.5,25,6.5,4,0.4],
+    ["pep","Pepperoni (1 Stück)","Pepperoni (1 slice)","main",225,10,25,9.5,4,0.4],
+    ["hawaii","Hawaii (1 Stück)","Hawaii (1 slice)","main",205,9,26,7,4,0.4],
+    ["bbq","BBQ Chicken (1 Stück)","BBQ Chicken (1 slice)","main",215,11,26,7,4,0.4],
+    ["veggie","Vegi (1 Stück)","Veggie (1 slice)","main",190,8,25,6,4,0.4],
+    ["meat","Meat Lover (1 Stück)","Meat Lover (1 slice)","main",255,13,25,11,4,0.4],
+    ["carbonara","Pasta Carbonara","Pasta Carbonara","main",600,25,68,25,1],
+    ["wings","Chicken Wings (4 Stk.)","Chicken wings (4 pcs)","starter",280,27,4,18],
+    ["kickers","Chicken Kickers (5 Stk.)","Chicken kickers (5 pcs)","starter",270,19,18,13],
+    ["caesar","Chicken-Caesar-Salat","Chicken Caesar salad","salad",330,28,14,18],
+    ["garlic","Knoblauchbrot (2 Stk.)","Garlic bread (2 pcs)","side",250,6,30,12],
+    ["lava","Schoko-Küchlein","Chocolate lava cake","dessert",380,5,45,20],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

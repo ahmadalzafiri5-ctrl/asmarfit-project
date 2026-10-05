@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import NodeCache from "node-cache";
 import { searchBasics, correctQuery, fold, tokensOf } from "./basics.js";
 import { fetchSourceText } from "./recipeImport.js";
+import { loadCatalog } from "./catalog.js";
 
 dotenv.config();
 
@@ -583,6 +584,16 @@ const videoCache = new Map(); // "lang|query" -> { at, data }
 const ytDecode = (s) => String(s || "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
 // lets the app know whether to offer the video button at all (it stays hidden without a key)
+/* ---------- GET /api/fastfood/catalog ---------- */
+// Menus of all chains for the "Unterwegs essen" planner (files in backend/catalog, see catalog.js). The app sends
+// the version it already has (?v=...) and gets { unchanged: true } back when nothing new was deployed.
+const fastFoodCatalog = loadCatalog();
+console.log("Fast-food catalog: " + fastFoodCatalog.counts.chains + " chains, " + fastFoodCatalog.counts.items + " items, version " + fastFoodCatalog.version);
+app.get("/api/fastfood/catalog", (req, res) => {
+  res.set("Cache-Control", "public, max-age=300");
+  if (req.query.v && String(req.query.v) === fastFoodCatalog.version) return res.json({ version: fastFoodCatalog.version, unchanged: true });
+  res.json({ version: fastFoodCatalog.version, chains: fastFoodCatalog.chains });
+});
 app.get("/api/features", (_req, res) => res.json({ video: Boolean(YOUTUBE_API_KEY) }));
 
 app.get("/api/exercise-video", async (req, res) => {

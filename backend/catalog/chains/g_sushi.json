@@ -1,0 +1,24 @@
+{
+  "id": "g_sushi",
+  "name": "Sushi / Japanisch",
+  "emoji": "🍣",
+  "color": "#2F6EBA",
+  "type": "asian",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 22,
+  "items": [
+    ["nigiri","Nigiri Lachs (2 Stk.)","Salmon nigiri (2 pcs)","main",120,8,18,2,4,0.3],
+    ["maki","Maki Lachs (6 Stk.)","Salmon maki (6 pcs)","main",200,9,36,2,3,0.5],
+    ["cali","California Roll (8 Stk.)","California roll (8 pcs)","main",300,9,46,9,2,0.7],
+    ["sashimi","Sashimi Lachs (5 Stk.)","Salmon sashimi (5 pcs)","main",180,25,0,9,2,0.5],
+    ["teriyaki","Teriyaki Lachs mit Reis","Teriyaki salmon with rice","main",650,35,70,22,1],
+    ["chirashi","Chirashi-Bowl","Chirashi bowl","main",600,30,85,12,1],
+    ["gyoza","Gyoza (5 Stk.)","Gyoza (5 pcs)","starter",250,10,28,10],
+    ["tempura","Tempura Garnelen (4 Stk.)","Shrimp tempura (4 pcs)","starter",280,12,24,15],
+    ["miso","Miso-Suppe","Miso soup","starter",40,3,4,1.5],
+    ["edamame","Edamame","Edamame","side",120,11,9,5],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

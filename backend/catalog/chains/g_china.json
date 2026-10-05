@@ -1,0 +1,24 @@
+{
+  "id": "g_china",
+  "name": "Chinesisch",
+  "emoji": "🥢",
+  "color": "#C9302C",
+  "type": "asian",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 23,
+  "items": [
+    ["friedrice","Gebratener Reis mit Poulet","Chicken fried rice","main",700,28,90,24,1],
+    ["noodles","Gebratene Nudeln","Fried noodles","main",750,25,100,28,1],
+    ["sweetsour","Süss-sauer Poulet","Sweet & sour chicken","main",800,30,95,32,1],
+    ["duck","Peking-Ente (1/4)","Peking duck (1/4)","main",700,45,20,48,1],
+    ["chopsuey","Chop Suey","Chop suey","main",500,28,40,22,1],
+    ["dimsum","Dim Sum (6 Stk.)","Dim sum (6 pcs)","starter",350,16,40,14],
+    ["springroll","Frühlingsrollen (2 Stk.)","Spring rolls (2 pcs)","starter",300,6,32,16],
+    ["wonton","Wan-Tan-Suppe","Wonton soup","starter",300,18,30,10],
+    ["rice","Reis","Rice","side",250,5,55,0.5],
+    ["veg","Gebratenes Gemüse","Stir-fried vegetables","side",220,6,20,13],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

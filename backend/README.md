@@ -53,3 +53,25 @@ Umgebungsvariablen gesetzt, nie im Repo.
 - Die per-IP-Rate-Limits liegen in einer In-Memory-Map (kein Redis) und
   setzen sich bei jedem Neustart/Deploy zurück — für den aktuellen Umfang
   ausreichend, aber kein Schutz gegen gezielten Missbrauch mit wechselnden IPs.
+
+## Fast-food catalog (`GET /api/fastfood/catalog`)
+
+The "Unterwegs essen" planner in the app loads its menus from here, so chains and items can be added or corrected
+without releasing a new app version (the app keeps the last answer and has a bundled copy for offline use).
+
+- `catalog/chains/*.json` — one file per chain: `{ id, name, emoji, color, type, region (EU|US|world), src (estimate|dataset|import), pos, items }`.
+  A row is `[id, nameDe, nameEn, category, kcal, protein, carbs, fat, max?, weight?]`, category is one of
+  `main | starter | salad | side | extra | dessert | drink`.
+- `catalog/import/*.csv` — extra tables merged on top at startup. Header:
+  `restaurant,item,item_de,kcal,protein,carbs,fat,category,region,max,weight` (category, max and weight are optional;
+  the category is guessed from the name when empty). A restaurant that matches an existing chain adds items to it
+  (same item names are skipped), an unknown one creates a new chain. Rows whose calories do not roughly match
+  protein/carbs/fat (4/4/9 kcal per gram) or without protein are dropped.
+- `catalog/source/fastfood_calories.csv` — public US data set (TidyTuesday 2018, nutrition tables of 8 chains) that
+  `node tools/build-catalog.mjs` turns into the `src: "dataset"` chains (Taco Bell, Chick-fil-A, Arby's, Sonic, Dairy
+  Queen, McDonald's/Burger King/Subway "(USA)"). The same script exports the menus bundled in the frontend.
+  Check the data licence before a commercial release.
+- Everything with `src: "estimate"` is a rounded estimate, not an official figure — the app says so.
+
+The response carries a `version` (hash of the content). The app sends it back as `?v=…` and gets `{ unchanged: true }`
+when nothing changed. Run `node server.js` and open `/api/fastfood/catalog` to check a change.

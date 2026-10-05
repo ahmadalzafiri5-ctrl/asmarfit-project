@@ -1,0 +1,25 @@
+{
+  "id": "ph",
+  "name": "Pizza Hut",
+  "emoji": "🍕",
+  "color": "#EE3124",
+  "type": "pizza",
+  "region": "EU",
+  "src": "estimate",
+  "pos": 5,
+  "items": [
+    ["marg","Margherita (1 Stück)","Margherita (1 slice)","main",205,9,27,7,4,0.4],
+    ["pep","Pepperoni (1 Stück)","Pepperoni (1 slice)","main",250,11,27,11,4,0.4],
+    ["supreme","Chicken Supreme (1 Stück)","Chicken Supreme (1 slice)","main",235,12,27,8.5,4,0.4],
+    ["bbq","BBQ Chicken (1 Stück)","BBQ Chicken (1 slice)","main",235,12,29,7.5,4,0.4],
+    ["veggie","Veggie Supreme (1 Stück)","Veggie Supreme (1 slice)","main",215,9,28,7,4,0.4],
+    ["meat","Meat Lovers (1 Stück)","Meat Lovers (1 slice)","main",275,14,27,12,4,0.4],
+    ["pasta","Pasta Bolognese","Pasta Bolognese","main",700,30,85,25,1],
+    ["wings","Chicken Wings (6 Stk.)","Chicken wings (6 pcs)","starter",420,36,4,29,1],
+    ["salad","Salat (Beilage)","Side salad","salad",120,3,12,7],
+    ["sticks","Breadsticks (2 Stk.)","Breadsticks (2 pcs)","side",230,6,34,7],
+    ["dough","Cookie-Dessert","Cookie dessert","dessert",380,4,55,16],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

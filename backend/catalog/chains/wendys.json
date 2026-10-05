@@ -1,0 +1,26 @@
+{
+  "id": "wendys",
+  "name": "Wendy's",
+  "emoji": "🍔",
+  "color": "#E2203D",
+  "type": "burger",
+  "region": "US",
+  "src": "estimate",
+  "pos": 7,
+  "items": [
+    ["dave1","Dave's Single","Dave's Single","main",590,30,39,34],
+    ["dave2","Dave's Double","Dave's Double","main",810,49,40,48,1],
+    ["bacon","Baconator","Baconator","main",950,57,38,62,1],
+    ["jrcheese","Jr. Cheeseburger","Jr. Cheeseburger","main",290,15,26,13,3,0.7],
+    ["spicy","Spicy Chicken Sandwich","Spicy Chicken Sandwich","main",500,29,51,21],
+    ["grilled","Gegrilltes Chicken Sandwich","Grilled Chicken Sandwich","main",370,34,38,10],
+    ["nug10","Chicken Nuggets (10 Stk.)","Chicken Nuggets (10 pcs)","starter",450,23,26,29,1],
+    ["nug4","Chicken Nuggets (4 Stk.)","Chicken Nuggets (4 pcs)","starter",170,9,10,11],
+    ["chili","Chili (klein)","Chili (small)","side",240,17,23,7],
+    ["potato","Ofenkartoffel (natur)","Baked potato (plain)","side",270,7,61,0],
+    ["friesm","Pommes mittel","Fries medium","side",350,5,50,15],
+    ["frosty","Frosty (klein)","Frosty (small)","dessert",340,9,53,9],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

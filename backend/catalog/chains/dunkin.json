@@ -1,0 +1,18 @@
+{
+  "id": "dunkin",
+  "name": "Dunkin'",
+  "emoji": "🍩",
+  "color": "#FF671F",
+  "type": "cafe",
+  "region": "US",
+  "src": "estimate",
+  "pos": 19,
+  "items": [
+    ["bagel","Egg & Cheese Bagel","Egg & cheese bagel","main",430,19,52,15],
+    ["wake","Wake-Up Wrap Ei & Käse","Wake-up wrap egg & cheese","main",180,9,13,10,3,0.5],
+    ["hash","Hash Browns","Hash browns","side",130,1,14,8],
+    ["donut","Donut (Glasur)","Glazed donut","dessert",240,3,31,11],
+    ["coffee","Kaffee schwarz","Black coffee","drink",5,0,1,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

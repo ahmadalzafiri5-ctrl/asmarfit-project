@@ -1,0 +1,22 @@
+{
+  "id": "g_thai",
+  "name": "Thai",
+  "emoji": "🍜",
+  "color": "#2E9E6B",
+  "type": "asian",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 25,
+  "items": [
+    ["padthai","Pad Thai","Pad Thai","main",700,25,90,26,1],
+    ["greencurry","Grünes Curry mit Poulet & Reis","Green curry with chicken & rice","main",750,32,80,32,1],
+    ["friedrice","Gebratener Reis","Fried rice","main",650,22,90,20,1],
+    ["satay","Satay-Spiesse (4 Stk.)","Satay skewers (4 pcs)","main",320,28,10,19,2,0.6],
+    ["tomkha","Tom-Kha-Suppe","Tom kha soup","starter",350,18,12,26],
+    ["tomyum","Tom-Yum-Suppe","Tom yum soup","starter",150,14,12,5],
+    ["somtam","Som Tam (Papayasalat)","Som tam (papaya salad)","salad",200,6,25,9],
+    ["mango","Mango Sticky Rice","Mango sticky rice","dessert",450,6,80,12],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

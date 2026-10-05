@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, Children, cloneElement, createContext, useContext } from "react";
 import { Capacitor } from "@capacitor/core";
 import { searchBasics } from "./basics.js";
-import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal, customItem } from "./fastfood.js";
+import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal, customItem, checkCatalog, catalogCounts } from "./fastfood.js";
 import { ExerciseAnimation } from "./exerciseAnim.jsx";
 import { sceneFor } from "./exerciseScenes.js";
 import { visibleFor } from "./genderContent.js";
@@ -608,6 +608,18 @@ const STR = {
     ffCat_dessert: "Desserts",
     ffCat_drink: "Drinks",
     ffDisclaimer: "Estimates for Europe (Oct 2026), not the chains' official figures. Portions and recipes may differ.",
+    ffRegion_all: "All regions",
+    ffRegion_EU: "Europe / Switzerland",
+    ffRegion_US: "USA",
+    ffRegion_world: "World cuisines",
+    ffSrcShort_dataset: "nutrition table",
+    ffSrcNote_dataset: "Values from the chain's published US nutrition table (data set 2018). The current menu and other countries can differ.",
+    ffCatalogInfo: "Catalog: {c} chains · {i} items",
+    ffCatalogFrom_live: "up to date from the server",
+    ffCatalogFrom_cache: "saved on this phone",
+    ffCatalogFrom_bundled: "built into the app (offline)",
+    ffAddSearch: "Search items",
+    ffShowAll: "Show all ({n} more)",
     pantryIntro: "Create folders, for example Breakfast or Carbs, and save what you always buy. Then you log it with one tap, without searching.",
     pantryAddTo: "Entries go into the selected meal.",
     pantryEmpty: "Nothing in this folder yet.",
@@ -1409,6 +1421,18 @@ const STR = {
     ffCat_dessert: "Desserts",
     ffCat_drink: "Getränke",
     ffDisclaimer: "Richtwerte für Europa (Stand Okt. 2026), nicht die offiziellen Angaben der Ketten. Portionen und Rezepte können abweichen.",
+    ffRegion_all: "Alle Regionen",
+    ffRegion_EU: "Europa / Schweiz",
+    ffRegion_US: "USA",
+    ffRegion_world: "Weltküchen",
+    ffSrcShort_dataset: "Nährwerttabelle",
+    ffSrcNote_dataset: "Werte aus der veröffentlichten US-Nährwerttabelle der Kette (Datensatz 2018). Das aktuelle Menü und andere Länder können abweichen.",
+    ffCatalogInfo: "Katalog: {c} Ketten · {i} Artikel",
+    ffCatalogFrom_live: "aktuell vom Server",
+    ffCatalogFrom_cache: "auf diesem Handy gespeichert",
+    ffCatalogFrom_bundled: "in der App eingebaut (offline)",
+    ffAddSearch: "Artikel suchen",
+    ffShowAll: "Alle zeigen ({n} weitere)",
     pantryIntro: "Lege Ordner an, zum Beispiel Frühstück oder Carbs, und speichere dort, was du immer kaufst. Dann trackst du es mit einem Tipp, ohne zu suchen.",
     pantryAddTo: "Einträge landen in der gewählten Mahlzeit.",
     pantryEmpty: "Noch nichts in diesem Ordner.",
@@ -6243,13 +6267,58 @@ function FastFoodMenu({ t, lang, chain, items, onAdd, onDelete, onDeleteChain, o
   );
 }
 
+// The menus live on the server (the list grows there without an app update); the copy bundled in the app is the offline
+// fallback. The last server answer is kept in the browser, outside the asfit.* keys (not part of backups, rebuilt any time).
+const FF_CACHE_KEY = "asfitcache.ffCatalog";
+function useFastFoodCatalog() {
+  const [cat, setCat] = useState(() => {
+    try {
+      const c = JSON.parse(localStorage.getItem(FF_CACHE_KEY) || "null");
+      const chains = c && checkCatalog(c.chains);
+      if (chains) return { chains, version: c.version, from: "cache" };
+    } catch {}
+    return { chains: CHAINS, version: null, from: "bundled" };
+  });
+  useEffect(() => {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 8000);
+    fetch(API_BASE + "/api/fastfood/catalog" + (cat.version ? "?v=" + encodeURIComponent(cat.version) : ""), { signal: ctl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!j || !j.version) return;
+        if (j.unchanged) {
+          setCat((c) => (c.from === "cache" ? { ...c, from: "live" } : c));
+          return;
+        }
+        const chains = checkCatalog(j.chains);
+        if (!chains) return;
+        try {
+          localStorage.setItem(FF_CACHE_KEY, JSON.stringify({ version: j.version, chains: j.chains }));
+        } catch {}
+        setCat({ chains, version: j.version, from: "live" });
+      })
+      .catch(() => {})
+      .finally(() => clearTimeout(timer));
+    return () => {
+      ctl.abort();
+      clearTimeout(timer);
+    };
+  }, []);
+  return cat;
+}
+const FF_REGIONS = ["EU", "US", "world"];
+
 function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProtein, proteinTarget, onLog }) {
   const last = data.last;
-  const allChains = useMemo(() => [...(data.mine || []), ...CHAINS], [data.mine]);
+  const catalog = useFastFoodCatalog();
+  const allChains = useMemo(() => [...(data.mine || []), ...catalog.chains], [data.mine, catalog.chains]);
   const [chainId, setChainId] = useState(null);
   const [step, setStep] = useState("chain"); // chain -> budget -> result (menu = add items, reachable from budget and result)
   const [cq, setCq] = useState("");
   const [ctype, setCtype] = useState("all");
+  const [cregion, setCregion] = useState("all");
+  const [addQ, setAddQ] = useState("");
+  const [addAll, setAddAll] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [menuFrom, setMenuFrom] = useState("budget");
@@ -6341,9 +6410,10 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
 
   if (step === "chain") {
     const q = cq.trim().toLowerCase();
-    const types = ["all", ...(data.mine && data.mine.length ? ["mine"] : []), ...Array.from(new Set(CHAINS.map((c) => c.type)))];
+    const types = ["all", ...(data.mine && data.mine.length ? ["mine"] : []), ...Array.from(new Set(catalog.chains.map((c) => c.type)))];
+    const regions = FF_REGIONS.filter((r) => catalog.chains.some((c) => (c.region || "world") === r));
     const shown = allChains
-      .filter((c) => (ctype === "all" || (ctype === "mine" ? c.mine : c.type === ctype)) && (!q || c.name.toLowerCase().includes(q)))
+      .filter((c) => (ctype === "all" || (ctype === "mine" ? c.mine : c.type === ctype)) && (cregion === "all" || c.mine || (c.region || "world") === cregion) && (!q || c.name.toLowerCase().includes(q)))
       .sort((a, b) => (b.id === last ? 1 : 0) - (a.id === last ? 1 : 0));
     const create = () => {
       const name = newName.trim().slice(0, 40);
@@ -6366,6 +6436,13 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
           <Search size={16} color={COLORS.dim} />
           <input data-chain-search value={cq} onChange={(e) => setCq(e.target.value)} placeholder={t.ffSearchChain} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14 }} />
         </div>
+        {regions.length > 1 && (
+          <div data-chain-regions style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 8, paddingBottom: 2 }}>
+            {["all", ...regions].map((k) => (
+              <Chip key={k} label={k === "all" ? t.ffRegion_all : t["ffRegion_" + k]} active={cregion === k} onClick={() => setCregion(k)} />
+            ))}
+          </div>
+        )}
         <div data-chain-types style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 14, paddingBottom: 2 }}>
           {types.map((k) => (
             <Chip key={k} label={k === "all" ? t.intakeAll : t["ffType_" + k]} active={ctype === k} onClick={() => setCtype(k)} />
@@ -6378,7 +6455,7 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
               <span style={{ fontSize: 30 }}>{c.emoji}</span>
               <div>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 800, color: COLORS.text, lineHeight: 1.15 }}>{c.name}</div>
-                <div style={{ ...small, fontSize: 11.5, marginTop: 3 }}>{c.items.length + ((data.custom || {})[c.id] || []).length} {t.ffItems}{c.generic ? " · " + t.ffGeneric : ""}</div>
+                <div style={{ ...small, fontSize: 11.5, marginTop: 3 }}>{c.items.length + ((data.custom || {})[c.id] || []).length} {t.ffItems}{c.generic ? " · " + t.ffGeneric : c.src === "dataset" ? " · " + t.ffSrcShort_dataset : ""}</div>
               </div>
             </div>
           ))}
@@ -6401,6 +6478,9 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
           </div>
         )}
         <div style={{ ...small, fontSize: 11.5, lineHeight: 1.5, marginTop: 18 }}>{t.ffDisclaimer}</div>
+        <div data-catalog-info style={{ ...small, fontSize: 11, lineHeight: 1.5, marginTop: 8 }}>
+          {t.ffCatalogInfo.replace("{c}", catalogCounts(catalog.chains).chains).replace("{i}", catalogCounts(catalog.chains).items)} · {t["ffCatalogFrom_" + catalog.from]}
+        </div>
       </div>
     );
   }
@@ -6437,6 +6517,7 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
         {backLink(t.ffOtherPlace, "chain")}
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text }}>{t.ffHowMuch}</div>
         <div style={{ ...small, marginBottom: 6 }}>{chain.emoji} {chain.name}</div>
+        {chain.src === "dataset" && <div data-src-note style={{ ...small, fontSize: 11.5, lineHeight: 1.45, marginBottom: 6 }}>{t.ffSrcNote_dataset}</div>}
 
         <div style={{ position: "relative", width: 240, height: 240, margin: "0 auto" }}>
           <svg
@@ -6617,7 +6698,16 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
             <div data-missing onClick={() => { setMenuFrom("result"); setStep("menu"); }} style={{ textAlign: "center", padding: "6px 0 2px", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>＋ {t.ffMissing}</div>
             {adding && (
               <div style={{ marginTop: 6 }}>
-                {groups.map((g) => (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, background: COLORS.raised, borderRadius: 10, padding: "8px 10px", marginBottom: 6 }}>
+                  <Search size={14} color={COLORS.dim} />
+                  <input data-add-search value={addQ} onChange={(e) => setAddQ(e.target.value)} placeholder={t.ffAddSearch} style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13 }} />
+                </div>
+                {groups.map((g0) => {
+                  const aq = addQ.trim().toLowerCase();
+                  const found = aq ? g0.items.filter((it) => nm(it).toLowerCase().includes(aq)) : g0.items;
+                  const hits = [...found.filter((it) => it.mine), ...found.filter((it) => !it.mine)]; // own items first
+                  const g = { ...g0, items: aq || addAll ? hits : hits.slice(0, 6), more: !aq && !addAll ? Math.max(0, hits.length - 6) : 0 };
+                  return g.items.length === 0 ? null : (
                   <div key={g.k} style={{ marginBottom: 8 }}>
                     <div style={{ ...small, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", margin: "6px 0 4px" }}>{t["ffCat_" + g.k]}</div>
                     {g.items.map((it) => (
@@ -6626,8 +6716,10 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
                         <span style={{ ...small, fontSize: 11.5, whiteSpace: "nowrap" }}>{it.kcal} kcal · {ffR1(it.p)} g P</span>
                       </div>
                     ))}
+                    {g.more > 0 && <div data-add-more onClick={() => setAddAll(true)} style={{ textAlign: "center", padding: "4px 0", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.ffShowAll.replace("{n}", g.more)}</div>}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

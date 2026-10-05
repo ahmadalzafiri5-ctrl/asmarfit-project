@@ -1,0 +1,20 @@
+{
+  "id": "starbucks",
+  "name": "Starbucks",
+  "emoji": "☕",
+  "color": "#00704A",
+  "type": "cafe",
+  "region": "US",
+  "src": "estimate",
+  "pos": 20,
+  "items": [
+    ["bites","Egg Bites Bacon & Gruyère (2 Stk.)","Bacon & Gruyère egg bites (2)","main",300,19,9,20],
+    ["wrap","Egg-White Spinat-Feta-Wrap","Spinach feta egg-white wrap","main",290,20,34,8],
+    ["turkey","Turkey-Bacon-Cheddar-Sandwich (Eiweiss)","Turkey bacon cheddar egg-white sandwich","main",230,15,28,5],
+    ["bowl","Chicken-Quinoa-Protein-Bowl","Chicken & quinoa protein bowl","main",420,27,42,16],
+    ["box","Protein-Box mit Ei & Käse","Eggs & cheddar protein box","main",460,23,38,24],
+    ["croissant","Butter-Croissant","Butter croissant","side",260,5,28,14],
+    ["latte","Caffè Latte (Grande)","Caffè latte (grande)","drink",190,13,19,7],
+    ["coffee","Filterkaffee","Brewed coffee","drink",5,1,0,0]
+  ]
+}

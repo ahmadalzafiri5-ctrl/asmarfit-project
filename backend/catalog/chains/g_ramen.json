@@ -1,0 +1,22 @@
+{
+  "id": "g_ramen",
+  "name": "Ramen / Japanische Küche",
+  "emoji": "🍜",
+  "color": "#B5651D",
+  "type": "asian",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 26,
+  "items": [
+    ["tonkotsu","Tonkotsu Ramen","Tonkotsu ramen","main",800,35,85,35,1],
+    ["shoyu","Shoyu Ramen","Shoyu ramen","main",550,28,70,17,1],
+    ["katsu","Katsu-Curry","Katsu curry","main",1000,40,110,45,1],
+    ["gyudon","Gyudon (Rindfleisch-Bowl)","Gyudon (beef bowl)","main",700,25,95,22,1],
+    ["udon","Udon-Suppe","Udon soup","main",400,15,70,6,1],
+    ["karaage","Karaage (5 Stk.)","Karaage (5 pcs)","starter",350,22,18,20],
+    ["onigiri","Onigiri","Onigiri","side",180,4,38,1,3,0.4],
+    ["miso","Miso-Suppe","Miso soup","starter",40,3,4,1.5],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

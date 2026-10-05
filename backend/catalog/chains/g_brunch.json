@@ -1,0 +1,23 @@
+{
+  "id": "g_brunch",
+  "name": "Frühstück / Brunch",
+  "emoji": "🍳",
+  "color": "#E0A100",
+  "type": "cafe",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 31,
+  "items": [
+    ["eggs","Rührei (3 Eier) mit Toast","Scrambled eggs (3) with toast","main",450,25,25,27],
+    ["omelette","Omelette Schinken & Käse","Ham & cheese omelette","main",500,32,6,38],
+    ["benedict","Eggs Benedict","Eggs Benedict","main",650,28,35,44],
+    ["avotoast","Avocado-Toast mit Ei","Avocado toast with egg","main",450,16,35,28],
+    ["pancakes","Pancakes (3 Stk.) mit Sirup","Pancakes (3) with syrup","main",600,10,100,18],
+    ["frenchtoast","French Toast","French toast","main",550,15,70,22],
+    ["porridge","Porridge mit Früchten","Porridge with fruit","main",350,10,60,7],
+    ["granola","Joghurt-Bowl mit Granola","Yoghurt bowl with granola","main",400,15,55,14],
+    ["bacon","Speck (3 Scheiben)","Bacon (3 slices)","side",130,9,0,10],
+    ["oj","Orangensaft","Orange juice","drink",110,1,25,0.5]
+  ]
+}

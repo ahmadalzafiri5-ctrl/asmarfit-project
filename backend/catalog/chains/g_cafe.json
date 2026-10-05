@@ -1,0 +1,23 @@
+{
+  "id": "g_cafe",
+  "name": "Café / Bäckerei",
+  "emoji": "🥐",
+  "color": "#A0702A",
+  "type": "cafe",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 30,
+  "items": [
+    ["cheesesand","Käse-Sandwich","Cheese sandwich","main",450,20,45,20],
+    ["hamtoast","Schinken-Käse-Toast","Ham & cheese toastie","main",380,18,36,17],
+    ["chickensand","Poulet-Sandwich","Chicken sandwich","main",420,28,40,16],
+    ["bagel","Lachs-Bagel","Salmon bagel","main",450,22,50,16],
+    ["yoghurt","Joghurt mit Müesli","Yoghurt with muesli","main",300,12,40,10],
+    ["croissant","Croissant","Croissant","side",300,6,32,16],
+    ["muffin","Muffin","Muffin","dessert",420,6,55,20],
+    ["cake","Rüeblitorte (1 Stück)","Carrot cake (1 slice)","dessert",450,6,55,24],
+    ["latte","Latte Macchiato","Latte macchiato","drink",180,10,15,9],
+    ["cappu","Cappuccino","Cappuccino","drink",100,6,9,5]
+  ]
+}

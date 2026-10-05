@@ -1,0 +1,26 @@
+{
+  "id": "g_pizzeria",
+  "name": "Pizzeria / Italiener",
+  "emoji": "🍝",
+  "color": "#C8442B",
+  "type": "world",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 21,
+  "items": [
+    ["margh","Pizza Margherita (ganze)","Pizza Margherita (whole)","main",800,32,100,30,1],
+    ["salami","Pizza Salami (ganze)","Pizza salami (whole)","main",950,40,100,42,1],
+    ["quattro","Pizza Quattro Formaggi (ganze)","Pizza four cheese (whole)","main",1000,45,95,48,1],
+    ["calzone","Calzone","Calzone","main",900,38,95,40,1],
+    ["carbonara","Pasta Carbonara","Pasta carbonara","main",800,32,90,34,1],
+    ["bolo","Spaghetti Bolognese","Spaghetti Bolognese","main",700,30,85,24,1],
+    ["lasagne","Lasagne","Lasagne","main",700,33,55,38,1],
+    ["caprese","Caprese","Caprese","salad",350,20,6,28],
+    ["mixed","Gemischter Salat","Mixed salad","salad",120,3,8,8],
+    ["bruschetta","Bruschetta (3 Stk.)","Bruschetta (3 pcs)","starter",300,8,40,12],
+    ["tiramisu","Tiramisu","Tiramisu","dessert",450,7,45,26],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

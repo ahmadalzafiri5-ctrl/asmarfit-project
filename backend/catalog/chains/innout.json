@@ -1,0 +1,21 @@
+{
+  "id": "innout",
+  "name": "In-N-Out",
+  "emoji": "🍔",
+  "color": "#E41C2B",
+  "type": "burger",
+  "region": "US",
+  "src": "estimate",
+  "pos": 13,
+  "items": [
+    ["ham","Hamburger","Hamburger","main",390,16,39,19],
+    ["cheese","Cheeseburger","Cheeseburger","main",480,22,39,27],
+    ["dd","Double-Double","Double-Double","main",670,37,39,41],
+    ["ddps","Double-Double Protein Style","Double-Double Protein Style","main",520,33,11,39],
+    ["chps","Cheeseburger Protein Style","Cheeseburger Protein Style","main",330,18,11,25],
+    ["fries","Pommes","Fries","side",395,7,54,18],
+    ["shake","Milchshake (Schoko)","Chocolate shake","dessert",590,9,76,28],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

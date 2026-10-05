@@ -1,0 +1,22 @@
+{
+  "id": "g_greek",
+  "name": "Griechisch",
+  "emoji": "🥙",
+  "color": "#1F6FB5",
+  "type": "world",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 28,
+  "items": [
+    ["gyros","Gyros-Teller mit Reis & Pommes","Gyros plate with rice & fries","main",1100,45,100,55,1],
+    ["souvlaki","Souvlaki-Spiess (2 Stk.)","Souvlaki skewers (2 pcs)","main",400,40,8,22,2,0.6],
+    ["moussaka","Moussaka","Moussaka","main",650,28,40,40,1],
+    ["gemista","Gemista","Gemista","main",400,10,55,16,1],
+    ["greek","Griechischer Salat","Greek salad","salad",300,8,14,24],
+    ["tzatziki","Tzatziki","Tzatziki","extra",120,4,6,9],
+    ["pita","Pita","Pita","side",250,8,50,2],
+    ["baklava","Baklava (1 Stück)","Baklava (1 piece)","dessert",250,4,28,14],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

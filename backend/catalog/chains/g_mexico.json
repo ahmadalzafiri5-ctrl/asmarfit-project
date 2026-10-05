@@ -1,0 +1,22 @@
+{
+  "id": "g_mexico",
+  "name": "Mexikanisch (Restaurant)",
+  "emoji": "🌮",
+  "color": "#2C8A3D",
+  "type": "mexican",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 27,
+  "items": [
+    ["burrito","Burrito (Poulet)","Chicken burrito","main",800,38,85,32,1],
+    ["tacos","Tacos (3 Stk.)","Tacos (3 pcs)","main",600,30,55,28,1],
+    ["quesadilla","Quesadilla","Quesadilla","main",700,32,50,40,1],
+    ["fajitas","Fajitas (Poulet)","Chicken fajitas","main",600,45,35,28,1],
+    ["bowl","Burrito Bowl","Burrito bowl","main",650,35,75,22,1],
+    ["nachos","Nachos mit Käse","Cheese nachos","starter",800,22,80,45,1],
+    ["guac","Guacamole & Chips","Guacamole & chips","starter",450,6,40,30],
+    ["churros","Churros (4 Stk.)","Churros (4 pcs)","dessert",350,4,45,17],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

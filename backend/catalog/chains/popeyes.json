@@ -1,0 +1,25 @@
+{
+  "id": "popeyes",
+  "name": "Popeyes",
+  "emoji": "🍗",
+  "color": "#F26B26",
+  "type": "chicken",
+  "region": "US",
+  "src": "estimate",
+  "pos": 11,
+  "items": [
+    ["classic","Classic Chicken Sandwich","Classic Chicken Sandwich","main",700,28,50,42],
+    ["breast","Hähnchenbrust (mit Knochen)","Chicken breast (bone-in)","main",380,31,12,22,3,0.8],
+    ["thigh","Hähnchenschenkel (mit Knochen)","Chicken thigh (bone-in)","main",330,19,13,22,3,0.7],
+    ["leg","Hähnchenkeule (mit Knochen)","Chicken leg (bone-in)","main",160,13,5,10,4,0.4],
+    ["wing","Chicken Wing","Chicken wing","main",160,10,6,11,4,0.4],
+    ["tenders","Tenders (3 Stk.)","Tenders (3 pcs)","starter",340,26,20,18],
+    ["fries","Cajun Fries (regular)","Cajun fries (regular)","side",270,4,37,12],
+    ["rice","Red Beans & Rice","Red beans & rice","side",230,6,32,9],
+    ["mash","Kartoffelpüree","Mashed potatoes","side",110,2,16,4],
+    ["slaw","Coleslaw","Coleslaw","side",140,1,13,10],
+    ["biscuit","Biscuit","Biscuit","side",260,4,28,15],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

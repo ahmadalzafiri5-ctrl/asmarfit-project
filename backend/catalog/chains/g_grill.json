@@ -1,0 +1,24 @@
+{
+  "id": "g_grill",
+  "name": "Steakhouse / Grill",
+  "emoji": "🥩",
+  "color": "#8B2E1A",
+  "type": "world",
+  "region": "world",
+  "src": "estimate",
+  "generic": true,
+  "pos": 29,
+  "items": [
+    ["rump","Rumpsteak (250 g)","Rump steak (250 g)","main",600,60,0,38,1],
+    ["entrecote","Entrecôte (300 g)","Ribeye (300 g)","main",750,70,0,50,1],
+    ["filet","Rindsfilet (200 g)","Beef fillet (200 g)","main",400,46,0,24,1],
+    ["chicken","Pouletbrust gegrillt (300 g)","Grilled chicken breast (300 g)","main",300,50,0,10,1],
+    ["ribs","Spareribs (halbe Portion)","Spare ribs (half rack)","main",800,55,20,55,1],
+    ["fries","Pommes","Fries","side",380,5,50,18],
+    ["potato","Ofenkartoffel mit Sauerrahm","Baked potato with sour cream","side",350,7,55,11],
+    ["salad","Beilagensalat","Side salad","salad",100,2,8,6],
+    ["veg","Gegrilltes Gemüse","Grilled vegetables","extra",150,4,14,8],
+    ["cheesecake","Cheesecake","Cheesecake","dessert",450,7,42,28],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

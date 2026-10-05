@@ -1,0 +1,30 @@
+{
+  "id": "kfc",
+  "name": "KFC",
+  "emoji": "🍗",
+  "color": "#E4002B",
+  "type": "chicken",
+  "region": "EU",
+  "src": "estimate",
+  "pos": 2,
+  "items": [
+    ["breast","Original Recipe Brust","Original Recipe breast","main",390,39,11,21,3,0.8],
+    ["thigh","Original Recipe Schenkel","Original Recipe thigh","main",280,19,9,19,3,0.6],
+    ["drum","Original Recipe Unterschenkel","Original Recipe drumstick","main",130,12,4,8,4,0.35],
+    ["wing","Original Recipe Flügel","Original Recipe wing","main",130,10,5,8,4,0.35],
+    ["tenders","Tenders (3 Stk.)","Tenders (3 pcs)","main",290,25,17,14,2,0.7],
+    ["hotwings","Hot Wings (5 Stk.)","Hot wings (5 pcs)","main",380,22,17,24,1,0.8],
+    ["zinger","Zinger Burger","Zinger burger","main",520,25,50,25],
+    ["fillet","Chicken Fillet Burger","Chicken fillet burger","main",440,27,40,19],
+    ["twister","Twister Wrap","Twister wrap","main",480,23,45,23],
+    ["popcorn","Popcorn Chicken (klein)","Popcorn chicken (small)","starter",285,17,18,17],
+    ["chsalad","Chicken-Salat","Chicken salad","salad",250,24,12,12],
+    ["friesm","Pommes mittel","Fries medium","side",340,4,44,16],
+    ["wedges","Wedges (klein)","Wedges (small)","side",280,4,35,14],
+    ["slaw","Coleslaw","Coleslaw","side",150,1,13,10],
+    ["corn","Maiskolben","Corn on the cob","side",130,3,21,3],
+    ["cookie","Cookie","Cookie","dessert",210,2,30,9],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

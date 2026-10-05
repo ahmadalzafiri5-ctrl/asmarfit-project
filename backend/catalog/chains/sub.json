@@ -1,0 +1,30 @@
+{
+  "id": "sub",
+  "name": "Subway",
+  "emoji": "🥖",
+  "color": "#009743",
+  "type": "sandwich",
+  "region": "EU",
+  "src": "estimate",
+  "pos": 3,
+  "items": [
+    ["teri6","Chicken Teriyaki (15 cm)","Chicken Teriyaki (6 in)","main",340,25,52,4,2],
+    ["teri12","Chicken Teriyaki (30 cm)","Chicken Teriyaki (12 in)","main",680,50,104,8,1,1.5],
+    ["roast6","Oven Roasted Chicken (15 cm)","Oven Roasted Chicken (6 in)","main",320,24,46,5,2],
+    ["roast12","Oven Roasted Chicken (30 cm)","Oven Roasted Chicken (12 in)","main",640,48,92,10,1,1.5],
+    ["turkey6","Turkey Breast (15 cm)","Turkey Breast (6 in)","main",280,18,46,3,2],
+    ["turkey12","Turkey Breast (30 cm)","Turkey Breast (12 in)","main",560,36,92,6,1,1.5],
+    ["bmt6","Italian B.M.T. (15 cm)","Italian B.M.T. (6 in)","main",410,20,45,16,2],
+    ["steak6","Steak & Cheese (15 cm)","Steak & Cheese (6 in)","main",380,25,46,10,2],
+    ["tuna6","Tuna (15 cm)","Tuna (6 in)","main",450,19,44,22,2],
+    ["meatball6","Meatball Marinara (15 cm)","Meatball Marinara (6 in)","main",480,22,55,19,2],
+    ["veggie6","Veggie Delite (15 cm)","Veggie Delite (6 in)","main",230,9,44,2,2],
+    ["chsalad","Chicken-Teriyaki-Salat","Chicken Teriyaki salad","salad",200,24,18,3],
+    ["vegsalad","Veggie-Salat","Veggie salad","salad",60,3,10,1],
+    ["extra","Extra Poulet (doppelte Portion)","Extra chicken (double portion)","extra",90,15,1,2.5],
+    ["chips","Chips (Tüte)","Chips (bag)","side",150,2,15,9],
+    ["cookie","Cookie","Cookie","dessert",210,2,30,10],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

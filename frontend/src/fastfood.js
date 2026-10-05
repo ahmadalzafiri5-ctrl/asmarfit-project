@@ -192,6 +192,25 @@ const BASE = [
 
 export const CHAINS = [...BASE, ...MORE_CHAINS];
 
+// The server (GET /api/fastfood/catalog) is the master list; the menus above are the offline copy. A catalog from the
+// server is checked here before it is used, a broken one is ignored and the bundled menus stay.
+const CAT_SET = new Set(["main", "starter", "salad", "side", "extra", "dessert", "drink"]);
+const rowOk = (r) => Array.isArray(r) && r.length >= 8 && typeof r[0] === "string" && typeof r[1] === "string" && typeof r[2] === "string" && CAT_SET.has(r[3]) && [4, 5, 6, 7].every((i) => Number.isFinite(r[i]));
+export function checkCatalog(chains) {
+  if (!Array.isArray(chains) || chains.length < 3) return null;
+  const out = [];
+  const ids = new Set();
+  for (const c of chains) {
+    if (!c || typeof c.id !== "string" || typeof c.name !== "string" || !Array.isArray(c.items) || ids.has(c.id)) continue;
+    const items = c.items.filter(rowOk);
+    if (!items.length) continue;
+    ids.add(c.id);
+    out.push({ id: c.id, name: c.name, emoji: typeof c.emoji === "string" ? c.emoji : "🍽️", color: /^#[0-9a-fA-F]{6}$/.test(c.color || "") ? c.color : "#8A8A8A", type: typeof c.type === "string" ? c.type : "world", region: c.region || "world", src: c.src || "estimate", generic: c.generic, items });
+  }
+  return out.length >= 3 ? out : null;
+}
+export const catalogCounts = (chains) => ({ chains: chains.length, items: chains.reduce((n, c) => n + c.items.length, 0) });
+
 const CAT_ORDER = ["main", "starter", "salad", "side", "extra", "dessert", "drink"];
 export const CAT_KEYS = CAT_ORDER;
 
@@ -229,13 +248,45 @@ function mainSets(mains) {
   return out;
 }
 
+// With a big menu (the server catalog has up to ~100 mains for one chain) the search would explode, so each shelf is cut
+// down to the items that can win: most protein, best protein per kcal, leanest and smallest. Short menus stay untouched.
+const SHELF_CAP = { main: 14, starter: 4, salad: 3, side: 4, extra: 3, dessert: 3, drink: 3 };
+export function shortlist(arr, cat) {
+  const cap = SHELF_CAP[cat] || 4;
+  if (arr.length <= cap) return arr;
+  const keep = new Set();
+  const top = (cmp, n) => arr.slice().sort(cmp).slice(0, n).forEach((x) => keep.add(x));
+  const dens = (x) => x.p / Math.max(1, x.kcal);
+  const fatShare = (x) => (x.f * 9) / Math.max(1, x.kcal);
+  top((a, b) => b.p - a.p || a.kcal - b.kcal, Math.ceil(cap * 0.45));
+  top((a, b) => dens(b) - dens(a) || b.p - a.p, Math.ceil(cap * 0.3));
+  top((a, b) => fatShare(a) - fatShare(b) || b.p - a.p, Math.ceil(cap * 0.15));
+  top((a, b) => a.kcal - b.kcal, Math.max(1, Math.floor(cap * 0.15)));
+  return arr.filter((x) => keep.has(x));
+}
+
+// keeps the best few of a stream of orders, so millions of combinations never have to be stored
+function topList(n, better) {
+  const list = [];
+  return {
+    list,
+    add(c) {
+      let i = list.length;
+      while (i > 0 && better(c, list[i - 1])) i--;
+      if (i >= n) return;
+      list.splice(i, 0, c);
+      if (list.length > n) list.pop();
+    },
+  };
+}
+
 // Finds order variants that fit the budget; returns [{ key, label, lines, tot }] — best first.
 //   proteinFirst: the highest-protein order leads, otherwise the lower-fat one does.
 export function suggest(chain, budget, proteinFirst = true, extra = []) {
   const items = itemsOf(chain, extra);
-  const by = (cat) => items.filter((i) => i.cat === cat);
+  const by = (cat) => shortlist(items.filter((i) => i.cat === cat), cat);
   const opt = (arr) => [null, ...arr];
-  const drinks = by("drink").filter((d) => d.kcal <= 120 || d.p >= 3); // water is added separately
+  const drinks = shortlist(items.filter((i) => i.cat === "drink" && (i.kcal <= 120 || i.p >= 3)), "drink"); // water is added separately
   const sets = mainSets(by("main"));
   const startersO = opt(by("starter"));
   const saladsO = opt(by("salad"));
@@ -243,12 +294,28 @@ export function suggest(chain, budget, proteinFirst = true, extra = []) {
   const extrasO = opt(by("extra"));
   const dessertsO = opt(by("dessert"));
   const drinksO = opt(drinks);
-  const combos = [];
+  const cmpP = (a, b) => a.tot.p > b.tot.p || (a.tot.p === b.tot.p && a.tot.kcal > b.tot.kcal);
+  const cmpD = (a, b) => {
+    const x = a.tot.p / a.tot.kcal;
+    const y = b.tot.p / b.tot.kcal;
+    return x > y || (x === y && a.tot.p > b.tot.p);
+  };
+  const cmpL = (a, b) => a.tot.p > b.tot.p;
+  // separate tops for orders that contain a main (preferred) and for everything
+  const mk = () => ({ p: topList(3, cmpP), d: topList(3, cmpD), l: topList(3, cmpL) });
+  const withMain = mk();
+  const anyOrder = mk();
+  const feed = (t, c) => {
+    t.p.add(c);
+    if (c.tot.kcal >= budget * 0.5) t.d.add(c);
+    if (c.tot.kcal >= budget * 0.6 && (c.tot.f * 9) / Math.max(1, c.tot.kcal) <= 0.34) t.l.add(c);
+  };
+  let any = false;
   for (const ms of sets) {
-    const mk = ms.reduce((s, l) => s + l.it.kcal * l.qty, 0);
-    if (mk > budget) continue;
+    const mk0 = ms.reduce((s, l) => s + l.it.kcal * l.qty, 0);
+    if (mk0 > budget) continue;
     for (const st of startersO) {
-      const k1 = mk + (st ? st.kcal : 0);
+      const k1 = mk0 + (st ? st.kcal : 0);
       if (k1 > budget) continue;
       for (const sa of saladsO) {
         const k2 = k1 + (sa ? sa.kcal : 0);
@@ -266,11 +333,14 @@ export function suggest(chain, budget, proteinFirst = true, extra = []) {
               for (const dr of drinksO) {
                 const k6 = k5 + (dr ? dr.kcal : 0);
                 if (k6 > budget) continue;
+                if (!ms.length && !st && !sa && !si && !ex && !de && !dr) continue;
                 const lines = ms.map((l) => ({ it: l.it, qty: l.qty }));
                 [st, sa, si, ex, de, dr].forEach((x) => x && lines.push({ it: x, qty: 1 }));
-                if (!lines.length) continue;
                 const tot = sumLines(lines);
-                combos.push({ lines, tot, key: lines.map((l) => l.it.id + "x" + l.qty).sort().join("|") });
+                const c = { lines, tot, key: lines.map((l) => l.it.id + "x" + l.qty).sort().join("|") };
+                any = true;
+                feed(anyOrder, c);
+                if (lines.some((l) => l.it.cat === "main")) feed(withMain, c);
               }
             }
           }
@@ -278,22 +348,18 @@ export function suggest(chain, budget, proteinFirst = true, extra = []) {
       }
     }
   }
-  if (!combos.length) return [];
-  const hasMain = combos.some((c) => c.lines.some((l) => l.it.cat === "main"));
-  const pool = hasMain ? combos.filter((c) => c.lines.some((l) => l.it.cat === "main")) : combos;
+  if (!any) return [];
+  const pool = withMain.p.list.length ? withMain : anyOrder;
   const used = new Set();
-  const take = (sorted) => {
-    const hit = sorted.find((c) => !used.has(c.key));
+  const take = (list) => {
+    const hit = list.find((c) => !used.has(c.key));
     if (!hit) return null;
     used.add(hit.key);
     return hit;
   };
-  const byProtein = pool.slice().sort((a, b) => b.tot.p - a.tot.p || b.tot.kcal - a.tot.kcal);
-  const dense = pool.filter((c) => c.tot.kcal >= budget * 0.5).sort((a, b) => b.tot.p / b.tot.kcal - a.tot.p / a.tot.kcal || b.tot.p - a.tot.p);
-  const lean = pool.filter((c) => c.tot.kcal >= budget * 0.6 && (c.tot.f * 9) / Math.max(1, c.tot.kcal) <= 0.34).sort((a, b) => b.tot.p - a.tot.p);
-  const a = take(byProtein);
-  const b = take(dense);
-  const c = take(lean);
+  const a = take(pool.p.list);
+  const b = take(pool.d.list);
+  const c = take(pool.l.list);
   const out = [];
   if (a) out.push({ ...a, label: "ffBestProtein" });
   if (b) out.push({ ...b, label: "ffBestRatio" });

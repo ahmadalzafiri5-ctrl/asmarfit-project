@@ -1,0 +1,24 @@
+{
+  "id": "doner",
+  "name": "Döner",
+  "emoji": "🥙",
+  "color": "#C77B30",
+  "type": "doner",
+  "region": "EU",
+  "src": "estimate",
+  "pos": 6,
+  "items": [
+    ["dchicken","Poulet-Döner (im Brot)","Chicken doner (in bread)","main",600,38,55,22,1],
+    ["dbeef","Kalbs-Döner (im Brot)","Veal doner (in bread)","main",680,34,55,34,1],
+    ["wchicken","Poulet-Dürüm","Chicken wrap","main",640,40,60,24,1],
+    ["wbeef","Fleisch-Dürüm","Meat wrap","main",730,36,66,36,1],
+    ["plate","Döner-Teller (ohne Brot, mit Salat)","Doner plate (no bread, with salad)","main",480,40,12,30,2],
+    ["falafel","Falafel-Dürüm","Falafel wrap","main",620,18,75,26,1],
+    ["salad","Salat (Beilage)","Side salad","salad",80,2,8,4],
+    ["fries","Pommes","Fries","side",380,5,50,18],
+    ["baklava","Baklava (1 Stück)","Baklava (1 piece)","dessert",160,2,15,10],
+    ["ayran","Ayran","Ayran","drink",70,3,5,4],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}

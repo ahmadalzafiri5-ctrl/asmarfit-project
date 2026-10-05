@@ -1,0 +1,24 @@
+{
+  "id": "fiveguys",
+  "name": "Five Guys",
+  "emoji": "🍟",
+  "color": "#D31F27",
+  "type": "burger",
+  "region": "US",
+  "src": "estimate",
+  "pos": 12,
+  "items": [
+    ["ham","Hamburger","Hamburger","main",700,39,39,43,1],
+    ["cheese","Cheeseburger","Cheeseburger","main",840,47,40,55,1],
+    ["lham","Little Hamburger","Little Hamburger","main",480,23,39,26],
+    ["lcheese","Little Cheeseburger","Little Cheeseburger","main",550,27,40,32],
+    ["bacon","Bacon Cheeseburger","Bacon Cheeseburger","main",920,51,40,62,1],
+    ["hotdog","Hot Dog","Hot Dog","main",520,18,40,32],
+    ["veg","Veggie Sandwich","Veggie Sandwich","main",440,10,43,26],
+    ["friesl","Pommes (Little)","Fries (little)","side",530,8,72,23],
+    ["friesr","Pommes (Regular)","Fries (regular)","side",950,14,131,41,1],
+    ["shake","Milchshake","Milkshake","dessert",670,15,90,28],
+    ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+    ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0]
+  ]
+}
