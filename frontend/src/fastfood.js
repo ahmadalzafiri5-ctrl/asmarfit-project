@@ -4,15 +4,18 @@
 //   category: main | starter | salad | side | dessert | drink | extra
 //   max = most you can order of one item (default 2), weight = how much of the "main budget" one unit uses (default 1)
 
+import { MORE_CHAINS } from "./fastfoodMore.js";
+
 const COLA = ["cola", "Coca-Cola (0,4 l)", "Coca-Cola (0.4 l)", "drink", 170, 0, 42, 0];
 const COLA_ZERO = ["colazero", "Coca-Cola Zero (0,4 l)", "Coca-Cola Zero (0.4 l)", "drink", 2, 0, 0, 0];
 
-export const CHAINS = [
+const BASE = [
   {
     id: "mcd",
     name: "McDonald's",
     emoji: "🍔",
     color: "#FFC72C",
+    type: "burger",
     items: [
       ["bigmac", "Big Mac", "Big Mac", "main", 505, 26, 42, 26],
       ["royal", "Royal Cheese", "Royal Cheese", "main", 540, 30, 38, 30],
@@ -43,6 +46,7 @@ export const CHAINS = [
     name: "Burger King",
     emoji: "👑",
     color: "#F5A623",
+    type: "burger",
     items: [
       ["whopper", "Whopper", "Whopper", "main", 660, 28, 50, 37, 1],
       ["dblwhopper", "Double Whopper", "Double Whopper", "main", 910, 52, 51, 54, 1],
@@ -69,6 +73,7 @@ export const CHAINS = [
     name: "KFC",
     emoji: "🍗",
     color: "#E4002B",
+    type: "chicken",
     items: [
       ["breast", "Original Recipe Brust", "Original Recipe breast", "main", 390, 39, 11, 21, 3, 0.8],
       ["thigh", "Original Recipe Schenkel", "Original Recipe thigh", "main", 280, 19, 9, 19, 3, 0.6],
@@ -95,6 +100,7 @@ export const CHAINS = [
     name: "Subway",
     emoji: "🥖",
     color: "#009743",
+    type: "sandwich",
     items: [
       ["teri6", "Chicken Teriyaki (15 cm)", "Chicken Teriyaki (6 in)", "main", 340, 25, 52, 4, 2],
       ["teri12", "Chicken Teriyaki (30 cm)", "Chicken Teriyaki (12 in)", "main", 680, 50, 104, 8, 1, 1.5],
@@ -121,6 +127,7 @@ export const CHAINS = [
     name: "Domino's",
     emoji: "🍕",
     color: "#006491",
+    type: "pizza",
     items: [
       ["marg", "Margherita (1 Stück)", "Margherita (1 slice)", "main", 195, 8.5, 25, 6.5, 4, 0.4],
       ["pep", "Pepperoni (1 Stück)", "Pepperoni (1 slice)", "main", 225, 10, 25, 9.5, 4, 0.4],
@@ -143,6 +150,7 @@ export const CHAINS = [
     name: "Pizza Hut",
     emoji: "🍕",
     color: "#EE3124",
+    type: "pizza",
     items: [
       ["marg", "Margherita (1 Stück)", "Margherita (1 slice)", "main", 205, 9, 27, 7, 4, 0.4],
       ["pep", "Pepperoni (1 Stück)", "Pepperoni (1 slice)", "main", 250, 11, 27, 11, 4, 0.4],
@@ -164,6 +172,7 @@ export const CHAINS = [
     name: "Döner",
     emoji: "🥙",
     color: "#C77B30",
+    type: "doner",
     items: [
       ["dchicken", "Poulet-Döner (im Brot)", "Chicken doner (in bread)", "main", 600, 38, 55, 22, 1],
       ["dbeef", "Kalbs-Döner (im Brot)", "Veal doner (in bread)", "main", 680, 34, 55, 34, 1],
@@ -181,12 +190,20 @@ export const CHAINS = [
   },
 ];
 
+export const CHAINS = [...BASE, ...MORE_CHAINS];
+
 const CAT_ORDER = ["main", "starter", "salad", "side", "extra", "dessert", "drink"];
 export const CAT_KEYS = CAT_ORDER;
 
 // row -> object
-export function itemsOf(chain) {
-  return chain.items.map((r) => ({ id: r[0], de: r[1], en: r[2], cat: r[3], kcal: r[4], p: r[5], c: r[6], f: r[7], max: r[8] || 2, w: r[9] || 1 }));
+// extra = items the user added himself (already in the object form below)
+export function itemsOf(chain, extra = []) {
+  return chain.items.map((r) => ({ id: r[0], de: r[1], en: r[2], cat: r[3], kcal: r[4], p: r[5], c: r[6], f: r[7], max: r[8] || 2, w: r[9] || 1 })).concat(extra);
+}
+
+// an item the user typed in or picked from the world-wide search, in the same shape as the rows above
+export function customItem(c) {
+  return { id: c.id, de: c.name, en: c.name, cat: c.cat || "main", kcal: Math.round(c.kcal), p: c.p, c: c.c, f: c.f, max: 3, w: c.cat === "main" || !c.cat ? 1 : 1, mine: true };
 }
 
 export const sumLines = (lines) => lines.reduce((s, l) => ({ kcal: s.kcal + l.it.kcal * l.qty, p: s.p + l.it.p * l.qty, c: s.c + l.it.c * l.qty, f: s.f + l.it.f * l.qty }), { kcal: 0, p: 0, c: 0, f: 0 });
@@ -214,8 +231,8 @@ function mainSets(mains) {
 
 // Finds order variants that fit the budget; returns [{ key, label, lines, tot }] — best first.
 //   proteinFirst: the highest-protein order leads, otherwise the lower-fat one does.
-export function suggest(chain, budget, proteinFirst = true) {
-  const items = itemsOf(chain);
+export function suggest(chain, budget, proteinFirst = true, extra = []) {
+  const items = itemsOf(chain, extra);
   const by = (cat) => items.filter((i) => i.cat === cat);
   const opt = (arr) => [null, ...arr];
   const drinks = by("drink").filter((d) => d.kcal <= 120 || d.p >= 3); // water is added separately
