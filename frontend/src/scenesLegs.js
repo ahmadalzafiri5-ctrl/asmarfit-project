@@ -1,4 +1,4 @@
-// Legs: squats, presses, lunges, curls, calves, jumps.
+﻿// Legs: squats, presses, lunges, curls, calves, jumps.
 import { FL, rel, cap, L, C, R, box, backPad, ZOUT } from "./sceneKit.js";
 
 export function addLegs(S) {
@@ -134,8 +134,28 @@ export function addLegs(S) {
   {
     const mk = (a, k) => ({ hy: 108, legL: [a, 0, k, 1], legR: [a, 0, k, 1], handL: [86, 96], handR: [154, 96] });
     const eq = [L([100, 118], [140, 118], 9, "pad"), L([120, 122], [120, FL], 3), C("kneeL", 5, "pad", { fill: "var(--c-border)" }), C("kneeR", 5, "pad", { fill: "var(--c-border)" })];
-    S.adductor = { view: "front", kf: [mk(80, 0.85), mk(16, 0.6)], eq, held: "none", ms: 3000, cap: cap("Beine zusammendrücken", "Kontrolliert öffnen", "Squeeze the legs together", "Open with control") };
-    S.abductor = { view: "front", kf: [mk(16, 0.6), mk(80, 0.85)], eq, held: "none", ms: 3000, cap: cap("Beine nach außen drücken", "Kontrolliert schließen", "Push the legs apart", "Close with control") };
+    S.adductor = {
+      view: "top",
+      kf: [
+        { legL: [50], legR: [50], armL: [172, 24], armR: [172, 24] },
+        { legL: [6], legR: [6], armL: [172, 24], armR: [172, 24] },
+      ],
+      eq: [R([120, 128], 46, 30, "pad", { rx: 6 }), R([120, 104], 56, 8, "pad", { rx: 4 }), R("kneeL", 18, 9, "pad", { rx: 3 }), R("kneeR", 18, 9, "pad", { rx: 3 })],
+      held: "none",
+      ms: 3000,
+      cap: cap("Beine zusammendrücken", "Kontrolliert öffnen", "Squeeze the legs together", "Open with control"),
+    };
+    S.abductor = {
+      view: "top",
+      kf: [
+        { legL: [6], legR: [6], armL: [172, 24], armR: [172, 24] },
+        { legL: [50], legR: [50], armL: [172, 24], armR: [172, 24] },
+      ],
+      eq: [R([120, 128], 46, 30, "pad", { rx: 6 }), R([120, 104], 56, 8, "pad", { rx: 4 }), R("kneeL", 18, 9, "pad", { rx: 3 }), R("kneeR", 18, 9, "pad", { rx: 3 })],
+      held: "none",
+      ms: 3000,
+      cap: cap("Beine nach außen drücken", "Kontrolliert schließen", "Push the legs apart", "Close with control"),
+    };
   }
 
   // wall sit: slide down, then hold

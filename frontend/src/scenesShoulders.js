@@ -135,23 +135,24 @@ export function addShoulders(S) {
     cap: cap("Arme zur Seite heben", "Langsam senken", "Raise the arms out to the sides", "Lower slowly"),
   };
   S.reardelt_cable = {
-    view: "front",
+    view: "top",
+    noLegs: true,
     kf: [
-      { handL: [128, 52], handR: [112, 52] },
-      { handL: [62, 46], handR: [178, 46] },
+      { armL: [14, -34], armR: [14, -34] },
+      { armL: [96, 92], armR: [96, 92] },
     ],
-    eq: [L("handL", [212, 10], 2, "mach", { o: 0.8 }), L("handR", [28, 10], 2, "mach", { o: 0.8 }), C([212, 10], 5), C([28, 10], 5), L([212, 10], [212, FL], 3), L([28, 10], [28, FL], 3)],
-    held: "grip",
+    eq: [L([218, 48], "handL", 2, "mach", { o: 0.85 }), L([22, 48], "handR", 2, "mach", { o: 0.85 }), C([22, 48], 5), C([218, 48], 5)],
+    held: "none",
     ms: 3200,
     cap: cap("Arme weit öffnen", "Kontrolliert zurück", "Open the arms wide", "Back with control"),
   };
   S.reardelt_machine = {
-    view: "front",
+    view: "top",
     kf: [
-      { hy: 108, legL: [0, 0, 0.12, 1], legR: [0, 0, 0.12, 1], handL: [114, 78], handR: [126, 78] },
-      { hy: 108, legL: [0, 0, 0.12, 1], legR: [0, 0, 0.12, 1], handL: [52, 60], handR: [188, 60] },
+      { armL: [30, -50], armR: [30, -50] },
+      { armL: [100, 96], armR: [100, 96] },
     ],
-    eq: [L([98, 118], [142, 118], 9, "pad"), L([120, 122], [120, FL], 3), L([40, 54], [40, 80], 8, "pad"), L([200, 54], [200, 80], 8, "pad")],
+    eq: [R([120, 70], 46, 8, "pad", { rx: 4 }), C([62, 92], 6, "mach", { fill: "var(--c-dim)" }), C([178, 92], 6, "mach", { fill: "var(--c-dim)" }), L([62, 92], "handL", 3, "mach"), L([178, 92], "handR", 3, "mach"), L("elbowL", "handL", 10, "pad"), L("elbowR", "handR", 10, "pad")],
     held: "none",
     ms: 3400,
     cap: cap("Arme nach hinten öffnen", "Kontrolliert zurück", "Open the arms backwards", "Back with control"),
@@ -172,13 +173,14 @@ export function addShoulders(S) {
   };
   // band pull-apart
   S.pullapart = {
-    view: "front",
+    view: "top",
+    noLegs: true,
     kf: [
-      { handL: [112, 50], handR: [128, 50] },
-      { handL: [58, 46], handR: [182, 46] },
+      { armL: [18, -6], armR: [18, -6] },
+      { armL: [96, 92], armR: [96, 92] },
     ],
     eq: [L("handL", "handR", 2.5, "mach")],
-    held: "grip",
+    held: "none",
     ms: 2800,
     cap: cap("Band auseinanderziehen", "Langsam zurück", "Pull the band apart", "Back slowly"),
   };

@@ -99,7 +99,7 @@ const COLORS = {
 };
 
 // who is using the app (the onboarding choice): decides the figures, the mascot and which exercises are shown first
-const GenderCtx = createContext({ gender: "diverse", showAll: false, setShowAll: () => {}, figure: "auto", setFigure: () => {} });
+const GenderCtx = createContext({ gender: "diverse", showAll: false, setShowAll: () => {} });
 const useGender = () => useContext(GenderCtx);
 
 const THEMES = {
@@ -655,6 +655,9 @@ const STR = {
     libVideoClose: "Close",
     libHowTo: "Step by step",
     libAnim: "How it works",
+    libTabPhoto: "Photo",
+    libTabFigure: "Figure",
+    libTopView: "View from above",
     libAnimHint: "The figure shows the movement. Red = the muscles that work. Tap to pause.",
     libPause: "Pause",
     libPlay: "Play",
@@ -1453,6 +1456,9 @@ const STR = {
     libVideoClose: "Schließen",
     libHowTo: "Schritt für Schritt",
     libAnim: "So geht's",
+    libTabPhoto: "Foto",
+    libTabFigure: "Figur",
+    libTopView: "Ansicht von oben",
     libAnimHint: "Die Figur zeigt die Bewegung. Rot = die Muskeln, die arbeiten. Tippen hält an.",
     libPause: "Pause",
     libPlay: "Abspielen",
@@ -7530,7 +7536,7 @@ function ExerciseVideoRow({ t, lang, exKey, name, onShare }) {
   );
 }
 
-function ExerciseDemo({ t, lang, media, item }) {
+function ExerciseDemo({ t, lang, media, item, bare = false }) {
   const [paused, setPaused] = useState(false);
   const [imgOk, setImgOk] = useState(true);
   const l = lang === "de" ? "de" : "en";
@@ -7538,9 +7544,8 @@ function ExerciseDemo({ t, lang, media, item }) {
   const url = (n) => media.base + item.id + "/" + n + ".jpg";
   const chips = [EQUIP_LABELS[item.eq] && EQUIP_LABELS[item.eq][l], LEVEL_LABELS[item.lv] && LEVEL_LABELS[item.lv][l]].filter(Boolean);
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim };
-  return (
-    <Card style={{ marginBottom: 14 }}>
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libHowTo}</div>
+  const inner = (
+    <>
       {imgOk && (
         <>
           <div onClick={() => setPaused((p) => !p)} style={{ position: "relative", borderRadius: 12, overflow: "hidden", background: "#fff", cursor: "pointer" }}>
@@ -7567,6 +7572,14 @@ function ExerciseDemo({ t, lang, media, item }) {
         ))}
       </div>
       <div style={{ ...small, fontSize: 11, marginTop: 10 }}>{t.libSource}</div>
+    </>
+  );
+  return bare ? (
+    <div data-demo-photo>{inner}</div>
+  ) : (
+    <Card style={{ marginBottom: 14 }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libHowTo}</div>
+      {inner}
     </Card>
   );
 }
@@ -7724,6 +7737,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
   const [media, setMedia] = useState(null); // pictures + steps for the "how to do it" card
   const gx = useGender();
   const gender = gx.gender;
+  const [demoTab, setDemoTab] = usePersisted("demoTab", "photo");
   useEffect(() => {
     let alive = true;
     loadExerciseMedia().then((m) => {
@@ -7840,22 +7854,39 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
             <>
               {(() => {
                 const scene = sceneFor(selected.key);
-                return scene ? (
+                const item = media && media.items && media.items[selected.key];
+                const tab = item && scene ? demoTab : item ? "photo" : "figure";
+                const tipLine = (
+                  <div data-tip style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: COLORS.dim }}>
+                    <div><span style={{ color: COLORS.gold, fontWeight: 700 }}>💡</span> {cueOf(selected)}</div>
+                    <div><span style={{ color: "#E3262E", fontWeight: 700 }}>●</span> {t.libRedMeans} {names(mus.primary)}</div>
+                  </div>
+                );
+                return (
                   <Card style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libAnim}</div>
-                    <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} title={nameOf(selected)} tip={cueOf(selected)} muscleText={t.libRedMeans + " " + names(mus.primary)} steps={media && media.items && media.items[selected.key] ? (lang === "de" ? media.items[selected.key].de : media.items[selected.key].en) || [] : []} bodyStyle={gender === "diverse" ? (gx.figure === "auto" ? "neutral" : gx.figure) : gender} />
-                    {gender === "diverse" && (
-                      <div data-figpick style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                        <Chip label={t.figFemale} active={gx.figure === "female"} onClick={() => gx.setFigure("female")} />
-                        <Chip label={t.figNeutral} active={gx.figure === "auto" || gx.figure === "neutral"} onClick={() => gx.setFigure("neutral")} />
-                        <Chip label={t.figMale} active={gx.figure === "male"} onClick={() => gx.setFigure("male")} />
-                      </div>
-                    )}
-                    <div style={{ ...small, fontSize: 11.5, marginTop: 6 }}>{t.libAnimHint}</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+                      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text }}>{t.libAnim}</div>
+                      {item && scene && (
+                        <div data-demo-tabs style={{ display: "flex", gap: 6 }}>
+                          <Chip label={t.libTabPhoto} active={tab === "photo"} onClick={() => setDemoTab("photo")} />
+                          <Chip label={t.libTabFigure} active={tab === "figure"} onClick={() => setDemoTab("figure")} />
+                        </div>
+                      )}
+                    </div>
+                    {tab === "photo" && item ? (
+                      <>
+                        <ExerciseDemo bare t={t} lang={lang} media={media} item={item} />
+                        {tipLine}
+                      </>
+                    ) : scene ? (
+                      <>
+                        <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOf(selected)} tip={cueOf(selected)} muscleText={t.libRedMeans + " " + names(mus.primary)} steps={item ? (lang === "de" ? item.de : item.en) || [] : []} bodyStyle={gender === "diverse" ? "neutral" : gender} />
+                        <div style={{ ...small, fontSize: 11.5, marginTop: 6 }}>{t.libAnimHint}</div>
+                      </>
+                    ) : null}
                   </Card>
-                ) : null;
+                );
               })()}
-              {media && media.items && media.items[selected.key] && <ExerciseDemo t={t} lang={lang} media={media} item={media.items[selected.key]} />}
               {(mus.primary.length > 0 || mus.secondary.length > 0) && (
                 <Card style={{ marginBottom: 14 }}>
                   <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>{t.libTargetMuscles}</div>
@@ -9762,7 +9793,6 @@ export default function AsmarFitApp() {
   const [pantryReturn, setPantryReturn] = useState(null); // where "back" goes from the pantry screen
   const [fastfood, setFastfood] = usePersisted("fastfood", { last: null, custom: {}, mine: [] }); // eating-out planner: last chain
   const [showAllEx, setShowAllEx] = usePersisted("exAll", false); // library: false = only what fits the onboarding choice
-  const [figureStyle, setFigureStyle] = usePersisted("figure", "auto"); // exercise figure for "diverse"
   const [recipeImport, setRecipeImport] = useState(null); // a pasted link that opens the recipe import straight away
   const [intake, setIntake] = usePersisted("intake", { subs: [], log: [], card: true });
   const [intakeReturn, setIntakeReturn] = useState("settings"); // where "back" goes from the intake log
@@ -10713,7 +10743,7 @@ export default function AsmarFitApp() {
     showBack = null;
   }
 
-  const genderCtx = useMemo(() => ({ gender: profile.gender === "female" || profile.gender === "male" ? profile.gender : "diverse", showAll: showAllEx, setShowAll: setShowAllEx, figure: figureStyle, setFigure: setFigureStyle }), [profile.gender, showAllEx, figureStyle]);
+  const genderCtx = useMemo(() => ({ gender: profile.gender === "female" || profile.gender === "male" ? profile.gender : "diverse", showAll: showAllEx, setShowAll: setShowAllEx }), [profile.gender, showAllEx]);
   return (
     <GenderCtx.Provider value={genderCtx}>
     <div style={{ display: "flex", justifyContent: "center", padding: isPhone ? 0 : "24px 12px", minHeight: "100%" }}>

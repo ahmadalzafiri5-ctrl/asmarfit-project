@@ -87,17 +87,28 @@ export function addChest(S) {
     ms: 3400,
     cap: cap("Zusammenführen", "Kontrolliert öffnen", "Bring together", "Open with control"),
   });
-  S.fly_cable = cableFly([66, 48], [6, 56]);
+  S.fly_cable = {
+    view: "top",
+    noLegs: true,
+    kf: [
+      { armL: [80, 70], armR: [80, 70] },
+      { armL: [16, -24], armR: [16, -24] },
+    ],
+    eq: [L([22, 118], "handL", 2, "mach", { o: 0.85 }), L([218, 118], "handR", 2, "mach", { o: 0.85 }), C([22, 118], 5), C([218, 118], 5)],
+    held: "none",
+    ms: 3400,
+    cap: cap("Zusammenführen", "Kontrolliert öffnen", "Bring together", "Open with control"),
+  };
   S.fly_cable_low = cableFly([60, 104], [6, 30], true);
   S.fly_cable_high = cableFly([62, 28], [6, 98]);
   // pec deck: seated, elbows bent, forearms meet in front
   S.pec_deck = {
-    view: "front",
+    view: "top",
     kf: [
-      { hy: 108, legL: [0, 0, 0.12, 1], legR: [0, 0, 0.12, 1], handL: [52, 60], handR: [188, 60] },
-      { hy: 108, legL: [0, 0, 0.12, 1], legR: [0, 0, 0.12, 1], handL: [114, 78], handR: [126, 78] },
+      { armL: [86, 4], armR: [86, 4] },
+      { armL: [30, -50], armR: [30, -50] },
     ],
-    eq: [L([98, 118], [142, 118], 9, "pad"), L([120, 122], [120, FL], 3), L([40, 54], [40, 80], 8, "pad"), L([200, 54], [200, 80], 8, "pad")],
+    eq: [R([120, 108], 56, 9, "pad", { rx: 4 }), C([58, 84], 6, "mach", { fill: "var(--c-dim)" }), C([182, 84], 6, "mach", { fill: "var(--c-dim)" }), L([58, 84], "handL", 3, "mach"), L([182, 84], "handR", 3, "mach"), L("elbowL", "handL", 10, "pad"), L("elbowR", "handR", 10, "pad")],
     held: "none",
     ms: 3400,
     cap: cap("Zusammendrücken", "Kontrolliert öffnen", "Squeeze together", "Open with control"),
