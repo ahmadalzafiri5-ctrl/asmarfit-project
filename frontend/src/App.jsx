@@ -65,6 +65,7 @@ import {
   Pencil,
   Pill,
   Users,
+  Scale,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -349,6 +350,29 @@ const STR = {
     waterSave: "Save",
     searchRetry: "Tap to retry",
     assistantTitle: "ASFIT Coach",
+    setGroupMine: "My ASFIT",
+    setGroupFeatures: "Features",
+    setHeightLabel: "Height",
+    setWeightLabel: "Weight",
+    setDayLabel: "day",
+    secActivity: "Activity",
+    secOverview: "Overview",
+    secMore: "More",
+    qaFood: "Food",
+    qaTrain: "Workout",
+    qaWeigh: "Weigh in",
+    qaCoach: "Coach",
+    waterCustomLink: "Custom amount",
+    toolRecipes: "Recipes",
+    toolImport: "Recipe from link",
+    toolPantry: "Pantry",
+    toolFastFood: "Eating out",
+    toolMyMeals: "My meals",
+    toolIntake: "Intake diary",
+    toolCheat: "Cheat day",
+    ofKcal: "of {n} kcal",
+    kcalLeftN: "{n} left",
+    kcalOverN: "{n} over",
     assistantEntry: "Ask the coach",
     assistantHello: "Hi! I'm your ASFIT coach. Ask me about training, nutrition or how to use the app.",
     assistantHelloData: "Hi {name}! I'm your ASFIT coach and I know your goal and your numbers, so my answers are personal. What do you want to know?",
@@ -1168,6 +1192,29 @@ const STR = {
     waterSave: "Speichern",
     searchRetry: "Tippen zum Wiederholen",
     assistantTitle: "ASFIT-Coach",
+    setGroupMine: "Mein ASFIT",
+    setGroupFeatures: "Funktionen",
+    setHeightLabel: "Größe",
+    setWeightLabel: "Gewicht",
+    setDayLabel: "Tag",
+    secActivity: "Aktivität",
+    secOverview: "Überblick",
+    secMore: "Mehr",
+    qaFood: "Essen",
+    qaTrain: "Training",
+    qaWeigh: "Wiegen",
+    qaCoach: "Coach",
+    waterCustomLink: "Eigene Menge",
+    toolRecipes: "Rezepte",
+    toolImport: "Rezept aus Link",
+    toolPantry: "Speisekammer",
+    toolFastFood: "Unterwegs essen",
+    toolMyMeals: "Meine Gerichte",
+    toolIntake: "Einnahme-Tagebuch",
+    toolCheat: "Cheat Day",
+    ofKcal: "von {n} kcal",
+    kcalLeftN: "{n} übrig",
+    kcalOverN: "{n} drüber",
     assistantEntry: "Coach fragen",
     assistantHello: "Hallo! Ich bin dein ASFIT-Coach. Frag mich zu Training, Ernährung oder zur Bedienung der App.",
     assistantHelloData: "Hallo {name}! Ich bin dein ASFIT-Coach und kenne dein Ziel und deine Zahlen, deshalb sind meine Antworten persönlich. Was möchtest du wissen?",
@@ -2339,13 +2386,6 @@ function TopBar({ title, lang, setLang, onBack, onSettings }) {
             <SettingsIcon size={15} color={COLORS.dim} />
           </div>
         )}
-        <div onClick={() => setLang(lang === "en" ? "de" : "en")} style={{ display: "flex", background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 999, padding: 3, cursor: "pointer", userSelect: "none" }}>
-          {["de", "en"].map((l) => (
-            <div key={l} style={{ padding: "5px 10px", borderRadius: 999, fontSize: 11.5, fontWeight: 600, fontFamily: "Sora, sans-serif", color: lang === l ? COLORS.bg : COLORS.dim, background: lang === l ? COLORS.gold : "transparent", transition: "all .2s ease" }}>
-              {l.toUpperCase()}
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -2355,6 +2395,31 @@ function Chip({ label, active, onClick }) {
   return (
     <div onClick={onClick} style={{ padding: "7px 14px", borderRadius: 999, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, cursor: "pointer", background: active ? COLORS.gold : COLORS.surface, color: active ? COLORS.bg : COLORS.dim, border: `1px solid ${active ? COLORS.gold : COLORS.border}`, whiteSpace: "nowrap" }}>
       {label}
+    </div>
+  );
+}
+
+// caption above a group of cards (Start screen), with an optional action on the right
+function SectionLabel({ children, action, onAction }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "22px 2px 10px" }}>
+      <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: COLORS.dim }}>{children}</span>
+      {action && (
+        <span onClick={onAction} style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+          {action}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function QuickAction({ icon: Icon, label, onClick }) {
+  return (
+    <div data-quick={label} onClick={onClick} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "13px 4px 11px", borderRadius: 16, background: COLORS.surface, border: "1px solid " + COLORS.border, cursor: "pointer" }}>
+      <div style={{ width: 38, height: 38, borderRadius: 12, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon size={19} color={COLORS.gold} />
+      </div>
+      <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: COLORS.text, whiteSpace: "nowrap" }}>{label}</span>
     </div>
   );
 }
@@ -2794,6 +2859,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
   const pct = Math.min(100, (waterMl / goalMl) * 100);
   const [custom, setCustom] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState("");
   const customVal = parseInt(custom, 10);
@@ -2833,29 +2899,34 @@ function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
           <button key={ml} onClick={() => onAdd(ml)} style={chip}>+ {ml}</button>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          type="number"
-          inputMode="numeric"
-          value={custom}
-          onChange={(e) => setCustom(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && customOk) { onAdd(customVal); setCustom(""); } }}
-          placeholder={t.waterCustomPh}
-          style={{ ...numInputStyle, flex: 1, minWidth: 0 }}
-        />
-        <button
-          onClick={() => { if (customOk) { onAdd(customVal); setCustom(""); } }}
-          disabled={!customOk}
-          style={{ background: customOk ? COLORS.teal : COLORS.raised, color: customOk ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: customOk ? "pointer" : "default", whiteSpace: "nowrap" }}
-        >
-          {t.waterAddBtn}
-        </button>
-      </div>
-      {waterMl > 0 && (
-        <div style={{ textAlign: "right", marginTop: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span data-water-custom onClick={() => setShowCustom((v) => !v)} style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.teal, cursor: "pointer" }}>
+          + {t.waterCustomLink}
+        </span>
+        {waterMl > 0 && (
           <span onClick={onUndo} style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, cursor: "pointer", textDecoration: "underline" }}>
             {t.waterUndo}{lastMl ? " (−" + lastMl + " ml)" : ""}
           </span>
+        )}
+      </div>
+      {showCustom && (
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && customOk) { onAdd(customVal); setCustom(""); } }}
+            placeholder={t.waterCustomPh}
+            style={{ ...numInputStyle, flex: 1, minWidth: 0 }}
+          />
+          <button
+            onClick={() => { if (customOk) { onAdd(customVal); setCustom(""); } }}
+            disabled={!customOk}
+            style={{ background: customOk ? COLORS.teal : COLORS.raised, color: customOk ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: customOk ? "pointer" : "default", whiteSpace: "nowrap" }}
+          >
+            {t.waterAddBtn}
+          </button>
         </div>
       )}
     </Card>
@@ -2899,7 +2970,7 @@ function TodayOpen({ t, lang, cfg, info, hideIntake, onGo, onSettings }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2919,58 +2990,66 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
 
   const latestNote = notes.length ? notes[0] : null;
 
+  const locale = lang === "de" ? "de-DE" : "en-US";
+  const hour = new Date().getHours();
+  const dateLabel = new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
+  const intakeRow = intakeDue.length === 0 && intakeShow && (
+    <div data-intake-home>
+      <Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 22 }}>💊</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeTitle}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{intakeCount > 0 ? t.intakeHomeSubSome : t.intakeHomeSubNone}</div>
+          </div>
+          <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+        </div>
+      </Card>
+    </div>
+  );
+
   return (
-    <div style={{ padding: "4px 20px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: -4, marginBottom: 22 }}>
-        {profile.avatarUrl ? (
-          <img src={profile.avatarUrl} alt="" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-        ) : null}
-        <p style={{ color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 14, margin: 0 }}>
-          {new Date().getHours() < 11 ? t.greetingPrefix : new Date().getHours() < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
-        </p>
+    <div style={{ padding: "2px 20px 28px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+        {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} /> : null}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, lineHeight: 1.2 }}>
+            {hour < 11 ? t.greetingPrefix : hour < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
+          </div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3, textTransform: "capitalize" }}>{dateLabel}</div>
+        </div>
       </div>
 
-      <Card style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
-        <Ring pct={kcalGoal ? (kcalEaten / (kcalGoal + kcalBurned)) * 100 : 0} size={132} stroke={11}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, lineHeight: 1 }}>{Math.max(kcalGoal + kcalBurned - kcalEaten, 0)}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: COLORS.dim, marginTop: 4 }}>kcal {t.kcalLeft}</div>
+      <Card style={{ marginBottom: 14, padding: "18px 16px 14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Ring pct={kcalGoal ? (kcalEaten / (kcalGoal + kcalBurned)) * 100 : 0} size={132} stroke={11}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, lineHeight: 1 }}>{Math.max(kcalGoal + kcalBurned - kcalEaten, 0)}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: COLORS.dim, marginTop: 4 }}>kcal {t.kcalLeft}</div>
+            </div>
+          </Ring>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <MacroBar label={t.protein} value={proteinEaten} target={profile.macroTargets.protein} color={COLORS.teal} />
+            <MacroBar label={t.carbs} value={carbsEaten} target={profile.macroTargets.carbs} color={COLORS.gold} />
+            <MacroBar label={t.fat} value={fatEaten} target={profile.macroTargets.fat} color={COLORS.coral} />
           </div>
-        </Ring>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <MacroBar label={t.protein} value={proteinEaten} target={profile.macroTargets.protein} color={COLORS.teal} />
-          <MacroBar label={t.carbs} value={carbsEaten} target={profile.macroTargets.carbs} color={COLORS.gold} />
-          <MacroBar label={t.fat} value={fatEaten} target={profile.macroTargets.fat} color={COLORS.coral} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-around", marginTop: 6, paddingTop: 12, borderTop: "1px solid " + COLORS.border, fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>
+          {[
+            [t.eatenLabel, kcalEaten],
+            [t.burnedLabel, kcalBurned],
+            [t.goalLabel, kcalGoal],
+          ].map(([label, val]) => (
+            <div key={label} style={{ textAlign: "center" }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{val}</div>
+              {label}
+            </div>
+          ))}
         </div>
       </Card>
 
-      <div style={{ display: "flex", justifyContent: "space-around", marginTop: -4, marginBottom: 16, fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>
-        {[
-          [t.eatenLabel, kcalEaten],
-          [t.burnedLabel, kcalBurned],
-          [t.goalLabel, kcalGoal],
-        ].map(([label, val]) => (
-          <div key={label} style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{val}</div>
-            {label}
-          </div>
-        ))}
-      </div>
-
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
       {todayCfg && todayInfo && <TodayOpen t={t} lang={lang} cfg={todayCfg} info={todayInfo} hideIntake={intakeDue.length > 0} onGo={onTodayGo} onSettings={onTodaySettings} />}
-      {intakeDue.length === 0 && intakeShow && (
-        <div data-intake-home><Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 22 }}>💊</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeTitle}</div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{intakeCount > 0 ? t.intakeHomeSubSome : t.intakeHomeSubNone}</div>
-            </div>
-            <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
-          </div>
-        </Card></div>
-      )}
       {intakeDue.length > 0 && (
         <Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer", border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeCardTitle}</div>
@@ -2979,18 +3058,20 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
           </div>
         </Card>
       )}
-      <StreakCard t={t} streak={streak} history={history} onOpen={onOpenHistory} />
+
+      <div data-quick-actions style={{ display: "flex", gap: 10, marginBottom: 4 }}>
+        <QuickAction icon={UtensilsCrossed} label={t.qaFood} onClick={() => onQuick("food")} />
+        <QuickAction icon={Dumbbell} label={t.qaTrain} onClick={() => onQuick("train")} />
+        <QuickAction icon={Scale} label={t.qaWeigh} onClick={() => onQuick("weigh")} />
+        <QuickAction icon={MessageCircle} label={t.qaCoach} onClick={() => onQuick("coach")} />
+      </div>
+
+      <SectionLabel>{t.secActivity}</SectionLabel>
       <StepsCard t={t} steps={steps} source={stepsSource} weightKg={profile.weight} goal={stepsGoal} onSaveGoal={onSaveStepsGoal} onConnect={onConnectSteps} onSaveManual={onSaveSteps} />
-
       <WaterCard t={t} waterMl={waterMl} goalMl={profile.waterGoalMl || Math.round(((profile.weight || 70) * 35) / 250) * 250} lastMl={lastWaterMl} onAdd={onAddWater} onUndo={onUndoWater} onSaveGoal={onSaveWaterGoal} />
+      <StreakCard t={t} streak={streak} history={history} onOpen={onOpenHistory} />
 
-      <Card onClick={onOpenAssistant} style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
-        <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <MessageCircle size={17} color={COLORS.gold} />
-        </div>
-        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text }}>{t.assistantEntry}</span>
-      </Card>
-
+      <SectionLabel>{t.secOverview}</SectionLabel>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <Card>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>{t.lastWorkout}</div>
@@ -3014,16 +3095,24 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
         </Card>
       </div>
 
-      <Card>
+      <Card style={{ marginBottom: 12 }}>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 6 }}>{t.todaysNote}</div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: latestNote ? COLORS.text : COLORS.dim }}>{latestNote ? latestNote.text : t.noNoteToday}</div>
       </Card>
+
+      {intakeRow && (
+        <>
+          <SectionLabel>{t.secMore}</SectionLabel>
+          {intakeRow}
+        </>
+      )}
     </div>
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood, onOpenIntake }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood, onOpenIntake, kcalGoal = 0 }) {
   const [linkText, setLinkText] = useState("");
+  const [showLink, setShowLink] = useState(false);
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
   const mealDefs = [
@@ -3064,6 +3153,16 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
     return new Date(viewDate + "T12:00:00").toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
   })();
 
+  const tools = [
+    { k: "recipes", emoji: "📖", label: t.toolRecipes, onClick: onOpenRecipes },
+    { k: "link", emoji: "🔗", label: t.toolImport, onClick: () => setShowLink((v) => !v), active: showLink },
+    { k: "pantry", emoji: "🥫", label: t.toolPantry, onClick: onOpenPantry },
+    { k: "fastfood", emoji: "🍔", label: t.toolFastFood, onClick: onOpenFastFood, attr: "data-fastfood" },
+    { k: "mine", emoji: "⭐", label: t.toolMyMeals, onClick: onOpenMyMeals },
+    { k: "intake", emoji: "💊", label: t.toolIntake, onClick: onOpenIntake, attr: "data-intake-nutrition" },
+    { k: "cheat", emoji: "🍕", label: t.toolCheat, sub: nextCheat ? (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : null, onClick: onOpenCheats },
+  ];
+
   return (
     <div style={{ padding: "0 20px 24px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -3088,7 +3187,27 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
       </div>
 
       {copied && <div style={{ textAlign: "center", marginBottom: 12, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold }}>✓ {t.copiedToast}</div>}
-      <Card style={{ marginBottom: 16 }}>
+      <Card style={{ marginBottom: 14 }}>
+        {(() => {
+          const eaten = Math.round(sumMeals(viewMeals, "kcal"));
+          const over = kcalGoal > 0 && eaten > kcalGoal;
+          return (
+            <div data-kcal-head style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                <div>
+                  <span style={{ fontFamily: "Sora, sans-serif", fontSize: 26, fontWeight: 700, color: COLORS.text }}>{eaten}</span>
+                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}> {kcalGoal > 0 ? t.ofKcal.replace("{n}", kcalGoal) : "kcal"}</span>
+                </div>
+                {kcalGoal > 0 && <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 600, color: over ? COLORS.coral : COLORS.teal }}>{over ? t.kcalOverN.replace("{n}", eaten - kcalGoal) : t.kcalLeftN.replace("{n}", kcalGoal - eaten)}</span>}
+              </div>
+              {kcalGoal > 0 && (
+                <div style={{ height: 6, borderRadius: 3, background: COLORS.raised, overflow: "hidden", marginTop: 8 }}>
+                  <div style={{ height: "100%", width: Math.min(100, (eaten / kcalGoal) * 100) + "%", background: over ? COLORS.coral : COLORS.gold, borderRadius: 3, transition: "width .6s ease" }} />
+                </div>
+              )}
+            </div>
+          );
+        })()}
         <MacroBar label={t.protein} value={sumMeals(viewMeals, "protein")} target={macroTargets.protein} color={COLORS.teal} />
         <MacroBar label={t.carbs} value={sumMeals(viewMeals, "carbs")} target={macroTargets.carbs} color={COLORS.gold} />
         <MacroBar label={t.fat} value={sumMeals(viewMeals, "fat")} target={macroTargets.fat} color={COLORS.coral} />
@@ -3110,86 +3229,51 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
 
       {isToday && (
         <>
-          <div onClick={() => onOpenFoodSearch("snacks")} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 12, cursor: "pointer" }}>
+          <div onClick={() => onOpenFoodSearch("snacks")} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 14, cursor: "pointer" }}>
             <Search size={16} color={COLORS.dim} />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, flex: 1 }}>{t.searchPlaceholder}</span>
             <ScanLine size={17} color={COLORS.gold} />
           </div>
 
-          <div onClick={onOpenRecipes} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
-            <BookOpen size={16} color={COLORS.gold} />
-            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.recipesButton}</span>
-          </div>
-
-          <div style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <Link2 size={16} color={COLORS.gold} />
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.importTitle}</span>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input
-                value={linkText}
-                onChange={(e) => setLinkText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && linkText.trim()) onImportText(linkText.trim()); }}
-                placeholder={t.nutriLinkPlaceholder}
-                style={{ ...numInputStyle, flex: 1, minWidth: 0 }}
-              />
-              {!linkText.trim() && navigator.clipboard && navigator.clipboard.readText ? (
-                <button onClick={() => navigator.clipboard.readText().then((x) => setLinkText(String(x || "").slice(0, 8000))).catch(() => {})} style={{ background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "0 12px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap" }}>
-                  {t.importPaste}
-                </button>
-              ) : (
-                <button disabled={!linkText.trim()} onClick={() => onImportText(linkText.trim())} style={{ background: linkText.trim() ? COLORS.gold : COLORS.raised, color: linkText.trim() ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 10, padding: "0 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
-                  {t.importGoShort}
-                </button>
-              )}
-            </div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 8, lineHeight: 1.4 }}>{t.nutriLinkHint}</div>
-          </div>
-
-          <div onClick={onOpenPantry} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
-            <span style={{ fontSize: 22 }}>🥫</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.pantryButton}</div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {pantry.length ? pantry.map((f) => f.emoji + " " + f.name).join(" · ") : t.pantryButtonSub}
+          <div data-tools style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 14px", padding: "0 20px 4px" }}>
+            {tools.map((x) => (
+              <div key={x.k} {...(x.attr ? { [x.attr]: true } : {})} data-tool={x.k} onClick={x.onClick} style={{ flex: "0 0 auto", width: 96, minHeight: 92, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "space-between", gap: 6, padding: "11px 11px 10px", borderRadius: 16, background: x.active ? COLORS.goldSoft : COLORS.surface, border: "1px solid " + (x.active ? COLORS.gold : COLORS.border), cursor: "pointer" }}>
+                <span style={{ fontSize: 24, lineHeight: 1 }}>{x.emoji}</span>
+                <div>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.text, lineHeight: 1.2 }}>{x.label}</div>
+                  {x.sub && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim, marginTop: 2, lineHeight: 1.25 }}>{x.sub}</div>}
+                </div>
               </div>
-            </div>
-            <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+            ))}
           </div>
 
-          <div data-fastfood onClick={onOpenFastFood} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
-            <span style={{ fontSize: 22 }}>🍔</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.ffButton}</div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.ffButtonSub}</div>
-            </div>
-            <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
-          </div>
-
-          <div data-intake-nutrition onClick={onOpenIntake} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
-            <span style={{ fontSize: 22 }}>💊</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.intakeTitle}</div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{t.intakeHomeSubNone}</div>
-            </div>
-            <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
-          </div>
-
-          <div onClick={onOpenMyMeals} style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", background: COLORS.raised, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
-            <Star size={16} color={COLORS.gold} />
-            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>{t.myMealsButton}</span>
-          </div>
-
-          <div onClick={onOpenCheats} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 20, cursor: "pointer" }}>
-            <span style={{ fontSize: 22 }}>🍕</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.cheatTitle}</div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
-                {nextCheat ? (nextCheat.type === "day" ? t.cheatDay : t.cheatMeal) + " · " + (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : t.cheatNextNone}
+          {showLink && (
+            <div data-link-import style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <Link2 size={16} color={COLORS.gold} />
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.importTitle}</span>
               </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && linkText.trim()) onImportText(linkText.trim()); }}
+                  placeholder={t.nutriLinkPlaceholder}
+                  style={{ ...numInputStyle, flex: 1, minWidth: 0 }}
+                />
+                {!linkText.trim() && navigator.clipboard && navigator.clipboard.readText ? (
+                  <button onClick={() => navigator.clipboard.readText().then((x) => setLinkText(String(x || "").slice(0, 8000))).catch(() => {})} style={{ background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "0 12px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap" }}>
+                    {t.importPaste}
+                  </button>
+                ) : (
+                  <button disabled={!linkText.trim()} onClick={() => onImportText(linkText.trim())} style={{ background: linkText.trim() ? COLORS.gold : COLORS.raised, color: linkText.trim() ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 10, padding: "0 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
+                    {t.importGoShort}
+                  </button>
+                )}
+              </div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 8, lineHeight: 1.4 }}>{t.nutriLinkHint}</div>
             </div>
-          </div>
+          )}
         </>
       )}
 
@@ -3350,27 +3434,22 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
         )}
       </Card>
 
-      <Card style={{ marginBottom: 18, cursor: "pointer" }}>
-        <div onClick={onOpenFriends} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ fontSize: 26 }}>⚔️</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{t.friendsTitle}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{t.friendsCardSub}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+        <Card onClick={onOpenFriends} style={{ cursor: "pointer", padding: "14px 14px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 26, lineHeight: 1 }}>⚔️</div>
+          <div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.friendsTitle}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 3, lineHeight: 1.35 }}>{t.friendsCardSub}</div>
           </div>
-          <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
-        </div>
-      </Card>
-
-      <Card style={{ marginBottom: 18, cursor: "pointer" }}>
-        <div onClick={onOpenRecords} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ fontSize: 26 }}>🏆</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{t.recordsTitle}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{t.recordsCardSub}</div>
+        </Card>
+        <Card onClick={onOpenRecords} style={{ cursor: "pointer", padding: "14px 14px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 26, lineHeight: 1 }}>🏆</div>
+          <div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.recordsTitle}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 3, lineHeight: 1.35 }}>{t.recordsCardSub}</div>
           </div>
-          <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
-        </div>
-      </Card>
+        </Card>
+      </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.yourExercises}</span>
@@ -9133,8 +9212,8 @@ function IntakeScreen({ t, lang, data, setData }) {
 }
 
 function SettingsRow({ icon: Icon, tint = "gold", label, sub, onClick, right, first }) {
-  const bg = tint === "coral" ? COLORS.coralSoft : tint === "dim" ? COLORS.raised : COLORS.goldSoft;
-  const fg = tint === "coral" ? COLORS.coral : tint === "dim" ? COLORS.dim : COLORS.gold;
+  const bg = tint === "coral" ? COLORS.coralSoft : tint === "dim" ? COLORS.raised : tint === "teal" ? "color-mix(in srgb, " + COLORS.teal + " 18%, transparent)" : COLORS.goldSoft;
+  const fg = tint === "coral" ? COLORS.coral : tint === "dim" ? COLORS.dim : tint === "teal" ? COLORS.teal : COLORS.gold;
   return (
     <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: onClick ? "pointer" : "default", borderTop: first ? "none" : "1px solid " + COLORS.border }}>
       <div style={{ width: 34, height: 34, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -9156,51 +9235,63 @@ function SettingsLabel({ children }) {
 
 function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
   const remOn = NOTIF_KINDS.filter((k) => reminders[k] && reminders[k].on).length;
+  const stat = (value, label) => (
+    <div style={{ flex: 1, background: COLORS.bg, borderRadius: 12, padding: "9px 6px", textAlign: "center", border: "1px solid " + COLORS.border }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{value}</div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim, marginTop: 1 }}>{label}</div>
+    </div>
+  );
   return (
     <div style={{ padding: "0 20px 28px" }}>
-      <Card onClick={() => onNav("settingsProfile")} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22, cursor: "pointer" }}>
-        {profile.avatarUrl ? (
-          <img src={profile.avatarUrl} alt="" style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-        ) : (
-          <div style={{ width: 54, height: 54, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
+      <Card onClick={() => onNav("settingsProfile")} style={{ marginBottom: 24, cursor: "pointer", padding: "18px 16px 16px", background: "linear-gradient(160deg, " + COLORS.goldSoft + ", " + COLORS.surface + " 70%)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {profile.avatarUrl ? (
+            <img src={profile.avatarUrl} alt="" style={{ width: 60, height: 60, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid " + COLORS.gold }} />
+          ) : (
+            <div style={{ width: 60, height: 60, borderRadius: "50%", background: `linear-gradient(150deg, ${COLORS.gold}, ${COLORS.teal})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, color: COLORS.bg }}>{(profile.name || "?").charAt(0).toUpperCase()}</span>
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.text }}>{profile.name}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, marginTop: 3 }}>{t.setProfileRow}</div>
           </div>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16.5, fontWeight: 700, color: COLORS.text }}>{profile.name}</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{profile.weight} kg · {profile.height} cm · {profile.kcalGoal} kcal</div>
+          <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
         </div>
-        <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+        <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          {stat(profile.weight + " kg", t.setWeightLabel)}
+          {stat(profile.height + " cm", t.setHeightLabel)}
+          {stat(profile.kcalGoal, "kcal / " + t.setDayLabel)}
+        </div>
       </Card>
 
-      <SettingsGroup title={t.setGroupAccount}>
-        <SettingsRow icon={User} label={t.setProfileRow} onClick={() => onNav("settingsProfile")} />
+      <SettingsGroup title={t.setGroupMine}>
         <SettingsRow icon={Target} label={t.setGoalsRow} sub={profile.kcalGoal + " kcal"} onClick={() => onNav("settingsGoals")} />
+        <SettingsRow icon={Bell} label={t.reminders} sub={remOn + " / " + NOTIF_KINDS.length} onClick={() => onNav("settingsReminders")} />
+        <SettingsRow icon={Palette} label={t.setDisplayRow} onClick={() => onNav("settingsDisplay")} />
       </SettingsGroup>
 
-      <SettingsGroup title={t.setGroupApp}>
-        <SettingsRow icon={Palette} label={t.setDisplayRow} onClick={() => onNav("settingsDisplay")} />
-        <SettingsRow icon={Bell} label={t.reminders} sub={remOn + " / " + NOTIF_KINDS.length} onClick={() => onNav("settingsReminders")} />
-        <SettingsRow icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
-        <SettingsRow icon={Users} label={t.friendsTitle} onClick={() => onNav("friends")} />
-        <SettingsRow icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />
+      <SettingsGroup title={t.setGroupFeatures}>
+        <SettingsRow tint="teal" icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
+        <SettingsRow tint="teal" icon={Users} label={t.friendsTitle} onClick={() => onNav("friends")} />
+        <SettingsRow tint="teal" icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />
       </SettingsGroup>
 
       <SettingsGroup title={t.setGroupData}>
-        <SettingsRow icon={Database} label={t.setDataRow} onClick={() => onNav("settingsData")} />
+        <SettingsRow tint="coral" icon={Database} label={t.setDataRow} onClick={() => onNav("settingsData")} />
       </SettingsGroup>
 
       <SettingsGroup title={t.setGroupHelp}>
-        <SettingsRow icon={HelpCircle} label={t.setHelpRow} onClick={() => onNav("settingsHelp")} />
         <SettingsRow icon={MessageCircle} label={t.settingsSupport} onClick={() => onNav("assistant")} />
+        <SettingsRow icon={HelpCircle} label={t.setHelpRow} onClick={() => onNav("settingsHelp")} />
         <SettingsRow icon={Share2} label={t.setShareRow} sub={shareMsg} onClick={onShare} />
         <SettingsRow icon={Info} label={t.setAboutRow} onClick={() => onNav("settingsAbout")} />
       </SettingsGroup>
 
       <SettingsGroup title={t.setGroupLegal}>
-        <SettingsRow icon={Shield} label={t.settingsPrivacy} onClick={() => onNav("privacy")} />
-        <SettingsRow icon={FileText} label={t.setTermsRow} onClick={() => onNav("terms")} />
-        <SettingsRow icon={Landmark} label={t.setImprintRow} onClick={() => onNav("impressum")} />
+        <SettingsRow tint="dim" icon={Shield} label={t.settingsPrivacy} onClick={() => onNav("privacy")} />
+        <SettingsRow tint="dim" icon={FileText} label={t.setTermsRow} onClick={() => onNav("terms")} />
+        <SettingsRow tint="dim" icon={Landmark} label={t.setImprintRow} onClick={() => onNav("impressum")} />
       </SettingsGroup>
 
       <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>
@@ -10772,6 +10863,14 @@ export default function AsmarFitApp() {
           lastWaterMl={waterLog.length ? waterLog[waterLog.length - 1] : 250}
           onSaveWaterGoal={(ml) => setProfile((p) => ({ ...p, waterGoalMl: ml }))}
           onOpenAssistant={() => setOverlay("assistant")}
+          onQuick={(k) => {
+            if (k === "food") {
+              setActiveMealKey(mealKeyForNow());
+              setOverlay("foodSearch");
+            } else if (k === "train") setTab("training");
+            else if (k === "weigh") setTab("progress");
+            else setOverlay("assistant");
+          }}
           steps={steps}
           stepsSource={stepsSource}
           onConnectSteps={() => refreshSteps(true)}
@@ -10804,6 +10903,7 @@ export default function AsmarFitApp() {
           meals={meals}
           history={historyMap}
           macroTargets={profile.macroTargets}
+          kcalGoal={profile.kcalGoal}
           onOpenFoodSearch={(key) => {
             setActiveMealKey(key);
             setOverlay("foodSearch");
