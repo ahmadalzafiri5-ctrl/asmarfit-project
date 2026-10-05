@@ -613,7 +613,7 @@ app.post("/api/food/photo", async (req, res) => {
       headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: process.env.PHOTO_MODEL || ASSISTANT_MODEL,
-        max_tokens: 700,
+        max_tokens: 1400,
         system:
           "You estimate nutrition from a photo of a meal. Identify each visible food or drink item, estimate its portion and its nutrition. Drinks and other liquids (cola, water, juice, milk, coffee, soup, smoothies …) are measured in millilitres, solid food in grams. " +
           "Answer with ONLY a JSON object, no prose, in exactly this shape: " +
@@ -719,7 +719,7 @@ app.post("/api/recipe", async (req, res) => {
       headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: ASSISTANT_MODEL,
-        max_tokens: 700,
+        max_tokens: 1800,
         system:
           "You create one simple recipe for a nutrition tracking app. Reply with ONLY a JSON object, no other text, in this exact shape: " +
           '{"name": string, "category": "breakfast"|"lunch"|"dinner"|"snacks", "kcal": number, "protein": number, "carbs": number, "fat": number, "ingredients": [string]} ' +
@@ -734,12 +734,18 @@ app.post("/api/recipe", async (req, res) => {
     const data = await r.json();
     const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join(" ");
     const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return res.status(502).json({ error: "bad_format" });
+    if (!m) {
+      console.error("Recipe answer without JSON (stop: " + data.stop_reason + "): " + text.slice(0, 160).replace(/\s+/g, " "));
+      return res.status(502).json({ error: "bad_format" });
+    }
     const raw = JSON.parse(m[0]);
     const num = (v) => Math.max(0, Math.round(Number(v) || 0));
     const category = ["breakfast", "lunch", "dinner", "snacks"].includes(raw.category) ? raw.category : "lunch";
     const ingredients = Array.isArray(raw.ingredients) ? raw.ingredients.map((x) => String(x).slice(0, 120)).slice(0, 25) : [];
-    if (!raw.name || ingredients.length === 0) return res.status(502).json({ error: "bad_format" });
+    if (!raw.name || ingredients.length === 0) {
+      console.error("Recipe answer unusable (stop: " + data.stop_reason + "): " + m[0].slice(0, 160).replace(/\s+/g, " "));
+      return res.status(502).json({ error: "bad_format" });
+    }
     res.json({ name: String(raw.name).slice(0, 80), category, kcal: num(raw.kcal), protein: num(raw.protein), carbs: num(raw.carbs), fat: num(raw.fat), ingredients });
   } catch (err) {
     console.error("Recipe request failed:", err.message);
