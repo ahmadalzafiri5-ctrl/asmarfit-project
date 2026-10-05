@@ -5,6 +5,7 @@ import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal } from "./fa
 import { ExerciseAnimation } from "./exerciseAnim.jsx";
 import { sceneFor } from "./exerciseScenes.js";
 import { visibleFor } from "./genderContent.js";
+import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 // @zxing/* (the browser barcode fallback) is loaded lazily inside scanWeb()
@@ -622,6 +623,8 @@ const STR = {
     libAnimHint: "The figure shows the movement. Red = the muscles that work. Tap to pause.",
     libPause: "Pause",
     libPlay: "Play",
+    libRep: "Rep",
+    libFull: "Full screen",
     libSlow: "Slow motion",
     libStartEnd: "Start and end position alternate. Tap to pause the animation.",
     libSource: "Pictures and instructions: free-exercise-db (public domain).",
@@ -680,6 +683,13 @@ const STR = {
     foodLinkTitle: "Link detected: get the nutrition values from the recipe",
     foodLinkSub: "Works with recipe sites and TikTok. For Instagram, copy the caption of the post and paste the text.",
     intakeTitle: "Intake log",
+    intakeCatalogTitle: "Choose a substance",
+    intakeAmountHint: "The list only holds names. You type in the amount yourself; the app gives no recommendation and no dosing.",
+    intakeSearch: "Search (name or brand)",
+    intakeCustom: "Type in your own name",
+    intakeNoMatch: "Nothing found. You can type in your own name above.",
+    intakeHomeSubSome: "Pick a substance or log what you took",
+    intakeHomeSubNone: "Pick a substance from the list and enter the amount",
     intakeDisclaimer: "A plain diary for your own entries. No recommendation and no medical advice. Talk about anything you take, and your blood work, with a doctor. The data stays on your phone only.",
     intakeIntro: "Add what you take and log when you took or injected it. The app shows what is due and suggests the next injection site.",
     intakeNew: "New substance",
@@ -1353,6 +1363,8 @@ const STR = {
     libAnimHint: "Die Figur zeigt die Bewegung. Rot = die Muskeln, die arbeiten. Tippen hält an.",
     libPause: "Pause",
     libPlay: "Abspielen",
+    libRep: "Wdh.",
+    libFull: "Vollbild",
     libSlow: "Zeitlupe",
     libStartEnd: "Start und Ende im Wechsel. Tippen hält die Animation an.",
     libSource: "Bilder und englische Anleitung: free-exercise-db (gemeinfrei). Deutsche Schritte: ASFIT.",
@@ -1411,6 +1423,13 @@ const STR = {
     foodLinkTitle: "Link erkannt: Nährwerte aus dem Rezept holen",
     foodLinkSub: "Funktioniert mit Rezeptseiten und TikTok. Bei Instagram kopierst du die Beschreibung des Beitrags und fügst den Text ein.",
     intakeTitle: "Einnahme-Tagebuch",
+    intakeCatalogTitle: "Stoff auswählen",
+    intakeAmountHint: "Die Liste enthält nur Namen. Die Menge trägst du selbst ein; die App gibt keine Empfehlung und keine Dosierung vor.",
+    intakeSearch: "Suchen (Name oder Handelsname)",
+    intakeCustom: "Eigenen Namen eingeben",
+    intakeNoMatch: "Nichts gefunden. Du kannst oben einen eigenen Namen eingeben.",
+    intakeHomeSubSome: "Stoff auswählen oder eintragen, was du genommen hast",
+    intakeHomeSubNone: "Stoff aus der Liste wählen und Menge eintragen",
     intakeDisclaimer: "Reines Tagebuch für deine eigenen Einträge. Keine Empfehlung und keine medizinische Beratung. Sprich Einnahmen und Blutwerte mit einer Ärztin oder einem Arzt ab. Die Daten bleiben nur auf deinem Handy.",
     intakeIntro: "Lege an, was du nimmst, und trage ein, wann du es genommen oder gespritzt hast. Die App zeigt dir, was fällig ist, und schlägt die nächste Injektionsstelle vor.",
     intakeNew: "Neue Substanz",
@@ -2693,7 +2712,7 @@ function BackupReminder({ t, onOpen }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0 }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2752,6 +2771,18 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
       </div>
 
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
+      {intakeDue.length === 0 && intakeShow && (
+        <div data-intake-home><Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 22 }}>💊</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeTitle}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{intakeCount > 0 ? t.intakeHomeSubSome : t.intakeHomeSubNone}</div>
+            </div>
+            <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+          </div>
+        </Card></div>
+      )}
       {intakeDue.length > 0 && (
         <Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer", border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeCardTitle}</div>
@@ -2803,7 +2834,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood, onOpenIntake }) {
   const [linkText, setLinkText] = useState("");
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
   const nextCheat = [...cheats].map((c) => ({ ...c, diff: Math.round((new Date(c.date + "T00:00").getTime() - todayMs) / 86400000) })).filter((c) => c.diff >= 0).sort((a, b) => a.diff - b.diff)[0];
@@ -2944,6 +2975,15 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.ffButton}</div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.ffButtonSub}</div>
+            </div>
+            <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+          </div>
+
+          <div data-intake-nutrition onClick={onOpenIntake} style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
+            <span style={{ fontSize: 22 }}>💊</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{t.intakeTitle}</div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{t.intakeHomeSubNone}</div>
             </div>
             <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
           </div>
@@ -6981,7 +7021,31 @@ const EQUIP_LABELS = {
 const LEVEL_LABELS = { beginner: { de: "Anfänger", en: "Beginner" }, intermediate: { de: "Fortgeschritten", en: "Intermediate" }, expert: { de: "Profi", en: "Expert" } };
 
 // ---------- Technique video: found by the server (YouTube Data API) and played in the app; without a key it opens the YouTube search ----------
+// does the server have a video key? (checked once per session; without it the video button stays hidden)
+let videoEnabledPromise = null;
+function useVideoEnabled() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    if (!videoEnabledPromise) {
+      videoEnabledPromise = fetch(API_BASE + "/api/features")
+        .then((r) => (r.ok ? r.json() : {}))
+        .then((j) => !!(j && j.video))
+        .catch(() => {
+          videoEnabledPromise = null;
+          return false;
+        });
+    }
+    videoEnabledPromise.then((v) => alive && setOn(v));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return on;
+}
+
 function ExerciseVideoRow({ t, lang, exKey, name, onShare }) {
+  const videoOn = useVideoEnabled();
   const [v, setV] = useState(null); // { id, title, channel }
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -7053,9 +7117,11 @@ function ExerciseVideoRow({ t, lang, exKey, name, onShare }) {
         </Card>
       )}
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-        <button data-video-btn onClick={play} style={{ ...btn, color: COLORS.text, opacity: busy ? 0.7 : 1 }}>
-          {busy ? t.libVideoLoading : "▶ " + t.libYoutube}
-        </button>
+        {(videoOn || v) && (
+          <button data-video-btn onClick={play} style={{ ...btn, color: COLORS.text, opacity: busy ? 0.7 : 1 }}>
+            {busy ? t.libVideoLoading : "▶ " + t.libYoutube}
+          </button>
+        )}
         <button onClick={onShare} style={{ ...btn, color: COLORS.gold }}>
           {t.shareButton}
         </button>
@@ -7377,7 +7443,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                 return scene ? (
                   <Card style={{ marginBottom: 14 }}>
                     <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libAnim}</div>
-                    <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} bodyStyle={gender === "diverse" ? (gx.figure === "auto" ? "neutral" : gx.figure) : gender} />
+                    <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} title={nameOf(selected)} steps={media && media.items && media.items[selected.key] ? (lang === "de" ? media.items[selected.key].de : media.items[selected.key].en) || [] : []} bodyStyle={gender === "diverse" ? (gx.figure === "auto" ? "neutral" : gx.figure) : gender} />
                     {gender === "diverse" && (
                       <div data-figpick style={{ display: "flex", gap: 8, marginTop: 8 }}>
                         <Chip label={t.figFemale} active={gx.figure === "female"} onClick={() => gx.setFigure("female")} />
@@ -8104,7 +8170,7 @@ const INTAKE_ROUTES = [
   { k: "gel", de: "Gel / Creme", en: "Gel / cream" },
   { k: "other", de: "Sonstiges", en: "Other" },
 ];
-const INTAKE_UNITS = ["mg", "ml", "IE", "mcg", "Stk"];
+const INTAKE_UNITS = ["mg", "g", "ml", "IE", "mcg", "Stk"];
 // ordered so the suggested next site alternates left / right and moves around the body
 const INTAKE_SITES = [
   { k: "gl", de: "Gesäß links", en: "Glute left" },
@@ -8159,12 +8225,64 @@ function nextSite(sub, log) {
   return INTAKE_SITES[(i + 1) % INTAKE_SITES.length].k;
 }
 
+// pick a substance from the list (the amount is typed in afterwards) or enter a name by hand
+function IntakeCatalog({ t, lang, onPick, onCustom, onClose }) {
+  const [q, setQ] = useState("");
+  const [g, setG] = useState("all");
+  const list = searchIntake(q, g);
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  const lbl = (a) => a[lang === "de" ? "de" : "en"];
+  const routeLabel = (k) => (INTAKE_ROUTES.find((r) => r.k === k) || {})[lang === "de" ? "de" : "en"] || "";
+  return (
+    <div data-catalog style={{ position: "fixed", inset: 0, zIndex: 1500, background: COLORS.bg, overflowY: "auto", padding: "16px 20px 28px" }}>
+      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.text }}>{t.intakeCatalogTitle}</div>
+          <span data-catalog-close onClick={onClose} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.gold, cursor: "pointer", padding: "4px 8px" }}>✕ {t.intakeCancel}</span>
+        </div>
+        <div style={{ ...small, fontSize: 12, lineHeight: 1.5, marginBottom: 12 }}>{t.intakeAmountHint}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "11px 14px", marginBottom: 12 }}>
+          <Search size={16} color={COLORS.dim} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.intakeSearch} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14 }} />
+        </div>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 12, paddingBottom: 2 }}>
+          <Chip label={t.intakeAll} active={g === "all"} onClick={() => setG("all")} />
+          {INTAKE_GROUPS.map((x) => (
+            <Chip key={x.k} label={lbl(x)} active={g === x.k} onClick={() => setG(x.k)} />
+          ))}
+        </div>
+        <div data-catalog-custom onClick={onCustom} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 12, padding: "12px 14px", marginBottom: 12, cursor: "pointer" }}>
+          <Pencil size={15} color={COLORS.gold} />
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.gold }}>{t.intakeCustom}</span>
+        </div>
+        {list.length === 0 ? (
+          <div style={{ ...small, textAlign: "center", padding: "18px 12px", lineHeight: 1.5 }}>{t.intakeNoMatch}</div>
+        ) : (
+          <Card style={{ padding: 4 }}>
+            {list.map((x, i) => (
+              <div key={x.n} data-catalog-item onClick={() => onPick(x)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "12px", borderBottom: i < list.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{x.n}</div>
+                  <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>{routeLabel(x.r)} · {lbl(INTAKE_GROUPS.find((y) => y.k === x.g))}</div>
+                </div>
+                <Plus size={16} color={COLORS.gold} style={{ flexShrink: 0 }} />
+              </div>
+            ))}
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function IntakeScreen({ t, lang, data, setData }) {
   const subs = data.subs || [];
   const log = data.log || [];
   const [logging, setLogging] = useState(null); // substance id while the "taken now" form is open
   const [lf, setLf] = useState({ dose: "", site: null, when: "", note: "" });
   const [editing, setEditing] = useState(null); // "new" | substance id
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [fromList, setFromList] = useState(false);
   const emptySub = { name: "", route: "inject", dose: "", unit: "mg", schedType: "interval", days: 7, weekdays: [1] };
   const [sf, setSf] = useState(emptySub);
   const [edit, setEdit] = useState(false);
@@ -8218,12 +8336,22 @@ function IntakeScreen({ t, lang, data, setData }) {
     flash(t.intakeLogged);
   };
 
-  const startNew = () => {
+  const startNew = () => setCatalogOpen(true);
+  const startCustom = () => {
+    setCatalogOpen(false);
+    setFromList(false);
     setSf(emptySub);
+    setEditing("new");
+  };
+  const pickFromList = (x) => {
+    setCatalogOpen(false);
+    setFromList(true);
+    setSf({ ...emptySub, name: x.n, route: x.r, unit: x.u, schedType: "needed" });
     setEditing("new");
   };
   const startEdit = (s) => {
     const sc = s.sched || { type: "needed" };
+    setFromList(false);
     setSf({ name: s.name, route: s.route, dose: String(s.dose || ""), unit: s.unit, schedType: sc.type, days: sc.days || 7, weekdays: sc.weekdays || [1] });
     setEditing(s.id);
   };
@@ -8245,6 +8373,7 @@ function IntakeScreen({ t, lang, data, setData }) {
 
   return (
     <div style={{ padding: "0 20px 28px", position: "relative" }}>
+      {catalogOpen && <IntakeCatalog t={t} lang={lang} onPick={pickFromList} onCustom={startCustom} onClose={() => setCatalogOpen(false)} />}
       <div style={{ ...small, fontSize: 12, lineHeight: 1.5, marginBottom: 14 }}>{t.intakeDisclaimer}</div>
 
       {subs.length === 0 && editing === null && (
@@ -8346,6 +8475,7 @@ function IntakeScreen({ t, lang, data, setData }) {
       {editing !== null ? (
         <Card style={{ marginBottom: 14 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{editing === "new" ? t.intakeNew : t.intakeChange}</div>
+          {fromList && <div data-amount-hint style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, lineHeight: 1.5, marginBottom: 10 }}>{t.intakeAmountHint}</div>}
           <input value={sf.name} onChange={(e) => setSf({ ...sf, name: e.target.value })} placeholder={t.intakeName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />
           <div style={{ ...small, marginBottom: 6 }}>{t.intakeRoute}</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
@@ -9968,6 +10098,8 @@ export default function AsmarFitApp() {
           backupDue={backupDue}
           onOpenBackup={() => setOverlay("settingsData")}
           intakeDue={intakeDue}
+          intakeShow={intake.card !== false}
+          intakeCount={(intake.subs || []).length}
           onOpenIntake={() => {
             setIntakeReturn(null);
             setOverlay("intake");
@@ -9993,6 +10125,10 @@ export default function AsmarFitApp() {
           pantry={pantry}
           onOpenPantry={() => openPantry(null)}
           onOpenFastFood={() => setOverlay("fastfood")}
+          onOpenIntake={() => {
+            setIntakeReturn(null);
+            setOverlay("intake");
+          }}
           onImportText={(txt) => {
             setRecipeImport(txt);
             setOverlay("recipes");

@@ -582,6 +582,9 @@ const YOUTUBE_API_BASE = process.env.YOUTUBE_API_BASE || "https://www.googleapis
 const videoCache = new Map(); // "lang|query" -> { at, data }
 const ytDecode = (s) => String(s || "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
+// lets the app know whether to offer the video button at all (it stays hidden without a key)
+app.get("/api/features", (_req, res) => res.json({ video: Boolean(YOUTUBE_API_KEY) }));
+
 app.get("/api/exercise-video", async (req, res) => {
   if (!YOUTUBE_API_KEY) return res.status(503).json({ error: "not_configured" });
   if (isRateLimited(assistantHits, req.ip, 10)) return res.status(429).json({ error: "rate_limited" });

@@ -550,8 +550,8 @@ export function frameSvg(scene, u, primary, style) {
   );
 }
 
-// the player: loops the scene, tap = pause, shows the current phase in words
-export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay, slow, bodyStyle = "neutral" }) {
+// the player: loops the scene like a short video (timeline, repetition counter, slow motion, full screen with the written steps)
+export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay, slow, bodyStyle = "neutral", labelRep = "Rep", labelFull = "Full screen", labelClose = "Close", steps = [], title = "" }) {
   const [u, setU] = useState(0);
   const [paused, setPaused] = useState(() => {
     try {
@@ -561,11 +561,14 @@ export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay,
     }
   });
   const [half, setHalf] = useState(false);
+  const [full, setFull] = useState(false);
+  const [reps, setReps] = useState(1);
   const raf = useRef(0);
   const clock = useRef({ last: 0, u: 0 });
   useEffect(() => {
     clock.current.u = 0;
     setU(0);
+    setReps(1);
   }, [scene]);
   useEffect(() => {
     if (paused) return undefined;
@@ -576,7 +579,9 @@ export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay,
       const dt = now - c.last;
       if (dt >= 30) {
         c.last = now;
-        c.u = (c.u + dt / loopMs) % 1;
+        const next = c.u + dt / loopMs;
+        if (next >= 1) setReps((r) => (r >= 99 ? 1 : r + 1));
+        c.u = next % 1;
         setU(c.u);
       }
       raf.current = requestAnimationFrame(step);
@@ -588,29 +593,67 @@ export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay,
   const { j, seg, segs } = sceneAt(scene, u, bodyStyle);
   const caps = scene.cap && scene.cap[lang === "de" ? "de" : "en"];
   const label = caps ? caps[Math.min(caps.length - 1, Math.floor((seg / segs) * caps.length))] : "";
+  const pill = { background: "var(--c-bg)", borderRadius: 999, padding: "3px 10px", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700 };
+  const stage = (big) => (
+    <div onClick={() => setPaused((p) => !p)} style={{ position: "relative", cursor: "pointer", borderRadius: 14, background: "var(--c-raised)", overflow: "hidden" }}>
+      <svg viewBox={vbOf(scene)} width="100%" style={{ display: "block" }} role="img" aria-label={label}>
+        <Figure scene={scene} j={j} primary={primary} style={bodyStyle} />
+      </svg>
+      {label && (
+        <div data-phase style={{ ...pill, position: "absolute", left: 10, bottom: 14, color: "var(--c-text)", opacity: 0.92, fontSize: big ? 14 : 11.5 }}>
+          {label}
+        </div>
+      )}
+      <div data-reps style={{ ...pill, position: "absolute", right: 10, top: 10, color: "var(--c-dim)", opacity: 0.92 }}>
+        {labelRep} {reps}
+      </div>
+      {paused && <div style={{ ...pill, position: "absolute", right: 10, bottom: 14, color: "var(--c-gold)" }}>▶ {labelPlay}</div>}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 4, background: "var(--c-border)" }}>
+        <div data-progress style={{ width: u * 100 + "%", height: "100%", background: "var(--c-gold)" }} />
+      </div>
+    </div>
+  );
+  const controls = (
+    <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginTop: 6 }}>
+      <span data-full onClick={() => setFull(true)} style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: "var(--c-gold)", cursor: "pointer", padding: "2px 4px", marginRight: "auto" }}>
+        ⤢ {labelFull}
+      </span>
+      <span onClick={() => setHalf((h) => !h)} style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: half ? "var(--c-bg)" : "var(--c-gold)", background: half ? "var(--c-gold)" : "transparent", border: "1px solid var(--c-gold)", borderRadius: 999, padding: "2px 10px", cursor: "pointer" }}>
+        {slow}
+      </span>
+      <span onClick={() => setPaused((p) => !p)} style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: "var(--c-gold)", cursor: "pointer", padding: "2px 4px" }}>
+        {paused ? "▶ " + labelPlay : "❚❚ " + labelPause}
+      </span>
+    </div>
+  );
   return (
     <div>
-      <div onClick={() => setPaused((p) => !p)} style={{ position: "relative", cursor: "pointer", borderRadius: 14, background: "var(--c-raised)", overflow: "hidden" }}>
-        <svg viewBox={vbOf(scene)} width="100%" style={{ display: "block" }} role="img" aria-label={label}>
-          <Figure scene={scene} j={j} primary={primary} style={bodyStyle} />
-        </svg>
-        {label && (
-          <div data-phase style={{ position: "absolute", left: 10, bottom: 8, background: "var(--c-bg)", color: "var(--c-text)", borderRadius: 999, padding: "3px 10px", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, opacity: 0.92 }}>
-            {label}
+      {stage(false)}
+      {controls}
+      {full && (
+        <div data-fullscreen style={{ position: "fixed", inset: 0, zIndex: 2000, background: "var(--c-bg)", overflowY: "auto", padding: "16px 16px 28px" }}>
+          <div style={{ maxWidth: 560, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: "var(--c-text)" }}>{title}</div>
+              <span data-full-close onClick={() => setFull(false)} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: "var(--c-gold)", cursor: "pointer", padding: "4px 8px" }}>
+                ✕ {labelClose}
+              </span>
+            </div>
+            {stage(true)}
+            {controls}
+            {steps.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                {steps.map((s, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, padding: "6px 0", fontFamily: "Inter, sans-serif", fontSize: 15, color: "var(--c-text)", lineHeight: 1.45 }}>
+                    <span style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--c-goldSoft)", color: "var(--c-gold)", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+                    <span>{s}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-        {paused && (
-          <div style={{ position: "absolute", right: 10, bottom: 8, background: "var(--c-bg)", color: "var(--c-gold)", borderRadius: 999, padding: "3px 10px", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700 }}>▶ {labelPlay}</div>
-        )}
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 6 }}>
-        <span onClick={() => setHalf((h) => !h)} style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: half ? "var(--c-bg)" : "var(--c-gold)", background: half ? "var(--c-gold)" : "transparent", border: "1px solid var(--c-gold)", borderRadius: 999, padding: "2px 10px", cursor: "pointer" }}>
-          {slow}
-        </span>
-        <span onClick={() => setPaused((p) => !p)} style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: "var(--c-gold)", cursor: "pointer", padding: "2px 4px" }}>
-          {paused ? "▶ " + labelPlay : "❚❚ " + labelPause}
-        </span>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
