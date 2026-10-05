@@ -1,7 +1,7 @@
 // Animated exercise demos: a side-view mannequin that is moved between key poses.
 // Everything is drawn as SVG from bone lengths and angles, so it works offline and needs no images or videos.
 // The scenes (key poses + equipment) live in exerciseScenes.js; this file is the engine and the player.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // ----- bones (viewBox is 240 x 170, the floor is y = 148, the figure looks to the right) -----
 export const FLOOR = 148;
@@ -550,8 +550,89 @@ export function frameSvg(scene, u, primary, style) {
   );
 }
 
+
+// thin outline of a pose: shows the whole range of the movement at a glance
+function Ghost({ j }) {
+  const ln = (a, b) => <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="var(--c-dim)" strokeWidth="1.7" strokeLinecap="round" />;
+  if (j.view === "front") {
+    return (
+      <g opacity="0.42">
+        {ln(j.hip, j.sh)}
+        {ln(j.shL, j.elbowL)}
+        {ln(j.elbowL, j.handL)}
+        {ln(j.shR, j.elbowR)}
+        {ln(j.elbowR, j.handR)}
+        {ln(j.hipL, j.kneeL)}
+        {ln(j.kneeL, j.ankleL)}
+        {ln(j.hipR, j.kneeR)}
+        {ln(j.kneeR, j.ankleR)}
+        <circle cx={j.head[0]} cy={j.head[1]} r={HEAD_R} fill="none" stroke="var(--c-dim)" strokeWidth="1.7" />
+      </g>
+    );
+  }
+  return (
+    <g opacity="0.42">
+      {ln(j.hip, j.sh)}
+      {ln(j.sh, j.elbow)}
+      {ln(j.elbow, j.hand)}
+      {ln(j.hip, j.knee)}
+      {ln(j.knee, j.ankle)}
+      {ln(j.ankle, j.toe)}
+      <circle cx={j.head[0]} cy={j.head[1]} r={HEAD_R} fill="none" stroke="var(--c-dim)" strokeWidth="1.7" />
+    </g>
+  );
+}
+
+// the joint that travels the most is the one the arrow follows
+function focusOf(scene) {
+  if (scene._focus !== undefined) return scene._focus;
+  const front = scene.view === "front";
+  const cands = front ? ["handR", "ankleR", "head", "hip"] : ["hand", "ankle", "head", "hip"];
+  let best = null;
+  let bestLen = 0;
+  cands.forEach((k) => {
+    let len = 0;
+    let prev = null;
+    for (let i = 0; i <= 40; i++) {
+      const p = sceneAt(scene, i / 40).j[k];
+      if (prev && p) len += Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+      prev = p;
+    }
+    if (len > bestLen) {
+      bestLen = len;
+      best = k;
+    }
+  });
+  scene._focus = bestLen > 25 ? best : null;
+  return scene._focus;
+}
+
+function MoveArrow({ scene, u, j, style }) {
+  const k = focusOf(scene);
+  if (!k || !j[k]) return null;
+  const p0 = j[k];
+  const p1 = sceneAt(scene, (u + 0.03) % 1, style).j[k];
+  const dx = p1[0] - p0[0];
+  const dy = p1[1] - p0[1];
+  const sp = Math.hypot(dx, dy);
+  if (sp < 1.1) return null;
+  const ux = dx / sp;
+  const uy = dy / sp;
+  const a = [p0[0] + ux * 16, p0[1] + uy * 16];
+  const len = Math.min(26, 8 + sp * 3);
+  const b = [a[0] + ux * len, a[1] + uy * len];
+  const h1 = [b[0] - ux * 6 - uy * 4, b[1] - uy * 6 + ux * 4];
+  const h2 = [b[0] - ux * 6 + uy * 4, b[1] - uy * 6 - ux * 4];
+  return (
+    <g data-arrow stroke="var(--c-gold)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none">
+      <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} />
+      <polyline points={h1.join(",") + " " + b.join(",") + " " + h2.join(",")} />
+    </g>
+  );
+}
+
 // the player: loops the scene like a short video (timeline, repetition counter, slow motion, full screen with the written steps)
-export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay, slow, bodyStyle = "neutral", labelRep = "Rep", labelFull = "Full screen", labelClose = "Close", steps = [], title = "" }) {
+export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay, slow, bodyStyle = "neutral", labelRep = "Rep", labelFull = "Full screen", labelClose = "Close", steps = [], title = "", tip = "", muscleText = "" }) {
   const [u, setU] = useState(0);
   const [paused, setPaused] = useState(() => {
     try {
@@ -591,13 +672,24 @@ export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay,
     return () => cancelAnimationFrame(raf.current);
   }, [paused, half, scene]);
   const { j, seg, segs } = sceneAt(scene, u, bodyStyle);
+  const ghosts = useMemo(() => {
+    if (scene.loop) return [];
+    const n = scene.kf.length;
+    const m = (n - 1) * 2;
+    const list = [];
+    for (let i = 0; i < n; i++) list.push(sceneAt(scene, i / m, bodyStyle).j);
+    // a pose that hardly differs from the previous one adds nothing
+    return list.filter((g, i) => i === 0 || Math.hypot(g.hand[0] - list[i - 1].hand[0], g.hand[1] - list[i - 1].hand[1], g.ankle[0] - list[i - 1].ankle[0], g.ankle[1] - list[i - 1].ankle[1]) > 6);
+  }, [scene, bodyStyle]);
   const caps = scene.cap && scene.cap[lang === "de" ? "de" : "en"];
   const label = caps ? caps[Math.min(caps.length - 1, Math.floor((seg / segs) * caps.length))] : "";
   const pill = { background: "var(--c-bg)", borderRadius: 999, padding: "3px 10px", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700 };
   const stage = (big) => (
     <div onClick={() => setPaused((p) => !p)} style={{ position: "relative", cursor: "pointer", borderRadius: 14, background: "var(--c-raised)", overflow: "hidden" }}>
       <svg viewBox={vbOf(scene)} width="100%" style={{ display: "block" }} role="img" aria-label={label}>
+        {ghosts.map((g, i) => <Ghost key={i} j={g} />)}
         <Figure scene={scene} j={j} primary={primary} style={bodyStyle} />
+        {!paused && !scene.loop && <MoveArrow scene={scene} u={u} j={j} style={bodyStyle} />}
       </svg>
       {label && (
         <div data-phase style={{ ...pill, position: "absolute", left: 10, bottom: 14, color: "var(--c-text)", opacity: 0.92, fontSize: big ? 14 : 11.5 }}>
@@ -630,6 +722,12 @@ export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay,
     <div>
       {stage(false)}
       {controls}
+      {(tip || muscleText) && (
+        <div data-tip style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: "var(--c-dim)" }}>
+          {tip && <div><span style={{ color: "var(--c-gold)", fontWeight: 700 }}>💡</span> {tip}</div>}
+          {muscleText && <div><span style={{ color: "#E3262E", fontWeight: 700 }}>●</span> {muscleText}</div>}
+        </div>
+      )}
       {full && (
         <div data-fullscreen style={{ position: "fixed", inset: 0, zIndex: 2000, background: "var(--c-bg)", overflowY: "auto", padding: "16px 16px 28px" }}>
           <div style={{ maxWidth: 560, margin: "0 auto" }}>
@@ -641,6 +739,12 @@ export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay,
             </div>
             {stage(true)}
             {controls}
+            {(tip || muscleText) && (
+              <div style={{ marginTop: 10, fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: 1.5, color: "var(--c-dim)" }}>
+                {tip && <div><span style={{ color: "var(--c-gold)", fontWeight: 700 }}>💡</span> {tip}</div>}
+                {muscleText && <div><span style={{ color: "#E3262E", fontWeight: 700 }}>●</span> {muscleText}</div>}
+              </div>
+            )}
             {steps.length > 0 && (
               <div style={{ marginTop: 14 }}>
                 {steps.map((s, i) => (

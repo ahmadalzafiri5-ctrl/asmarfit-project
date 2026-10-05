@@ -624,6 +624,7 @@ const STR = {
     libPause: "Pause",
     libPlay: "Play",
     libRep: "Rep",
+    libRedMeans: "Red = trains:",
     libFull: "Full screen",
     libSlow: "Slow motion",
     libStartEnd: "Start and end position alternate. Tap to pause the animation.",
@@ -1364,6 +1365,7 @@ const STR = {
     libPause: "Pause",
     libPlay: "Abspielen",
     libRep: "Wdh.",
+    libRedMeans: "Rot = trainiert:",
     libFull: "Vollbild",
     libSlow: "Zeitlupe",
     libStartEnd: "Start und Ende im Wechsel. Tippen hält die Animation an.",
@@ -7443,7 +7445,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                 return scene ? (
                   <Card style={{ marginBottom: 14 }}>
                     <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libAnim}</div>
-                    <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} title={nameOf(selected)} steps={media && media.items && media.items[selected.key] ? (lang === "de" ? media.items[selected.key].de : media.items[selected.key].en) || [] : []} bodyStyle={gender === "diverse" ? (gx.figure === "auto" ? "neutral" : gx.figure) : gender} />
+                    <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} title={nameOf(selected)} tip={cueOf(selected)} muscleText={t.libRedMeans + " " + names(mus.primary)} steps={media && media.items && media.items[selected.key] ? (lang === "de" ? media.items[selected.key].de : media.items[selected.key].en) || [] : []} bodyStyle={gender === "diverse" ? (gx.figure === "auto" ? "neutral" : gx.figure) : gender} />
                     {gender === "diverse" && (
                       <div data-figpick style={{ display: "flex", gap: 8, marginTop: 8 }}>
                         <Chip label={t.figFemale} active={gx.figure === "female"} onClick={() => gx.setFigure("female")} />
