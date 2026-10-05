@@ -348,9 +348,15 @@ const STR = {
     waterGoalPh: "Daily goal in ml",
     waterSave: "Save",
     searchRetry: "Tap to retry",
-    assistantTitle: "ASFIT Assistant",
-    assistantEntry: "Ask the assistant",
-    assistantHello: "Hi! I'm your ASFIT assistant. Ask me about training, nutrition or how to use the app.",
+    assistantTitle: "ASFIT Coach",
+    assistantEntry: "Ask the coach",
+    assistantHello: "Hi! I'm your ASFIT coach. Ask me about training, nutrition or how to use the app.",
+    assistantHelloData: "Hi {name}! I'm your ASFIT coach and I know your goal and your numbers, so my answers are personal. What do you want to know?",
+    assistantDataTitle: "Use my data",
+    assistantDataOn: "The coach knows your goal, weight, today's food and your training. These numbers are sent to the AI service together with your question, nothing else.",
+    assistantDataOff: "The coach answers in general terms and does not see any of your data.",
+    assistantChips: ["How do I reach my protein goal today?", "Is my training right for my goal?", "Why is my weight stalling?", "What should I eat before training?"],
+    assistantChipsPlain: ["How do I build muscle?", "How many meals a day are best?", "How does the app work?"],
     assistantPlaceholder: "Type your question …",
     assistantThinking: "Thinking …",
     assistantError: "Sorry, something went wrong. Please try again.",
@@ -408,7 +414,7 @@ const STR = {
     exerciseSaved: "Saved",
     noHistory: "No entries yet",
     settingsPrivacy: "Privacy",
-    settingsSupport: "Ask AI support",
+    settingsSupport: "Ask the AI coach",
     privacyTitle: "Privacy",
     privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight, notes and your profile picture are currently kept on your device only — never uploaded."},{"h":"Food search and barcode","p":"Search terms and barcodes are forwarded through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI photo scan, assistant and recipes","p":"For the photo scan, a downscaled image is sent to our server and from there to an AI service for analysis. Assistant questions and recipe requests are handled the same way. Our server does not store any of it."},{"h":"Health data (steps)","p":"On request, ASFIT reads your daily steps from Health Connect to estimate calories burned. The values stay on your device. You can revoke access at any time in Health Connect."}],
     recordsTitle: "Records",
@@ -880,7 +886,7 @@ const STR = {
     remFoodBody: "Time to log your meals 🍽️",
     remWeighBody: "Step on the scale and log your weight ⚖️",
     remTrainBody: "Time for your workout 💪",
-    setAskAi: "Ask the AI assistant",
+    setAskAi: "Ask the AI coach",
     setFaqTitle: "Frequently asked questions",
     setFaq: [{"q":"How do I log food?","a":"Open the Nutrition tab and tap the search bar. Search for a food, scan a barcode or use the AI photo scan. Pick the amount and tap Add."},{"q":"How does the AI photo scan work?","a":"Take or choose a photo of your meal. The AI estimates ingredients, calories and macros. You can edit names and amounts before logging — it is an estimate and can be off."},{"q":"How are my calories calculated?","a":"From your age, height, weight and gender (Mifflin-St Jeor) times an activity factor, adjusted for your goal and target date. You can set your own goal under Settings → My goals."},{"q":"Where is my data stored?","a":"On your device. Use Settings → Backup & delete data to save a backup file, so nothing is lost if you reinstall the app."},{"q":"How do workouts work?","a":"Start a workout in the Training tab. It keeps running — even if you close the app — until you finish or discard it."},{"q":"What are records and challenges?","a":"Training → Records shows your best lifts automatically. You can also create your own challenge, like a 5 km run, and set a reward for beating it."},{"q":"Why is the first search or AI answer slow?","a":"The free server goes to sleep when unused and needs up to a minute to wake up. After that it is fast again."},{"q":"How do I connect a smartwatch or other health apps?","a":"Settings → Connections & health apps. Turn on syncing with Health Connect in your watch or fitness app, then connect ASFIT there."}],
     setAboutVersion: "Version",
@@ -1161,9 +1167,15 @@ const STR = {
     waterGoalPh: "Tagesziel in ml",
     waterSave: "Speichern",
     searchRetry: "Tippen zum Wiederholen",
-    assistantTitle: "ASFIT-Assistent",
-    assistantEntry: "Assistent fragen",
-    assistantHello: "Hallo! Ich bin dein ASFIT-Assistent. Frag mich zu Training, Ernährung oder zur Bedienung der App.",
+    assistantTitle: "ASFIT-Coach",
+    assistantEntry: "Coach fragen",
+    assistantHello: "Hallo! Ich bin dein ASFIT-Coach. Frag mich zu Training, Ernährung oder zur Bedienung der App.",
+    assistantHelloData: "Hallo {name}! Ich bin dein ASFIT-Coach und kenne dein Ziel und deine Zahlen, deshalb sind meine Antworten persönlich. Was möchtest du wissen?",
+    assistantDataTitle: "Meine Daten nutzen",
+    assistantDataOn: "Der Coach kennt dein Ziel, Gewicht, das heutige Essen und dein Training. Diese Zahlen gehen zusammen mit deiner Frage an den KI-Dienst, sonst nichts.",
+    assistantDataOff: "Der Coach antwortet allgemein und sieht keine deiner Daten.",
+    assistantChips: ["Wie komme ich heute auf mein Eiweissziel?", "Passt mein Training zu meinem Ziel?", "Warum stagniert mein Gewicht?", "Was esse ich vor dem Training?"],
+    assistantChipsPlain: ["Wie baue ich Muskeln auf?", "Wie viele Mahlzeiten pro Tag sind sinnvoll?", "Wie funktioniert die App?"],
     assistantPlaceholder: "Deine Frage …",
     assistantThinking: "Denke nach …",
     assistantError: "Da ist etwas schiefgelaufen. Bitte versuch es nochmal.",
@@ -1221,7 +1233,7 @@ const STR = {
     exerciseSaved: "Gespeichert",
     noHistory: "Noch keine Einträge",
     settingsPrivacy: "Datenschutz",
-    settingsSupport: "KI-Support fragen",
+    settingsSupport: "KI-Coach fragen",
     privacyTitle: "Datenschutz",
     privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht, Notizen und dein Profilbild werden derzeit nur auf deinem Gerät gehalten — nie hochgeladen."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Foto-Scan, Assistent und Rezepte","p":"Beim Foto-Scan wird das Bild verkleinert an unseren Server und von dort zur Analyse an einen KI-Dienst gesendet. Fragen an den Assistenten und Rezeptwünsche laufen genauso. Unser Server speichert nichts davon."},{"h":"Gesundheitsdaten (Schritte)","p":"Auf Wunsch liest ASFIT deine Tagesschritte aus Health Connect, um verbrannte Kalorien zu schätzen. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."}],
     recordsTitle: "Rekorde",
@@ -1693,7 +1705,7 @@ const STR = {
     remFoodBody: "Zeit, dein Essen einzutragen 🍽️",
     remWeighBody: "Wiege dich und trage dein Gewicht ein ⚖️",
     remTrainBody: "Zeit fürs Training 💪",
-    setAskAi: "KI-Assistenten fragen",
+    setAskAi: "KI-Coach fragen",
     setFaqTitle: "Häufige Fragen",
     setFaq: [{"q":"Wie logge ich Essen?","a":"Öffne den Tab Ernährung und tippe auf die Suchleiste. Suche ein Lebensmittel, scanne einen Barcode oder nutze den KI-Foto-Scan. Menge wählen und auf Hinzufügen tippen."},{"q":"Wie funktioniert der KI-Foto-Scan?","a":"Mach ein Foto deiner Mahlzeit oder wähle eins aus. Die KI schätzt Zutaten, Kalorien und Makros. Namen und Mengen kannst du vor dem Loggen ändern — es ist eine Schätzung und kann abweichen."},{"q":"Wie werden meine Kalorien berechnet?","a":"Aus Alter, Größe, Gewicht und Geschlecht (Mifflin-St Jeor) mal einem Aktivitätsfaktor, angepasst an dein Ziel und Zieldatum. Ein eigenes Ziel legst du unter Einstellungen → Meine Ziele fest."},{"q":"Wo werden meine Daten gespeichert?","a":"Auf deinem Gerät. Unter Einstellungen → Daten sichern & löschen speicherst du eine Sicherungsdatei, damit nichts verloren geht, wenn du die App neu installierst."},{"q":"Wie funktionieren Workouts?","a":"Starte ein Workout im Tab Training. Es läuft weiter — auch wenn du die App schließt — bis du es beendest oder verwirfst."},{"q":"Was sind Rekorde und Herausforderungen?","a":"Unter Training → Rekorde siehst du deine Bestleistungen automatisch. Du kannst auch eigene Herausforderungen anlegen, wie einen 5-km-Lauf, und eine Belohnung festlegen."},{"q":"Warum dauert die erste Suche oder KI-Antwort lange?","a":"Der kostenlose Server schläft, wenn ihn niemand nutzt, und braucht bis zu einer Minute zum Aufwachen. Danach ist er wieder schnell."},{"q":"Wie verbinde ich meine Smartwatch oder andere Gesundheits-Apps?","a":"Einstellungen → Verbindungen & Gesundheits-Apps. Schalte in deiner Uhr- oder Fitness-App die Synchronisierung mit Health Connect ein und verbinde dann ASFIT dort."}],
     setAboutVersion: "Version",
@@ -5717,7 +5729,7 @@ function plainChat(text) {
     .replace(/`([^`]+)`/g, "$1");
 }
 
-function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
+function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, chips = [] }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -5728,8 +5740,8 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
     if (messages.length > 0 || busy) endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, busy]);
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (override) => {
+    const text = (typeof override === "string" ? override : input).trim();
     if (!text || busy) return;
     const next = [...messages, { role: "user", content: text }];
     setMessages(next);
@@ -5740,7 +5752,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
       const res = await fetch(API_BASE + "/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, lang, context }),
+        body: JSON.stringify({ messages: next, lang, context, data: data || undefined }),
       });
       if (res.status === 503) {
         setError(t.assistantNotConfigured);
@@ -5782,6 +5794,15 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
     <div style={{ display: "flex", flexDirection: "column", minHeight }}>
       <div style={{ flex: 1 }}>
         {bubble({ role: "assistant", content: hello }, "hello")}
+        {messages.length === 0 && chips.length > 0 && (
+          <div data-ai-chips style={{ display: "flex", flexDirection: "column", gap: 8, margin: "4px 0 14px" }}>
+            {chips.map((c) => (
+              <div key={c} data-ai-chip onClick={() => send(c)} style={{ alignSelf: "flex-start", maxWidth: "92%", padding: "9px 14px", borderRadius: 14, border: "1px solid " + COLORS.gold, background: COLORS.goldSoft, color: COLORS.gold, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, lineHeight: 1.35, cursor: "pointer" }}>
+                {c}
+              </div>
+            ))}
+          </div>
+        )}
         {messages.map(bubble)}
         {busy && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>{t.assistantThinking}</div>}
         {error && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 10 }}>{error}</div>}
@@ -5795,7 +5816,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
           placeholder={t.assistantPlaceholder}
           style={{ ...numInputStyle, flex: 1, borderRadius: 14, padding: "12px 14px" }}
         />
-        <button onClick={send} disabled={busy || !input.trim()} style={{ width: 46, borderRadius: 14, border: "none", background: busy || !input.trim() ? COLORS.raised : COLORS.gold, cursor: busy || !input.trim() ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button onClick={() => send()} disabled={busy || !input.trim()} style={{ width: 46, borderRadius: 14, border: "none", background: busy || !input.trim() ? COLORS.raised : COLORS.gold, cursor: busy || !input.trim() ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Send size={18} color={busy || !input.trim() ? COLORS.dim : COLORS.bg} />
         </button>
       </div>
@@ -5803,10 +5824,17 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620 }) {
   );
 }
 
-function AssistantScreen({ t, lang }) {
+function AssistantScreen({ t, lang, data, aiOn, setAiOn, name }) {
   return (
     <div style={{ padding: "0 20px 16px" }}>
-      <AssistantChat t={t} lang={lang} hello={t.assistantHello} />
+      <div data-ai-data style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "11px 14px", marginBottom: 14 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>{t.assistantDataTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2, lineHeight: 1.45 }}>{aiOn ? t.assistantDataOn : t.assistantDataOff}</div>
+        </div>
+        <Switch checked={aiOn} onChange={setAiOn} />
+      </div>
+      <AssistantChat t={t} lang={lang} hello={(aiOn ? t.assistantHelloData : t.assistantHello).replace("{name}", name || "")} data={aiOn ? data : null} chips={aiOn ? t.assistantChips : t.assistantChipsPlain} />
     </div>
   );
 }
@@ -8690,6 +8718,7 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
 const INTAKE_ROUTES = [
   { k: "inject", de: "Spritze", en: "Injection" },
   { k: "oral", de: "Tabletten / Kapseln", en: "Tablets / capsules" },
+  { k: "powder", de: "Pulver / Getränk", en: "Powder / drink" },
   { k: "gel", de: "Gel / Creme", en: "Gel / cream" },
   { k: "other", de: "Sonstiges", en: "Other" },
 ];
@@ -9908,6 +9937,28 @@ export default function AsmarFitApp() {
   const [stepsGoal, setStepsGoal] = usePersisted("stepsGoal", 10000);
   const historyMap = useMemo(() => buildHistory(meals, waterMl, steps), [meals, waterMl, steps]);
   const streak = useMemo(() => computeStreaks(historyMap), [historyMap]);
+  // what the assistant may know about the user (sent with each question, only while "aiData" is on)
+  const [aiOn, setAiOn] = usePersisted("aiData", true);
+  const aiData = useMemo(() => {
+    const day = (x) => String(x).slice(0, 10);
+    return {
+      name: profile.name,
+      gender: profile.gender,
+      age: profile.age,
+      heightCm: profile.height,
+      weightKg: profile.weight,
+      targetKg: profile.target,
+      goal: profile.goal,
+      kcalGoal: profile.kcalGoal,
+      macroTargetsG: profile.macroTargets,
+      today: { kcal: Math.round(sumMeals(meals, "kcal")), proteinG: Math.round(sumMeals(meals, "protein")), carbsG: Math.round(sumMeals(meals, "carbs")), fatG: Math.round(sumMeals(meals, "fat")), waterMl, steps },
+      weightLog: weightLog.slice(-8).map((w) => ({ date: day(w.dateISO), kg: w.kg })),
+      lastWorkouts: workoutHistory.slice(-5).map((wo) => ({ date: day(wo.dateISO), minutes: Math.round((wo.durationSec || 0) / 60), volumeKg: Math.round(wo.volumeKg || 0), sets: (wo.sets || []).slice(0, 10).map((x) => x.exerciseKey + " " + x.weight + "kg x" + x.reps) })),
+      plan: planName ? { name: planName, days: planDays.map((d) => d.name + ": " + d.exercises.map((e) => e.key).join(", ")) } : null,
+      personalBests: personalBests,
+      loggingStreakDays: streak.current,
+    };
+  }, [profile, meals, waterMl, steps, weightLog, workoutHistory, planName, planDays, personalBests, streak]);
   const [streakCelebrated, setStreakCelebrated] = usePersisted("streakCelebrated", 0);
   // Confetti once per milestone. If the streak broke, the marker drops so the next run celebrates again.
   useEffect(() => {
@@ -10593,7 +10644,7 @@ export default function AsmarFitApp() {
     topTitle = t.setImprintRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "assistant") {
-    content = <AssistantScreen t={t} lang={lang} />;
+    content = <AssistantScreen t={t} lang={lang} data={aiData} aiOn={aiOn} setAiOn={setAiOn} name={profile.name} />;
     topTitle = t.assistantTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "planBuilder") {
