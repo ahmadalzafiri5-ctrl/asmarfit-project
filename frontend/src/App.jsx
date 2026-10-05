@@ -6,6 +6,7 @@ import { ExerciseAnimation } from "./exerciseAnim.jsx";
 import { sceneFor } from "./exerciseScenes.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
+import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 // @zxing/* (the browser barcode fallback) is loaded lazily inside scanWeb()
@@ -802,8 +803,27 @@ const STR = {
     setWaterGoal: "Water goal (ml)",
     setWaterDefault: "Default for your weight:",
     remTime: "Time",
-    remNoteWeb: "Reminders work in the installed Android app.",
-    remNoteNative: "You get a notification every day at the chosen time.",
+    remNoteWeb: "On iPhone and in the browser the app cannot send notifications while it is closed. Here it shows on the home screen what is still open. Notifications with the app closed work in the installed Android app.",
+    remNoteNative: "The notifications also arrive while the app is closed. They are planned again whenever you open the app or log something, so a missed-workout message only comes if it is true.",
+    remBreakfast: "Log breakfast",
+    remLunch: "Log lunch",
+    remDinner: "Log dinner",
+    remWater: "Drink water",
+    remWaterEvery: "Every {n} h",
+    remWaterFrom: "From",
+    remWaterTo: "Until",
+    remTrainSub: "On your training days",
+    remMissed: "Missed workout",
+    remMissedSub: "In the evening, if you have not trained on a training day",
+    remStreak: "Streak at risk",
+    remStreakSub: "If you have not logged anything today",
+    remIntake: "Intake due",
+    remIntakeSub: "For intake-log entries with a rhythm",
+    remComeback: "We miss you",
+    remComebackSub: "After 3 days without opening the app",
+    remDays: "Training days",
+    todayOpenTitle: "Still open today",
+    todayOpenSettings: "Reminders",
     remFoodBody: "Time to log your meals 🍽️",
     remWeighBody: "Step on the scale and log your weight ⚖️",
     remTrainBody: "Time for your workout 💪",
@@ -1543,8 +1563,27 @@ const STR = {
     setWaterGoal: "Wasserziel (ml)",
     setWaterDefault: "Standard für dein Gewicht:",
     remTime: "Uhrzeit",
-    remNoteWeb: "Erinnerungen funktionieren in der installierten Android-App.",
-    remNoteNative: "Du bekommst täglich zur gewählten Uhrzeit eine Benachrichtigung.",
+    remNoteWeb: "Auf dem iPhone und im Browser kann die App bei geschlossener App keine Nachrichten schicken. Hier zeigt sie dir auf der Startseite, was noch offen ist. Nachrichten bei geschlossener App gibt es in der installierten Android-App.",
+    remNoteNative: "Die Nachrichten kommen auch bei geschlossener App. Sie werden jedes Mal neu geplant, wenn du die App öffnest oder etwas einträgst, damit \"Training verpasst\" nur kommt, wenn es stimmt.",
+    remBreakfast: "Frühstück eintragen",
+    remLunch: "Mittagessen eintragen",
+    remDinner: "Abendessen eintragen",
+    remWater: "Wasser trinken",
+    remWaterEvery: "Alle {n} Std.",
+    remWaterFrom: "Von",
+    remWaterTo: "Bis",
+    remTrainSub: "An deinen Trainingstagen",
+    remMissed: "Training verpasst",
+    remMissedSub: "Abends, wenn du an einem Trainingstag noch nicht trainiert hast",
+    remStreak: "Serie in Gefahr",
+    remStreakSub: "Wenn du heute noch nichts eingetragen hast",
+    remIntake: "Einnahme fällig",
+    remIntakeSub: "Für Einträge im Einnahme-Tagebuch mit Rhythmus",
+    remComeback: "Wir vermissen dich",
+    remComebackSub: "Nach 3 Tagen ohne Öffnen der App",
+    remDays: "Trainingstage",
+    todayOpenTitle: "Heute noch offen",
+    todayOpenSettings: "Erinnerungen",
     remFoodBody: "Zeit, dein Essen einzutragen 🍽️",
     remWeighBody: "Wiege dich und trage dein Gewicht ein ⚖️",
     remTrainBody: "Zeit fürs Training 💪",
@@ -2714,7 +2753,35 @@ function BackupReminder({ t, onOpen }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0 }) {
+// "Still open today": what the reminders would nag about, shown on the home screen (also where background notifications are not possible)
+function TodayOpen({ t, lang, cfg, info, hideIntake, onGo, onSettings }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  const items = dueNow({ now, cfg, lang, today: info }).filter((x) => !(hideIntake && x.key.startsWith("intake-"))).slice(0, 4);
+  if (items.length === 0) return null;
+  return (
+    <div data-today-open>
+      <Card style={{ marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.todayOpenTitle}</div>
+          <span onClick={onSettings} style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.todayOpenSettings}</span>
+        </div>
+        {items.map((x) => (
+          <div key={x.key} data-today-item={x.key} onClick={() => onGo(x.go)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: "1px solid " + COLORS.border }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: x.key === "missed" || x.key === "streak" ? COLORS.coral : COLORS.gold, flexShrink: 0 }} />
+            <span style={{ flex: 1, fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text, lineHeight: 1.4 }}>{x.text}</span>
+            <ChevronLeft size={15} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2773,6 +2840,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
       </div>
 
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
+      {todayCfg && todayInfo && <TodayOpen t={t} lang={lang} cfg={todayCfg} info={todayInfo} hideIntake={intakeDue.length > 0} onGo={onTodayGo} onSettings={onTodaySettings} />}
       {intakeDue.length === 0 && intakeShow && (
         <div data-intake-home><Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -4839,6 +4907,13 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
 // PC browser has no access to Google's ML Kit scanner module, so it shows a
 // hint instead of a scan button rather than faking a result.
 const IS_NATIVE_APP = Capacitor.isNativePlatform();
+const lsJson = (k) => {
+  try {
+    return JSON.parse(localStorage.getItem("asfit." + k));
+  } catch {
+    return null;
+  }
+};
 const HEALTH_STORE_NAME = Capacitor.getPlatform() === "ios" ? "Apple Health" : "Health Connect";
 
 function usePersisted(key, init) {
@@ -8605,7 +8680,7 @@ function SettingsLabel({ children }) {
 }
 
 function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
-  const remOn = Object.values(reminders).filter(Boolean).length;
+  const remOn = NOTIF_KINDS.filter((k) => reminders[k] && reminders[k].on).length;
   return (
     <div style={{ padding: "0 20px 28px" }}>
       <Card onClick={() => onNav("settingsProfile")} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22, cursor: "pointer" }}>
@@ -8630,7 +8705,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
 
       <SettingsGroup title={t.setGroupApp}>
         <SettingsRow icon={Palette} label={t.setDisplayRow} onClick={() => onNav("settingsDisplay")} />
-        <SettingsRow icon={Bell} label={t.reminders} sub={remOn + " / 3"} onClick={() => onNav("settingsReminders")} />
+        <SettingsRow icon={Bell} label={t.reminders} sub={remOn + " / " + NOTIF_KINDS.length} onClick={() => onNav("settingsReminders")} />
         <SettingsRow icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
         <SettingsRow icon={Users} label={t.friendsTitle} onClick={() => onNav("friends")} />
         <SettingsRow icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />
@@ -9036,34 +9111,77 @@ function StartIntro({ onDone, accent, full }) {
   );
 }
 
-function RemindersSettings({ t, reminders, setReminders, times, setTimes, native }) {
+function RemindersSettings({ t, lang, notif, setNotif, native }) {
+  const wd = INTAKE_WEEKDAYS[lang] || INTAKE_WEEKDAYS.en;
+  const set = (k, patch) => setNotif({ ...notif, [k]: { ...notif[k], ...patch } });
   const rows = [
-    { key: "food", label: t.remFood, icon: UtensilsCrossed },
-    { key: "weigh", label: t.remWeigh, icon: TrendingUp },
-    { key: "train", label: t.remTrain, icon: Dumbbell },
+    { k: "breakfast", label: t.remBreakfast, icon: UtensilsCrossed, kind: "time" },
+    { k: "lunch", label: t.remLunch, icon: UtensilsCrossed, kind: "time" },
+    { k: "dinner", label: t.remDinner, icon: UtensilsCrossed, kind: "time" },
+    { k: "water", label: t.remWater, icon: Droplets, kind: "water" },
+    { k: "weigh", label: t.remWeigh, icon: TrendingUp, kind: "time" },
+    { k: "train", label: t.remTrain, sub: t.remTrainSub, icon: Dumbbell, kind: "time" },
+    { k: "missed", label: t.remMissed, sub: t.remMissedSub, icon: Dumbbell, kind: "time" },
+    { k: "streak", label: t.remStreak, sub: t.remStreakSub, icon: Flame, kind: "time" },
+    { k: "intake", label: t.remIntake, sub: t.remIntakeSub, icon: Pill, kind: "time" },
+    { k: "comeback", label: t.remComeback, sub: t.remComebackSub, icon: Bell, kind: "none" },
   ];
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim };
+  const timeBox = (value, onChange) => <input type="time" value={value} onChange={(e) => e.target.value && onChange(e.target.value)} style={{ ...numInputStyle, width: 120 }} />;
   return (
     <div style={{ padding: "0 20px 28px" }}>
-      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "0 2px 14px", lineHeight: 1.5 }}>{native ? t.remNoteNative : t.remNoteWeb}</div>
-      <Card style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{ ...small, margin: "0 2px 14px", lineHeight: 1.5 }}>{native ? t.remNoteNative : t.remNoteWeb}</div>
+      <Card style={{ padding: 0, overflow: "hidden", marginBottom: 14 }}>
         {rows.map((r, i) => (
-          <div key={r.key} style={{ padding: "13px 14px", borderTop: i === 0 ? "none" : "1px solid " + COLORS.border }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <r.icon size={16} color={COLORS.dim} />
-                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14.5, color: COLORS.text }}>{r.label}</span>
+          <div key={r.k} data-rem={r.k} style={{ padding: "13px 14px", borderTop: i === 0 ? "none" : "1px solid " + COLORS.border }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <r.icon size={16} color={COLORS.dim} style={{ flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14.5, color: COLORS.text }}>{r.label}</div>
+                  {r.sub && <div style={{ ...small, fontSize: 12, marginTop: 2, lineHeight: 1.4 }}>{r.sub}</div>}
+                </div>
               </div>
-              <Switch checked={!!reminders[r.key]} onChange={(v) => setReminders({ ...reminders, [r.key]: v })} />
+              <Switch checked={!!notif[r.k].on} onChange={(v) => set(r.k, { on: v })} />
             </div>
-            {reminders[r.key] && (
+            {notif[r.k].on && r.kind === "time" && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
-                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.remTime}</span>
-                <input type="time" value={times[r.key]} onChange={(e) => e.target.value && setTimes({ ...times, [r.key]: e.target.value })} style={{ ...numInputStyle, width: 120 }} />
+                <span style={small}>{t.remTime}</span>
+                {timeBox(notif[r.k].time, (v) => set(r.k, { time: v }))}
+              </div>
+            )}
+            {notif[r.k].on && r.kind === "water" && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                  {[1, 2, 3, 4].map((n) => (
+                    <Chip key={n} label={t.remWaterEvery.replace("{n}", n)} active={notif.water.every === n} onClick={() => set("water", { every: n })} />
+                  ))}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <span style={small}>{t.remWaterFrom}</span>
+                  {timeBox(notif.water.from, (v) => set("water", { from: v }))}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={small}>{t.remWaterTo}</span>
+                  {timeBox(notif.water.to, (v) => set("water", { to: v }))}
+                </div>
               </div>
             )}
           </div>
         ))}
       </Card>
+      {(notif.train.on || notif.missed.on) && (
+        <div data-rem-days>
+          <Card style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.remDays}</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                <Chip key={d} label={wd[d]} active={notif.days.includes(d)} onClick={() => setNotif({ ...notif, days: notif.days.includes(d) ? notif.days.filter((x) => x !== d) : [...notif.days, d] })} />
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
@@ -9186,8 +9304,8 @@ export default function AsmarFitApp() {
   // always opened a blank free workout no matter what plan was built.
   const [planDays, setPlanDays] = usePersisted("planDays", []);
   const [units, setUnits] = usePersisted("units", "kg");
-  const [reminders, setReminders] = usePersisted("reminders", { food: true, weigh: true, train: false });
-  const [reminderTimes, setReminderTimes] = usePersisted("reminderTimes", { food: "12:30", weigh: "08:00", train: "18:00" });
+  const [notifRaw, setNotif] = usePersisted("notif", legacyNotif(lsJson("reminders"), lsJson("reminderTimes")));
+  const notif = useMemo(() => normalizeNotif(notifRaw), [notifRaw]);
   const [shareMsg, setShareMsg] = useState(null);
 
   const [pbName, setPbName] = usePersisted("pbName", "");
@@ -9745,32 +9863,68 @@ export default function AsmarFitApp() {
     }
   };
 
-  // Daily reminders as local notifications (only inside the installed app).
+  // What the reminders need to know about today (also feeds the "still open" card on Home).
+  const todayInfo = useMemo(() => {
+    const key = dateKey(new Date());
+    const sameDay = (iso) => {
+      try {
+        return dateKey(new Date(iso)) === key;
+      } catch {
+        return false;
+      }
+    };
+    const cnt = (k) => ((meals || {})[k] ? meals[k].length : 0);
+    return {
+      meals: { breakfast: cnt("breakfast"), lunch: cnt("lunch"), dinner: cnt("dinner"), snacks: cnt("snacks") },
+      waterMl,
+      waterGoalMl: profile.waterGoalMl || Math.round(((profile.weight || 70) * 35) / 250) * 250,
+      workoutToday: workoutHistory.some((w) => sameDay(w.dateISO)),
+      weighedToday: weightLog.some((w) => sameDay(w.dateISO)),
+      foodToday: cnt("breakfast") + cnt("lunch") + cnt("dinner") + cnt("snacks") > 0,
+      streak: streak.current,
+      intake: (intake.subs || []).map((s) => ({ name: s.name, offsets: intakeDueOffsets(s, intake.log || [], Date.now(), 5) })).filter((s) => s.offsets.length),
+    };
+  }, [meals, waterMl, profile.waterGoalMl, profile.weight, workoutHistory, weightLog, streak.current, intake, todayStamp()]);
+
+  // Installed app: schedule the next days of reminders as local notifications. They are planned again whenever something
+  // changes (a meal, a workout, water ...) and whenever the app comes back to the front, so "missed workout" only fires if it is true.
+  const [notifTick, setNotifTick] = useState(0);
   useEffect(() => {
-    if (!IS_NATIVE_APP || !onboarded) return;
-    (async () => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") setNotifTick((x) => x + 1);
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+  const notifSig = JSON.stringify([notif, lang, todayInfo.meals, Math.floor(todayInfo.waterMl / 250), todayInfo.workoutToday, todayInfo.weighedToday, todayInfo.foodToday, todayInfo.streak, todayInfo.intake, todayStamp(), notifTick]);
+  useEffect(() => {
+    if (!IS_NATIVE_APP || !onboarded) return undefined;
+    const timer = setTimeout(async () => {
       try {
         const { LocalNotifications } = await import("@capacitor/local-notifications");
-        await LocalNotifications.cancel({ notifications: [{ id: 1 }, { id: 2 }, { id: 3 }] });
-        const defs = [
-          { id: 1, key: "food", body: t.remFoodBody },
-          { id: 2, key: "weigh", body: t.remWeighBody },
-          { id: 3, key: "train", body: t.remTrainBody },
-        ].filter((d) => reminders[d.key]);
-        if (defs.length === 0) return;
+        const pending = await LocalNotifications.getPending();
+        const old = (pending.notifications || []).filter((n) => n.id >= 100 || n.id <= 3).map((n) => ({ id: n.id }));
+        if (old.length) await LocalNotifications.cancel({ notifications: old });
+        if (!NOTIF_KINDS.some((k) => notif[k] && notif[k].on)) return;
         const perm = await LocalNotifications.requestPermissions();
         if (perm.display !== "granted") return;
-        await LocalNotifications.schedule({
-          notifications: defs.map((d) => {
-            const [hour, minute] = (reminderTimes[d.key] || "12:00").split(":").map(Number);
-            return { id: d.id, title: "ASFIT", body: d.body, schedule: { on: { hour, minute }, allowWhileIdle: true } };
-          }),
-        });
+        const plan = planNotifications({ now: Date.now(), cfg: notif, lang, today: todayInfo });
+        if (plan.length) await LocalNotifications.schedule({ notifications: plan.map((n) => ({ id: n.id, title: n.title, body: n.body, schedule: { at: n.at, allowWhileIdle: true } })) });
       } catch {
         /* notifications are optional */
       }
-    })();
-  }, [reminders, reminderTimes, onboarded, lang]);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [notifSig, onboarded]);
+  const goToday = (go) => {
+    if (go === "nutrition") setTab("nutrition");
+    else if (go === "training") setTab("training");
+    else if (go === "weigh") setTab("progress");
+    else if (go === "intake") {
+      setIntakeReturn(null);
+      setOverlay("intake");
+    }
+  };
 
   // Installed app: also nudge via notification once a workout has been running 2 h.
   const workoutStartedAt = activeWorkout?.startedAt;
@@ -10023,7 +10177,7 @@ export default function AsmarFitApp() {
       <SettingsScreen
         t={t}
         profile={profile}
-        reminders={reminders}
+        reminders={notif}
         onNav={(k) => {
           if (k === "intake") setIntakeReturn("settings");
           if (k === "friends") setFriendsReturn("settings");
@@ -10048,7 +10202,7 @@ export default function AsmarFitApp() {
     topTitle = t.setDisplayRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsReminders") {
-    content = <RemindersSettings t={t} reminders={reminders} setReminders={setReminders} times={reminderTimes} setTimes={setReminderTimes} native={IS_NATIVE_APP} />;
+    content = <RemindersSettings t={t} lang={lang} notif={notif} setNotif={setNotif} native={IS_NATIVE_APP} />;
     topTitle = t.reminders;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsData") {
@@ -10102,6 +10256,11 @@ export default function AsmarFitApp() {
           intakeDue={intakeDue}
           intakeShow={intake.card !== false}
           intakeCount={(intake.subs || []).length}
+          lang={lang}
+          todayCfg={notif}
+          todayInfo={todayInfo}
+          onTodayGo={goToday}
+          onTodaySettings={() => setOverlay("settingsReminders")}
           onOpenIntake={() => {
             setIntakeReturn(null);
             setOverlay("intake");
