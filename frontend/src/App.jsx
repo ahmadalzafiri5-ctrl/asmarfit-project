@@ -844,6 +844,10 @@ const STR = {
     remDinner: "Log dinner",
     remWater: "Drink water",
     remWaterEvery: "Every {n} h",
+    remWaterModeEvery: "Every few hours",
+    remWaterModeTimes: "My own times",
+    remWaterAdd: "Add a time",
+    remWaterTimesHint: "You get a reminder at exactly these times.",
     remWaterFrom: "From",
     remWaterTo: "Until",
     remTrainSub: "On your training days",
@@ -1638,6 +1642,10 @@ const STR = {
     remDinner: "Abendessen eintragen",
     remWater: "Wasser trinken",
     remWaterEvery: "Alle {n} Std.",
+    remWaterModeEvery: "Alle paar Stunden",
+    remWaterModeTimes: "Meine Uhrzeiten",
+    remWaterAdd: "Uhrzeit hinzufügen",
+    remWaterTimesHint: "Du wirst genau zu diesen Uhrzeiten erinnert.",
     remWaterFrom: "Von",
     remWaterTo: "Bis",
     remTrainSub: "An deinen Trainingstagen",
@@ -9466,20 +9474,54 @@ function RemindersSettings({ t, lang, notif, setNotif, native }) {
               </div>
             )}
             {notif[r.k].on && r.kind === "water" && (
-              <div style={{ marginTop: 12 }}>
+              <div data-water style={{ marginTop: 12 }}>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-                  {[1, 2, 3, 4].map((n) => (
-                    <Chip key={n} label={t.remWaterEvery.replace("{n}", n)} active={notif.water.every === n} onClick={() => set("water", { every: n })} />
-                  ))}
+                  <Chip label={t.remWaterModeEvery} active={notif.water.mode !== "times"} onClick={() => set("water", { mode: "interval" })} />
+                  <Chip label={t.remWaterModeTimes} active={notif.water.mode === "times"} onClick={() => set("water", { mode: "times" })} />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={small}>{t.remWaterFrom}</span>
-                  {timeBox(notif.water.from, (v) => set("water", { from: v }))}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={small}>{t.remWaterTo}</span>
-                  {timeBox(notif.water.to, (v) => set("water", { to: v }))}
-                </div>
+                {notif.water.mode === "times" ? (
+                  <div>
+                    <div style={{ ...small, fontSize: 12, lineHeight: 1.45, marginBottom: 8 }}>{t.remWaterTimesHint}</div>
+                    {(notif.water.times || []).map((tm, i) => (
+                      <div key={i} data-water-time style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        {timeBox(tm, (v) => set("water", { times: notif.water.times.map((x, j) => (j === i ? v : x)) }))}
+                        <div data-water-del onClick={() => set("water", { times: notif.water.times.filter((_, j) => j !== i) })} aria-label={t.delete} style={{ cursor: "pointer", padding: 8 }}>
+                          <Trash2 size={16} color={COLORS.dim} />
+                        </div>
+                      </div>
+                    ))}
+                    {(notif.water.times || []).length < 12 && (
+                      <div
+                        data-water-add
+                        onClick={() => {
+                          const cur = notif.water.times || [];
+                          const last = cur.length ? cur[cur.length - 1] : "08:00";
+                          const h = Math.min(22, (parseInt(last.slice(0, 2), 10) || 8) + 2);
+                          set("water", { times: [...cur, String(h).padStart(2, "0") + last.slice(2)] });
+                        }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, cursor: "pointer", padding: "4px 0" }}
+                      >
+                        <Plus size={14} /> {t.remWaterAdd}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                      {[1, 2, 3, 4].map((n) => (
+                        <Chip key={n} label={t.remWaterEvery.replace("{n}", n)} active={notif.water.every === n} onClick={() => set("water", { every: n })} />
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={small}>{t.remWaterFrom}</span>
+                      {timeBox(notif.water.from, (v) => set("water", { from: v }))}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={small}>{t.remWaterTo}</span>
+                      {timeBox(notif.water.to, (v) => set("water", { to: v }))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>

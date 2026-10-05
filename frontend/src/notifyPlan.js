@@ -5,7 +5,7 @@ export const NOTIF_DEFAULTS = {
   breakfast: { on: false, time: "08:00" },
   lunch: { on: true, time: "12:30" },
   dinner: { on: false, time: "18:30" },
-  water: { on: false, every: 3, from: "09:00", to: "20:00" },
+  water: { on: false, mode: "interval", every: 3, from: "09:00", to: "20:00", times: ["09:00", "11:30", "14:00", "16:30", "19:00"] }, // mode "times" = the user picks the exact times
   weigh: { on: true, time: "08:00" },
   train: { on: false, time: "17:30" },
   missed: { on: false, time: "20:00" },
@@ -90,6 +90,19 @@ const minutes = (hhmm) => {
   return h * 60 + m;
 };
 
+// the times of day for the water reminders: the user's own list, or every N hours between two times
+export function waterTimes(w) {
+  const c = { ...NOTIF_DEFAULTS.water, ...(w || {}) };
+  const pad = (n) => String(n).padStart(2, "0");
+  if (c.mode === "times") {
+    return Array.from(new Set((c.times || []).filter((x) => /^\d{1,2}:\d{2}$/.test(x)).map((x) => pad(parseInt(x.split(":")[0], 10)) + ":" + x.split(":")[1]))).sort();
+  }
+  const every = Math.max(1, Math.min(6, c.every || 3));
+  const out = [];
+  for (let m = minutes(c.from); m <= minutes(c.to); m += every * 60) out.push(pad(Math.floor(m / 60)) + ":" + pad(m % 60));
+  return out;
+}
+
 // days (as offsets from today, 0 = today) on which a substance is due, assuming each dose is taken on its due day
 export function intakeDueOffsets(sub, log, nowMs, horizon) {
   const sc = sub.sched || { type: "needed" };
@@ -135,8 +148,7 @@ export function planNotifications({ now, cfg, lang, today, windowDays = 5, max =
     if (c.water.on) {
       const goal = today.waterGoalMl || 2500;
       if (!(isToday && today.waterMl >= goal * 0.9)) {
-        const every = Math.max(1, Math.min(6, c.water.every || 3));
-        for (let m = minutes(c.water.from), i = 0; m <= minutes(c.water.to); m += every * 60, i++) push(atTime(day, String(Math.floor(m / 60)) + ":" + String(m % 60)), "water", pick(L.water, d + i));
+        waterTimes(c.water).forEach((tm, i) => push(atTime(day, tm), "water", pick(L.water, d + i)));
       }
     }
     if (c.weigh.on && !(isToday && today.weighedToday)) push(atTime(day, c.weigh.time), "weigh", pick(L.weigh, d));
@@ -173,12 +185,11 @@ export function dueNow({ now, cfg, lang, today }) {
   ["breakfast", "lunch", "dinner"].forEach((slot) => {
     if (c[slot].on && min >= minutes(c[slot].time) + 60 && !(today.meals && today.meals[slot] > 0)) items.push({ key: slot, text: L.meal[slot], go: "nutrition" });
   });
-  if (c.water.on && min >= 11 * 60) {
+  if (c.water.on) {
     const goal = today.waterGoalMl || 2500;
-    const from = minutes(c.water.from);
-    const to = Math.max(from + 60, minutes(c.water.to));
-    const share = Math.min(1, Math.max(0, (min - from) / (to - from)));
-    if (today.waterMl < goal * share * 0.75) items.push({ key: "water", text: L.water, go: "home" });
+    const times = waterTimes(c.water);
+    const passed = times.filter((tm) => min >= minutes(tm) + 30).length;
+    if (times.length && passed >= 1 && today.waterMl < goal * (passed / times.length) * 0.75) items.push({ key: "water", text: L.water, go: "home" });
   }
   if (c.weigh.on && min >= minutes(c.weigh.time) + 120 && !today.weighedToday) items.push({ key: "weigh", text: L.weigh, go: "weigh" });
   const trainDay = c.days.includes(wd);
