@@ -350,6 +350,46 @@ const STR = {
     waterSave: "Save",
     searchRetry: "Tap to retry",
     assistantTitle: "ASFIT Coach",
+    potTitle: "Your potential",
+    potSub: "Add a photo of yourself (full body, sportswear, good light works best). ASFIT shows you an example picture of how you could look in {n} months if you stay consistent.",
+    potSettingsLabel: "My goal as a picture",
+    potPhoto: "Take photo",
+    potGallery: "Choose from gallery",
+    potChange: "Change photo",
+    potPhotoOk: "Photo ready",
+    potMonths: "In how many months?",
+    potMonth1: "1 month",
+    potMonthsN: "{n} months",
+    potGoalLabel: "What do you want to achieve?",
+    potGoalPh: "e.g. lose 5 kg, broader shoulders, a flatter stomach",
+    potConsent: "I am at least 18 years old. My photo is sent to an AI service only to create this picture and is not stored there (only a small copy stays on your phone).",
+    potGo: "Show my potential",
+    potBusyShort: "Creating …",
+    potBusy: "Your picture is being created … this can take up to a minute.",
+    potNeedPhoto: "Please choose a photo first.",
+    potNeedGoal: "Write briefly what you want to achieve.",
+    potNeedConsent: "Please confirm the note below.",
+    potAdultOnly: "This feature is only available from age 18.",
+    potErr: "That did not work. Please try again.",
+    potLimit: "You have already created several pictures today. Please try again tomorrow.",
+    potOff: "This feature is not set up on the server yet.",
+    potResultTitle: "How you could look in {n} months",
+    potBefore: "Today",
+    potAfter: "In {n} months",
+    potNoImage: "The example picture is not switched on on this server yet. Here is your forecast:",
+    potImageFailed: "The example picture could not be created this time. Here is your forecast:",
+    potWeight: "Weight",
+    potFat: "Body fat",
+    potFatUnit: "pts",
+    potMuscle: "Muscle",
+    potMuscle_none: "hardly any change",
+    potMuscle_slight: "a bit more muscle",
+    potMuscle_moderate: "noticeably more muscle",
+    potAdjusted: "More realistic suggestion",
+    potDisclaimer: "Example picture from an AI simulation, not a promise. What really happens depends on training, nutrition, sleep and genetics.",
+    potHealth: "If your body image weighs on you, talk to someone you trust or to a professional.",
+    potRedo: "Create again",
+    potHomeTitle: "Your goal in {n} months",
     setGroupMine: "My ASFIT",
     setGroupFeatures: "Features",
     setHeightLabel: "Height",
@@ -1192,6 +1232,46 @@ const STR = {
     waterSave: "Speichern",
     searchRetry: "Tippen zum Wiederholen",
     assistantTitle: "ASFIT-Coach",
+    potTitle: "Dein Potenzial",
+    potSub: "Lade ein Foto von dir hoch (am besten ganzer Körper, Sportkleidung, gutes Licht). ASFIT zeigt dir ein Beispielbild, wie du in {n} Monaten aussehen könntest, wenn du dranbleibst.",
+    potSettingsLabel: "Mein Ziel als Bild",
+    potPhoto: "Foto aufnehmen",
+    potGallery: "Aus Galerie wählen",
+    potChange: "Foto ändern",
+    potPhotoOk: "Foto bereit",
+    potMonths: "In wie vielen Monaten?",
+    potMonth1: "1 Monat",
+    potMonthsN: "{n} Monate",
+    potGoalLabel: "Was willst du erreichen?",
+    potGoalPh: "z. B. 5 kg abnehmen, breitere Schultern, flacherer Bauch",
+    potConsent: "Ich bin mindestens 18 Jahre alt. Mein Foto wird nur für dieses Bild an einen KI-Dienst gesendet und dort nicht gespeichert (nur eine kleine Kopie bleibt auf deinem Handy).",
+    potGo: "Mein Potenzial zeigen",
+    potBusyShort: "Wird erstellt …",
+    potBusy: "Dein Bild wird erstellt … das kann bis zu einer Minute dauern.",
+    potNeedPhoto: "Bitte wähle zuerst ein Foto.",
+    potNeedGoal: "Schreib kurz, was du erreichen willst.",
+    potNeedConsent: "Bitte bestätige den Hinweis unten.",
+    potAdultOnly: "Diese Funktion gibt es erst ab 18 Jahren.",
+    potErr: "Das hat nicht geklappt. Bitte versuch es nochmal.",
+    potLimit: "Du hast heute schon mehrere Bilder erstellt. Versuch es morgen wieder.",
+    potOff: "Diese Funktion ist auf dem Server noch nicht eingerichtet.",
+    potResultTitle: "So könntest du in {n} Monaten aussehen",
+    potBefore: "Heute",
+    potAfter: "In {n} Monaten",
+    potNoImage: "Das Beispielbild ist auf diesem Server noch nicht eingeschaltet. Hier ist deine Prognose:",
+    potImageFailed: "Das Beispielbild konnte diesmal nicht erstellt werden. Hier ist deine Prognose:",
+    potWeight: "Gewicht",
+    potFat: "Körperfett",
+    potFatUnit: "%-Punkte",
+    potMuscle: "Muskeln",
+    potMuscle_none: "kaum Veränderung",
+    potMuscle_slight: "etwas mehr Muskeln",
+    potMuscle_moderate: "spürbar mehr Muskeln",
+    potAdjusted: "Realistischerer Vorschlag",
+    potDisclaimer: "Beispielbild aus einer KI-Simulation, kein Versprechen. Was wirklich passiert, hängt von Training, Ernährung, Schlaf und Veranlagung ab.",
+    potHealth: "Wenn dich dein Körperbild belastet, sprich mit einer Vertrauensperson oder einer Fachperson.",
+    potRedo: "Neu erstellen",
+    potHomeTitle: "Dein Ziel in {n} Monaten",
     setGroupMine: "Mein ASFIT",
     setGroupFeatures: "Funktionen",
     setHeightLabel: "Größe",
@@ -2535,7 +2615,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
         </div>
       )}
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", justifyContent: step === 9 ? "flex-start" : "center", overflowY: "auto", paddingTop: step === 9 ? 18 : 0 }}>
         {step === 0 && (
           <div style={{ textAlign: "center" }}>
             <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
@@ -2716,6 +2796,8 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               rows={3}
               style={{ width: "100%", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 14, color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none", resize: "none", marginBottom: 18 }}
             />
+
+            <PotentialPreview t={t} lang={lang} goalText={vision3Months} profile={{ gender, age: ageFromBirth(birth), height: Number(height), weight: Number(weight), target: Number(target), goal }} />
 
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.obVisionWhy}</div>
             <textarea
@@ -2970,7 +3052,7 @@ function TodayOpen({ t, lang, cfg, info, hideIntake, onGo, onSettings }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -2990,6 +3072,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
 
   const latestNote = notes.length ? notes[0] : null;
 
+  const [potential] = usePersisted("potential", null);
   const locale = lang === "de" ? "de-DE" : "en-US";
   const hour = new Date().getHours();
   const dateLabel = new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
@@ -3072,6 +3155,21 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
       <StreakCard t={t} streak={streak} history={history} onOpen={onOpenHistory} />
 
       <SectionLabel>{t.secOverview}</SectionLabel>
+      {potential && potential.summary && (
+        <div data-potential-card>
+          <Card onClick={onOpenGoals} style={{ marginBottom: 12, cursor: "pointer" }}>
+            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+              {(potential.after || potential.before) && <img src={potential.after || potential.before} alt="" style={{ width: 64, height: 86, objectFit: "cover", borderRadius: 12, flexShrink: 0 }} />}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold }}>✨ {t.potHomeTitle.replace("{n}", potential.months)}</div>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text, marginTop: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{potential.goalText}</div>
+                {potential.projected && potential.projected.weightKg != null && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.teal, marginTop: 4 }}>{profile.weight} → {potential.projected.weightKg} kg</div>}
+              </div>
+              <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+            </div>
+          </Card>
+        </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <Card>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>{t.lastWorkout}</div>
@@ -5958,6 +6056,235 @@ function downscaleImage(file, max = 1024) {
     img.onerror = reject;
     img.src = url;
   });
+}
+
+// ---------------- "Potential preview": photo + goal -> forecast and an example picture ----------------
+
+function downscaleDataUrl(dataUrl, max = 768, quality = 0.8) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const f = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * f);
+      c.height = Math.round(img.height * f);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+// today / in N months, draggable
+function BeforeAfter({ before, after, labelBefore, labelAfter }) {
+  const [pos, setPos] = useState(50);
+  const ref = useRef(null);
+  const move = (e) => {
+    const r = ref.current.getBoundingClientRect();
+    setPos(Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)));
+  };
+  const img = { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" };
+  const pill = { position: "absolute", top: 10, padding: "4px 10px", borderRadius: 999, background: "rgba(0,0,0,0.55)", color: "#fff", fontFamily: "Sora, sans-serif", fontSize: 11, fontWeight: 600 };
+  return (
+    <div
+      ref={ref}
+      data-before-after
+      onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
+      onPointerMove={(e) => { if (e.buttons || e.pointerType === "touch") move(e); }}
+      style={{ position: "relative", width: "100%", aspectRatio: "3 / 4", borderRadius: 16, overflow: "hidden", background: COLORS.raised, touchAction: "pan-y", cursor: "ew-resize", userSelect: "none" }}
+    >
+      <img src={after} alt="" draggable={false} style={img} />
+      <img src={before} alt="" draggable={false} style={{ ...img, clipPath: "inset(0 " + (100 - pos) + "% 0 0)" }} />
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: pos + "%", width: 2, background: "#fff", transform: "translateX(-1px)", boxShadow: "0 0 6px rgba(0,0,0,0.5)" }}>
+        <div style={{ position: "absolute", top: "50%", left: "50%", width: 32, height: 32, borderRadius: "50%", background: "#fff", transform: "translate(-50%, -50%)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+          <span style={{ fontSize: 13, color: "#222", letterSpacing: -1 }}>◀▶</span>
+        </div>
+      </div>
+      <span style={{ ...pill, left: 10 }}>{labelBefore}</span>
+      <span style={{ ...pill, right: 10 }}>{labelAfter}</span>
+    </div>
+  );
+}
+
+// profile = { gender, age, height, weight, target, goal }; the goal text comes from the screen (onboarding) or its own field (settings)
+function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = false }) {
+  const [saved, setSaved] = usePersisted("potential", null);
+  const [photo, setPhoto] = useState(null);
+  const [consent, setConsent] = useState(false);
+  const [months, setMonths] = useState(3);
+  const [localGoal, setLocalGoal] = useState(goalText);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const camRef = useRef(null);
+  const galRef = useRef(null);
+  const goal = (ownGoalField ? localGoal : goalText).trim();
+  const adult = Number(profile && profile.age) >= 18;
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, lineHeight: 1.5 };
+  const n = (s, k) => String(s).replace("{n}", k);
+
+  const pick = async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    try {
+      setPhoto(await downscaleImage(f, 1024));
+      setMsg(null);
+    } catch {
+      setMsg(t.potErr);
+    }
+  };
+
+  const run = async () => {
+    if (busy) return;
+    if (!photo) return setMsg(t.potNeedPhoto);
+    if (goal.length < 3) return setMsg(t.potNeedGoal);
+    if (!adult) return setMsg(t.potAdultOnly);
+    if (!consent) return setMsg(t.potNeedConsent);
+    setBusy(true);
+    setMsg(null);
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 150000);
+    try {
+      const res = await fetch(API_BASE + "/api/potential", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: photo,
+          adult: true,
+          goalText: goal,
+          months,
+          lang,
+          profile: { gender: profile.gender, age: profile.age, heightCm: profile.height, weightKg: profile.weight, targetKg: profile.target, goal: profile.goal },
+        }),
+        signal: ctl.signal,
+      });
+      if (res.status === 429) return setMsg(t.potLimit);
+      if (res.status === 503) return setMsg(t.potOff);
+      if (!res.ok) return setMsg(t.potErr);
+      const d = await res.json();
+      if (d.usable === false) return setMsg(d.problem || t.potErr);
+      const before = await downscaleDataUrl(photo, 720, 0.78);
+      const after = d.image ? await downscaleDataUrl(d.image, 720, 0.82) : null;
+      setSaved({ goalText: goal, months: d.months || months, at: Date.now(), summary: d.summary, changes: d.changes || [], projected: d.projected || {}, realistic: d.realistic !== false, adjustedGoal: d.adjustedGoal || null, imageAvailable: !!d.imageAvailable, imageError: d.imageError || null, startWeight: profile.weight || null, before, after });
+      setPhoto(null);
+      setConsent(false);
+    } catch {
+      setMsg(t.potErr);
+    } finally {
+      clearTimeout(timer);
+      setBusy(false);
+    }
+  };
+
+  const card = { background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 18, padding: 16, marginBottom: 18, textAlign: "left" };
+
+  if (saved && saved.summary) {
+    const pj = saved.projected || {};
+    const fat = pj.bodyFatChangePct;
+    return (
+      <div data-potential-result style={card}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15.5, fontWeight: 700, color: COLORS.text, marginBottom: 12 }}>{n(t.potResultTitle, saved.months)}</div>
+        {saved.after ? (
+          <BeforeAfter before={saved.before} after={saved.after} labelBefore={t.potBefore} labelAfter={n(t.potAfter, saved.months)} />
+        ) : (
+          <>
+            {saved.before && <img src={saved.before} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: 16, marginBottom: 10 }} />}
+            <div data-potential-noimage style={{ ...small, marginBottom: 6 }}>{saved.imageError ? t.potImageFailed : t.potNoImage}</div>
+          </>
+        )}
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, lineHeight: 1.55, margin: "14px 0 10px" }}>{saved.summary}</div>
+        {saved.changes && saved.changes.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            {saved.changes.map((c) => (
+              <div key={c} style={{ display: "flex", gap: 8, fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text, marginBottom: 5 }}>
+                <span style={{ color: COLORS.gold }}>✓</span>
+                <span>{c}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          {pj.weightKg != null && (
+            <div style={{ flex: 1, background: COLORS.raised, borderRadius: 12, padding: "9px 10px" }}>
+              <div style={{ ...small, fontSize: 11 }}>{t.potWeight}</div>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{saved.startWeight ? saved.startWeight + " → " : ""}{pj.weightKg} kg</div>
+            </div>
+          )}
+          {fat != null && (
+            <div style={{ flex: 1, background: COLORS.raised, borderRadius: 12, padding: "9px 10px" }}>
+              <div style={{ ...small, fontSize: 11 }}>{t.potFat}</div>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{fat > 0 ? "+" : ""}{fat} {t.potFatUnit}</div>
+            </div>
+          )}
+          {pj.muscle && (
+            <div style={{ flex: 1, background: COLORS.raised, borderRadius: 12, padding: "9px 10px" }}>
+              <div style={{ ...small, fontSize: 11 }}>{t.potMuscle}</div>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.text, lineHeight: 1.25 }}>{t["potMuscle_" + pj.muscle]}</div>
+            </div>
+          )}
+        </div>
+        {!saved.realistic && saved.adjustedGoal && (
+          <div style={{ background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 12, padding: "10px 12px", marginBottom: 12 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.gold, marginBottom: 3 }}>{t.potAdjusted}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text, lineHeight: 1.45 }}>{saved.adjustedGoal}</div>
+          </div>
+        )}
+        <div style={{ ...small, fontSize: 11.5 }}>{t.potDisclaimer}</div>
+        <div style={{ ...small, fontSize: 11.5, marginTop: 4 }}>{t.potHealth}</div>
+        <div data-potential-redo onClick={() => setSaved(null)} style={{ marginTop: 12, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>↻ {t.potRedo}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div data-potential style={card}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15.5, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>✨ {t.potTitle}</div>
+      <div style={{ ...small, marginBottom: 14 }}>{n(t.potSub, months)}</div>
+
+      {ownGoalField && (
+        <>
+          <div style={{ ...small, marginBottom: 6 }}>{t.potGoalLabel}</div>
+          <textarea data-potential-goal value={localGoal} onChange={(e) => setLocalGoal(e.target.value)} placeholder={t.potGoalPh} rows={2} style={{ width: "100%", background: COLORS.raised, border: "1px solid " + COLORS.border, borderRadius: 12, padding: 12, color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none", resize: "none", marginBottom: 14 }} />
+        </>
+      )}
+
+      <input ref={camRef} data-potential-cam type="file" accept="image/*" capture="user" onChange={pick} style={{ display: "none" }} />
+      <input ref={galRef} data-potential-gallery type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
+      {photo ? (
+        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>
+          <img data-potential-thumb src={photo} alt="" style={{ width: 72, height: 96, objectFit: "cover", borderRadius: 12 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>✓ {t.potPhotoOk}</div>
+            <div onClick={() => galRef.current && galRef.current.click()} style={{ marginTop: 6, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.potChange}</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          <button data-potential-take onClick={() => camRef.current && camRef.current.click()} style={{ flex: 1, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 8px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>📷 {t.potPhoto}</button>
+          <button data-potential-pick onClick={() => galRef.current && galRef.current.click()} style={{ flex: 1, background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 8px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t.potGallery}</button>
+        </div>
+      )}
+
+      <div style={{ ...small, marginBottom: 6 }}>{t.potMonths}</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+        {[1, 3, 6, 12].map((m) => (
+          <Chip key={m} label={m === 1 ? t.potMonth1 : n(t.potMonthsN, m)} active={months === m} onClick={() => setMonths(m)} />
+        ))}
+      </div>
+
+      <label data-potential-consent style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", marginBottom: 14 }}>
+        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 3, accentColor: COLORS.gold, flexShrink: 0 }} />
+        <span style={{ ...small, fontSize: 12 }}>{t.potConsent}</span>
+      </label>
+
+      <button data-potential-go onClick={run} disabled={busy} style={{ width: "100%", background: busy ? COLORS.raised : COLORS.gold, color: busy ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: busy ? "default" : "pointer" }}>
+        {busy ? t.potBusyShort : "✨ " + t.potGo}
+      </button>
+      {busy && <div data-potential-busy style={{ ...small, marginTop: 10, textAlign: "center" }}>{t.potBusy}</div>}
+      {msg && <div data-potential-msg style={{ marginTop: 10, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.coral, lineHeight: 1.45 }}>{msg}</div>}
+    </div>
+  );
 }
 
 function PhotoScanScreen({ t, lang, onAdd, onDone }) {
@@ -9371,7 +9698,7 @@ function ProfileSettings({ t, profile, onSave }) {
   );
 }
 
-function GoalsSettings({ t, profile, stepsGoal, onSave }) {
+function GoalsSettings({ t, lang, profile, stepsGoal, onSave }) {
   const [goal, setGoal] = useState(profile.goal || "maintain");
   const [target, setTarget] = useState(String(profile.target || profile.weight || ""));
   const [targetDate, setTargetDate] = useState(profile.targetDate || new Date(Date.now() + 84 * 86400000).toISOString().slice(0, 10));
@@ -9403,6 +9730,8 @@ function GoalsSettings({ t, profile, stepsGoal, onSave }) {
   ];
   return (
     <div style={{ padding: "0 20px 28px" }}>
+      <SettingsLabel>{t.potSettingsLabel}</SettingsLabel>
+      <PotentialPreview t={t} lang={lang} goalText={profile.vision3Months || ""} ownGoalField profile={{ gender: profile.gender, age: profile.age || ageFromBirth(profile.birth || { d: 1, m: 1, y: 2000 }), height: profile.height, weight: profile.weight, target: Number(target), goal }} />
       <SettingsLabel>{t.setGoalType}</SettingsLabel>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {goals.map((g) => (
@@ -10815,7 +11144,7 @@ export default function AsmarFitApp() {
     topTitle = t.setProfileRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsGoals") {
-    content = <GoalsSettings t={t} profile={profile} stepsGoal={stepsGoal} onSave={saveGoals} />;
+    content = <GoalsSettings t={t} lang={lang} profile={profile} stepsGoal={stepsGoal} onSave={saveGoals} />;
     topTitle = t.setGoalsRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsDisplay") {
@@ -10863,6 +11192,7 @@ export default function AsmarFitApp() {
           lastWaterMl={waterLog.length ? waterLog[waterLog.length - 1] : 250}
           onSaveWaterGoal={(ml) => setProfile((p) => ({ ...p, waterGoalMl: ml }))}
           onOpenAssistant={() => setOverlay("assistant")}
+          onOpenGoals={() => setOverlay("settingsGoals")}
           onQuick={(k) => {
             if (k === "food") {
               setActiveMealKey(mealKeyForNow());

@@ -75,3 +75,23 @@ without releasing a new app version (the app keeps the last answer and has a bun
 
 The response carries a `version` (hash of the content). The app sends it back as `?v=…` and gets `{ unchanged: true }`
 when nothing changed. Run `node server.js` and open `/api/fastfood/catalog` to check a change.
+
+## Potential preview (`POST /api/potential`)
+
+Onboarding step "Deine Vision" and Settings → My goals: the user adds a photo and a goal ("in 3 months I want …") and gets
+an honest forecast (Claude with vision: summary, what changes, expected weight / body-fat change, a more realistic
+suggestion when the wish is extreme) and — only if an image service is configured — an example picture of the same
+person after N months. The photo is sent for this request only and never stored on the server (no logging of photo or
+goal text); adults only (`adult: true` is required, the app also checks the profile age).
+
+Optional image service (set as Render environment variables; without them the forecast still works and the app says that
+the example picture is not switched on):
+
+- `IMAGE_PROVIDER` = `openai` (default model `gpt-image-1`, `POST /v1/images/edits`) or `gemini` (default
+  `gemini-2.5-flash-image`, `generateContent`), `IMAGE_API_KEY` = the provider key, optional `IMAGE_MODEL`, `IMAGE_API_BASE`.
+- `POTENTIAL_DAILY_LIMIT` (default 6 per user and day), `POTENTIAL_PER_MINUTE` (default 3), `POTENTIAL_MODEL`
+  (default: the assistant model).
+- `GET /api/features` reports `potential` and `potentialImage`.
+
+The adapters are covered by `asfit-shots/potential-backend-test.cjs` against mock servers only; they have not been run
+against the real provider APIs yet.
