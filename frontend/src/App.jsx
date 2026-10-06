@@ -7,6 +7,8 @@ import { sceneFor } from "./exerciseScenes.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
+import { PLAN_TEMPLATES, buildFromTemplate } from "./planTemplates.js";
+import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
@@ -351,6 +353,18 @@ const STR = {
     waterSave: "Save",
     searchRetry: "Tap to retry",
     assistantTitle: "ASFIT Coach",
+    tplTitle: "Start from a template",
+    tplOr: "Or build your own plan:",
+    tplHint: "New here? Pick a ready-made plan →",
+    csvTitle: "Your data as tables (CSV) for Excel",
+    csvFood: "Food",
+    csvBody: "Body",
+    csvWorkouts: "Workouts",
+    csvDone: "{n} rows exported",
+    csvEmpty: "No data to export yet",
+    exMetricWeight: "Weight",
+    exMetricOrm: "Est. 1RM",
+    exMetricVolume: "Volume",
     wrTitle: "Your weekly check-in",
     wrAvgKcal: "avg kcal",
     wrAvgProtein: "avg protein",
@@ -1285,6 +1299,18 @@ const STR = {
     waterSave: "Speichern",
     searchRetry: "Tippen zum Wiederholen",
     assistantTitle: "ASFIT-Coach",
+    tplTitle: "Mit einer Vorlage starten",
+    tplOr: "Oder baue deinen Plan selbst:",
+    tplHint: "Neu hier? Wähle einen fertigen Plan →",
+    csvTitle: "Deine Daten als Tabelle (CSV) für Excel",
+    csvFood: "Ernährung",
+    csvBody: "Körper",
+    csvWorkouts: "Training",
+    csvDone: "{n} Zeilen exportiert",
+    csvEmpty: "Noch keine Daten zum Exportieren",
+    exMetricWeight: "Gewicht",
+    exMetricOrm: "1RM (geschätzt)",
+    exMetricVolume: "Volumen",
     wrTitle: "Dein Wochen-Check-in",
     wrAvgKcal: "Ø kcal",
     wrAvgProtein: "Ø Eiweiß",
@@ -3882,6 +3908,11 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
             {activeWorkout ? t.resumeWorkout : t.startWorkout}
           </button>
         </div>
+        {!hasPlanDays && (
+          <div data-tpl-hint onClick={onOpenPlanBuilder} style={{ marginTop: 12, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+            {t.tplHint}
+          </div>
+        )}
         {hasPlanDays && planDays.length > 1 && (
           <div style={{ display: "flex", gap: 8, marginTop: 14, overflowX: "auto", paddingBottom: 2 }}>
             {planDays.map((d) => (
@@ -4045,6 +4076,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
   };
   const [weightInput, setWeightInput] = useState("");
   const [exKey, setExKey] = useState(null);
+  const [exMetric, setExMetric] = useState("weight");
 
   const rangeDays = [28, 90, 365, Infinity][range];
   const shownWeights = weightLog.filter((w) => rangeDays === Infinity || Date.now() - new Date(w.dateISO).getTime() <= rangeDays * 86400000);
@@ -4052,12 +4084,17 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
 
   const trainedKeys = [...new Set(workoutHistory.flatMap((w) => (w.sets || []).map((s) => s.exerciseKey)))];
   const activeKey = exKey && trainedKeys.includes(exKey) ? exKey : trainedKeys[0];
+  // per workout: heaviest weight, estimated one-rep max (Epley) or total volume of the chosen exercise
   const exPoints = workoutHistory
     .map((w) => {
-      const ws = (w.sets || []).filter((s) => s.exerciseKey === activeKey).map((s) => s.weight);
-      return ws.length ? Math.max(...ws) : null;
+      const ss = (w.sets || []).filter((s) => s.exerciseKey === activeKey);
+      if (!ss.length) return null;
+      if (exMetric === "orm") return Math.max(...ss.map((s) => (s.reps > 1 ? s.weight * (1 + s.reps / 30) : s.weight)));
+      if (exMetric === "volume") return ss.reduce((a, s) => a + s.weight * s.reps, 0);
+      return Math.max(...ss.map((s) => s.weight));
     })
-    .filter((v) => v !== null);
+    .filter((v) => v !== null)
+    .map((v) => Math.round(v * 10) / 10);
   const exBest = exPoints.length ? Math.max(...exPoints) : null;
 
   const saveWeight = () => {
@@ -4132,6 +4169,11 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.noProgressYet}</div>
         ) : (
           <>
+            <div data-ex-metrics style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+              {[["weight", t.exMetricWeight], ["orm", t.exMetricOrm], ["volume", t.exMetricVolume]].map(([m, label]) => (
+                <Chip key={m} label={label} active={exMetric === m} onClick={() => setExMetric(m)} />
+              ))}
+            </div>
             <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", paddingBottom: 2 }}>
               {trainedKeys.map((k) => {
                 const ex = EXERCISE_LIBRARY.find((e) => e.key === k);
@@ -8971,6 +9013,31 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
 
   return (
     <div style={{ padding: "0 20px 24px" }}>
+      {days.length === 0 && (
+        <div data-plan-templates style={{ marginBottom: 20 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 8 }}>{t.tplTitle}</div>
+          {PLAN_TEMPLATES.map((p) => {
+            const L = p[lang === "de" ? "de" : "en"];
+            return (
+              <div
+                key={p.id}
+                data-template={p.id}
+                onClick={() => {
+                  const b = buildFromTemplate(p, lang, EXERCISE_LIBRARY);
+                  setName(b.name);
+                  setDays(b.days);
+                  setSelectedDay(null);
+                }}
+                style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 8, cursor: "pointer" }}
+              >
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{L.name}</div>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{L.sub}</div>
+              </div>
+            );
+          })}
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "14px 0 4px" }}>{t.tplOr}</div>
+        </div>
+      )}
       <div style={{ marginBottom: 16 }}>
         <TextField value={name} onChange={setName} placeholder={t.planNamePlaceholder} />
       </div>
@@ -9057,7 +9124,7 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
 
 /* ---------------- Settings ---------------- */
 
-function BackupCard({ t }) {
+function BackupCard({ t, lang = "de" }) {
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
   const collect = () => {
@@ -9107,6 +9174,35 @@ function BackupCard({ t }) {
       flash(t.backupCopyFailed);
     }
   };
+  // tables for Excel / Numbers / Sheets
+  const csv = (kind) => {
+    const rd = (k, d) => {
+      try {
+        const v = JSON.parse(localStorage.getItem("asfit." + k));
+        return v === null || v === undefined ? d : v;
+      } catch {
+        return d;
+      }
+    };
+    let rows;
+    if (kind === "food") {
+      const tm = rd("meals", null);
+      rows = foodRows(rd("daily", {}), tm && tm.d, tm && tm.v, lang);
+    } else if (kind === "body") rows = bodyRows(rd("weightLog", []), rd("measures", []), lang);
+    else
+      rows = workoutRows(rd("workoutHistory", []), (k) => {
+        const e = EXERCISE_LIBRARY.find((x) => x.key === k);
+        return e ? (lang === "de" ? e.nameDe : e.name) : k;
+      });
+    const blob = new Blob([toCsv(csvHeader(kind, lang), rows, lang)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "asfit-" + kind + "-" + new Date().toLocaleDateString("sv") + ".csv";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    flash(rows.length ? t.csvDone.replace("{n}", rows.length) : t.csvEmpty);
+  };
   const onImport = async (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
@@ -9134,6 +9230,12 @@ function BackupCard({ t }) {
       </div>
       <button onClick={() => fileRef.current && fileRef.current.click()} style={{ ...btn, width: "100%", flex: "none" }}>{t.backupImport}</button>
       <input ref={fileRef} type="file" accept="application/json,.json" onChange={onImport} style={{ display: "none" }} />
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "14px 0 8px" }}>{t.csvTitle}</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button data-csv="food" onClick={() => csv("food")} style={btn}>{t.csvFood}</button>
+        <button data-csv="body" onClick={() => csv("body")} style={btn}>{t.csvBody}</button>
+        <button data-csv="workouts" onClick={() => csv("workouts")} style={btn}>{t.csvWorkouts}</button>
+      </div>
       {msg && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.gold, marginTop: 8 }}>{msg}</div>}
     </div>
   );
@@ -10518,7 +10620,7 @@ function RemindersSettings({ t, lang, notif, setNotif, native }) {
   );
 }
 
-function DataSettings({ t, onReplayOnboarding }) {
+function DataSettings({ t, lang, onReplayOnboarding }) {
   const [confirmingDanger, setConfirmingDanger] = useState(false);
   useEffect(() => {
     if (!confirmingDanger) return undefined;
@@ -10529,7 +10631,7 @@ function DataSettings({ t, onReplayOnboarding }) {
     <div style={{ padding: "0 20px 28px" }}>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "0 2px 14px", lineHeight: 1.5 }}>{t.setDataIntro}</div>
       <Card style={{ marginBottom: 18 }}>
-        <BackupCard t={t} />
+        <BackupCard t={t} lang={lang} />
       </Card>
       <SettingsGroup>
         <SettingsRow icon={RotateCcw} tint="dim" label={t.replayOnboarding} onClick={onReplayOnboarding} />
@@ -11581,7 +11683,7 @@ export default function AsmarFitApp() {
     topTitle = t.reminders;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsData") {
-    content = <DataSettings t={t} onReplayOnboarding={() => { setOverlay(null); setOnboarded(false); }} />;
+    content = <DataSettings t={t} lang={lang} onReplayOnboarding={() => { setOverlay(null); setOnboarded(false); }} />;
     topTitle = t.setDataRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsHelp") {
