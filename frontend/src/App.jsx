@@ -6,6 +6,7 @@ import { ExerciseAnimation } from "./exerciseAnim.jsx";
 import { sceneFor } from "./exerciseScenes.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
+import { weeklyReview, reviewDue } from "./weeklyReview.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
@@ -350,7 +351,59 @@ const STR = {
     waterSave: "Save",
     searchRetry: "Tap to retry",
     assistantTitle: "ASFIT Coach",
+    wrTitle: "Your weekly check-in",
+    wrAvgKcal: "avg kcal",
+    wrAvgProtein: "avg protein",
+    wrWorkouts: "workouts",
+    wrWeightWeek: "kg / week",
+    wr_ok_cut: "You are on track: food and weight fit your goal. Keep going, change nothing.",
+    wr_ok_gain: "You are on track: food and weight fit your goal. Keep going, change nothing.",
+    wr_ok_keep: "Your weight is steady and your food fits your goal. Keep going.",
+    wr_lower_cut: "Your weight is hardly moving ({w} kg per week). If you stay consistent, lower your daily target by {n} kcal and check again in a week.",
+    wr_raise_cut: "You lose {w} kg per week, faster than recommended. Raise your target by {n} kcal to protect muscle and energy.",
+    wr_raise_gain: "Your weight is hardly rising. Raise your daily target by {n} kcal.",
+    wr_lower_gain: "You gain {w} kg per week, more than needed, probably more fat too. Lower your target by {n} kcal.",
+    wr_raise_keep: "Your weight is falling by {w} kg per week although you want to hold it. Raise your target by {n} kcal.",
+    wr_lower_keep: "Your weight is rising by {w} kg per week although you want to hold it. Lower your target by {n} kcal.",
+    wr_adherence: "You ate {a} kcal a day on average, your target is {g}. Hit the target first, then the app can judge how your body responds.",
+    wr_needData: "For the weekly check-in I need at least 4 logged days in the past week.",
+    wr_needWeight: "Weigh yourself at least twice within two weeks (a week apart) and I can check your target.",
+    wr_floor: "Your daily target is already low. Do not lower it further; talk to a professional if you are unsure.",
+    wrApply: "Adjust target ({n} kcal)",
+    wrKeep: "Keep it as it is",
+    wrGotIt: "Got it",
+    wrApplied: "Daily target adjusted",
+    measuresTitle: "Body measurements",
+    measure_waist: "Waist",
+    measure_chest: "Chest",
+    measure_hips: "Hips",
+    measure_arm: "Upper arm",
+    measure_thigh: "Thigh",
+    measure_fat: "Body fat",
+    measuresPh: "Value",
+    measuresNeedMore: "Add at least two values and you will see the trend.",
+    measuresSince: "since the first entry",
+    toolFast: "Fasting",
+    fastTitle: "Fasting",
+    fastPlanText: "{a} h fasting, {b} h eating",
+    fastStart: "Start fasting",
+    fastStop: "End fast",
+    fastAgo: "Started how long ago?",
+    fastNow: "now",
+    fastLeft: "left",
+    fastReached: "Goal reached",
+    fastEatNow: "you can eat now",
+    fastSince: "Fasting for {t}",
+    fastEndsAt: "goal at {t}",
+    fastHistory: "Recent fasts",
+    fastEmpty: "No fasts yet.",
+    fastRate: "{a} of {b} reached in the last 7 days",
+    fastNote: "Not suitable without medical advice during pregnancy, with an eating disorder, if underweight, or with diabetes medication.",
+    fastHomeLeft: "{t} h left",
+    fastHomeReached: "Goal reached, you can eat",
     potTitle: "Your potential",
+    potSubNoImage: "Write what you want to achieve in {n} months. ASFIT works out honestly what is realistic: weight, body fat and what visibly changes if you stay consistent.",
+    potPrivacyNoImage: "Your goal and basic numbers (weight, height, age) are sent to the AI service for this. You do not need a photo.",
     potSub: "Add a photo of yourself (full body, sportswear, good light works best). ASFIT shows you an example picture of how you could look in {n} months if you stay consistent.",
     potSettingsLabel: "My goal as a picture",
     potPhoto: "Take photo",
@@ -1232,7 +1285,59 @@ const STR = {
     waterSave: "Speichern",
     searchRetry: "Tippen zum Wiederholen",
     assistantTitle: "ASFIT-Coach",
+    wrTitle: "Dein Wochen-Check-in",
+    wrAvgKcal: "Ø kcal",
+    wrAvgProtein: "Ø Eiweiß",
+    wrWorkouts: "Trainings",
+    wrWeightWeek: "kg / Woche",
+    wr_ok_cut: "Du liegst gut im Plan: Essen und Gewicht passen zu deinem Ziel. Weiter so, nichts ändern.",
+    wr_ok_gain: "Du liegst gut im Plan: Essen und Gewicht passen zu deinem Ziel. Weiter so, nichts ändern.",
+    wr_ok_keep: "Dein Gewicht ist stabil und dein Essen passt zum Ziel. Weiter so.",
+    wr_lower_cut: "Dein Gewicht bewegt sich kaum ({w} kg pro Woche). Wenn du dranbleibst, senke dein Tagesziel um {n} kcal und schau in einer Woche wieder.",
+    wr_raise_cut: "Du nimmst mit {w} kg pro Woche schneller ab als empfohlen. Erhöhe dein Ziel um {n} kcal, das schont Muskeln und Energie.",
+    wr_raise_gain: "Dein Gewicht steigt kaum. Erhöhe dein Tagesziel um {n} kcal.",
+    wr_lower_gain: "Du nimmst mit {w} kg pro Woche schneller zu als nötig, vermutlich auch mehr Fett. Senke dein Ziel um {n} kcal.",
+    wr_raise_keep: "Dein Gewicht sinkt um {w} kg pro Woche, obwohl du es halten willst. Erhöhe dein Ziel um {n} kcal.",
+    wr_lower_keep: "Dein Gewicht steigt um {w} kg pro Woche, obwohl du es halten willst. Senke dein Ziel um {n} kcal.",
+    wr_adherence: "Du hast im Schnitt {a} kcal pro Tag gegessen, dein Ziel ist {g}. Triff erst das Ziel, dann kann die App beurteilen, wie dein Körper reagiert.",
+    wr_needData: "Für den Wochen-Check-in brauche ich mindestens 4 getrackte Tage in der letzten Woche.",
+    wr_needWeight: "Wiege dich mindestens zweimal innerhalb von zwei Wochen (eine Woche Abstand), dann kann ich dein Ziel prüfen.",
+    wr_floor: "Dein Tagesziel ist schon niedrig. Senke es nicht weiter; sprich bei Unsicherheit mit einer Fachperson.",
+    wrApply: "Ziel anpassen ({n} kcal)",
+    wrKeep: "Passt so",
+    wrGotIt: "Verstanden",
+    wrApplied: "Tagesziel angepasst",
+    measuresTitle: "Körpermaße",
+    measure_waist: "Taille",
+    measure_chest: "Brust",
+    measure_hips: "Hüfte",
+    measure_arm: "Oberarm",
+    measure_thigh: "Oberschenkel",
+    measure_fat: "Körperfett",
+    measuresPh: "Wert",
+    measuresNeedMore: "Trag mindestens zwei Werte ein, dann siehst du den Verlauf.",
+    measuresSince: "seit dem ersten Eintrag",
+    toolFast: "Fasten",
+    fastTitle: "Fasten",
+    fastPlanText: "{a} h fasten, {b} h essen",
+    fastStart: "Fasten starten",
+    fastStop: "Fasten beenden",
+    fastAgo: "Wie lange ist der Start her?",
+    fastNow: "jetzt",
+    fastLeft: "noch",
+    fastReached: "Ziel erreicht",
+    fastEatNow: "du darfst essen",
+    fastSince: "Du fastest seit {t}",
+    fastEndsAt: "Ziel um {t} Uhr",
+    fastHistory: "Letzte Fastenzeiten",
+    fastEmpty: "Noch keine Fastenzeiten.",
+    fastRate: "{a} von {b} in den letzten 7 Tagen erreicht",
+    fastNote: "Nicht ohne ärztlichen Rat in der Schwangerschaft, bei Essstörung, Untergewicht oder mit Diabetes-Medikamenten.",
+    fastHomeLeft: "noch {t} h",
+    fastHomeReached: "Ziel erreicht, du darfst essen",
     potTitle: "Dein Potenzial",
+    potSubNoImage: "Schreib, was du in {n} Monaten erreichen willst. ASFIT rechnet dir ehrlich aus, was dabei realistisch ist: Gewicht, Körperfett und was sich sichtbar verändert, wenn du dranbleibst.",
+    potPrivacyNoImage: "Dafür gehen dein Ziel und deine Eckdaten (Gewicht, Größe, Alter) an den KI-Dienst. Ein Foto brauchst du nicht.",
     potSub: "Lade ein Foto von dir hoch (am besten ganzer Körper, Sportkleidung, gutes Licht). ASFIT zeigt dir ein Beispielbild, wie du in {n} Monaten aussehen könntest, wenn du dranbleibst.",
     potSettingsLabel: "Mein Ziel als Bild",
     potPhoto: "Foto aufnehmen",
@@ -3015,6 +3120,262 @@ function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
   );
 }
 
+// ---------------- Weekly check-in ----------------
+function WeeklyReviewCard({ t, review, mode = "home", onApply, onDone }) {
+  const s = review.suggestion;
+  const w = review.slopePerWeek;
+  const f1 = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",");
+  const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + f1(Math.abs(n));
+  const raw = t["wr_" + s.type + "_" + s.group] || t["wr_" + s.type] || "";
+  const text = raw.replace("{n}", Math.abs(s.delta || 0)).replace("{w}", w === null ? "" : f1(Math.abs(w))).replace("{a}", review.avgKcal).replace("{g}", review.kcalGoal);
+  const stat = (v, l) => (
+    <div style={{ flex: 1, minWidth: 0, background: COLORS.raised, borderRadius: 12, padding: "9px 4px", textAlign: "center" }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, whiteSpace: "nowrap" }}>{v}</div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim, marginTop: 1 }}>{l}</div>
+    </div>
+  );
+  return (
+    <div data-weekly-review>
+      <Card style={{ marginBottom: 12 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold, marginBottom: 10 }}>📊 {t.wrTitle}</div>
+        {s.type !== "needData" && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {stat(review.avgKcal, t.wrAvgKcal)}
+            {stat(review.avgProtein + " g", t.wrAvgProtein)}
+            {stat(review.workouts + "×", t.wrWorkouts)}
+            {stat(w === null ? "–" : (w > 0 ? "+" : w < 0 ? "−" : "") + f1(Math.abs(w)), t.wrWeightWeek)}
+          </div>
+        )}
+        <div data-wr-text style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text, lineHeight: 1.5 }}>{text}</div>
+        {s.delta !== 0 && onApply && (
+          <button data-wr-apply onClick={() => onApply(s.delta)} style={{ width: "100%", marginTop: 12, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+            {t.wrApply.replace("{n}", sign(s.delta))}
+          </button>
+        )}
+        {mode === "home" && onDone && (
+          <div data-wr-done onClick={onDone} style={{ marginTop: 12, textAlign: "center", fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
+            {s.delta !== 0 ? t.wrKeep : t.wrGotIt}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ---------------- Body measurements ----------------
+const MEASURE_KINDS = [
+  { k: "waist", unit: "cm" },
+  { k: "chest", unit: "cm" },
+  { k: "hips", unit: "cm" },
+  { k: "arm", unit: "cm" },
+  { k: "thigh", unit: "cm" },
+  { k: "fat", unit: "%" },
+];
+function MeasuresCard({ t, lang, measures, onAdd, onDelete, rangeDays }) {
+  const [k, setK] = useState("waist");
+  const [val, setVal] = useState("");
+  const kind = MEASURE_KINDS.find((m) => m.k === k);
+  const all = measures.filter((m) => m.key === k).sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+  const shown = all.filter((m) => rangeDays === Infinity || Date.now() - new Date(m.dateISO).getTime() <= rangeDays * 86400000);
+  const latest = all.length ? all[all.length - 1] : null;
+  const first = all.length > 1 ? all[0] : null;
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const fmt = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",");
+  const save = () => {
+    const v = parseFloat(val.replace(",", "."));
+    if (v > 0 && v < (k === "fat" ? 75 : 300)) {
+      onAdd(k, v);
+      setVal("");
+    }
+  };
+  const delta = latest && first ? Math.round((latest.value - first.value) * 10) / 10 : null;
+  return (
+    <div data-measures>
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.measuresTitle}</span>
+          {latest && (
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.coral }}>
+              {fmt(latest.value)} <span style={{ fontSize: 12, color: COLORS.dim, fontWeight: 400 }}>{kind.unit}</span>
+            </span>
+          )}
+        </div>
+        <div data-measure-kinds style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", paddingBottom: 2 }}>
+          {MEASURE_KINDS.map((m) => (
+            <Chip key={m.k} label={t["measure_" + m.k]} active={k === m.k} onClick={() => setK(m.k)} />
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input data-measure-input type="number" inputMode="decimal" value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") save(); }} placeholder={t.measuresPh + " (" + kind.unit + ")"} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+          <button data-measure-save onClick={save} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+            {t.saveWeight}
+          </button>
+        </div>
+        {shown.length >= 2 ? (
+          <LineChart points={shown.map((m) => m.value)} color={COLORS.coral} unit={kind.unit} />
+        ) : (
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.measuresNeedMore}</div>
+        )}
+        {delta !== null && (
+          <div data-measure-delta style={{ marginTop: 10, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: delta === 0 ? COLORS.dim : COLORS.teal }}>
+            {delta > 0 ? "+" : delta < 0 ? "−" : ""}{fmt(Math.abs(delta))} {kind.unit} {t.measuresSince}
+          </div>
+        )}
+        {all.length > 0 && (
+          <div style={{ marginTop: 12, maxHeight: 170, overflowY: "auto", borderTop: "1px solid " + COLORS.border }}>
+            {[...all].reverse().map((m, i) => (
+              <div key={m.dateISO + i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 2px", borderBottom: "1px solid " + COLORS.border }}>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{fmtDate(m.dateISO)}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{fmt(m.value)} {kind.unit}</span>
+                  <div onClick={() => onDelete(m.dateISO, m.key)} style={{ cursor: "pointer", padding: 4 }}>
+                    <X size={14} color={COLORS.dim} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ---------------- Fasting timer ----------------
+const FAST_PLANS = [14, 16, 18, 20];
+const FAST_INIT = { plan: 16, active: null, history: [] };
+const fastHm = (ms) => {
+  const m = Math.max(0, Math.floor(ms / 60000));
+  return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
+};
+const fastClock = (ms, lang) => new Date(ms).toLocaleTimeString(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit" });
+
+function FastingScreen({ t, lang }) {
+  const [fast, setFast] = usePersisted("fast", FAST_INIT);
+  const [now, setNow] = useState(Date.now());
+  const [ago, setAgo] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(id);
+  }, []);
+  const a = fast.active;
+  const hours = a ? a.hours : fast.plan;
+  const targetMs = hours * 3600000;
+  const elapsed = a ? Math.max(0, now - a.start) : 0;
+  const reached = !!a && elapsed >= targetMs;
+  const start = () => {
+    setFast((f) => ({ ...f, active: { start: Date.now() - ago * 3600000, hours: f.plan } }));
+    setNow(Date.now());
+  };
+  const stop = () => setFast((f) => (f.active ? { ...f, active: null, history: [{ start: f.active.start, end: Date.now(), hours: f.active.hours }, ...f.history].slice(0, 60) } : f));
+  const week = fast.history.filter((h) => Date.now() - h.end <= 7 * 86400000);
+  const wk = week.filter((h) => h.end - h.start >= h.hours * 3600000 - 60000).length;
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, lineHeight: 1.5 };
+  const dur = (ms) => Math.floor(ms / 3600000) + " h " + String(Math.floor((ms % 3600000) / 60000)).padStart(2, "0") + " min";
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <div data-fast-plans style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 20 }}>
+        {FAST_PLANS.map((h) => (
+          <Chip key={h} label={h + ":" + (24 - h)} active={hours === h} onClick={() => !a && setFast((f) => ({ ...f, plan: h }))} />
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+        <Ring pct={a ? (elapsed / targetMs) * 100 : 0} size={210} stroke={14} color={reached ? COLORS.teal : COLORS.gold}>
+          <div style={{ textAlign: "center" }}>
+            {a ? (
+              <>
+                <div data-fast-main style={{ fontFamily: "Sora, sans-serif", fontSize: reached ? 20 : 34, fontWeight: 700, color: COLORS.text, lineHeight: 1.1 }}>{reached ? "✓ " + t.fastReached : fastHm(targetMs - elapsed)}</div>
+                <div style={{ ...small, marginTop: 6 }}>{reached ? t.fastEatNow : t.fastLeft}</div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 34, fontWeight: 700, color: COLORS.text, lineHeight: 1.1 }}>{hours}:{24 - hours}</div>
+                <div style={{ ...small, marginTop: 6 }}>{n2(t.fastPlanText, hours, 24 - hours)}</div>
+              </>
+            )}
+          </div>
+        </Ring>
+      </div>
+      {a ? (
+        <>
+          <div data-fast-info style={{ textAlign: "center", ...small, marginBottom: 16 }}>
+            {t.fastSince.replace("{t}", dur(elapsed))} · {t.fastEndsAt.replace("{t}", fastClock(a.start + targetMs, lang))}
+          </div>
+          <button data-fast-stop onClick={stop} style={{ width: "100%", background: reached ? COLORS.gold : COLORS.raised, color: reached ? COLORS.bg : COLORS.text, border: "1px solid " + (reached ? COLORS.gold : COLORS.border), borderRadius: 14, padding: "14px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
+            {t.fastStop}
+          </button>
+        </>
+      ) : (
+        <>
+          <div style={{ ...small, textAlign: "center", marginBottom: 8 }}>{t.fastAgo}</div>
+          <div data-fast-ago style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 16 }}>
+            {[0, 1, 2, 4].map((h) => (
+              <Chip key={h} label={h === 0 ? t.fastNow : h + " h"} active={ago === h} onClick={() => setAgo(h)} />
+            ))}
+          </div>
+          <button data-fast-start onClick={start} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
+            {t.fastStart}
+          </button>
+        </>
+      )}
+
+      <SectionLabel>{t.fastHistory}</SectionLabel>
+      {fast.history.length === 0 ? (
+        <div style={small}>{t.fastEmpty}</div>
+      ) : (
+        <>
+          <div data-fast-rate style={{ ...small, marginBottom: 8 }}>{t.fastRate.replace("{a}", wk).replace("{b}", week.length)}</div>
+          <Card style={{ padding: 4 }}>
+            {fast.history.slice(0, 7).map((h, i, arr) => {
+              const ok = h.end - h.start >= h.hours * 3600000 - 60000;
+              return (
+                <div key={h.start} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 12px", borderBottom: i < arr.length - 1 ? "1px solid " + COLORS.border : "none" }}>
+                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{new Date(h.start).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { weekday: "short", day: "numeric", month: "short" })}</span>
+                  <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: ok ? COLORS.teal : COLORS.text }}>{dur(h.end - h.start)} {ok ? "✓" : ""}</span>
+                </div>
+              );
+            })}
+          </Card>
+        </>
+      )}
+      <div style={{ ...small, fontSize: 11.5, marginTop: 18 }}>{t.fastNote}</div>
+    </div>
+  );
+}
+const n2 = (s, a, b) => String(s).replace("{a}", a).replace("{b}", b);
+
+// small card on the start screen while a fast is running
+function FastHomeCard({ t, onOpen }) {
+  const [fast] = usePersisted("fast", FAST_INIT);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const a = fast.active;
+  if (!a) return null;
+  const targetMs = a.hours * 3600000;
+  const elapsed = Math.max(0, now - a.start);
+  const reached = elapsed >= targetMs;
+  return (
+    <div data-fast-card>
+      <Card onClick={onOpen} style={{ marginBottom: 12, cursor: "pointer" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 22 }}>⏱️</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.fastTitle} · {a.hours}:{24 - a.hours}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: reached ? COLORS.teal : COLORS.dim, marginTop: 2 }}>{reached ? t.fastHomeReached : t.fastHomeLeft.replace("{t}", fastHm(targetMs - elapsed))}</div>
+          </div>
+          <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+        </div>
+        <div style={{ height: 6, borderRadius: 3, background: COLORS.raised, overflow: "hidden", marginTop: 10 }}>
+          <div style={{ height: "100%", width: Math.min(100, (elapsed / targetMs) * 100) + "%", background: reached ? COLORS.teal : COLORS.gold, borderRadius: 3 }} />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function BackupReminder({ t, onOpen }) {
   return (
     <Card onClick={onOpen} style={{ marginBottom: 12, cursor: "pointer", border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
@@ -3052,7 +3413,7 @@ function TodayOpen({ t, lang, cfg, info, hideIntake, onGo, onSettings }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
+function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, weeklyCard = null, onReviewDone = () => {}, onReviewApply = () => {}, onOpenFasting = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -3133,6 +3494,8 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
 
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
       {todayCfg && todayInfo && <TodayOpen t={t} lang={lang} cfg={todayCfg} info={todayInfo} hideIntake={intakeDue.length > 0} onGo={onTodayGo} onSettings={onTodaySettings} />}
+      <FastHomeCard t={t} onOpen={onOpenFasting} />
+      {weeklyCard && <WeeklyReviewCard t={t} review={weeklyCard} mode="home" onApply={onReviewApply} onDone={onReviewDone} />}
       {intakeDue.length > 0 && (
         <Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer", border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeCardTitle}</div>
@@ -3208,7 +3571,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood, onOpenIntake, kcalGoal = 0 }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood, onOpenIntake, onOpenFasting = () => {}, kcalGoal = 0 }) {
   const [linkText, setLinkText] = useState("");
   const [showLink, setShowLink] = useState(false);
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
@@ -3256,6 +3619,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
     { k: "link", emoji: "🔗", label: t.toolImport, onClick: () => setShowLink((v) => !v), active: showLink },
     { k: "pantry", emoji: "🥫", label: t.toolPantry, onClick: onOpenPantry },
     { k: "fastfood", emoji: "🍔", label: t.toolFastFood, onClick: onOpenFastFood, attr: "data-fastfood" },
+    { k: "fast", emoji: "⏱️", label: t.toolFast, onClick: onOpenFasting },
     { k: "mine", emoji: "⭐", label: t.toolMyMeals, onClick: onOpenMyMeals },
     { k: "intake", emoji: "💊", label: t.toolIntake, onClick: onOpenIntake, attr: "data-intake-nutrition" },
     { k: "cheat", emoji: "🍕", label: t.toolCheat, sub: nextCheat ? (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : null, onClick: onOpenCheats },
@@ -3646,7 +4010,7 @@ function LineChart({ points, color, height = 140, unit = "" }) {
   );
 }
 
-function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDeleteWeight, photos, onAddPhoto, onDeletePhoto }) {
+function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDeleteWeight, photos, onAddPhoto, onDeletePhoto, measures = [], onAddMeasure = () => {}, onDeleteMeasure = () => {}, weekly = null, onApplyWeekly = () => {} }) {
   const [range, setRange] = useState(3);
   const [slider, setSlider] = useState(50);
   const [compareId, setCompareId] = useState(null);
@@ -3706,6 +4070,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
 
   return (
     <div style={{ padding: "0 20px 24px" }}>
+      {weekly && <WeeklyReviewCard t={t} review={weekly} mode="progress" onApply={onApplyWeekly} />}
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         {t.ranges.map((r, i) => (
           <Chip key={r} label={r} active={range === i} onClick={() => setRange(i)} />
@@ -3751,6 +4116,8 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
           </div>
         )}
       </Card>
+
+      <MeasuresCard t={t} lang={lang} measures={measures} onAdd={onAddMeasure} onDelete={onDeleteMeasure} rangeDays={rangeDays} />
 
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
@@ -6107,9 +6474,35 @@ function BeforeAfter({ before, after, labelBefore, labelAfter }) {
   );
 }
 
+// without a picture: the way from today's weight to the expected weight
+function WeightPath({ start, end, monthsText, labelNow, labelThen }) {
+  if (start == null || end == null) return null;
+  const delta = Math.round((end - start) * 10) / 10;
+  return (
+    <div data-weight-path style={{ background: COLORS.raised, borderRadius: 16, padding: "16px 14px 14px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{labelNow}</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, color: COLORS.text }}>{start} <span style={{ fontSize: 13, color: COLORS.dim }}>kg</span></div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{labelThen}</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, color: COLORS.gold }}>{end} <span style={{ fontSize: 13, color: COLORS.dim }}>kg</span></div>
+        </div>
+      </div>
+      <div style={{ position: "relative", height: 8, borderRadius: 4, background: "linear-gradient(90deg, " + COLORS.teal + ", " + COLORS.gold + ")", margin: "16px 6px 10px" }}>
+        <span style={{ position: "absolute", left: -6, top: -4, width: 16, height: 16, borderRadius: "50%", background: COLORS.bg, border: "3px solid " + COLORS.teal }} />
+        <span style={{ position: "absolute", right: -6, top: -4, width: 16, height: 16, borderRadius: "50%", background: COLORS.bg, border: "3px solid " + COLORS.gold }} />
+      </div>
+      <div style={{ textAlign: "center", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>{delta > 0 ? "+" : ""}{delta} kg · {monthsText}</div>
+    </div>
+  );
+}
+
 // profile = { gender, age, height, weight, target, goal }; the goal text comes from the screen (onboarding) or its own field (settings)
 function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = false }) {
   const [saved, setSaved] = usePersisted("potential", null);
+  const imageOn = !!useServerFeatures().potentialImage; // without an image service on the server there is no photo step at all
   const [photo, setPhoto] = useState(null);
   const [consent, setConsent] = useState(false);
   const [months, setMonths] = useState(3);
@@ -6137,10 +6530,10 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
 
   const run = async () => {
     if (busy) return;
-    if (!photo) return setMsg(t.potNeedPhoto);
+    if (imageOn && !photo) return setMsg(t.potNeedPhoto);
     if (goal.length < 3) return setMsg(t.potNeedGoal);
     if (!adult) return setMsg(t.potAdultOnly);
-    if (!consent) return setMsg(t.potNeedConsent);
+    if (imageOn && !consent) return setMsg(t.potNeedConsent);
     setBusy(true);
     setMsg(null);
     const ctl = new AbortController();
@@ -6150,7 +6543,7 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          image: photo,
+          image: imageOn ? photo : undefined,
           adult: true,
           goalText: goal,
           months,
@@ -6164,7 +6557,7 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
       if (!res.ok) return setMsg(t.potErr);
       const d = await res.json();
       if (d.usable === false) return setMsg(d.problem || t.potErr);
-      const before = await downscaleDataUrl(photo, 720, 0.78);
+      const before = imageOn && photo ? await downscaleDataUrl(photo, 720, 0.78) : null;
       const after = d.image ? await downscaleDataUrl(d.image, 720, 0.82) : null;
       setSaved({ goalText: goal, months: d.months || months, at: Date.now(), summary: d.summary, changes: d.changes || [], projected: d.projected || {}, realistic: d.realistic !== false, adjustedGoal: d.adjustedGoal || null, imageAvailable: !!d.imageAvailable, imageError: d.imageError || null, startWeight: profile.weight || null, before, after });
       setPhoto(null);
@@ -6187,11 +6580,13 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15.5, fontWeight: 700, color: COLORS.text, marginBottom: 12 }}>{n(t.potResultTitle, saved.months)}</div>
         {saved.after ? (
           <BeforeAfter before={saved.before} after={saved.after} labelBefore={t.potBefore} labelAfter={n(t.potAfter, saved.months)} />
-        ) : (
+        ) : saved.before ? (
           <>
-            {saved.before && <img src={saved.before} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: 16, marginBottom: 10 }} />}
+            <img src={saved.before} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: 16, marginBottom: 10 }} />
             <div data-potential-noimage style={{ ...small, marginBottom: 6 }}>{saved.imageError ? t.potImageFailed : t.potNoImage}</div>
           </>
+        ) : (
+          <WeightPath start={saved.startWeight} end={pj.weightKg} monthsText={saved.months === 1 ? t.potMonth1 : n(t.potMonthsN, saved.months)} labelNow={t.potBefore} labelThen={n(t.potAfter, saved.months)} />
         )}
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, lineHeight: 1.55, margin: "14px 0 10px" }}>{saved.summary}</div>
         {saved.changes && saved.changes.length > 0 && (
@@ -6240,7 +6635,7 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
   return (
     <div data-potential style={card}>
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15.5, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>✨ {t.potTitle}</div>
-      <div style={{ ...small, marginBottom: 14 }}>{n(t.potSub, months)}</div>
+      <div style={{ ...small, marginBottom: 14 }}>{n(imageOn ? t.potSub : t.potSubNoImage, months)}</div>
 
       {ownGoalField && (
         <>
@@ -6249,9 +6644,9 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
         </>
       )}
 
-      <input ref={camRef} data-potential-cam type="file" accept="image/*" capture="user" onChange={pick} style={{ display: "none" }} />
-      <input ref={galRef} data-potential-gallery type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
-      {photo ? (
+      {imageOn && <input ref={camRef} data-potential-cam type="file" accept="image/*" capture="user" onChange={pick} style={{ display: "none" }} />}
+      {imageOn && <input ref={galRef} data-potential-gallery type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />}
+      {!imageOn ? null : photo ? (
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>
           <img data-potential-thumb src={photo} alt="" style={{ width: 72, height: 96, objectFit: "cover", borderRadius: 12 }} />
           <div style={{ flex: 1 }}>
@@ -6273,10 +6668,14 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
         ))}
       </div>
 
-      <label data-potential-consent style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", marginBottom: 14 }}>
-        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 3, accentColor: COLORS.gold, flexShrink: 0 }} />
-        <span style={{ ...small, fontSize: 12 }}>{t.potConsent}</span>
-      </label>
+      {imageOn ? (
+        <label data-potential-consent style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", marginBottom: 14 }}>
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 3, accentColor: COLORS.gold, flexShrink: 0 }} />
+          <span style={{ ...small, fontSize: 12 }}>{t.potConsent}</span>
+        </label>
+      ) : (
+        <div data-potential-privacy style={{ ...small, fontSize: 12, marginBottom: 14 }}>{t.potPrivacyNoImage}</div>
+      )}
 
       <button data-potential-go onClick={run} disabled={busy} style={{ width: "100%", background: busy ? COLORS.raised : COLORS.gold, color: busy ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: busy ? "default" : "pointer" }}>
         {busy ? t.potBusyShort : "✨ " + t.potGo}
@@ -7954,26 +8353,30 @@ const LEVEL_LABELS = { beginner: { de: "Anfänger", en: "Beginner" }, intermedia
 
 // ---------- Technique video: found by the server (YouTube Data API) and played in the app; without a key it opens the YouTube search ----------
 // does the server have a video key? (checked once per session; without it the video button stays hidden)
-let videoEnabledPromise = null;
-function useVideoEnabled() {
-  const [on, setOn] = useState(false);
+// what the server offers (video lookup, potential preview, example pictures); asked once per app start
+let featuresPromise = null;
+function useServerFeatures() {
+  const [f, setF] = useState({});
   useEffect(() => {
     let alive = true;
-    if (!videoEnabledPromise) {
-      videoEnabledPromise = fetch(API_BASE + "/api/features")
+    if (!featuresPromise) {
+      featuresPromise = fetch(API_BASE + "/api/features")
         .then((r) => (r.ok ? r.json() : {}))
-        .then((j) => !!(j && j.video))
+        .then((j) => j || {})
         .catch(() => {
-          videoEnabledPromise = null;
-          return false;
+          featuresPromise = null;
+          return {};
         });
     }
-    videoEnabledPromise.then((v) => alive && setOn(v));
+    featuresPromise.then((v) => alive && setF(v));
     return () => {
       alive = false;
     };
   }, []);
-  return on;
+  return f;
+}
+function useVideoEnabled() {
+  return !!useServerFeatures().video;
 }
 
 function ExerciseVideoRow({ t, lang, exKey, name, onShare }) {
@@ -10358,6 +10761,8 @@ export default function AsmarFitApp() {
   const historyMap = useMemo(() => buildHistory(meals, waterMl, steps), [meals, waterMl, steps]);
   const streak = useMemo(() => computeStreaks(historyMap), [historyMap]);
   // what the assistant may know about the user (sent with each question, only while "aiData" is on)
+  const [measures, setMeasures] = usePersisted("measures", []);
+  const [reviewState, setReviewState] = usePersisted("weeklyReview", { lastISO: null });
   const [aiOn, setAiOn] = usePersisted("aiData", true);
   const aiData = useMemo(() => {
     const day = (x) => String(x).slice(0, 10);
@@ -10379,6 +10784,7 @@ export default function AsmarFitApp() {
       loggingStreakDays: streak.current,
     };
   }, [profile, meals, waterMl, steps, weightLog, workoutHistory, planName, planDays, personalBests, streak]);
+  const weekly = useMemo(() => weeklyReview({ history: historyMap, weightLog, workoutHistory, profile }), [historyMap, weightLog, workoutHistory, profile]);
   const [streakCelebrated, setStreakCelebrated] = usePersisted("streakCelebrated", 0);
   // Confetti once per milestone. If the streak broke, the marker drops so the next run celebrates again.
   useEffect(() => {
@@ -10542,6 +10948,21 @@ export default function AsmarFitApp() {
     setWeightLog((l) => [...l, { dateISO: new Date().toISOString(), kg }]);
     setProfile((p) => ({ ...p, weight: kg }));
   };
+  const addMeasure = (key, value) => {
+    const day = new Date().toLocaleDateString("sv");
+    setMeasures((l) => [...l.filter((m) => !(m.key === key && new Date(m.dateISO).toLocaleDateString("sv") === day)), { dateISO: new Date().toISOString(), key, value }]);
+  };
+  const deleteMeasure = (dateISO, key) => setMeasures((l) => l.filter((m) => !(m.dateISO === dateISO && m.key === key)));
+  // weekly check-in: take over the suggested change of the daily target (kept within a safe range)
+  const applyWeekly = (delta) => {
+    setProfile((p) => {
+      const kcal = Math.max(1200, Math.min(6000, Math.round(((p.kcalGoal || 2000) + delta) / 10) * 10));
+      return { ...p, kcalManual: true, kcalGoal: kcal, macroTargets: computeMacroTargets(kcal, p.macroSplit || "balanced") };
+    });
+    setReviewState({ lastISO: todayStamp() });
+    flashShare(t.wrApplied);
+  };
+  const reviewDone = () => setReviewState({ lastISO: todayStamp() });
 
   const finishWorkout = (summary, showSummary = true) => {
     const newBests = [];
@@ -11063,6 +11484,10 @@ export default function AsmarFitApp() {
     content = <LegalPageScreen src="/impressum.html" />;
     topTitle = t.setImprintRow;
     showBack = () => setOverlay("settings");
+  } else if (overlay === "fasting") {
+    content = <FastingScreen t={t} lang={lang} />;
+    topTitle = t.fastTitle;
+    showBack = () => setOverlay(null);
   } else if (overlay === "assistant") {
     content = <AssistantScreen t={t} lang={lang} data={aiData} aiOn={aiOn} setAiOn={setAiOn} name={profile.name} />;
     topTitle = t.assistantTitle;
@@ -11193,6 +11618,10 @@ export default function AsmarFitApp() {
           onSaveWaterGoal={(ml) => setProfile((p) => ({ ...p, waterGoalMl: ml }))}
           onOpenAssistant={() => setOverlay("assistant")}
           onOpenGoals={() => setOverlay("settingsGoals")}
+          weeklyCard={weekly.suggestion.type !== "needData" && reviewDue(reviewState.lastISO) ? weekly : null}
+          onReviewDone={reviewDone}
+          onReviewApply={applyWeekly}
+          onOpenFasting={() => setOverlay("fasting")}
           onQuick={(k) => {
             if (k === "food") {
               setActiveMealKey(mealKeyForNow());
@@ -11246,6 +11675,7 @@ export default function AsmarFitApp() {
           pantry={pantry}
           onOpenPantry={() => openPantry(null)}
           onOpenFastFood={() => setOverlay("fastfood")}
+          onOpenFasting={() => setOverlay("fasting")}
           onOpenIntake={() => {
             setIntakeReturn(null);
             setOverlay("intake");
@@ -11294,6 +11724,11 @@ export default function AsmarFitApp() {
           weightLog={weightLog}
           workoutHistory={workoutHistory}
           onAddWeight={addWeight}
+          measures={measures}
+          onAddMeasure={addMeasure}
+          onDeleteMeasure={deleteMeasure}
+          weekly={weekly}
+          onApplyWeekly={applyWeekly}
           onDeleteWeight={(dateISO) =>
             setWeightLog((l) => {
               // Filtering by dateISO would remove every entry sharing that exact
