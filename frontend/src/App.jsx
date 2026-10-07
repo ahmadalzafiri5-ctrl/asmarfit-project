@@ -355,6 +355,8 @@ const STR = {
     waterSave: "Save",
     searchRetry: "Tap to retry",
     assistantTitle: "ASFIT Coach",
+    updateAvail: "New version available",
+    updateNow: "Update",
     seasonLook: "Seasonal look",
     seasonAuto: "Automatic",
     seasonOff: "Off",
@@ -1358,6 +1360,8 @@ const STR = {
     waterSave: "Speichern",
     searchRetry: "Tippen zum Wiederholen",
     assistantTitle: "ASFIT-Coach",
+    updateAvail: "Neue Version verfügbar",
+    updateNow: "Aktualisieren",
     seasonLook: "Jahreszeiten-Look",
     seasonAuto: "Automatisch",
     seasonOff: "Aus",
@@ -8871,6 +8875,53 @@ function useVideoEnabled() {
   return !!useServerFeatures().video;
 }
 
+// ---------- New version: every build writes version.json; the web app / home-screen app asks if a newer build is live ----------
+// (the Android app holds its own copy of the pages, so it skips this check)
+function useNewVersion() {
+  const [stale, setStale] = useState(false);
+  useEffect(() => {
+    if (IS_NATIVE_APP || typeof __BUILD_ID__ === "undefined") return undefined;
+    let alive = true;
+    let last = 0;
+    const check = async () => {
+      const now = Date.now();
+      if (now - last < 5 * 60 * 1000) return;
+      last = now;
+      try {
+        const r = await fetch(import.meta.env.BASE_URL + "version.json?t=" + now, { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (alive && j && typeof j.build === "string" && j.build !== __BUILD_ID__) setStale(true);
+      } catch {
+        /* offline, or the answer was not the version file */
+      }
+    };
+    check();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(check, 15 * 60 * 1000);
+    return () => {
+      alive = false;
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(timer);
+    };
+  }, []);
+  return stale;
+}
+
+function UpdateBanner({ t }) {
+  return (
+    <div data-update-banner style={{ position: "fixed", top: "calc(env(safe-area-inset-top) + 8px)", left: 12, right: 12, maxWidth: 366, margin: "0 auto", background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "9px 10px 9px 14px", display: "flex", alignItems: "center", gap: 10, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 1200 }}>
+      <span style={{ flex: 1 }}>{t.updateAvail}</span>
+      <span data-update-now onClick={() => window.location.reload()} style={{ cursor: "pointer", background: COLORS.bg, color: COLORS.gold, borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>
+        {t.updateNow}
+      </span>
+    </div>
+  );
+}
+
 function ExerciseVideoRow({ t, lang, exKey, name, onShare }) {
   const videoOn = useVideoEnabled();
   const [v, setV] = useState(null); // { id, title, channel }
@@ -11338,6 +11389,7 @@ export default function AsmarFitApp() {
     return seasonFor(new Date(), isSouthern(tz));
   }, [seasonMode, dayStamp]);
   const seasonCtx = useMemo(() => ({ key: seasonKey }), [seasonKey]);
+  const newVersion = useNewVersion();
   const [aiOn, setAiOn] = usePersisted("aiData", true);
   const aiData = useMemo(() => {
     const day = (x) => String(x).slice(0, 10);
@@ -12382,6 +12434,7 @@ export default function AsmarFitApp() {
         )}
         <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
         {onboarded && seasonKey && <SeasonLayer season={seasonKey} />}
+        {onboarded && newVersion && <UpdateBanner t={t} />}
         {onboarded && incomingShare && <ShareImportModal t={t} lang={lang} item={incomingShare} onImport={applyShare} onClose={() => setIncomingShare(null)} />}
         {shareToast && (
           <div style={{ position: "fixed", left: 20, right: 20, bottom: 96, maxWidth: 350, margin: "0 auto", background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 1100 }}>

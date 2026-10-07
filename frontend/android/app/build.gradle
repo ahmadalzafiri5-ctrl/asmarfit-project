@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+// the automatic build (GitHub Actions) counts the version up on every run; a build on this PC keeps 1 / "1.0"
+def asfitVersionCode = (System.getenv("ASFIT_VERSION_CODE") ?: "1") as int
+def asfitVersionName = System.getenv("ASFIT_VERSION_NAME") ?: "1.0"
+
 android {
     namespace = "com.asmarfit.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +11,8 @@ android {
         applicationId "com.asmarfit.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode asfitVersionCode
+        versionName asfitVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
