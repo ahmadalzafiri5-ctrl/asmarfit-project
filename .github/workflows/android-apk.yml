@@ -75,6 +75,18 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
+      # Google Play prueft, dass angeforderte Gesundheitsrechte wirklich gebraucht werden: nur Schritte, Gewicht, Workouts
+      - name: Pruefung Gesundheitsrechte (nur Schritte, Gewicht, Workouts)
+        run: |
+          AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          "$AAPT2" dump permissions frontend/android/app/build/outputs/apk/debug/app-debug.apk | tee perms.txt
+          HEALTH=$(grep -o "android.permission.health.[A-Z_]*" perms.txt | sort -u | tr '\n' ' ')
+          echo "Gesundheitsrechte: $HEALTH"
+          [ "$HEALTH" = "android.permission.health.READ_EXERCISE android.permission.health.READ_STEPS android.permission.health.READ_WEIGHT " ]
+
+      - name: Pruefung Alarm-Recht (kein SCHEDULE_EXACT_ALARM)
+        run: "! grep -q SCHEDULE_EXACT_ALARM perms.txt"
+
       - uses: actions/upload-artifact@v4
         with:
           name: ASFIT-android-apk
