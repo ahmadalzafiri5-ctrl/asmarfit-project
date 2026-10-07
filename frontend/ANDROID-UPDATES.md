@@ -36,6 +36,8 @@ Tipp: Wenn der Befehl aus einem Chat-Fenster kommt, kopiert ein „Run“-Knopf 
 
 **Prüfen, ob es geklappt hat:** Ein Secret allein startet keinen Bau. Starte ihn über **Actions → Android-App bauen → Run workflow** oder durch einen Push. Im Lauf darf **keine** gelbe Warnung zum Secret stehen. Steht dort „Länge … Zeichen“, stimmt der Wert noch nicht.
 
+Wenn es stimmt, hat der Wert etwa 3500 Zeichen und der Lauf zeigt keine Warnung zum Secret.
+
 Den Wert niemandem schicken und nirgends einfügen (auch nicht in den Chat). Ohne dieses Secret läuft der Bau trotzdem, die APK hat dann aber bei jedem Lauf einen neuen Schlüssel und lässt sich nur nach Deinstallieren der alten App installieren (Daten vorher über „Backup" in den Einstellungen sichern).
 
 ## Store-Variante ohne Einnahme-Tagebuch
