@@ -19,14 +19,18 @@ Die Versionsnummer zählt der Lauf selbst hoch (`1.0.<Lauf>`, versionCode = 100 
 
 Android installiert eine neue APK nur über die alte, wenn beide mit demselben Schlüssel signiert sind. Deine bisherigen Debug-APKs hat dein PC mit `C:\Users\<Name>\.android\debug.keystore` signiert. Damit der Bau-Server denselben Schlüssel nutzt:
 
-1. In PowerShell auf deinem PC ausführen (kopiert den Schlüssel in die Zwischenablage, zeigt ihn nicht an):
+1. In PowerShell auf deinem PC dieses Skript **ausführen** (es kopiert den Schlüssel in die Zwischenablage und schreibt nur „Fertig: … Zeichen"):
 
    ```powershell
-   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\.android\debug.keystore")) | Set-Clipboard
+   powershell -ExecutionPolicy Bypass -File "C:\Users\StartKlar\Downloads\asmarfit-project\frontend\tools\copy-keystore-to-clipboard.ps1"
    ```
 
-2. GitHub → dein Repository → **Settings → Secrets and variables → Actions → New repository secret**
+   Es muss „Fertig: etwa 3400 Zeichen" erscheinen.
+
+2. GitHub → dein Repository → **Settings → Secrets and variables → Actions → New repository secret** (oder beim vorhandenen `DEBUG_KEYSTORE_BASE64` auf **Update**)
 3. Name: `DEBUG_KEYSTORE_BASE64`, Wert: einfügen (Strg+V) → speichern.
+
+**Häufiger Fehler:** den Befehl selbst statt seines Ergebnisses einfügen. Dann hat das Secret nur etwa 100 Zeichen. Der Android-Bau meldet das als Warnung („Länge … Zeichen") und baut trotzdem weiter, aber mit einem neuen Schlüssel.
 
 Den Wert niemandem schicken und nirgends einfügen (auch nicht in den Chat). Ohne dieses Secret läuft der Bau trotzdem, die APK hat dann aber bei jedem Lauf einen neuen Schlüssel und lässt sich nur nach Deinstallieren der alten App installieren (Daten vorher über „Backup" in den Einstellungen sichern).
 

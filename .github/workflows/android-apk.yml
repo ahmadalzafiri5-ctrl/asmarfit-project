@@ -82,7 +82,9 @@ jobs:
             echo "Feste Signatur aus dem Secret wird verwendet."
           else
             rm -f ~/.android/debug.keystore
-            echo "::warning::Das Secret DEBUG_KEYSTORE_BASE64 ist kein gueltiger Debug-Schluessel (Laenge $LEN Zeichen, Base64 lesbar: $B64OK, Schluesseldatei oeffnet mit Passwort android: $OPENS, Alias androiddebugkey gefunden: $ALIAS). Ein richtiger Wert hat etwa 3400 Zeichen. Der Bau laeuft mit einem frischen Schluessel weiter."
+            HINT=""
+            if [ "$LEN" -lt 500 ]; then HINT=" Das ist viel zu kurz: vermutlich wurde der Befehl selbst eingefuegt statt seines Ergebnisses (Anleitung: frontend/ANDROID-UPDATES.md)."; fi
+            echo "::warning::Das Secret DEBUG_KEYSTORE_BASE64 ist kein gueltiger Debug-Schluessel (Laenge $LEN Zeichen, Base64 lesbar: $B64OK, Schluesseldatei oeffnet mit Passwort android: $OPENS, Alias androiddebugkey gefunden: $ALIAS). Ein richtiger Wert hat etwa 3400 Zeichen.$HINT Der Bau laeuft mit einem frischen Schluessel weiter."
           fi
           rm -f /tmp/ks.b64
 
