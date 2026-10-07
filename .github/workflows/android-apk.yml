@@ -70,12 +70,19 @@ jobs:
           mkdir -p ~/.android
           # Leerzeichen, Zeilenumbrueche und Anfuehrungszeichen vom Kopieren und Einfuegen werden entfernt (es wird nichts vom Inhalt ausgegeben)
           printf '%s' "$DEBUG_KEYSTORE_BASE64" | tr -d ' \r\n\t"' > /tmp/ks.b64
-          echo "Secret gefunden: $(wc -c < /tmp/ks.b64) Zeichen"
-          if base64 -d /tmp/ks.b64 > ~/.android/debug.keystore 2>/dev/null && keytool -list -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey > /dev/null 2>&1; then
+          LEN=$(wc -c < /tmp/ks.b64)
+          echo "Secret gefunden: $LEN Zeichen"
+          B64OK=nein; OPENS=nein; ALIAS=nein
+          if base64 -d /tmp/ks.b64 > ~/.android/debug.keystore 2>/dev/null; then
+            B64OK=ja
+            keytool -list -keystore ~/.android/debug.keystore -storepass android > /dev/null 2>&1 && OPENS=ja
+            keytool -list -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey > /dev/null 2>&1 && ALIAS=ja
+          fi
+          if [ "$ALIAS" = "ja" ]; then
             echo "Feste Signatur aus dem Secret wird verwendet."
           else
             rm -f ~/.android/debug.keystore
-            echo "::warning::Das Secret DEBUG_KEYSTORE_BASE64 ist kein gueltiger Debug-Schluessel (Base64 nicht lesbar, oder Alias androiddebugkey mit Passwort android nicht gefunden). Der Bau laeuft mit einem frischen Schluessel weiter."
+            echo "::warning::Das Secret DEBUG_KEYSTORE_BASE64 ist kein gueltiger Debug-Schluessel (Laenge $LEN Zeichen, Base64 lesbar: $B64OK, Schluesseldatei oeffnet mit Passwort android: $OPENS, Alias androiddebugkey gefunden: $ALIAS). Ein richtiger Wert hat etwa 3400 Zeichen. Der Bau laeuft mit einem frischen Schluessel weiter."
           fi
           rm -f /tmp/ks.b64
 
