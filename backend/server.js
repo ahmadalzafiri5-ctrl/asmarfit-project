@@ -5,6 +5,13 @@ import NodeCache from "node-cache";
 import { searchBasics, correctQuery, fold, tokensOf } from "./basics.js";
 import { fetchSourceText } from "./recipeImport.js";
 import { loadCatalog } from "./catalog.js";
+import { isCountryCode, countryNameFor, offCountryTag } from "./countries.js";
+
+// the country the user shops in (ISO code sent by the app) as an English name for AI prompts; null when missing or invalid
+function shopCountry(cc) {
+  const code = String(cc || "").toUpperCase();
+  return isCountryCode(code) ? countryNameFor(code, "en") : null;
+}
 
 dotenv.config();
 
@@ -203,10 +210,10 @@ async function usdaRequest(query, dataType, pageSize) {
  * branded products second. Two separate requests so branded noise can never push the
  * clean entries out of the page.
  */
-async function searchUsda(query) {
+async function searchUsda(query, opts = {}) {
   const [curated, branded] = await Promise.all([
     usdaRequest(query, "Foundation,SR Legacy", 15),
-    usdaRequest(query, "Branded", 12),
+    opts.branded === false ? Promise.resolve({ results: [], error: null }) : usdaRequest(query, "Branded", 12), // US brands are noise outside the US
   ]);
   const clean = (list) =>
     list
@@ -224,10 +231,11 @@ async function searchUsda(query) {
  * that USDA lacks. Results are re-ranked (name matches the query first) because the
  * raw relevance order is noisy for short words. Same { results, error } contract.
  */
-async function searchOpenFoodFacts(query, lang) {
+const OFF_SEARCH_BASE = process.env.OFF_SEARCH_BASE || "https://search.openfoodfacts.org"; // only changed in tests
+async function offSearchOnce(query, lang, filterTag) {
   try {
-    const url = new URL("https://search.openfoodfacts.org/search");
-    url.searchParams.set("q", query);
+    const url = new URL(OFF_SEARCH_BASE + "/search");
+    url.searchParams.set("q", filterTag ? query + ' countries_tags:"' + filterTag + '"' : query);
     if (lang === "de") url.searchParams.set("langs", "de");
     url.searchParams.set("page_size", "50");
     url.searchParams.set(
@@ -268,6 +276,14 @@ async function searchOpenFoodFacts(query, lang) {
   }
 }
 
+// With a country: products sold there first (Open Food Facts country filter), then the worldwide hits as before.
+// Either part failing keeps the answer out of the cache so the next try can recover.
+async function searchOpenFoodFacts(query, lang, cc = null) {
+  if (!cc) return offSearchOnce(query, lang, null);
+  const [local, world] = await Promise.all([offSearchOnce(query, lang, offCountryTag(cc)), offSearchOnce(query, lang, null)]);
+  return { results: [...local.results, ...world.results], error: local.error || world.error || null };
+}
+
 /**
  * Merges the sources in priority order (curated basics, USDA, Open Food Facts),
  * de-duplicated on name + brand and on name + full nutrition profile (OFF is
@@ -305,7 +321,8 @@ app.get("/api/food/search", async (req, res) => {
   // list plus USDA (Open Food Facts fills in when USDA has too little / is unavailable).
   const lang = req.query.lang === "de" ? "de" : "en";
   if (!query) return res.status(400).json({ error: "Missing ?q= search term" });
-  const cacheKey = "search3:" + lang + ":" + query.toLowerCase();
+  const cc = isCountryCode(String(req.query.cc || "").toUpperCase()) ? String(req.query.cc).toUpperCase() : null; // the country the user shops in
+  const cacheKey = "search4:" + lang + ":" + (cc || "-") + ":" + query.toLowerCase();
   const cached = cache.get(cacheKey);
   if (cached) return res.json({ cached: true, ...cached });
 
@@ -317,10 +334,10 @@ app.get("/api/food/search", async (req, res) => {
   let usda = { results: [], error: null };
   let off = { results: [], error: null };
   if (lang === "en" && USDA_API_KEY) {
-    usda = await searchUsda(fixed);
-    if (usda.results.length < 8) off = await searchOpenFoodFacts(fixed, lang);
+    usda = await searchUsda(fixed, { branded: !cc || cc === "US" });
+    if (usda.results.length < 8 || (cc && cc !== "US")) off = await searchOpenFoodFacts(fixed, lang, cc);
   } else {
-    off = await searchOpenFoodFacts(fixed, lang);
+    off = await searchOpenFoodFacts(fixed, lang, cc);
   }
 
   // Once a curated basic already answers the query cleanly, a long tail of
@@ -334,8 +351,8 @@ app.get("/api/food/search", async (req, res) => {
   }
 
   // Don't cache partial results caused by a failing source, so the next try can recover.
-  if (!usda.error && !off.error) cache.set(cacheKey, { results, corrected });
-  res.json({ cached: false, results, corrected });
+  if (!usda.error && !off.error) cache.set(cacheKey, { results, corrected, country: cc });
+  res.json({ cached: false, results, corrected, country: cc });
 });
 
 /* ---------- POST /api/assistant ---------- */
@@ -433,6 +450,7 @@ app.post("/api/assistant", async (req, res) => {
           "You are not a doctor: for medical problems, injuries, eating disorders or medication, recommend a professional. Do not give doses, cycles or stacking plans for hormones, anabolic steroids, peptides, SARMs or prescription drugs; say that this belongs with a doctor (the intake diary in the app only records what the user enters). " +
           "Write plain text only: no markdown (no ** bold, no # headings); short paragraphs, and \"- \" for lists. " +
           "Reply in " + lang + "." +
+          (shopCountry(req.body?.country) ? " The user shops and lives in " + shopCountry(req.body.country) + ": when you suggest foods, use products, shops and portions that are typical there." : "") +
           // The app sends the current screen and the user's data as free text for context, but both are
           // still caller-supplied input — wrap and label them so they can't be read as new instructions
           // (basic prompt-injection hardening).
@@ -643,7 +661,7 @@ app.post("/api/mealplan", async (req, res) => {
           '{"days": [{"meals": [{"slot": "breakfast"|"lunch"|"dinner"|"snacks", "name": string, "kcal": number, "protein": number, "carbs": number, "fat": number, "ingredients": [string]}]}], "shopping": [{"group": string, "items": [string]}]}. ' +
           "'days' has exactly " + days + " entries; every day has exactly these meals in this order: " + slots.join(", ") + ". " +
           "Each day's total should be close to the targets: " + targets.kcal + " kcal (within 5 percent), " + targets.protein + " g protein, " + targets.carbs + " g carbs, " + targets.fat + " g fat. " +
-          "Use everyday, affordable foods from a Swiss or European supermarket and simple recipes (at most 30 minutes). Reuse ingredients across days (batch cooking) so the shopping list stays short. " +
+          "Use everyday, affordable foods from " + (shopCountry(b.country) ? "a supermarket in " + shopCountry(b.country) : "a Swiss or European supermarket") + " and simple recipes (at most 30 minutes). Reuse ingredients across days (batch cooking) so the shopping list stays short. " +
           "Nutrition values per meal are estimates (whole numbers, grams for macros). 'ingredients' lists concrete metric amounts for one serving, for example '200 g skyr'. " +
           "'shopping' combines all ingredients of the whole plan (add up the amounts per item), grouped by supermarket section, items written like 'Haferflocken 480 g'. " +
           "Meal names, ingredients and shopping texts in " + lang + ". Diet: " + diet + ". " +
@@ -829,7 +847,8 @@ app.post("/api/recipe", async (req, res) => {
         system:
           "You create one simple recipe for a nutrition tracking app. Reply with ONLY a JSON object, no other text, in this exact shape: " +
           '{"name": string, "category": "breakfast"|"lunch"|"dinner"|"snacks", "kcal": number, "protein": number, "carbs": number, "fat": number, "ingredients": [string]} ' +
-          "Nutrition values are per one serving (whole numbers, grams for macros). Ingredients include concrete amounts (e.g. '200 ml milk'). Use " + lang + " for name and ingredients. Estimates are fine.",
+          "Nutrition values are per one serving (whole numbers, grams for macros). Ingredients include concrete amounts (e.g. '200 ml milk'). Use " + lang + " for name and ingredients. Estimates are fine." +
+          (shopCountry(req.body?.country) ? " Prefer ingredients that are easy to find in " + shopCountry(req.body.country) + "." : ""),
         messages: [{ role: "user", content: wish }],
       }),
     });
