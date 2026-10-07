@@ -15,6 +15,11 @@ on:
       - "backend/basics.js"
       - ".github/workflows/android-apk.yml"
   workflow_dispatch:
+    inputs:
+      store:
+        description: "Store-Variante bauen (ohne Einnahme-Tagebuch)"
+        type: boolean
+        default: false
 
 concurrency:
   group: android-apk
@@ -47,6 +52,8 @@ jobs:
 
       - name: Web-App bauen und in das Android-Projekt kopieren
         working-directory: frontend
+        env:
+          VITE_HIDE_INTAKE: ${{ inputs.store && '1' || '' }}
         run: |
           npm ci
           npm run build

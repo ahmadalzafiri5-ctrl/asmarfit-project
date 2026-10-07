@@ -6,3 +6,4 @@ dist/
 .idea/
 
 asfit-backup-*.json
+dist-store/

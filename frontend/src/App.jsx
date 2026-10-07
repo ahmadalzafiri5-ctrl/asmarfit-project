@@ -91,6 +91,8 @@ import {
 // .env.production) so the Android build points at the hosted backend instead
 // of localhost, which a phone can't reach. Falls back to local dev default.
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+// store build (VITE_HIDE_INTAKE=1): the intake diary is left out completely (no card, tile, settings row, reminder)
+const HIDE_INTAKE = import.meta.env.VITE_HIDE_INTAKE === "1";
 
 // Colours are CSS variables so the whole app can switch theme at runtime
 // (see THEMES / applyTheme below — the palette follows the gender chosen in onboarding).
@@ -4043,7 +4045,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
     { k: "fast", emoji: "⏱️", label: t.toolFast, onClick: onOpenFasting },
     { k: "mealplan", emoji: "📅", label: t.toolMealplan, onClick: onOpenMealPlan },
     { k: "mine", emoji: "⭐", label: t.toolMyMeals, onClick: onOpenMyMeals },
-    { k: "intake", emoji: "💊", label: t.toolIntake, onClick: onOpenIntake, attr: "data-intake-nutrition" },
+    ...(HIDE_INTAKE ? [] : [{ k: "intake", emoji: "💊", label: t.toolIntake, onClick: onOpenIntake, attr: "data-intake-nutrition" }]),
     { k: "cheat", emoji: "🍕", label: t.toolCheat, sub: nextCheat ? (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : null, onClick: onOpenCheats },
   ];
 
@@ -10979,7 +10981,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
       <SettingsGroup title={t.setGroupFeatures}>
         <SettingsRow tint="teal" icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
         <SettingsRow tint="teal" icon={Users} label={t.friendsTitle} onClick={() => onNav("friends")} />
-        <SettingsRow tint="teal" icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />
+        {!HIDE_INTAKE && <SettingsRow tint="teal" icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />}
       </SettingsGroup>
 
       <SettingsGroup title={t.setGroupData}>
@@ -11411,7 +11413,7 @@ function RemindersSettings({ t, lang, notif, setNotif, native }) {
     { k: "train", label: t.remTrain, sub: t.remTrainSub, icon: Dumbbell, kind: "time" },
     { k: "missed", label: t.remMissed, sub: t.remMissedSub, icon: Dumbbell, kind: "time" },
     { k: "streak", label: t.remStreak, sub: t.remStreakSub, icon: Flame, kind: "time" },
-    { k: "intake", label: t.remIntake, sub: t.remIntakeSub, icon: Pill, kind: "time" },
+    ...(HIDE_INTAKE ? [] : [{ k: "intake", label: t.remIntake, sub: t.remIntakeSub, icon: Pill, kind: "time" }]),
     { k: "comeback", label: t.remComeback, sub: t.remComebackSub, icon: Bell, kind: "none" },
   ];
   const small = { fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim };
@@ -11737,7 +11739,7 @@ export default function AsmarFitApp() {
   const [incomingShare, setIncomingShare] = useState(null); // something a friend shared, waiting for "import"
   const [shareToast, setShareToast] = useState(null);
   const [friendsReturn, setFriendsReturn] = useState(null);
-  const intakeDue = intake.card === false ? [] : (intake.subs || []).map((s) => ({ name: s.name, n: intakeNext(s, intake.log || []) })).filter((x) => x.n && x.n.diff <= 0).map((x) => ({ name: x.name, diff: x.n.diff }));
+  const intakeDue = HIDE_INTAKE || intake.card === false ? [] : (intake.subs || []).map((s) => ({ name: s.name, n: intakeNext(s, intake.log || []) })).filter((x) => x.n && x.n.diff <= 0).map((x) => ({ name: x.name, diff: x.n.diff }));
   const [firstSeen] = usePersisted("firstSeen", Date.now());
   // nudge for a backup once a week — the data only lives on this device
   const backupDue = onboarded && Date.now() - (Number(localStorage.getItem("asfit.lastBackup")) || firstSeen) > 7 * 86400000;
@@ -12317,7 +12319,7 @@ export default function AsmarFitApp() {
     if (go === "nutrition") setTab("nutrition");
     else if (go === "training") setTab("training");
     else if (go === "weigh") setTab("progress");
-    else if (go === "intake") {
+    else if (go === "intake" && !HIDE_INTAKE) {
       setIntakeReturn(null);
       setOverlay("intake");
     }
@@ -12676,7 +12678,7 @@ export default function AsmarFitApp() {
           backupDue={backupDue}
           onOpenBackup={() => setOverlay("settingsData")}
           intakeDue={intakeDue}
-          intakeShow={intake.card !== false}
+          intakeShow={!HIDE_INTAKE && intake.card !== false}
           intakeCount={(intake.subs || []).length}
           lang={lang}
           todayCfg={notif}

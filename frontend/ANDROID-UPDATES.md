@@ -30,6 +30,10 @@ Android installiert eine neue APK nur über die alte, wenn beide mit demselben S
 
 Den Wert niemandem schicken und nirgends einfügen (auch nicht in den Chat). Ohne dieses Secret läuft der Bau trotzdem, die APK hat dann aber bei jedem Lauf einen neuen Schlüssel und lässt sich nur nach Deinstallieren der alten App installieren (Daten vorher über „Backup" in den Einstellungen sichern).
 
+## Store-Variante ohne Einnahme-Tagebuch
+
+Für eine Veröffentlichung im Play Store lässt sich das Einnahme-Tagebuch komplett ausblenden (keine Karte, keine Kachel, keine Einstellung, keine Erinnerung). Auf GitHub: **Actions → Android-App bauen → Run workflow → Haken bei „Store-Variante bauen“**. Auf dem eigenen PC: vor dem Bauen `$env:VITE_HIDE_INTAKE = "1"` setzen. Die normale App behält es.
+
 ## Auf dem eigenen PC bauen
 
 ```powershell
