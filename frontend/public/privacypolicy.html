@@ -42,11 +42,15 @@
         <tr><td>KI-Foto-Scan</td><td>Verkleinertes Foto der Mahlzeit</td><td>Anthropic (Claude API, USA)</td><td>Kalorien/Makros aus dem Foto schätzen</td></tr>
         <tr><td>KI-Assistent</td><td>Deine Nachricht, optional der aktuelle App-Bildschirm als Kontext</td><td>Anthropic (Claude API, USA)</td><td>Frage beantworten</td></tr>
         <tr><td>KI-Rezept</td><td>Dein Freitext-Wunsch (z. B. „proteinreiches Abendessen“)</td><td>Anthropic (Claude API, USA)</td><td>Rezeptvorschlag erstellen</td></tr>
+        <tr><td>KI-Coach</td><td>Deine Frage; wenn der Schalter „Meine Daten teilen“ an ist, eine Zusammenfassung deiner Daten (Profil, Ziele, Mahlzeiten, Gewicht, Schritte, Training der letzten Tage)</td><td>Anthropic (Claude API, USA)</td><td>Persönliche Antworten geben</td></tr>
+        <tr><td>KI-Wochenplan</td><td>Kalorien- und Makroziele, Ernährungsform, Lebensmittel, die du nicht magst</td><td>Anthropic (Claude API, USA)</td><td>Wochenplan und Einkaufsliste erstellen</td></tr>
+        <tr><td>Rezept-Import</td><td>Link oder Text, den du einfügst; bei einem Link ruft unser Server die Seite ab</td><td>Die verlinkte Webseite; Anthropic (Claude API, USA)</td><td>Rezept aus einer Webseite übernehmen</td></tr>
+        <tr><td>Potenzial-Prognose</td><td>Dein Ziel in Worten, Zeitraum, Gewicht, Größe, Alter; optional dein verkleinertes Foto (Einwilligung, ab 18)</td><td>Anthropic (Claude API, USA); für ein Beispielbild nur, wenn der Betreiber einen Bilddienst eingerichtet hat, zusätzlich OpenAI oder Google (Foto und Beschreibung)</td><td>Ehrliche Prognose und optional ein Beispielbild erstellen</td></tr>
       </table>
       <p>Unser Server (gehostet bei Render) leitet diese Anfragen nur weiter und speichert die Inhalte nicht dauerhaft — Suchergebnisse werden bis zu 6 Stunden zwischengespeichert (Cache), um Anfragen zu sparen. Fotos werden nicht auf dem Server abgelegt. Alle Anfragen laufen anonym, ohne Nutzerkonto — wir können sie dir nicht persönlich zuordnen, ausser über deine IP-Adresse, die aus technischen Gründen (Missbrauchsschutz, Rate-Limiting) kurzzeitig verarbeitet wird.</p>
 
       <h2>4. Gesundheitsdaten (Health Connect / Apple Health)</h2>
-      <p>Auf Wunsch liest ASFIT deine Tagesschritte (und ggf. Gewicht, Workouts) aus Health Connect bzw. Apple Health, um Kalorienverbrauch zu schätzen. Diese Werte bleiben ausschließlich auf deinem Gerät und werden nicht an unseren Server gesendet. Du kannst den Zugriff jederzeit in den Einstellungen deines Geräts oder in ASFIT unter „Verbindungen“ widerrufen.</p>
+      <p>Auf Wunsch liest ASFIT deine Tagesschritte, dein Gewicht und deine Workouts der letzten Tage aus Health Connect bzw. Apple Health, um Kalorienverbrauch zu schätzen und den Trainingsverlauf zu ergänzen. Die Android-App fordert dafür ausschließlich diese drei Berechtigungen an (Lesen von Schritten, Gewicht und Trainingseinheiten), keine weiteren Gesundheitsdaten. Diese Werte bleiben ausschließlich auf deinem Gerät und werden nicht an unseren Server gesendet. Du kannst den Zugriff jederzeit in den Einstellungen deines Geräts oder in ASFIT unter „Verbindungen“ widerrufen.</p>
 
       <h2>5. Eigene Fotos (Profilbild, Fortschrittsfotos, eigenes Rezeptfoto)</h2>
       <p>Fotos, die du selbst auswählst (Profilbild, Fortschrittsvergleich, eigenes Rezeptbild), werden ausschließlich lokal auf deinem Gerät gespeichert und nirgends hochgeladen.</p>
@@ -92,11 +96,15 @@
         <tr><td>AI photo scan</td><td>A downscaled photo of your meal</td><td>Anthropic (Claude API, USA)</td><td>Estimate calories/macros from the photo</td></tr>
         <tr><td>AI assistant</td><td>Your message, optionally the current app screen as context</td><td>Anthropic (Claude API, USA)</td><td>Answer your question</td></tr>
         <tr><td>AI recipe</td><td>Your free-text request (e.g. "high-protein dinner")</td><td>Anthropic (Claude API, USA)</td><td>Generate a recipe suggestion</td></tr>
+        <tr><td>AI coach</td><td>Your question; if the switch "Share my data" is on, a summary of your data (profile, goals, meals, weight, steps, recent training)</td><td>Anthropic (Claude API, USA)</td><td>Give personal answers</td></tr>
+        <tr><td>AI weekly meal plan</td><td>Calorie and macro targets, diet, foods you dislike</td><td>Anthropic (Claude API, USA)</td><td>Create a weekly plan and shopping list</td></tr>
+        <tr><td>Recipe import</td><td>A link or text you paste; for a link our server fetches the page</td><td>The linked website; Anthropic (Claude API, USA)</td><td>Take over a recipe from a web page</td></tr>
+        <tr><td>Potential preview</td><td>Your goal in words, time frame, weight, height, age; optionally your downscaled photo (consent, 18+)</td><td>Anthropic (Claude API, USA); for an example picture only if the operator has set up an image service, additionally OpenAI or Google (photo and description)</td><td>Create an honest forecast and optionally an example picture</td></tr>
       </table>
       <p>Our server (hosted on Render) only forwards these requests and does not permanently store the content — search results are cached for up to 6 hours to reduce repeat requests. Photos are not stored on the server. All requests are anonymous, with no user account — we cannot personally identify you except via your IP address, which is processed briefly for technical reasons (abuse prevention, rate limiting).</p>
 
       <h2>4. Health data (Health Connect / Apple Health)</h2>
-      <p>On request, ASFIT reads your daily steps (and optionally weight, workouts) from Health Connect or Apple Health to estimate calories burned. These values stay on your device only and are never sent to our server. You can revoke access at any time in your device settings or in ASFIT under "Connections".</p>
+      <p>On request, ASFIT reads your daily steps, your weight and your workouts of the last days from Health Connect or Apple Health to estimate calories burned and complete your training history. The Android app requests only these three permissions (read steps, weight and exercise sessions), no other health data. These values stay on your device only and are never sent to our server. You can revoke access at any time in your device settings or in ASFIT under "Connections".</p>
 
       <h2>5. Your own photos (profile picture, progress photos, own recipe photo)</h2>
       <p>Photos you choose yourself (profile picture, progress comparison, your own recipe photo) are stored exclusively on your device and never uploaded anywhere.</p>
