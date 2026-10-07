@@ -8,6 +8,8 @@ import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
 import { PLAN_TEMPLATES, buildFromTemplate } from "./planTemplates.js";
+import { suggestNext } from "./progression.js";
+import { SEASONS, SEASON_KEYS, seasonFor, isSouthern } from "./seasons.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
 import { Health } from "@capgo/capacitor-health";
@@ -353,6 +355,63 @@ const STR = {
     waterSave: "Save",
     searchRetry: "Tap to retry",
     assistantTitle: "ASFIT Coach",
+    seasonLook: "Seasonal look",
+    seasonAuto: "Automatic",
+    seasonOff: "Off",
+    seasonHint: "Follows the date by itself: Halloween, Christmas, New Year, Valentine's Day, Easter and the four seasons. Light animations, switched off when your phone is set to reduce motion.",
+    season_halloween: "Happy Halloween",
+    season_christmas: "Merry Christmas",
+    season_newyear: "Happy New Year",
+    season_winter: "Winter time",
+    season_valentine: "Valentine's Day",
+    season_spring: "Spring time",
+    season_easter: "Happy Easter",
+    season_summer: "Summer time",
+    season_autumn: "Golden autumn",
+    suggestToday: "Suggestion for today",
+    suggest_up: "all sets done last time: add weight",
+    suggest_reps: "same weight, one more rep",
+    suggest_hold: "keep the weight, build up the reps",
+    suggestBody: "one more rep than your weakest set",
+    suggestUse: "use",
+    toolMealplan: "Meal plan",
+    mealplanTitle: "Meal plan",
+    mpIntro: "The AI creates a meal plan that fits your daily targets, with a ready shopping list.",
+    mpYourTargets: "Your daily targets",
+    mpDays: "How many days?",
+    mpDaysN: "{n} days",
+    mpDaysWord: "days",
+    mpMeals: "Meals per day",
+    mpMeals3: "3 meals",
+    mpMeals4: "3 + snack",
+    mpMeals5: "3 + 2 snacks",
+    mpDiet: "Diet",
+    mpDiet_none: "Everything",
+    mpDiet_vegetarian: "Vegetarian",
+    mpDiet_vegan: "Vegan",
+    mpDiet_pescatarian: "Pescatarian",
+    mpDislikes: "Foods you dislike or must avoid",
+    mpDislikesPh: "e.g. mushrooms, nuts, lactose",
+    mpGo: "Create plan",
+    mpBusyShort: "Creating …",
+    mpBusy: "Your plan is being created … this can take up to 2 minutes.",
+    mpErr: "That did not work. Please try again.",
+    mpLimit: "You have already created several plans today. Please try again tomorrow.",
+    mpOff: "This feature is not set up on the server yet.",
+    mpTarget: "Target {k} kcal",
+    mpTabPlan: "Plan",
+    mpTabShop: "Shopping list",
+    mpAdd: "Add to diary",
+    mpAdded: "Added",
+    mpAddDay: "Add the whole day",
+    mpIngredients: "Ingredients",
+    mpRedo: "Create new",
+    mpDayTotal: "Day total",
+    mpShopShare: "Share list",
+    mpShopCopied: "List copied",
+    mpShopReset: "Reset",
+    mpNote: "All values are estimates. The AI is no replacement for nutrition advice; with allergies or illness please ask a professional.",
+    mpTruncated: "The plan was shortened because the answer was too long.",
     tplTitle: "Start from a template",
     tplOr: "Or build your own plan:",
     tplHint: "New here? Pick a ready-made plan →",
@@ -1299,6 +1358,63 @@ const STR = {
     waterSave: "Speichern",
     searchRetry: "Tippen zum Wiederholen",
     assistantTitle: "ASFIT-Coach",
+    seasonLook: "Jahreszeiten-Look",
+    seasonAuto: "Automatisch",
+    seasonOff: "Aus",
+    seasonHint: "Passt sich dem Datum von selbst an: Halloween, Weihnachten, Neujahr, Valentinstag, Ostern und die vier Jahreszeiten. Leichte Animationen, bei \"Bewegung reduzieren\" im Handy ausgeschaltet.",
+    season_halloween: "Happy Halloween",
+    season_christmas: "Frohe Weihnachten",
+    season_newyear: "Frohes neues Jahr",
+    season_winter: "Winterzeit",
+    season_valentine: "Valentinstag",
+    season_spring: "Frühlingszeit",
+    season_easter: "Frohe Ostern",
+    season_summer: "Sommerzeit",
+    season_autumn: "Goldener Herbst",
+    suggestToday: "Vorschlag für heute",
+    suggest_up: "letztes Mal alles geschafft: Gewicht erhöhen",
+    suggest_reps: "gleiches Gewicht, eine Wiederholung mehr",
+    suggest_hold: "Gewicht halten, Wiederholungen aufbauen",
+    suggestBody: "eine Wiederholung mehr als dein schwächster Satz",
+    suggestUse: "übernehmen",
+    toolMealplan: "Wochenplan",
+    mealplanTitle: "Wochenplan",
+    mpIntro: "Die KI erstellt dir einen Essensplan, der zu deinen Tageszielen passt, mit fertiger Einkaufsliste.",
+    mpYourTargets: "Deine Tagesziele",
+    mpDays: "Wie viele Tage?",
+    mpDaysN: "{n} Tage",
+    mpDaysWord: "Tage",
+    mpMeals: "Mahlzeiten pro Tag",
+    mpMeals3: "3 Mahlzeiten",
+    mpMeals4: "3 + Snack",
+    mpMeals5: "3 + 2 Snacks",
+    mpDiet: "Ernährungsweise",
+    mpDiet_none: "Alles",
+    mpDiet_vegetarian: "Vegetarisch",
+    mpDiet_vegan: "Vegan",
+    mpDiet_pescatarian: "Pescetarisch",
+    mpDislikes: "Das mag ich nicht oder darf ich nicht essen",
+    mpDislikesPh: "z. B. Pilze, Nüsse, Laktose",
+    mpGo: "Plan erstellen",
+    mpBusyShort: "Wird erstellt …",
+    mpBusy: "Dein Plan wird erstellt … das kann bis zu 2 Minuten dauern.",
+    mpErr: "Das hat nicht geklappt. Bitte versuch es nochmal.",
+    mpLimit: "Du hast heute schon mehrere Pläne erstellt. Versuch es morgen wieder.",
+    mpOff: "Diese Funktion ist auf dem Server noch nicht eingerichtet.",
+    mpTarget: "Ziel {k} kcal",
+    mpTabPlan: "Plan",
+    mpTabShop: "Einkaufsliste",
+    mpAdd: "Ins Tagebuch",
+    mpAdded: "Eingetragen",
+    mpAddDay: "Ganzen Tag eintragen",
+    mpIngredients: "Zutaten",
+    mpRedo: "Neu erstellen",
+    mpDayTotal: "Tagessumme",
+    mpShopShare: "Liste teilen",
+    mpShopCopied: "Liste kopiert",
+    mpShopReset: "Zurücksetzen",
+    mpNote: "Alle Werte sind Schätzungen. Die KI ersetzt keine Ernährungsberatung; bei Allergien oder Krankheiten bitte eine Fachperson fragen.",
+    mpTruncated: "Der Plan wurde gekürzt, weil die Antwort zu lang war.",
     tplTitle: "Mit einer Vorlage starten",
     tplOr: "Oder baue deinen Plan selbst:",
     tplHint: "Neu hier? Wähle einen fertigen Plan →",
@@ -3290,8 +3406,9 @@ function FastingScreen({ t, lang }) {
   const elapsed = a ? Math.max(0, now - a.start) : 0;
   const reached = !!a && elapsed >= targetMs;
   const start = () => {
-    setFast((f) => ({ ...f, active: { start: Date.now() - ago * 3600000, hours: f.plan } }));
-    setNow(Date.now());
+    const t0 = Date.now(); // one moment for both, so "started 2 h ago" shows 2 h 00 min right away
+    setFast((f) => ({ ...f, active: { start: t0 - ago * 3600000, hours: f.plan } }));
+    setNow(t0);
   };
   const stop = () => setFast((f) => (f.active ? { ...f, active: null, history: [{ start: f.active.start, end: Date.now(), hours: f.active.hours }, ...f.history].slice(0, 60) } : f));
   const week = fast.history.filter((h) => Date.now() - h.end <= 7 * 86400000);
@@ -3402,6 +3519,192 @@ function FastHomeCard({ t, onOpen }) {
   );
 }
 
+// ---------------- Meal plan with shopping list (AI) ----------------
+const MP_DIETS = ["none", "vegetarian", "vegan", "pescatarian"];
+
+function MealPlanScreen({ t, lang, targets, onAddToMeal }) {
+  const [plan, setPlan] = usePersisted("mealplan", null);
+  const [form, setForm] = useState({ days: 5, meals: 4, diet: "none", dislikes: "" });
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const [view, setView] = useState("plan");
+  const [dayIdx, setDayIdx] = useState(0);
+  const [open, setOpen] = useState(null);
+  const [added, setAdded] = useState({});
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, lineHeight: 1.5 };
+  const locale = lang === "de" ? "de-DE" : "en-GB";
+  const slotLabel = { breakfast: t.breakfast, lunch: t.lunch, dinner: t.dinner, snacks: t.snacks };
+
+  const create = async () => {
+    if (busy) return;
+    setBusy(true);
+    setMsg(null);
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 170000);
+    try {
+      const res = await fetch(API_BASE + "/api/mealplan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lang, days: form.days, meals: form.meals, diet: form.diet, dislikes: form.dislikes, kcal: targets.kcal, protein: targets.protein, carbs: targets.carbs, fat: targets.fat }),
+        signal: ctl.signal,
+      });
+      if (res.status === 429) return setMsg(t.mpLimit);
+      if (res.status === 503) return setMsg(t.mpOff);
+      if (!res.ok) return setMsg(t.mpErr);
+      const d = await res.json();
+      setPlan({ createdAt: Date.now(), days: d.days, shopping: d.shopping || [], targets: d.targets, diet: d.diet, truncated: !!d.truncated, checked: {} });
+      setDayIdx(0);
+      setView("plan");
+      setOpen(null);
+      setAdded({});
+    } catch {
+      setMsg(t.mpErr);
+    } finally {
+      clearTimeout(timer);
+      setBusy(false);
+    }
+  };
+
+  const foodOf = (m) => ({ name: m.name, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
+  const addMeal = (di, mi, m) => {
+    onAddToMeal(m.slot, foodOf(m));
+    setAdded((a) => ({ ...a, [di + "-" + mi]: true }));
+  };
+
+  if (!plan || !plan.days) {
+    const chipRow = (label, items, cur, set) => (
+      <>
+        <div style={{ ...small, margin: "16px 0 6px" }}>{label}</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {items.map(([v, l]) => (
+            <Chip key={v} label={l} active={cur === v} onClick={() => set(v)} />
+          ))}
+        </div>
+      </>
+    );
+    return (
+      <div data-mealplan-form style={{ padding: "0 20px 28px" }}>
+        <div style={{ ...small, marginBottom: 6 }}>{t.mpIntro}</div>
+        <Card style={{ marginTop: 12, padding: "12px 14px" }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold, marginBottom: 6 }}>{t.mpYourTargets}</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{targets.kcal} kcal</div>
+          <div style={small}>{t.protein} {targets.protein} g · {t.carbs} {targets.carbs} g · {t.fat} {targets.fat} g</div>
+        </Card>
+        {chipRow(t.mpDays, [3, 5, 7].map((n) => [n, t.mpDaysN.replace("{n}", n)]), form.days, (v) => setForm((f) => ({ ...f, days: v })))}
+        {chipRow(t.mpMeals, [[3, t.mpMeals3], [4, t.mpMeals4], [5, t.mpMeals5]], form.meals, (v) => setForm((f) => ({ ...f, meals: v })))}
+        {chipRow(t.mpDiet, MP_DIETS.map((d) => [d, t["mpDiet_" + d]]), form.diet, (v) => setForm((f) => ({ ...f, diet: v })))}
+        <div style={{ ...small, margin: "16px 0 6px" }}>{t.mpDislikes}</div>
+        <input data-mp-dislikes value={form.dislikes} onChange={(e) => setForm((f) => ({ ...f, dislikes: e.target.value.slice(0, 200) }))} placeholder={t.mpDislikesPh} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+        <button data-mp-go onClick={create} disabled={busy} style={{ width: "100%", marginTop: 22, background: busy ? COLORS.raised : COLORS.gold, color: busy ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "14px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: busy ? "default" : "pointer" }}>
+          {busy ? t.mpBusyShort : "📅 " + t.mpGo}
+        </button>
+        {busy && <div data-mp-busy style={{ ...small, marginTop: 10, textAlign: "center" }}>{t.mpBusy}</div>}
+        {msg && <div data-mp-msg style={{ marginTop: 12, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.coral, lineHeight: 1.45 }}>{msg}</div>}
+        <div style={{ ...small, fontSize: 11.5, marginTop: 20 }}>{t.mpNote}</div>
+      </div>
+    );
+  }
+
+  const day = plan.days[Math.min(dayIdx, plan.days.length - 1)];
+  const tg = plan.targets || targets;
+  const checked = plan.checked || {};
+  const totalItems = plan.shopping.reduce((n, g) => n + g.items.length, 0);
+  const doneItems = Object.values(checked).filter(Boolean).length;
+  const toggle = (k) => setPlan((p) => ({ ...p, checked: { ...(p.checked || {}), [k]: !(p.checked || {})[k] } }));
+  const shareList = async () => {
+    const text = plan.shopping.map((g) => g.group + "\n" + g.items.map((i) => (checked[g.group + "|" + i] ? "☑ " : "☐ ") + i).join("\n")).join("\n\n");
+    try {
+      if (navigator.share) await navigator.share({ title: t.mpTabShop, text });
+      else {
+        await navigator.clipboard.writeText(text);
+        setMsg(t.mpShopCopied);
+        setTimeout(() => setMsg(null), 1800);
+      }
+    } catch {
+      /* cancelled */
+    }
+  };
+
+  return (
+    <div data-mealplan style={{ padding: "0 20px 28px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ ...small }}>{t.mpTarget.replace("{k}", tg.kcal)} · {plan.days.length} {t.mpDaysWord}</div>
+        <span data-mp-redo onClick={() => { setPlan(null); setMsg(null); }} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>↻ {t.mpRedo}</span>
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <Chip label={t.mpTabPlan} active={view === "plan"} onClick={() => setView("plan")} />
+        <Chip label={t.mpTabShop + " (" + doneItems + "/" + totalItems + ")"} active={view === "shop"} onClick={() => setView("shop")} />
+      </div>
+
+      {view === "plan" ? (
+        <>
+          <div data-mp-days style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 12, paddingBottom: 2 }}>
+            {plan.days.map((d, i) => (
+              <Chip key={i} label={new Date(plan.createdAt + i * 86400000).toLocaleDateString(locale, { weekday: "short", day: "numeric" })} active={dayIdx === i} onClick={() => { setDayIdx(i); setOpen(null); }} />
+            ))}
+          </div>
+          <div data-mp-total style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: COLORS.raised, borderRadius: 14, padding: "11px 14px", marginBottom: 12 }}>
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.mpDayTotal}</span>
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>{day.total.kcal} kcal · {day.total.protein} g {t.protein}</span>
+          </div>
+          {day.meals.map((m, mi) => {
+            const k = dayIdx + "-" + mi;
+            return (
+              <Card key={k} style={{ marginBottom: 10, padding: "12px 14px" }}>
+                <div data-mp-meal onClick={() => setOpen(open === k ? null : k)} style={{ cursor: "pointer" }}>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase", color: COLORS.gold }}>{slotLabel[m.slot]}</div>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginTop: 3 }}>{m.name}</div>
+                  <div style={{ ...small, marginTop: 3 }}>{m.kcal} kcal · {m.protein} g {t.protein} · {m.carbs} g {t.carbs} · {m.fat} g {t.fat}</div>
+                </div>
+                {open === k && (
+                  <div data-mp-ingredients style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid " + COLORS.border }}>
+                    <div style={{ ...small, fontWeight: 600, marginBottom: 4 }}>{t.mpIngredients}</div>
+                    {m.ingredients.map((x) => (
+                      <div key={x} style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text, padding: "2px 0" }}>• {x}</div>
+                    ))}
+                  </div>
+                )}
+                <div data-mp-add onClick={() => !added[k] && addMeal(dayIdx, mi, m)} style={{ marginTop: 10, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: added[k] ? COLORS.teal : COLORS.gold, cursor: added[k] ? "default" : "pointer" }}>
+                  {added[k] ? "✓ " + t.mpAdded : "＋ " + t.mpAdd}
+                </div>
+              </Card>
+            );
+          })}
+          <button data-mp-addday onClick={() => day.meals.forEach((m, mi) => { if (!added[dayIdx + "-" + mi]) addMeal(dayIdx, mi, m); })} style={{ width: "100%", background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer", marginTop: 4 }}>
+            {t.mpAddDay}
+          </button>
+        </>
+      ) : (
+        <>
+          {plan.shopping.map((g) => (
+            <div key={g.group} style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.dim, margin: "0 2px 6px" }}>{g.group}</div>
+              <Card style={{ padding: 4 }}>
+                {g.items.map((it, i) => {
+                  const k = g.group + "|" + it;
+                  return (
+                    <div key={k} data-mp-item onClick={() => toggle(k)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderBottom: i < g.items.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}>
+                      <span style={{ width: 20, height: 20, borderRadius: 6, border: "1.5px solid " + (checked[k] ? COLORS.gold : COLORS.border), background: checked[k] ? COLORS.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{checked[k] && <Check size={13} color={COLORS.bg} />}</span>
+                      <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: checked[k] ? COLORS.dim : COLORS.text, textDecoration: checked[k] ? "line-through" : "none" }}>{it}</span>
+                    </div>
+                  );
+                })}
+              </Card>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <button data-mp-share onClick={shareList} style={{ flex: 1, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t.mpShopShare}</button>
+            <button data-mp-reset onClick={() => setPlan((p) => ({ ...p, checked: {} }))} style={{ background: COLORS.raised, color: COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>{t.mpShopReset}</button>
+          </div>
+          {msg && <div style={{ ...small, marginTop: 10, color: COLORS.gold }}>{msg}</div>}
+        </>
+      )}
+      {plan.truncated && <div style={{ ...small, marginTop: 14 }}>{t.mpTruncated}</div>}
+      <div style={{ ...small, fontSize: 11.5, marginTop: 18 }}>{t.mpNote}</div>
+    </div>
+  );
+}
+
 function BackupReminder({ t, onOpen }) {
   return (
     <Card onClick={onOpen} style={{ marginBottom: 12, cursor: "pointer", border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
@@ -3460,6 +3763,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   const latestNote = notes.length ? notes[0] : null;
 
   const [potential] = usePersisted("potential", null);
+  const { key: sKey } = useSeason();
   const locale = lang === "de" ? "de-DE" : "en-US";
   const hour = new Date().getHours();
   const dateLabel = new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
@@ -3486,7 +3790,10 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, lineHeight: 1.2 }}>
             {hour < 11 ? t.greetingPrefix : hour < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
           </div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3, textTransform: "capitalize" }}>{dateLabel}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3, textTransform: "capitalize" }}>
+            {dateLabel}
+            {sKey && <span data-season-chip style={{ textTransform: "none" }}> · {SEASONS[sKey].emoji} {t["season_" + sKey]}</span>}
+          </div>
         </div>
       </div>
 
@@ -3597,7 +3904,7 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
   );
 }
 
-function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood, onOpenIntake, onOpenFasting = () => {}, kcalGoal = 0 }) {
+function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, history, onOpenFoodSearch, onOpenRecipes, onOpenMyMeals, onOpenCheats, onSaveMyMeal, onDeleteItem, onCopyItems, onEditItem, pantry = [], onOpenPantry, onImportText, onShare, onOpenFastFood, onOpenIntake, onOpenFasting = () => {}, onOpenMealPlan = () => {}, kcalGoal = 0 }) {
   const [linkText, setLinkText] = useState("");
   const [showLink, setShowLink] = useState(false);
   const todayMs = new Date(new Date().toLocaleDateString("sv") + "T00:00").getTime();
@@ -3646,6 +3953,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
     { k: "pantry", emoji: "🥫", label: t.toolPantry, onClick: onOpenPantry },
     { k: "fastfood", emoji: "🍔", label: t.toolFastFood, onClick: onOpenFastFood, attr: "data-fastfood" },
     { k: "fast", emoji: "⏱️", label: t.toolFast, onClick: onOpenFasting },
+    { k: "mealplan", emoji: "📅", label: t.toolMealplan, onClick: onOpenMealPlan },
     { k: "mine", emoji: "⭐", label: t.toolMyMeals, onClick: onOpenMyMeals },
     { k: "intake", emoji: "💊", label: t.toolIntake, onClick: onOpenIntake, attr: "data-intake-nutrition" },
     { k: "cheat", emoji: "🍕", label: t.toolCheat, sub: nextCheat ? (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : null, onClick: onOpenCheats },
@@ -4613,6 +4921,9 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
         return { ...en, sets: [...en.sets, fresh] };
       })
     );
+  // one tap puts the suggested weight and reps in as the next set
+  const useSuggestion = (ei, sug) =>
+    onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: [...en.sets, { weight: sug.weight > 0 ? String(sug.weight) : "", reps: String(sug.reps) }] })));
   const toggleDone = (ei, si) => {
     unlockAudio();
     const was = entries[ei].sets[si].done;
@@ -4736,6 +5047,20 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
                 {t.lastTime}: {lastSets(en.key).slice(0, 4).map((x) => (x.weight > 0 ? x.weight + " kg × " : "") + x.reps).join(" · ")}
               </div>
             )}
+            {!en.cardio && (() => {
+              const sug = suggestNext(lastSets(en.key), ex && ex.muscle);
+              if (!sug) return null;
+              return (
+                <div data-suggest onClick={() => useSuggestion(ei, sug)} style={{ display: "flex", alignItems: "center", gap: 8, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 12, padding: "8px 12px", margin: "-2px 0 12px", cursor: "pointer" }}>
+                  <span style={{ fontSize: 15 }}>💡</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text }}>{t.suggestToday}: {sug.weight > 0 ? String(sug.weight).replace(".", ",") + " kg × " : ""}{sug.reps}</div>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 1 }}>{sug.weight === 0 ? t.suggestBody : t["suggest_" + sug.kind]}</div>
+                  </div>
+                  <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.gold, whiteSpace: "nowrap" }}>+ {t.suggestUse}</span>
+                </div>
+              );
+            })()}
             {en.cardio && <input type="number" inputMode="decimal" min="0" value={en.minutes} onChange={(e) => updateMinutes(ei, e.target.value)} placeholder={t.minutesLabel} style={numInputStyle} />}
             {(en.sets || []).map((s, si) => (
               <div key={si} style={{ display: "grid", gridTemplateColumns: "22px 1fr 1fr 30px 24px", gap: 8, alignItems: "center", marginBottom: 8, opacity: s.done ? 0.6 : 1 }}>
@@ -4815,7 +5140,130 @@ function Confetti() {
 
 // The streak mascot "Sprout": strong on a long streak, friendly while it runs,
 // worn out (pale, leaves hanging, dumbbell on the floor) once the streak is lost.
-function Sprout({ mood = "ok", size = 64, who = "none" }) {
+// ---------------- Seasonal look ----------------
+const SeasonCtx = createContext({ key: null });
+const useSeason = () => useContext(SeasonCtx);
+
+// slow particles (falling, floating or rising) over the whole app; they never take touches and are off with "reduce motion"
+function SeasonLayer({ season }) {
+  const def = SEASONS[season];
+  const items = useMemo(() => {
+    if (!def) return [];
+    return Array.from({ length: 14 }, (_, i) => {
+      const dur = 12 + ((i * 5) % 9);
+      return {
+        emoji: def.particles[i % def.particles.length],
+        left: (i * 37 + 11) % 96,
+        top: 8 + ((i * 23) % 52),
+        size: 13 + ((i * 7) % 9),
+        dur,
+        delay: -((i * 3.1) % dur),
+        dx: ((i * 13) % 50) - 25,
+        dy: ((i * 17) % 60) - 30,
+      };
+    });
+  }, [season]);
+  if (!def) return null;
+  const anim = def.motion === "fall" ? "asfitSeasonFall" : def.motion === "rise" ? "asfitSeasonRise" : "asfitSeasonFloat";
+  return (
+    <div data-season-layer={season} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 40 }}>
+      <style>{`
+        @keyframes asfitSeasonFall { 0% { transform: translate3d(0,-12vh,0) rotate(0deg); opacity: 0 } 10% { opacity: .85 } 90% { opacity: .85 } 100% { transform: translate3d(var(--dx),108vh,0) rotate(300deg); opacity: 0 } }
+        @keyframes asfitSeasonRise { 0% { transform: translate3d(0,108vh,0) scale(.8); opacity: 0 } 15% { opacity: .8 } 85% { opacity: .8 } 100% { transform: translate3d(var(--dx),-12vh,0) scale(1.1); opacity: 0 } }
+        @keyframes asfitSeasonFloat { 0% { transform: translate3d(-12vw,0,0); opacity: 0 } 10% { opacity: .85 } 50% { transform: translate3d(50vw,var(--dy),0) } 90% { opacity: .85 } 100% { transform: translate3d(112vw,0,0); opacity: 0 } }
+        @media (prefers-reduced-motion: reduce) { .asfit-season-p { display: none !important } }
+      `}</style>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 260, background: "radial-gradient(ellipse at 50% -12%, " + def.tint + "38, transparent 72%)" }} />
+      {items.map((p, i) => (
+        <span key={i} className="asfit-season-p" style={{ position: "absolute", top: def.motion === "float" ? p.top + "%" : 0, left: def.motion === "float" ? 0 : p.left + "%", fontSize: p.size, lineHeight: 1, animation: anim + " " + p.dur + "s linear " + p.delay + "s infinite", "--dx": p.dx + "px", "--dy": p.dy + "px", willChange: "transform" }}>
+          {p.emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// what Sprout wears in each season (drawn on top of the leaves / face)
+function seasonAccessory(season, body) {
+  switch (season) {
+    case "halloween":
+      return (
+        <g data-season-acc="halloween">
+          <path d="M44 62 L75 6 L106 62 Z" fill="#4B2570" />
+          <ellipse cx="75" cy="62" rx="40" ry="8" fill="#3A1C58" />
+          <rect x="58" y="46" width="34" height="7" fill="#FF7A1A" />
+        </g>
+      );
+    case "christmas":
+      return (
+        <g data-season-acc="christmas">
+          <path d="M42 64 Q56 14 102 26 Q98 42 108 64 Z" fill="#D93A3A" />
+          <ellipse cx="75" cy="64" rx="38" ry="8" fill="#FFFFFF" />
+          <circle cx="103" cy="25" r="8" fill="#FFFFFF" />
+        </g>
+      );
+    case "newyear":
+      return (
+        <g data-season-acc="newyear">
+          <path d="M52 62 L75 8 L98 62 Z" fill="#F2C14E" />
+          <path d="M60 46 L90 46 M56 56 L94 56" stroke="#E0457F" strokeWidth="5" />
+          <circle cx="75" cy="8" r="6" fill="#E0457F" />
+        </g>
+      );
+    case "winter":
+      return (
+        <g data-season-acc="winter">
+          <path d="M36 78 Q75 96 114 78" stroke="#3C7DD9" strokeWidth="11" fill="none" strokeLinecap="round" />
+          <path d="M104 84 L112 112" stroke="#3C7DD9" strokeWidth="11" strokeLinecap="round" />
+          <path d="M42 80 Q75 92 108 80" stroke="#FFFFFF" strokeWidth="2.4" fill="none" strokeDasharray="5 6" />
+        </g>
+      );
+    case "valentine":
+      return (
+        <g data-season-acc="valentine">
+          <path d="M75 30 C 58 6, 32 22, 75 52 C 118 22, 92 6, 75 30 Z" fill="#FF3D6E" />
+        </g>
+      );
+    case "spring":
+      return (
+        <g data-season-acc="spring" transform="translate(40 38)">
+          {[0, 72, 144, 216, 288].map((a) => (
+            <ellipse key={a} cx="0" cy="-8" rx="5" ry="8" fill="#FF9EC4" transform={"rotate(" + a + ")"} />
+          ))}
+          <circle r="5" fill="#FFD84A" />
+        </g>
+      );
+    case "easter":
+      return (
+        <g data-season-acc="easter">
+          <ellipse cx="56" cy="26" rx="9" ry="26" fill={body} transform="rotate(-12 56 26)" />
+          <ellipse cx="56" cy="28" rx="4.5" ry="19" fill="#FFB7C9" transform="rotate(-12 56 28)" />
+          <ellipse cx="94" cy="26" rx="9" ry="26" fill={body} transform="rotate(12 94 26)" />
+          <ellipse cx="94" cy="28" rx="4.5" ry="19" fill="#FFB7C9" transform="rotate(12 94 28)" />
+        </g>
+      );
+    case "summer":
+      return (
+        <g data-season-acc="summer">
+          <rect x="46" y="78" width="28" height="18" rx="7" fill="#1F1F24" />
+          <rect x="76" y="78" width="28" height="18" rx="7" fill="#1F1F24" />
+          <path d="M74 85 L76 85" stroke="#1F1F24" strokeWidth="4" />
+          <path d="M46 84 L38 80 M104 84 L112 80" stroke="#1F1F24" strokeWidth="3" strokeLinecap="round" />
+          <path d="M52 83 L58 83" stroke="#FFFFFF" strokeWidth="2" opacity="0.5" />
+        </g>
+      );
+    case "autumn":
+      return (
+        <g data-season-acc="autumn">
+          <text x="75" y="42" fontSize="34" textAnchor="middle">🍁</text>
+        </g>
+      );
+    default:
+      return null;
+  }
+}
+
+function Sprout({ mood = "ok", size = 64, who = "none", season = null }) {
   const weak = mood === "weak";
   const strong = mood === "strong";
   const body = weak ? "#B9A6A6" : "#E3262E";
@@ -4924,6 +5372,7 @@ function Sprout({ mood = "ok", size = 64, who = "none" }) {
         )}
         {mood === "ok" && bell(122, 128, 20)}
         {weak && bell(128, 138, 18, 10)}
+        {season && seasonAccessory(season, body)}
       </g>
     </svg>
   );
@@ -4932,17 +5381,18 @@ function Sprout({ mood = "ok", size = 64, who = "none" }) {
 // the streak mascot follows the onboarding choice; "diverse" gets both
 function SproutMascot({ mood, size }) {
   const { gender } = useGender();
+  const { key: season } = useSeason();
   if (gender === "diverse") {
     return (
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
         <div style={{ marginRight: -size * 0.1 }}>
-          <Sprout mood={mood} size={size * 0.86} who="female" />
+          <Sprout mood={mood} size={size * 0.86} who="female" season={season} />
         </div>
-        <Sprout mood={mood} size={size * 0.86} who="male" />
+        <Sprout mood={mood} size={size * 0.86} who="male" season={season} />
       </div>
     );
   }
-  return <Sprout mood={mood} size={size} who={gender === "female" ? "female" : "male"} />;
+  return <Sprout mood={mood} size={size} who={gender === "female" ? "female" : "male"} season={season} />;
 }
 
 function Celebration({ t, data, onClose }) {
@@ -10300,6 +10750,15 @@ function DisplaySettings({ t, lang, setLang, display }) {
         <Chip label={t.setThemeMale} active={display.colorTheme === "male"} onClick={() => display.setColorTheme("male")} />
         <Chip label={t.setThemeDiverse} active={display.colorTheme === "diverse"} onClick={() => display.setColorTheme("diverse")} />
       </div>
+      <SettingsLabel>{t.seasonLook}</SettingsLabel>
+      <div data-season-chips style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Chip label={t.seasonAuto} active={display.season === "auto"} onClick={() => display.setSeason("auto")} />
+        <Chip label={t.seasonOff} active={display.season === "off"} onClick={() => display.setSeason("off")} />
+        {SEASON_KEYS.map((k) => (
+          <Chip key={k} label={SEASONS[k].emoji + " " + t["season_" + k]} active={display.season === k} onClick={() => display.setSeason(k)} />
+        ))}
+      </div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 8, lineHeight: 1.5 }}>{t.seasonHint}</div>
       <SettingsLabel>{t.setTextSize}</SettingsLabel>
       <div style={{ display: "flex", gap: 8 }}>
         <Chip label={t.setSmall} active={display.textSize === "s"} onClick={() => display.setTextSize("s")} />
@@ -10865,6 +11324,20 @@ export default function AsmarFitApp() {
   // what the assistant may know about the user (sent with each question, only while "aiData" is on)
   const [measures, setMeasures] = usePersisted("measures", []);
   const [reviewState, setReviewState] = usePersisted("weeklyReview", { lastISO: null });
+  const [seasonMode, setSeasonMode] = usePersisted("season", "auto"); // "auto" | "off" | a season key (to try them out)
+  const dayStamp = todayStamp();
+  const seasonKey = useMemo(() => {
+    if (seasonMode === "off") return null;
+    if (SEASONS[seasonMode]) return seasonMode;
+    let tz = "";
+    try {
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      /* no timezone info */
+    }
+    return seasonFor(new Date(), isSouthern(tz));
+  }, [seasonMode, dayStamp]);
+  const seasonCtx = useMemo(() => ({ key: seasonKey }), [seasonKey]);
   const [aiOn, setAiOn] = usePersisted("aiData", true);
   const aiData = useMemo(() => {
     const day = (x) => String(x).slice(0, 10);
@@ -11586,6 +12059,10 @@ export default function AsmarFitApp() {
     content = <LegalPageScreen src="/impressum.html" />;
     topTitle = t.setImprintRow;
     showBack = () => setOverlay("settings");
+  } else if (overlay === "mealplan") {
+    content = <MealPlanScreen t={t} lang={lang} targets={{ kcal: profile.kcalGoal, protein: profile.macroTargets.protein, carbs: profile.macroTargets.carbs, fat: profile.macroTargets.fat }} onAddToMeal={(slot, food) => setMeals((m) => ({ ...m, [slot]: [...m[slot], food] }))} />;
+    topTitle = t.mealplanTitle;
+    showBack = () => setOverlay(null);
   } else if (overlay === "fasting") {
     content = <FastingScreen t={t} lang={lang} />;
     topTitle = t.fastTitle;
@@ -11675,7 +12152,7 @@ export default function AsmarFitApp() {
     topTitle = t.setGoalsRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsDisplay") {
-    content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize, intro: introOn, setIntro: setIntroOn }} />;
+    content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize, intro: introOn, setIntro: setIntroOn, season: seasonMode, setSeason: setSeasonMode }} />;
     topTitle = t.setDisplayRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsReminders") {
@@ -11778,6 +12255,7 @@ export default function AsmarFitApp() {
           onOpenPantry={() => openPantry(null)}
           onOpenFastFood={() => setOverlay("fastfood")}
           onOpenFasting={() => setOverlay("fasting")}
+          onOpenMealPlan={() => setOverlay("mealplan")}
           onOpenIntake={() => {
             setIntakeReturn(null);
             setOverlay("intake");
@@ -11856,6 +12334,7 @@ export default function AsmarFitApp() {
   const genderCtx = useMemo(() => ({ gender: profile.gender === "female" || profile.gender === "male" ? profile.gender : "diverse", showAll: showAllEx, setShowAll: setShowAllEx }), [profile.gender, showAllEx]);
   return (
     <GenderCtx.Provider value={genderCtx}>
+    <SeasonCtx.Provider value={seasonCtx}>
     <div style={{ display: "flex", justifyContent: "center", padding: isPhone ? 0 : "24px 12px", minHeight: "100%" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
@@ -11863,7 +12342,7 @@ export default function AsmarFitApp() {
         input[type="range"] { -webkit-appearance: none; height: 4px; border-radius: 2px; background: ${COLORS.raised}; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: ${COLORS.gold}; cursor: pointer; }
       `}</style>
-      <div style={isPhone ? { width: "100%", height: "100dvh", display: "flex", flexDirection: "column", background: COLORS.bg, overflow: "hidden", fontFamily: "Inter, sans-serif", paddingTop: "env(safe-area-inset-top)" } : { width: 390, maxWidth: "100%", background: COLORS.bg, borderRadius: 40, border: "10px solid #0A0A0B", overflow: "hidden", boxShadow: "0 30px 60px rgba(0,0,0,0.45)", fontFamily: "Inter, sans-serif" }}>
+      <div style={isPhone ? { position: "relative", width: "100%", height: "100dvh", display: "flex", flexDirection: "column", background: COLORS.bg, overflow: "hidden", fontFamily: "Inter, sans-serif", paddingTop: "env(safe-area-inset-top)" } : { position: "relative", width: 390, maxWidth: "100%", background: COLORS.bg, borderRadius: 40, border: "10px solid #0A0A0B", overflow: "hidden", boxShadow: "0 30px 60px rgba(0,0,0,0.45)", fontFamily: "Inter, sans-serif" }}>
         {!isPhone && (
           <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 26px 0", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>
             <StatusBarClock />
@@ -11902,6 +12381,7 @@ export default function AsmarFitApp() {
           </>
         )}
         <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
+        {onboarded && seasonKey && <SeasonLayer season={seasonKey} />}
         {onboarded && incomingShare && <ShareImportModal t={t} lang={lang} item={incomingShare} onImport={applyShare} onClose={() => setIncomingShare(null)} />}
         {shareToast && (
           <div style={{ position: "fixed", left: 20, right: 20, bottom: 96, maxWidth: 350, margin: "0 auto", background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 1100 }}>
@@ -11911,6 +12391,7 @@ export default function AsmarFitApp() {
         {introOn && !introDone && <StartIntro onDone={finishIntro} full={introFull} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
       </div>
     </div>
+    </SeasonCtx.Provider>
     </GenderCtx.Provider>
   );
 }
