@@ -13,6 +13,7 @@ import { SEASONS, SEASON_KEYS, seasonFor, isSouthern } from "./seasons.js";
 import { lightOf, lightShares, LIGHT_COLORS, LIGHT_KEYS } from "./foodLight.js";
 import { QUICK_PRESETS, presetByKey, buildTimeline, totalSec, moveCount, presetMinutes, locate, activeMinutes } from "./quickWorkouts.js";
 import { speak, stopSpeaking, beep, unlockAudio, holdScreen } from "./voice.js";
+import { installA11y } from "./a11y.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
 import { Health } from "@capgo/capacitor-health";
@@ -11917,6 +11918,17 @@ export default function AsmarFitApp() {
 
   const t = useMemo(() => STR[lang], [lang]);
 
+  // accessibility: tappable elements become buttons (keyboard, screen reader), icon buttons get names; the page language follows the app language
+  const a11y = useRef(null);
+  useEffect(() => {
+    a11y.current = installA11y(lang);
+    return () => a11y.current && a11y.current.stop();
+  }, []);
+  useEffect(() => {
+    document.documentElement.lang = lang === "de" ? "de" : "en";
+    if (a11y.current) a11y.current.relabel(lang);
+  }, [lang]);
+
   // One scroll container serves every tab and overlay, so a screen used to open at
   // whatever scroll position the previous one had (e.g. Nutrition landing half-way down
   // after scrolling Home). Every screen change starts at the top.
@@ -12786,6 +12798,7 @@ export default function AsmarFitApp() {
     <div style={{ display: "flex", justifyContent: "center", padding: isPhone ? 0 : "24px 12px", minHeight: "100%" }}>
       <style>{`
         * { box-sizing: border-box; }
+        [data-a11y-auto]:focus-visible { outline: 2px solid ${COLORS.gold}; outline-offset: 2px; }
         input[type="range"] { -webkit-appearance: none; height: 4px; border-radius: 2px; background: ${COLORS.raised}; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: ${COLORS.gold}; cursor: pointer; }
       `}</style>
