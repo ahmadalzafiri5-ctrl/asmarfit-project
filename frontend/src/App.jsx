@@ -14,6 +14,8 @@ import { lightOf, lightShares, LIGHT_COLORS, LIGHT_KEYS } from "./foodLight.js";
 import { QUICK_PRESETS, presetByKey, buildTimeline, totalSec, moveCount, presetMinutes, locate, activeMinutes } from "./quickWorkouts.js";
 import { speak, stopSpeaking, beep, unlockAudio, holdScreen } from "./voice.js";
 import { installA11y } from "./a11y.js";
+import { allCountries, searchCountries, countryName, flagOf, guessCountry, ffRegionFor } from "./countries.js";
+import { alarmCfg, fastAlarmPlan, fastAlarmsDue, markFired, icsForFast, FAST_NOTIF_END, FAST_NOTIF_SOON } from "./fastAlarm.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
 import { Health } from "@capgo/capacitor-health";
@@ -75,6 +77,7 @@ import {
   Pill,
   Users,
   Scale,
+  Globe,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -403,6 +406,30 @@ const STR = {
     quickSayRest: "Rest. Next: {name}",
     quickSayHalf: "Halfway",
     quickSayDone: "Done. Well done!",
+    fastAlarmTitle: "Alarm",
+    fastAlarmEnd: "When the fast is over",
+    fastAlarmSoon: "1 hour before",
+    fastAlarmNative: "You get the notification even when the app is closed.",
+    fastAlarmWeb: "In the browser and as a home-screen app it only rings while ASFIT is open. For an alarm with the app closed, save it to your calendar.",
+    fastIcs: "Save alarm to calendar",
+    fastNotifEndTitle: "Fast complete ✓",
+    fastNotifEndBody: "{a}:{b} is done — you can eat now.",
+    fastNotifSoonTitle: "Almost there",
+    fastNotifSoonBody: "Your fast ({a}:{b}) ends in 1 hour.",
+    fastBannerEnd: "Fast complete — you can eat now",
+    fastBannerSoon: "Your fast ends in 1 hour",
+    fastBannerOpen: "Open",
+    fastBannerClose: "Close",
+    countryRow: "Country & food database",
+    countryNone2: "Not set",
+    countryTitle: "Choose your database",
+    countryHint: "Foods differ from region to region. Please choose the country you shop in to get the best search results.",
+    countrySearch: "Search country",
+    countrySuggested: "Suggested countries",
+    countryAll: "All countries",
+    countryNone: "No country found",
+    countryDb: "Database: {c}",
+    countryHeader: "Country & database",
     seasonLook: "Seasonal look",
     seasonAuto: "Automatic",
     seasonOff: "Off",
@@ -654,7 +681,7 @@ const STR = {
     settingsPrivacy: "Privacy",
     settingsSupport: "Ask the AI coach",
     privacyTitle: "Privacy",
-    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight, body measurements, notes, intake diary, photos and settings stay on your device — never uploaded. There is no account and no advertising."},{"h":"Food search and barcode","p":"Search terms and barcodes are passed through our server to USDA FoodData Central and Open Food Facts."},{"h":"AI features","p":"Photo scan, coach, recipes, recipe import, weekly meal plan and potential preview go through our server to an AI service (Anthropic, USA). Only what you enter for it is sent: for the photo scan the downscaled photo, for the coach your question and — if the switch in settings is on — a summary of your data, for the meal plan your calorie targets, diet and dislikes, for the preview your goal, the time frame, body values and optionally your photo. If the operator has set up an image service (OpenAI or Google), your photo also goes there for the example picture. Our server stores none of it."},{"h":"Health data","p":"On request ASFIT reads steps, weight and workouts of the last days from Health Connect. The values stay on your device. You can revoke access in Health Connect at any time."},{"h":"Sharing","p":"When you share by link or code, the content is inside the link itself. It is not stored on our server; whoever has the link can read it."},{"h":"Server","p":"Our server briefly remembers your IP address to prevent abuse (requests per minute and per day). There are no trackers."}],
+    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight, body measurements, notes, intake diary, photos and settings stay on your device — never uploaded. There is no account and no advertising."},{"h":"Food search and barcode","p":"Search terms, barcodes and — if you pick one, or the app recognises it from your time zone and language — your country are passed through our server to USDA FoodData Central and Open Food Facts, so products from your country come first. The country also goes to the AI features (coach, recipes, weekly plan) so the suggestions fit your shopping."},{"h":"AI features","p":"Photo scan, coach, recipes, recipe import, weekly meal plan and potential preview go through our server to an AI service (Anthropic, USA). Only what you enter for it is sent: for the photo scan the downscaled photo, for the coach your question and — if the switch in settings is on — a summary of your data, for the meal plan your calorie targets, diet and dislikes, for the preview your goal, the time frame, body values and optionally your photo. If the operator has set up an image service (OpenAI or Google), your photo also goes there for the example picture. Our server stores none of it."},{"h":"Health data","p":"On request ASFIT reads steps, weight and workouts of the last days from Health Connect. The values stay on your device. You can revoke access in Health Connect at any time."},{"h":"Sharing","p":"When you share by link or code, the content is inside the link itself. It is not stored on our server; whoever has the link can read it."},{"h":"Server","p":"Our server briefly remembers your IP address to prevent abuse (requests per minute and per day). There are no trackers. The app loads the exercise photos from jsDelivr (a delivery network for open-source files); jsDelivr sees your IP address when it does."}],
     recordsTitle: "Records",
     recordsCardSub: "Your highest achievements — take the challenge",
     historyTitle: "History",
@@ -1448,6 +1475,30 @@ const STR = {
     quickSayRest: "Pause. Als Nächstes: {name}",
     quickSayHalf: "Halbzeit",
     quickSayDone: "Geschafft. Gut gemacht!",
+    fastAlarmTitle: "Alarm",
+    fastAlarmEnd: "Am Ende des Fastens",
+    fastAlarmSoon: "1 Stunde vorher",
+    fastAlarmNative: "Du bekommst die Mitteilung auch bei geschlossener App.",
+    fastAlarmWeb: "Im Browser und als iPhone-App klingelt es nur, solange ASFIT offen ist. Für einen Alarm bei geschlossener App speicherst du ihn im Kalender.",
+    fastIcs: "Alarm im Kalender speichern",
+    fastNotifEndTitle: "Fasten geschafft ✓",
+    fastNotifEndBody: "{a}:{b} sind um — du kannst jetzt essen.",
+    fastNotifSoonTitle: "Gleich geschafft",
+    fastNotifSoonBody: "In 1 Stunde ist dein Fasten ({a}:{b}) vorbei.",
+    fastBannerEnd: "Fasten geschafft — du kannst jetzt essen",
+    fastBannerSoon: "In 1 Stunde ist dein Fasten vorbei",
+    fastBannerOpen: "Öffnen",
+    fastBannerClose: "Schließen",
+    countryRow: "Land & Lebensmittel-Datenbank",
+    countryNone2: "Nicht gewählt",
+    countryTitle: "Wähle deine Datenbank",
+    countryHint: "Lebensmittel können sich von Region zu Region unterscheiden. Bitte wähle das Land aus, in dem du einkaufst, um die besten Suchergebnisse zu erhalten.",
+    countrySearch: "Land suchen",
+    countrySuggested: "Vorgeschlagene Länder",
+    countryAll: "Alle Länder",
+    countryNone: "Kein Land gefunden",
+    countryDb: "Datenbank: {c}",
+    countryHeader: "Land & Datenbank",
     seasonLook: "Jahreszeiten-Look",
     seasonAuto: "Automatisch",
     seasonOff: "Aus",
@@ -1699,7 +1750,7 @@ const STR = {
     settingsPrivacy: "Datenschutz",
     settingsSupport: "KI-Coach fragen",
     privacyTitle: "Datenschutz",
-    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht, Körpermaße, Notizen, Einnahme-Tagebuch, Fotos und Einstellungen bleiben auf deinem Gerät — nie hochgeladen. Es gibt kein Konto und keine Werbung."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe und Barcodes werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet."},{"h":"KI-Funktionen","p":"Foto-Scan, Coach, Rezepte, Rezept-Import, Wochenplan und Potenzial-Prognose laufen über unseren Server zu einem KI-Dienst (Anthropic, USA). Gesendet wird nur, was du dafür eingibst: beim Foto-Scan das verkleinerte Foto, beim Coach deine Frage und — wenn der Schalter in den Einstellungen an ist — eine Zusammenfassung deiner Daten, beim Wochenplan deine Kalorienziele, Ernährungsform und Abneigungen, bei der Prognose dein Ziel, der Zeitraum, Körperwerte und optional dein Foto. Hat der Betreiber einen Bilddienst eingerichtet (OpenAI oder Google), geht dein Foto für das Beispielbild auch dorthin. Unser Server speichert nichts davon."},{"h":"Gesundheitsdaten","p":"Auf Wunsch liest ASFIT Schritte, Gewicht und Workouts der letzten Tage aus Health Connect. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."},{"h":"Teilen","p":"Beim Teilen per Link oder Code steckt der Inhalt im Link selbst. Er wird nicht auf unserem Server gespeichert; wer den Link hat, kann ihn lesen."},{"h":"Server","p":"Unser Server merkt sich kurz deine IP-Adresse, um Missbrauch zu verhindern (Anfragen pro Minute und Tag). Es gibt keine Tracker."}],
+    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht, Körpermaße, Notizen, Einnahme-Tagebuch, Fotos und Einstellungen bleiben auf deinem Gerät — nie hochgeladen. Es gibt kein Konto und keine Werbung."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe, Barcodes und — wenn du eins wählst oder die App es aus Zeitzone und Sprache erkennt — dein Land werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet, damit Produkte aus deinem Land zuerst kommen. Das Land geht auch an die KI-Funktionen (Coach, Rezepte, Wochenplan), damit die Vorschläge zu deinem Einkauf passen."},{"h":"KI-Funktionen","p":"Foto-Scan, Coach, Rezepte, Rezept-Import, Wochenplan und Potenzial-Prognose laufen über unseren Server zu einem KI-Dienst (Anthropic, USA). Gesendet wird nur, was du dafür eingibst: beim Foto-Scan das verkleinerte Foto, beim Coach deine Frage und — wenn der Schalter in den Einstellungen an ist — eine Zusammenfassung deiner Daten, beim Wochenplan deine Kalorienziele, Ernährungsform und Abneigungen, bei der Prognose dein Ziel, der Zeitraum, Körperwerte und optional dein Foto. Hat der Betreiber einen Bilddienst eingerichtet (OpenAI oder Google), geht dein Foto für das Beispielbild auch dorthin. Unser Server speichert nichts davon."},{"h":"Gesundheitsdaten","p":"Auf Wunsch liest ASFIT Schritte, Gewicht und Workouts der letzten Tage aus Health Connect. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."},{"h":"Teilen","p":"Beim Teilen per Link oder Code steckt der Inhalt im Link selbst. Er wird nicht auf unserem Server gespeichert; wer den Link hat, kann ihn lesen."},{"h":"Server","p":"Unser Server merkt sich kurz deine IP-Adresse, um Missbrauch zu verhindern (Anfragen pro Minute und Tag). Es gibt keine Tracker. Die Übungsfotos lädt die App von jsDelivr (ein Auslieferungsnetz für Open-Source-Dateien); dabei sieht jsDelivr deine IP-Adresse."}],
     recordsTitle: "Rekorde",
     recordsCardSub: "Deine höchsten Leistungen — nimm die Herausforderung an",
     historyTitle: "Verlauf",
@@ -3495,7 +3546,59 @@ function FastingScreen({ t, lang }) {
   const targetMs = hours * 3600000;
   const elapsed = a ? Math.max(0, now - a.start) : 0;
   const reached = !!a && elapsed >= targetMs;
+  const alarm = alarmCfg(fast);
+  const setAlarm = (patch) => {
+    unlockAudio();
+    try {
+      if (typeof Notification !== "undefined" && Notification.permission === "default") Notification.requestPermission();
+    } catch {
+      /* no web notifications here */
+    }
+    setFast((f) => ({ ...f, alarm: { ...alarmCfg(f), ...patch } }));
+  };
+  // Installed app: the alarm is a local notification, so it also comes with the app closed (planned again whenever fast or switches change)
+  const endKey = a ? a.start + "-" + a.hours : "";
+  useEffect(() => {
+    if (!IS_NATIVE_APP) return;
+    (async () => {
+      try {
+        const { LocalNotifications } = await import("@capacitor/local-notifications");
+        await LocalNotifications.cancel({ notifications: [{ id: FAST_NOTIF_END }, { id: FAST_NOTIF_SOON }] });
+        const plan = fastAlarmPlan(a, alarm, Date.now());
+        if (!plan.length) return;
+        const perm = await LocalNotifications.requestPermissions();
+        if (perm.display !== "granted") return;
+        await LocalNotifications.schedule({
+          notifications: plan.map((p) => ({
+            id: p.id,
+            title: p.kind === "end" ? t.fastNotifEndTitle : t.fastNotifSoonTitle,
+            body: (p.kind === "end" ? t.fastNotifEndBody : t.fastNotifSoonBody).replace("{a}", a.hours).replace("{b}", 24 - a.hours),
+            schedule: { at: new Date(p.at), allowWhileIdle: true },
+          })),
+        });
+      } catch {
+        /* notifications are optional */
+      }
+    })();
+  }, [endKey, alarm.end, alarm.soon, lang]);
+  // web / iPhone home-screen app: a calendar entry with an alarm is the way to be told with the app closed
+  const saveIcs = () => {
+    try {
+      const txt = icsForFast(a, alarm, { title: t.fastNotifEndTitle, body: t.fastNotifEndBody.replace("{a}", a.hours).replace("{b}", 24 - a.hours), soon: t.fastNotifSoonTitle });
+      const url = URL.createObjectURL(new Blob([txt], { type: "text/calendar;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "asfit-fasting.ics";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch {
+      /* no download possible */
+    }
+  };
   const start = () => {
+    unlockAudio();
     const t0 = Date.now(); // one moment for both, so "started 2 h ago" shows 2 h 00 min right away
     setFast((f) => ({ ...f, active: { start: t0 - ago * 3600000, hours: f.plan } }));
     setNow(t0);
@@ -3551,6 +3654,32 @@ function FastingScreen({ t, lang }) {
           </button>
         </>
       )}
+
+      <div data-fast-alarm style={{ marginTop: 18 }}>
+        <Card>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 12 }}>🔔 {t.fastAlarmTitle}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{t.fastAlarmEnd}</span>
+            <div data-fast-alarm-end style={{ display: "flex", gap: 6 }}>
+              <Chip label={t.optOn} active={alarm.end} onClick={() => setAlarm({ end: true })} />
+              <Chip label={t.seasonOff} active={!alarm.end} onClick={() => setAlarm({ end: false })} />
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{t.fastAlarmSoon}</span>
+            <div data-fast-alarm-soon style={{ display: "flex", gap: 6 }}>
+              <Chip label={t.optOn} active={alarm.soon} onClick={() => setAlarm({ soon: true })} />
+              <Chip label={t.seasonOff} active={!alarm.soon} onClick={() => setAlarm({ soon: false })} />
+            </div>
+          </div>
+          <div style={{ ...small, fontSize: 11.5 }}>{IS_NATIVE_APP ? t.fastAlarmNative : t.fastAlarmWeb}</div>
+          {!IS_NATIVE_APP && a && (alarm.end || alarm.soon) && (
+            <div data-fast-ics onClick={saveIcs} style={{ marginTop: 10, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+              📅 {t.fastIcs}
+            </div>
+          )}
+        </Card>
+      </div>
 
       <SectionLabel>{t.fastHistory}</SectionLabel>
       {fast.history.length === 0 ? (
@@ -3609,10 +3738,68 @@ function FastHomeCard({ t, onOpen }) {
   );
 }
 
+// rings while the app is open: banner, beeps, vibration and (if allowed) a system notification when the fast is over
+function FastWatcher({ t, lang, offset = 0, onOpen }) {
+  const [due, setDue] = useState(null);
+  useEffect(() => {
+    const check = () => {
+      try {
+        const fast = JSON.parse(localStorage.getItem("asfit.fast") || "null");
+        if (!fast || !fast.active) {
+          setDue((d) => (d ? null : d));
+          return;
+        }
+        const fired = JSON.parse(localStorage.getItem("asfitcache.fastFired") || "null");
+        const rung = fastAlarmsDue(fast.active, alarmCfg(fast), fired, Date.now());
+        if (!rung.length) return;
+        localStorage.setItem("asfitcache.fastFired", JSON.stringify(markFired(fast.active, fired, rung)));
+        const kind = rung.includes("end") ? "end" : "soon";
+        setDue(kind);
+        beep(880, 250);
+        setTimeout(() => beep(1175, 400), 350);
+        try {
+          if (navigator.vibrate) navigator.vibrate([250, 120, 250]);
+        } catch {
+          /* no vibration */
+        }
+        try {
+          if (document.hidden && typeof Notification !== "undefined" && Notification.permission === "granted") {
+            new Notification(kind === "end" ? t.fastNotifEndTitle : t.fastNotifSoonTitle, { body: (kind === "end" ? t.fastNotifEndBody : t.fastNotifSoonBody).replace("{a}", fast.active.hours).replace("{b}", 24 - fast.active.hours) });
+          }
+        } catch {
+          /* no system notification */
+        }
+      } catch {
+        /* storage unavailable */
+      }
+    };
+    check();
+    const id = setInterval(check, 15000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [lang]);
+  if (!due) return null;
+  return (
+    <div data-fast-banner={due} style={{ position: "fixed", top: "calc(env(safe-area-inset-top) + " + (8 + offset) + "px)", left: 12, right: 12, maxWidth: 366, margin: "0 auto", background: due === "end" ? COLORS.teal : COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "9px 10px 9px 14px", display: "flex", alignItems: "center", gap: 10, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 1190 }}>
+      <span style={{ flex: 1 }}>⏱️ {due === "end" ? t.fastBannerEnd : t.fastBannerSoon}</span>
+      <span data-fast-banner-open onClick={() => { setDue(null); onOpen(); }} style={{ cursor: "pointer", background: COLORS.bg, color: COLORS.text, borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>
+        {t.fastBannerOpen}
+      </span>
+      <span data-fast-banner-close aria-label={t.fastBannerClose} onClick={() => setDue(null)} style={{ cursor: "pointer", padding: "4px 6px", fontSize: 15 }}>
+        ✕
+      </span>
+    </div>
+  );
+}
+
 // ---------------- Meal plan with shopping list (AI) ----------------
 const MP_DIETS = ["none", "vegetarian", "vegan", "pescatarian"];
 
 function MealPlanScreen({ t, lang, targets, onAddToMeal }) {
+  const { code: cc } = useCountry();
   const [plan, setPlan] = usePersisted("mealplan", null);
   const [form, setForm] = useState({ days: 5, meals: 4, diet: "none", dislikes: "" });
   const [busy, setBusy] = useState(false);
@@ -3635,7 +3822,7 @@ function MealPlanScreen({ t, lang, targets, onAddToMeal }) {
       const res = await fetch(API_BASE + "/api/mealplan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, days: form.days, meals: form.meals, diet: form.diet, dislikes: form.dislikes, kcal: targets.kcal, protein: targets.protein, carbs: targets.carbs, fat: targets.fat }),
+        body: JSON.stringify({ lang, days: form.days, meals: form.meals, diet: form.diet, dislikes: form.dislikes, kcal: targets.kcal, protein: targets.protein, carbs: targets.carbs, fat: targets.fat, country: cc || undefined }),
         signal: ctl.signal,
       });
       if (res.status === 429) return setMsg(t.mpLimit);
@@ -4341,6 +4528,26 @@ function QuickWorkoutCards({ t, onOpen }) {
   );
 }
 
+// start and end picture of a move that flip back and forth (tap to pause); a missing picture hands over to the figure
+function QuickPhoto({ media, item, name, cue, onFail }) {
+  const [paused, setPaused] = useState(false);
+  const url = (n) => media.base + item.id + "/" + n + ".jpg";
+  return (
+    <div data-quick-photo>
+      <div onClick={() => setPaused((p) => !p)} style={{ position: "relative", borderRadius: 12, overflow: "hidden", background: "#fff", cursor: "pointer" }}>
+        <style>{"@keyframes quickFlip { 0%, 42% { opacity: 0; } 50%, 92% { opacity: 1; } 100% { opacity: 0; } }"}</style>
+        <img src={url(0)} alt={name} onError={onFail} style={{ display: "block", width: "100%" }} />
+        <img src={url(1)} alt="" onError={onFail} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: 0, animation: "quickFlip 2.6s ease-in-out infinite", animationPlayState: paused ? "paused" : "running" }} />
+      </div>
+      {cue && (
+        <div style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: COLORS.dim }}>
+          <span style={{ color: COLORS.gold, fontWeight: 700 }}>💡</span> {cue}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const { gender } = useGender();
   const preset = presetByKey(presetKey) || QUICK_PRESETS[0];
@@ -4353,6 +4560,18 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const [skipSec, setSkipSec] = useState(0);
   const [, setTick] = useState(0);
   const [result, setResult] = useState(null);
+  const [media, setMedia] = useState(null); // real photos of the moves (start / end position), same source as the exercise library
+  const [demoTab, setDemoTab] = usePersisted("demoTab", "photo");
+  const [badImg, setBadImg] = useState({});
+  useEffect(() => {
+    let alive = true;
+    loadExerciseMedia().then((m) => {
+      if (alive) setMedia(m);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
   const mem = useRef({ idx: -1, beeped: {}, half: {} });
   const wake = useRef(null);
   const nameOfKey = (k) => {
@@ -4519,6 +4738,10 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const scene = sceneFor(seg.key);
   const mus = exObj ? exerciseMuscles(exObj) : { primary: [] };
   const nextWork = tl.slice(loc.i + 1).find((x) => x.kind === "work");
+  const photoOf = (k) => (media && media.items && media.items[k] && !badImg[k] ? media.items[k] : null);
+  const photoItem = photoOf(seg.key);
+  const tab = photoItem && scene ? demoTab : photoItem ? "photo" : "figure";
+  const nextPhoto = nextWork && nextWork.key !== seg.key ? photoOf(nextWork.key) : null; // loaded in the background so the next move shows at once
   const label = seg.kind === "ready" ? t.quickReady : seg.kind === "rest" ? t.quickRest : t.quickMove.replace("{n}", seg.n).replace("{m}", seg.of);
   const title = seg.kind === "rest" ? t.quickNext.replace("{name}", nameOfKey(seg.key)) : nameOfKey(seg.key);
   return (
@@ -4539,10 +4762,26 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
         {seg.kind === "work" && nextWork && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>{t.quickThen.replace("{name}", nameOfKey(nextWork.key))}</div>}
         {pausedAt && <div data-quick-paused style={{ fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.coral, marginTop: 4 }}>{t.quickPause}</div>}
       </div>
-      {scene && (
+      {(scene || photoItem) && (
         <Card style={{ margin: "14px 0", padding: 10 }}>
-          <ExerciseAnimation key={seg.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
+          {photoItem && scene && (
+            <div data-demo-tabs style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+              <Chip label={t.libTabPhoto} active={tab === "photo"} onClick={() => setDemoTab("photo")} />
+              <Chip label={t.libTabFigure} active={tab === "figure"} onClick={() => setDemoTab("figure")} />
+            </div>
+          )}
+          {tab === "photo" && photoItem ? (
+            <QuickPhoto key={seg.key} media={media} item={photoItem} name={nameOfKey(seg.key)} cue={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} onFail={() => setBadImg((b) => ({ ...b, [seg.key]: true }))} />
+          ) : scene ? (
+            <ExerciseAnimation key={seg.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
+          ) : null}
         </Card>
+      )}
+      {nextPhoto && tab === "photo" && (
+        <div aria-hidden="true" style={{ display: "none" }}>
+          <img src={media.base + nextPhoto.id + "/0.jpg"} alt="" />
+          <img src={media.base + nextPhoto.id + "/1.jpg"} alt="" />
+        </div>
       )}
       <div style={{ display: "flex", gap: 10 }}>
         <button data-quick-pause onClick={togglePause} style={{ flex: 2, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "13px 0", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>{pausedAt ? t.quickResume : t.quickPause}</button>
@@ -6034,7 +6273,50 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
 
 /* ---------------- Food flow ---------------- */
 
-function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals = [], onOpenMyMeals, recentFoods = [], pantry = [], pantryFolder = null, onPantrySave, onPantryDone, onOpenPantry, onImportLink }) {
+// ---------------- Country (food database) ----------------
+const CountryCtx = createContext({ code: null, name: "" });
+const useCountry = () => useContext(CountryCtx);
+
+// "Choose your database": the country the user shops in; search, fast food and the AI suggestions follow it
+function CountryScreen({ t, lang, current, detected, onPick }) {
+  const [q, setQ] = useState("");
+  const list = useMemo(() => searchCountries(q, lang), [q, lang]);
+  const suggested = [...new Set([current, detected].filter(Boolean))];
+  const row = (code, last) => (
+    <div key={code} data-country-row={code} data-country-selected={code === current ? "1" : undefined} onClick={() => onPick(code)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px", borderBottom: last ? "none" : "1px solid " + COLORS.border, cursor: "pointer" }}>
+      <span style={{ fontSize: 22, lineHeight: 1 }}>{flagOf(code)}</span>
+      <span style={{ flex: 1, fontFamily: "Inter, sans-serif", fontSize: 15, color: COLORS.text }}>{countryName(code, lang)}</span>
+      {code === current && <Check size={18} color={COLORS.gold} />}
+    </div>
+  );
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "11px 14px", marginBottom: 18 }}>
+        <Search size={16} color={COLORS.dim} />
+        <input data-country-search value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.countrySearch} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14 }} />
+      </div>
+      {!q.trim() && (
+        <>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, marginBottom: 6 }}>{t.countryTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, lineHeight: 1.5, marginBottom: 6 }}>{t.countryHint}</div>
+          {suggested.length > 0 && (
+            <div data-country-suggested>
+              <SectionLabel>{t.countrySuggested}</SectionLabel>
+              <Card style={{ padding: 4 }}>{suggested.map((c, i) => row(c, i === suggested.length - 1))}</Card>
+            </div>
+          )}
+        </>
+      )}
+      <SectionLabel>{t.countryAll}</SectionLabel>
+      <Card style={{ padding: 4 }}>
+        {list.length === 0 ? <div data-country-none style={{ padding: 14, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.countryNone}</div> : list.map((c, i) => row(c.code, i === list.length - 1))}
+      </Card>
+    </div>
+  );
+}
+
+function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals = [], onOpenMyMeals, recentFoods = [], pantry = [], pantryFolder = null, onPantrySave, onPantryDone, onOpenPantry, onImportLink, onOpenCountry = () => {} }) {
+  const { code: cc, name: ccName } = useCountry();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [pick, setPick] = useState(false); // folder chooser under the amount card
@@ -6082,7 +6364,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
     setStatus("loading");
     const controller = new AbortController();
     const debounce = setTimeout(() => {
-      fetch(`${API_BASE}/api/food/search?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}`, { signal: controller.signal })
+      fetch(`${API_BASE}/api/food/search?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}${cc ? "&cc=" + cc : ""}`, { signal: controller.signal })
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json();
@@ -6102,7 +6384,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
       clearTimeout(debounce);
       controller.abort();
     };
-  }, [query, lang, retryTick]);
+  }, [query, lang, retryTick, cc]);
 
   const listToShow = status === "ok" ? results : local;
   const unit = selected?.unit === "ml" ? "ml" : "g";
@@ -6123,6 +6405,15 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             <Search size={16} color={COLORS.dim} />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
           </div>
+          {cc && !pantryFolder && (
+            <div style={{ marginBottom: 12 }}>
+              <span data-country-chip onClick={onOpenCountry} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 11px", borderRadius: 999, background: COLORS.raised, border: "1px solid " + COLORS.border, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>
+                <span style={{ fontSize: 15, lineHeight: 1 }}>{flagOf(cc)}</span>
+                {t.countryDb.replace("{c}", ccName)}
+                <ChevronDown size={13} />
+              </span>
+            </div>
+          )}
 
           {pantryFolder && (
             <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 14, padding: "11px 14px", marginBottom: 12 }}>
@@ -7144,6 +7435,7 @@ function plainChat(text) {
 }
 
 function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, chips = [] }) {
+  const { code: cc } = useCountry();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -7166,7 +7458,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
       const res = await fetch(API_BASE + "/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, lang, context, data: data || undefined }),
+        body: JSON.stringify({ messages: next, lang, context, data: data || undefined, country: cc || undefined }),
       });
       if (res.status === 503) {
         setError(t.assistantNotConfigured);
@@ -7812,6 +8104,7 @@ const ffR1 = (v) => Math.round(v * 10) / 10;
 
 // Add what is missing: search the world-wide food database or type in your own item (saved for this place)
 function FastFoodMenu({ t, lang, chain, items, onAdd, onDelete, onDeleteChain, onBack }) {
+  const { code: cc } = useCountry();
   const [q, setQ] = useState("");
   const [res, setRes] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | loading | ok | error
@@ -7838,7 +8131,7 @@ function FastFoodMenu({ t, lang, chain, items, onAdd, onDelete, onDeleteChain, o
     setStatus("loading");
     const ctl = new AbortController();
     const id = setTimeout(() => {
-      fetch(API_BASE + "/api/food/search?q=" + encodeURIComponent(s) + "&lang=" + encodeURIComponent(lang), { signal: ctl.signal })
+      fetch(API_BASE + "/api/food/search?q=" + encodeURIComponent(s) + "&lang=" + encodeURIComponent(lang) + (cc ? "&cc=" + cc : ""), { signal: ctl.signal })
         .then((r) => {
           if (!r.ok) throw new Error("HTTP " + r.status);
           return r.json();
@@ -7858,7 +8151,7 @@ function FastFoodMenu({ t, lang, chain, items, onAdd, onDelete, onDeleteChain, o
       clearTimeout(id);
       ctl.abort();
     };
-  }, [q, lang]);
+  }, [q, lang, cc]);
   const scaled = sel ? scale(sel.per100, grams) : null;
   const addFound = () => {
     if (!sel || !(grams > 0)) return;
@@ -8014,6 +8307,8 @@ const FF_REGIONS = ["EU", "US", "world"];
 function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProtein, proteinTarget, onLog }) {
   const last = data.last;
   const catalog = useFastFoodCatalog();
+  const { code: ccFF } = useCountry();
+  const homeRegion = ffRegionFor(ccFF); // chains of the user's own region come first
   const allChains = useMemo(() => [...(data.mine || []), ...catalog.chains], [data.mine, catalog.chains]);
   const [chainId, setChainId] = useState(null);
   const [step, setStep] = useState("chain"); // chain -> budget -> result (menu = add items, reachable from budget and result)
@@ -8117,7 +8412,7 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
     const regions = FF_REGIONS.filter((r) => catalog.chains.some((c) => (c.region || "world") === r));
     const shown = allChains
       .filter((c) => (ctype === "all" || (ctype === "mine" ? c.mine : c.type === ctype)) && (cregion === "all" || c.mine || (c.region || "world") === cregion) && (!q || c.name.toLowerCase().includes(q)))
-      .sort((a, b) => (b.id === last ? 1 : 0) - (a.id === last ? 1 : 0));
+      .sort((a, b) => (b.id === last ? 1 : 0) - (a.id === last ? 1 : 0) || ((a.mine || (a.region || "world") === homeRegion) ? 0 : 1) - ((b.mine || (b.region || "world") === homeRegion) ? 0 : 1));
     const create = () => {
       const name = newName.trim().slice(0, 40);
       if (!name) return;
@@ -8866,6 +9161,7 @@ function CheatScreen({ t, cheats, onAdd, onDelete }) {
 }
 
 function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecipe, onDeleteRecipe, initialImport = null, onShare }) {
+  const { code: cc } = useCountry();
   const [cat, setCat] = useState("all");
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
@@ -8913,7 +9209,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       const res = await fetch(API_BASE + "/api/recipe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: wish, lang }),
+        body: JSON.stringify({ prompt: wish, lang, country: cc || undefined }),
       });
       if (res.status === 503) setAiError(t.assistantNotConfigured);
       else if (!res.ok) setAiError(t.assistantError);
@@ -10941,6 +11237,7 @@ function SettingsLabel({ children }) {
 }
 
 function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
+  const { code: ccSet, name: ccSetName } = useCountry();
   const remOn = NOTIF_KINDS.filter((k) => reminders[k] && reminders[k].on).length;
   const stat = (value, label) => (
     <div style={{ flex: 1, background: COLORS.bg, borderRadius: 12, padding: "9px 6px", textAlign: "center", border: "1px solid " + COLORS.border }}>
@@ -10980,6 +11277,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
 
       <SettingsGroup title={t.setGroupFeatures}>
         <SettingsRow tint="teal" icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
+        <SettingsRow tint="teal" icon={Globe} label={t.countryRow} sub={ccSet ? flagOf(ccSet) + " " + ccSetName : t.countryNone2} onClick={() => onNav("country")} />
         <SettingsRow tint="teal" icon={Users} label={t.friendsTitle} onClick={() => onNav("friends")} />
         {!HIDE_INTAKE && <SettingsRow tint="teal" icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />}
       </SettingsGroup>
@@ -11772,6 +12070,19 @@ export default function AsmarFitApp() {
   const newVersion = useNewVersion();
   const [quickKey, setQuickKey] = useState(null);
   const [ampelOn, setAmpelOn] = usePersisted("ampel", true);
+  const [countryPref, setCountryPref] = usePersisted("country", null); // the country the user shops in (null = guessed from the phone)
+  const [countryReturn, setCountryReturn] = useState("settings");
+  const detectedCountry = useMemo(() => {
+    let tz = "";
+    try {
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      /* no time zone info */
+    }
+    return guessCountry({ timeZone: tz, languages: navigator.languages || [navigator.language] });
+  }, []);
+  const country = countryPref || detectedCountry;
+  const countryCtx = useMemo(() => ({ code: country, name: country ? countryName(country, lang) : "" }), [country, lang]);
   const [aiOn, setAiOn] = usePersisted("aiData", true);
   const aiData = useMemo(() => {
     const day = (x) => String(x).slice(0, 10);
@@ -12390,6 +12701,10 @@ export default function AsmarFitApp() {
         onAdd={addFoodItem}
         onOpenBarcode={() => setOverlay("barcode")}
         onOpenPhoto={() => setOverlay("photo")}
+        onOpenCountry={() => {
+          setCountryReturn("foodSearch");
+          setOverlay("country");
+        }}
         myMeals={myMeals}
         onOpenMyMeals={() => setOverlay("myMeals")}
         pantry={pantry}
@@ -12520,6 +12835,21 @@ export default function AsmarFitApp() {
     content = <QuickWorkoutScreen key={quickKey} t={t} lang={lang} presetKey={quickKey} weightKg={profile.weight} onLog={logQuickWorkout} onClose={() => setOverlay(null)} />;
     topTitle = t.quickTitle;
     showBack = () => setOverlay(null);
+  } else if (overlay === "country") {
+    content = (
+      <CountryScreen
+        t={t}
+        lang={lang}
+        current={country}
+        detected={detectedCountry}
+        onPick={(cc) => {
+          setCountryPref(cc);
+          setOverlay(countryReturn);
+        }}
+      />
+    );
+    topTitle = t.countryHeader;
+    showBack = () => setOverlay(countryReturn);
   } else if (overlay === "fasting") {
     content = <FastingScreen t={t} lang={lang} />;
     topTitle = t.fastTitle;
@@ -12592,6 +12922,7 @@ export default function AsmarFitApp() {
         onNav={(k) => {
           if (k === "intake") setIntakeReturn("settings");
           if (k === "friends") setFriendsReturn("settings");
+          if (k === "country") setCountryReturn("settings");
           setOverlay(k);
         }}
         onShare={shareApp}
@@ -12797,6 +13128,7 @@ export default function AsmarFitApp() {
     <GenderCtx.Provider value={genderCtx}>
     <SeasonCtx.Provider value={seasonCtx}>
     <AmpelCtx.Provider value={ampelOn}>
+    <CountryCtx.Provider value={countryCtx}>
     <div style={{ display: "flex", justifyContent: "center", padding: isPhone ? 0 : "24px 12px", minHeight: "100%" }}>
       <style>{`
         * { box-sizing: border-box; }
@@ -12845,6 +13177,7 @@ export default function AsmarFitApp() {
         <Celebration t={t} data={celebrate} onClose={() => setCelebrate(null)} />
         {onboarded && seasonKey && <SeasonLayer season={seasonKey} />}
         {onboarded && newVersion && <UpdateBanner t={t} />}
+        {onboarded && <FastWatcher t={t} lang={lang} offset={newVersion ? 52 : 0} onOpen={() => setOverlay("fasting")} />}
         {onboarded && incomingShare && <ShareImportModal t={t} lang={lang} item={incomingShare} onImport={applyShare} onClose={() => setIncomingShare(null)} />}
         {shareToast && (
           <div style={{ position: "fixed", left: 20, right: 20, bottom: 96, maxWidth: 350, margin: "0 auto", background: COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "11px 16px", display: "flex", alignItems: "center", gap: 8, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 1100 }}>
@@ -12854,6 +13187,7 @@ export default function AsmarFitApp() {
         {introOn && !introDone && <StartIntro onDone={finishIntro} full={introFull} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
       </div>
     </div>
+    </CountryCtx.Provider>
     </AmpelCtx.Provider>
     </SeasonCtx.Provider>
     </GenderCtx.Provider>
