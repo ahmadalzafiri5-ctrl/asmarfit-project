@@ -10,6 +10,9 @@ import { weeklyReview, reviewDue } from "./weeklyReview.js";
 import { PLAN_TEMPLATES, buildFromTemplate } from "./planTemplates.js";
 import { suggestNext } from "./progression.js";
 import { SEASONS, SEASON_KEYS, seasonFor, isSouthern } from "./seasons.js";
+import { lightOf, lightShares, LIGHT_COLORS, LIGHT_KEYS } from "./foodLight.js";
+import { QUICK_PRESETS, presetByKey, buildTimeline, totalSec, moveCount, presetMinutes, locate, activeMinutes } from "./quickWorkouts.js";
+import { speak, stopSpeaking, beep, unlockAudio, holdScreen } from "./voice.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
 import { Health } from "@capgo/capacitor-health";
@@ -357,6 +360,46 @@ const STR = {
     assistantTitle: "ASFIT Coach",
     updateAvail: "New version available",
     updateNow: "Update",
+    optOn: "On",
+    lightTitle: "Food traffic light",
+    lightSetting: "Food traffic light",
+    lightHint: "By energy density per 100 g: green under 100 kcal, yellow up to 240, orange above. It says nothing about healthy or unhealthy.",
+    light_green: "light",
+    light_yellow: "medium",
+    light_orange: "energy-dense",
+    quickTitle: "Quick workouts",
+    quick_seven: "7-minute circuit",
+    quick_hiit: "HIIT intervals",
+    quick_core: "Core express",
+    quick_legs: "Legs & glutes",
+    quickSub: "{n} moves · {m} min",
+    quickNoGear: "No equipment",
+    quickChair: "You need a chair",
+    quickRounds: "{n} rounds",
+    quickIntro: "Guided with timer, voice and beeps. Warm up briefly first and stop if something hurts.",
+    quickVoice: "Voice & beeps",
+    quickStart: "Let's go",
+    quickReady: "Get ready",
+    quickMove: "Move {n} of {m}",
+    quickRest: "Rest",
+    quickNext: "Next: {name}",
+    quickThen: "Then: {name}",
+    quickPause: "Pause",
+    quickResume: "Resume",
+    quickSkip: "Skip",
+    quickStop: "Stop",
+    quickDone: "Done!",
+    quickDonePartial: "Stopped early",
+    quickStats: "{time} · about {kcal} kcal",
+    quickLog: "Log workout",
+    quickAgain: "Again",
+    quickDiscard: "Discard",
+    quickLogged: "Workout logged",
+    quickSayReady: "Get ready. First: {name}",
+    quickSayWork: "{name}. Go!",
+    quickSayRest: "Rest. Next: {name}",
+    quickSayHalf: "Halfway",
+    quickSayDone: "Done. Well done!",
     seasonLook: "Seasonal look",
     seasonAuto: "Automatic",
     seasonOff: "Off",
@@ -1362,6 +1405,46 @@ const STR = {
     assistantTitle: "ASFIT-Coach",
     updateAvail: "Neue Version verfügbar",
     updateNow: "Aktualisieren",
+    optOn: "An",
+    lightTitle: "Lebensmittel-Ampel",
+    lightSetting: "Lebensmittel-Ampel",
+    lightHint: "Nach Energiedichte pro 100 g: grün unter 100 kcal, gelb bis 240, orange darüber. Sagt nichts über gesund oder ungesund.",
+    light_green: "leicht",
+    light_yellow: "mittel",
+    light_orange: "energiedicht",
+    quickTitle: "Kurz-Workouts",
+    quick_seven: "7-Minuten-Kreis",
+    quick_hiit: "HIIT-Intervalle",
+    quick_core: "Bauch-Express",
+    quick_legs: "Beine & Po",
+    quickSub: "{n} Übungen · {m} Min.",
+    quickNoGear: "Ohne Geräte",
+    quickChair: "Du brauchst einen Stuhl",
+    quickRounds: "{n} Runden",
+    quickIntro: "Geführt mit Zeitmesser, Ansage und Signalton. Wärm dich kurz auf und hör auf, wenn etwas wehtut.",
+    quickVoice: "Ansage & Ton",
+    quickStart: "Los geht's",
+    quickReady: "Mach dich bereit",
+    quickMove: "Übung {n} von {m}",
+    quickRest: "Pause",
+    quickNext: "Als Nächstes: {name}",
+    quickThen: "Danach: {name}",
+    quickPause: "Anhalten",
+    quickResume: "Weiter",
+    quickSkip: "Überspringen",
+    quickStop: "Beenden",
+    quickDone: "Geschafft!",
+    quickDonePartial: "Früher beendet",
+    quickStats: "{time} · etwa {kcal} kcal",
+    quickLog: "Eintragen",
+    quickAgain: "Nochmal",
+    quickDiscard: "Verwerfen",
+    quickLogged: "Workout eingetragen",
+    quickSayReady: "Mach dich bereit. Zuerst: {name}",
+    quickSayWork: "{name}. Los!",
+    quickSayRest: "Pause. Als Nächstes: {name}",
+    quickSayHalf: "Halbzeit",
+    quickSayDone: "Geschafft. Gut gemacht!",
     seasonLook: "Jahreszeiten-Look",
     seasonAuto: "Automatisch",
     seasonOff: "Aus",
@@ -4011,6 +4094,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
         <MacroBar label={t.protein} value={sumMeals(viewMeals, "protein")} target={macroTargets.protein} color={COLORS.teal} />
         <MacroBar label={t.carbs} value={sumMeals(viewMeals, "carbs")} target={macroTargets.carbs} color={COLORS.gold} />
         <MacroBar label={t.fat} value={sumMeals(viewMeals, "fat")} target={macroTargets.fat} color={COLORS.coral} />
+        <LightBar t={t} items={Object.values(viewMeals).flat()} />
         {(() => {
           const fiber = sumMeals(viewMeals, "fiber");
           const sugar = sumMeals(viewMeals, "sugar");
@@ -4120,6 +4204,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
                 {items.map((it, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: i < items.length - 1 || isToday ? `1px solid ${COLORS.border}` : "none", fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
                     <span onClick={isToday && it.grams ? () => setEditing({ slot: m.key, idx: i, grams: it.grams }) : undefined} style={{ cursor: isToday && it.grams ? "pointer" : "default", minWidth: 0 }}>
+                      <LightDot item={it} />
                       {it.name}
                       {it.grams ? <span style={{ color: COLORS.dim }}> · {it.grams}{it.unit || "g"}</span> : null}
                     </span>
@@ -4181,7 +4266,291 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
   );
 }
 
-function TrainingScreen({ t, lang, planName, planDays = [], personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout, onSharePlan, onOpenFriends }) {
+// ---------------- Food traffic light ----------------
+const AmpelCtx = createContext(true);
+const useAmpel = () => useContext(AmpelCtx);
+
+// small coloured dot in front of a food (search result or logged item); nothing when the amount is unknown or the light is off
+function LightDot({ item, size = 9 }) {
+  const on = useAmpel();
+  const l = on ? lightOf(item) : null;
+  if (!l) return null;
+  return <span data-light={l} style={{ display: "inline-block", width: size, height: size, borderRadius: "50%", background: LIGHT_COLORS[l], marginRight: 7, flexShrink: 0, verticalAlign: "middle" }} />;
+}
+
+function LightNote({ item, t }) {
+  const on = useAmpel();
+  const l = on ? lightOf(item) : null;
+  if (!l) return null;
+  return (
+    <span data-light-note={l}>
+      {" · "}
+      <span style={{ color: LIGHT_COLORS[l] }}>●</span> {t["light_" + l]}
+    </span>
+  );
+}
+
+// how the day's energy splits over green / yellow / orange foods
+function LightBar({ t, items }) {
+  const on = useAmpel();
+  if (!on) return null;
+  const s = lightShares(items);
+  const known = s.green + s.yellow + s.orange;
+  if (known <= 0) return null;
+  const pct = (v) => Math.round((v / known) * 100);
+  return (
+    <div data-light-bar style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + COLORS.border }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 7 }}>
+        <span>{t.lightTitle}</span>
+        <span>
+          {LIGHT_KEYS.filter((k) => s[k] > 0).map((k) => (
+            <span key={k} data-light-pct={k} style={{ marginLeft: 9 }}>
+              <span style={{ color: LIGHT_COLORS[k] }}>●</span> {pct(s[k])}%
+            </span>
+          ))}
+        </span>
+      </div>
+      <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: COLORS.raised }}>
+        {LIGHT_KEYS.filter((k) => s[k] > 0).map((k) => (
+          <div key={k} data-light-seg={k} style={{ width: (s[k] / known) * 100 + "%", background: LIGHT_COLORS[k] }} />
+        ))}
+      </div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginTop: 7, lineHeight: 1.4 }}>{t.lightHint}</div>
+    </div>
+  );
+}
+
+// ---------------- Quick workouts: guided circuits with timer, voice and beeps ----------------
+function QuickWorkoutCards({ t, onOpen }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.quickTitle}</div>
+      <div data-quick-cards style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px", padding: "0 20px 4px" }}>
+        {QUICK_PRESETS.map((p) => (
+          <div key={p.key} data-quick-card={p.key} onClick={() => onOpen(p.key)} style={{ flex: "0 0 auto", width: 150, boxSizing: "border-box", padding: "12px 12px 11px", borderRadius: 16, background: COLORS.surface, border: "1px solid " + COLORS.border, cursor: "pointer", display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 24, lineHeight: 1 }}>{p.emoji}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text, lineHeight: 1.2 }}>{t["quick_" + p.key]}</div>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, lineHeight: 1.3 }}>{t.quickSub.replace("{n}", moveCount(p)).replace("{m}", presetMinutes(p))}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
+  const { gender } = useGender();
+  const preset = presetByKey(presetKey) || QUICK_PRESETS[0];
+  const tl = useMemo(() => buildTimeline(preset), [preset]);
+  const [phase, setPhase] = useState("intro"); // intro | run | done
+  const [voiceOn, setVoiceOn] = usePersisted("quickVoice", true);
+  const [startedAt, setStartedAt] = useState(0);
+  const [pausedAt, setPausedAt] = useState(null);
+  const [pausedMs, setPausedMs] = useState(0);
+  const [skipSec, setSkipSec] = useState(0);
+  const [, setTick] = useState(0);
+  const [result, setResult] = useState(null);
+  const mem = useRef({ idx: -1, beeped: {}, half: {} });
+  const wake = useRef(null);
+  const nameOfKey = (k) => {
+    const ex = EXERCISE_LIBRARY.find((e) => e.key === k);
+    return ex ? (lang === "de" ? ex.nameDe : ex.name) : k;
+  };
+  const elapsedNow = () => ((pausedAt || Date.now()) - startedAt - pausedMs) / 1000 + skipSec;
+
+  const releaseWake = () => {
+    try {
+      if (wake.current && wake.current.release) wake.current.release();
+    } catch {
+      /* ignore */
+    }
+    wake.current = null;
+  };
+  useEffect(
+    () => () => {
+      stopSpeaking();
+      releaseWake();
+    },
+    []
+  );
+  useEffect(() => {
+    if (phase !== "run") return undefined;
+    const id = setInterval(() => setTick((n) => n + 1), 200);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  const finish = (seconds, partial) => {
+    const kcal = burnKcal(preset.met, weightKg || 70, activeMinutes(seconds));
+    releaseWake();
+    if (voiceOn && !partial) {
+      speak(t.quickSayDone, lang);
+      beep(1000, 500);
+    } else stopSpeaking();
+    setResult({ seconds: Math.round(seconds), kcal, partial });
+    setPhase("done");
+  };
+
+  // announcements: on every new step, a beep for the last three seconds, "halfway" for the long moves
+  useEffect(() => {
+    if (phase !== "run" || pausedAt) return;
+    const loc = locate(tl, elapsedNow());
+    if (loc.done) {
+      finish(totalSec(tl), false);
+      return;
+    }
+    const seg = loc.seg;
+    const m = mem.current;
+    if (m.idx !== loc.i) {
+      m.idx = loc.i;
+      if (voiceOn) {
+        const nm = nameOfKey(seg.key);
+        speak((seg.kind === "ready" ? t.quickSayReady : seg.kind === "work" ? t.quickSayWork : t.quickSayRest).replace("{name}", nm), lang);
+        if (seg.kind === "work") beep(1100, 300);
+      }
+    }
+    const sec = Math.ceil(loc.left);
+    if (voiceOn && sec >= 1 && sec <= 3 && !m.beeped[loc.i + ":" + sec]) {
+      m.beeped[loc.i + ":" + sec] = true;
+      beep(660, 100);
+    }
+    if (voiceOn && seg.kind === "work" && seg.sec >= 40 && !m.half[loc.i] && loc.into >= seg.sec / 2) {
+      m.half[loc.i] = true;
+      speak(t.quickSayHalf, lang);
+    }
+  });
+
+  const start = () => {
+    unlockAudio();
+    mem.current = { idx: -1, beeped: {}, half: {} };
+    setPausedAt(null);
+    setPausedMs(0);
+    setSkipSec(0);
+    setStartedAt(Date.now());
+    setPhase("run");
+    holdScreen().then((l) => {
+      wake.current = l;
+    });
+  };
+  const togglePause = () => {
+    if (pausedAt) {
+      setPausedMs((p) => p + Date.now() - pausedAt);
+      setPausedAt(null);
+    } else {
+      stopSpeaking();
+      setPausedAt(Date.now());
+    }
+  };
+  const skip = () => setSkipSec((s) => s + locate(tl, elapsedNow()).left + 0.05);
+  const stop = () => {
+    const el = elapsedNow();
+    if (activeMinutes(el) >= 1) finish(el, true);
+    else {
+      stopSpeaking();
+      releaseWake();
+      setPhase("intro");
+    }
+  };
+
+  const fmt = (s) => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
+  const card = { marginBottom: 14 };
+
+  if (phase === "intro") {
+    return (
+      <div data-quick-intro style={{ padding: "0 20px 24px" }}>
+        <div style={{ fontSize: 34, lineHeight: 1, marginBottom: 8 }}>{preset.emoji}</div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text }}>{t["quick_" + preset.key]}</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "4px 0 14px", lineHeight: 1.45 }}>
+          {t.quickSub.replace("{n}", moveCount(preset)).replace("{m}", presetMinutes(preset))} · {preset.work} s / {preset.rest} s · {preset.chair ? t.quickChair : t.quickNoGear}
+          {preset.rounds > 1 ? " · " + t.quickRounds.replace("{n}", preset.rounds) : ""}
+        </div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 14, lineHeight: 1.45 }}>{t.quickIntro}</div>
+        <Card style={{ padding: 4, ...card }}>
+          {preset.exercises.map((k, i) => (
+            <div key={k} data-quick-ex={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: i < preset.exercises.length - 1 ? "1px solid " + COLORS.border : "none", fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>
+              <span style={{ width: 22, height: 22, borderRadius: "50%", background: COLORS.goldSoft, color: COLORS.gold, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span>
+              {nameOfKey(k)}
+            </div>
+          ))}
+        </Card>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text }}>{t.quickVoice}</span>
+          <div data-quick-voice style={{ display: "flex", gap: 8 }}>
+            <Chip label={t.optOn} active={!!voiceOn} onClick={() => setVoiceOn(true)} />
+            <Chip label={t.seasonOff} active={!voiceOn} onClick={() => setVoiceOn(false)} />
+          </div>
+        </div>
+        <button data-quick-start onClick={start} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 0", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
+          {t.quickStart}
+        </button>
+      </div>
+    );
+  }
+
+  if (phase === "done" && result) {
+    return (
+      <div data-quick-done style={{ padding: "30px 20px 24px", textAlign: "center" }}>
+        <div style={{ fontSize: 54, lineHeight: 1 }}>{result.partial ? "👍" : "🎉"}</div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, color: COLORS.text, margin: "12px 0 6px" }}>{result.partial ? t.quickDonePartial : t.quickDone}</div>
+        <div data-quick-stats style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, marginBottom: 24 }}>{t.quickStats.replace("{time}", fmt(result.seconds)).replace("{kcal}", result.kcal)}</div>
+        <button data-quick-log onClick={() => onLog({ presetKey: preset.key, seconds: result.seconds, kcal: result.kcal })} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 0", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", marginBottom: 10 }}>
+          {t.quickLog}
+        </button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button data-quick-again onClick={() => { setResult(null); setPhase("intro"); }} style={{ flex: 1, background: COLORS.raised, color: COLORS.text, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "12px 0", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>{t.quickAgain}</button>
+          <button data-quick-discard onClick={onClose} style={{ flex: 1, background: COLORS.raised, color: COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "12px 0", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>{t.quickDiscard}</button>
+        </div>
+      </div>
+    );
+  }
+
+  // running
+  const el = Math.max(0, elapsedNow());
+  const loc = locate(tl, el);
+  const seg = loc.seg;
+  const sec = Math.max(0, Math.ceil(loc.left));
+  const frac = Math.max(0, Math.min(1, loc.left / seg.sec));
+  const R = 78;
+  const C = 2 * Math.PI * R;
+  const color = seg.kind === "work" ? COLORS.gold : seg.kind === "rest" ? COLORS.teal : COLORS.coral;
+  const exObj = EXERCISE_LIBRARY.find((e) => e.key === seg.key);
+  const scene = sceneFor(seg.key);
+  const mus = exObj ? exerciseMuscles(exObj) : { primary: [] };
+  const nextWork = tl.slice(loc.i + 1).find((x) => x.kind === "work");
+  const label = seg.kind === "ready" ? t.quickReady : seg.kind === "rest" ? t.quickRest : t.quickMove.replace("{n}", seg.n).replace("{m}", seg.of);
+  const title = seg.kind === "rest" ? t.quickNext.replace("{name}", nameOfKey(seg.key)) : nameOfKey(seg.key);
+  return (
+    <div data-quick-run data-quick-kind={seg.kind} style={{ padding: "0 20px 24px" }}>
+      <div style={{ height: 5, borderRadius: 3, background: COLORS.raised, overflow: "hidden", marginBottom: 14 }}>
+        <div data-quick-progress style={{ height: "100%", width: Math.min(100, (el / totalSec(tl)) * 100) + "%", background: COLORS.gold, borderRadius: 3 }} />
+      </div>
+      <div style={{ textAlign: "center" }}>
+        <div data-quick-label style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: 0.4, color }}>{label}</div>
+        <div style={{ position: "relative", width: 176, height: 176, margin: "10px auto 8px" }}>
+          <svg width="176" height="176" viewBox="0 0 176 176">
+            <circle cx="88" cy="88" r={R} stroke={COLORS.raised} strokeWidth="10" fill="none" />
+            <circle cx="88" cy="88" r={R} stroke={color} strokeWidth="10" fill="none" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - frac)} transform="rotate(-90 88 88)" />
+          </svg>
+          <div data-quick-sec style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Sora, sans-serif", fontSize: 56, fontWeight: 700, color: COLORS.text }}>{sec}</div>
+        </div>
+        <div data-quick-name style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, minHeight: 26 }}>{title}</div>
+        {seg.kind === "work" && nextWork && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>{t.quickThen.replace("{name}", nameOfKey(nextWork.key))}</div>}
+        {pausedAt && <div data-quick-paused style={{ fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.coral, marginTop: 4 }}>{t.quickPause}</div>}
+      </div>
+      {scene && (
+        <Card style={{ margin: "14px 0", padding: 10 }}>
+          <ExerciseAnimation key={seg.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
+        </Card>
+      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button data-quick-pause onClick={togglePause} style={{ flex: 2, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "13px 0", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>{pausedAt ? t.quickResume : t.quickPause}</button>
+        <button data-quick-skip onClick={skip} style={{ flex: 1, background: COLORS.raised, color: COLORS.text, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "13px 0", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>{t.quickSkip}</button>
+        <button data-quick-stop onClick={stop} style={{ flex: 1, background: COLORS.raised, color: COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "13px 0", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>{t.quickStop}</button>
+      </div>
+    </div>
+  );
+}
+
+function TrainingScreen({ t, lang, planName, planDays = [], personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout, onSharePlan, onOpenFriends, onOpenQuick = () => {} }) {
   const timed = workoutHistory.filter((w) => w.durationSec > 0);
   const avgSessionSec = timed.length ? Math.round(timed.reduce((s, w) => s + w.durationSec, 0) / timed.length) : null;
   const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
@@ -4238,6 +4607,8 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
           </div>
         )}
       </Card>
+
+      <QuickWorkoutCards t={t} onOpen={onOpenQuick} />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
         <Card onClick={onOpenFriends} style={{ cursor: "pointer", padding: "14px 14px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -5938,7 +6309,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < listToShow.length - 1 ? `1px solid ${COLORS.border}` : "none", cursor: "pointer" }}
                 >
                   <div>
-                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{f.name}</div>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}><LightDot item={f} />{f.name}</div>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
                       {f.per100.kcal} kcal {f.unit === "ml" ? "/ 100 ml" : t.per100g} · P {f.per100.protein} · C {f.per100.carbs} · F {f.per100.fat}
                       {f.brand ? " · " + String(f.brand).split(",")[0].slice(0, 24) : ""}
@@ -5966,7 +6337,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             </div>
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: selected.note ? 8 : 20 }}>
-            {selected.per100.kcal} kcal {unit === "ml" ? "/ 100 ml" : t.per100g}{selected.brand ? " · " + String(selected.brand).split(",")[0] : ""}
+            {selected.per100.kcal} kcal {unit === "ml" ? "/ 100 ml" : t.per100g}{selected.brand ? " · " + String(selected.brand).split(",")[0] : ""}<LightNote item={selected} t={t} />
           </div>
           {selected.note && (
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim, marginBottom: 20, lineHeight: 1.45 }}>
@@ -10810,6 +11181,12 @@ function DisplaySettings({ t, lang, setLang, display }) {
         ))}
       </div>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 8, lineHeight: 1.5 }}>{t.seasonHint}</div>
+      <SettingsLabel>{t.lightSetting}</SettingsLabel>
+      <div data-light-chips style={{ display: "flex", gap: 8 }}>
+        <Chip label={t.optOn} active={!!display.ampel} onClick={() => display.setAmpel(true)} />
+        <Chip label={t.seasonOff} active={!display.ampel} onClick={() => display.setAmpel(false)} />
+      </div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 8, lineHeight: 1.5 }}>{t.lightHint}</div>
       <SettingsLabel>{t.setTextSize}</SettingsLabel>
       <div style={{ display: "flex", gap: 8 }}>
         <Chip label={t.setSmall} active={display.textSize === "s"} onClick={() => display.setTextSize("s")} />
@@ -11390,6 +11767,8 @@ export default function AsmarFitApp() {
   }, [seasonMode, dayStamp]);
   const seasonCtx = useMemo(() => ({ key: seasonKey }), [seasonKey]);
   const newVersion = useNewVersion();
+  const [quickKey, setQuickKey] = useState(null);
+  const [ampelOn, setAmpelOn] = usePersisted("ampel", true);
   const [aiOn, setAiOn] = usePersisted("aiData", true);
   const aiData = useMemo(() => {
     const day = (x) => String(x).slice(0, 10);
@@ -11635,6 +12014,14 @@ export default function AsmarFitApp() {
         }),
       });
     }
+  };
+
+  // a finished guided short workout goes into the training log like any other session
+  const logQuickWorkout = ({ presetKey, seconds, kcal }) => {
+    const minutes = Math.max(1, Math.round(seconds / 60));
+    setWorkoutHistory((h) => [...h, { id: Date.now(), dateISO: new Date().toISOString(), durationSec: seconds, volumeKg: 0, sets: [], cardio: [{ exerciseKey: "hiit", minutes }], burnedKcal: kcal, quick: presetKey }]);
+    setOverlay(null);
+    flashShare(t.quickLogged);
   };
 
   const createCustomRecord = ({ name, unit, value, lower, reward }) => {
@@ -12115,6 +12502,10 @@ export default function AsmarFitApp() {
     content = <MealPlanScreen t={t} lang={lang} targets={{ kcal: profile.kcalGoal, protein: profile.macroTargets.protein, carbs: profile.macroTargets.carbs, fat: profile.macroTargets.fat }} onAddToMeal={(slot, food) => setMeals((m) => ({ ...m, [slot]: [...m[slot], food] }))} />;
     topTitle = t.mealplanTitle;
     showBack = () => setOverlay(null);
+  } else if (overlay === "quickWorkout") {
+    content = <QuickWorkoutScreen key={quickKey} t={t} lang={lang} presetKey={quickKey} weightKg={profile.weight} onLog={logQuickWorkout} onClose={() => setOverlay(null)} />;
+    topTitle = t.quickTitle;
+    showBack = () => setOverlay(null);
   } else if (overlay === "fasting") {
     content = <FastingScreen t={t} lang={lang} />;
     topTitle = t.fastTitle;
@@ -12204,7 +12595,7 @@ export default function AsmarFitApp() {
     topTitle = t.setGoalsRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsDisplay") {
-    content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize, intro: introOn, setIntro: setIntroOn, season: seasonMode, setSeason: setSeasonMode }} />;
+    content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize, intro: introOn, setIntro: setIntroOn, season: seasonMode, setSeason: setSeasonMode, ampel: ampelOn, setAmpel: setAmpelOn }} />;
     topTitle = t.setDisplayRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsReminders") {
@@ -12336,6 +12727,10 @@ export default function AsmarFitApp() {
           workoutHistory={workoutHistory}
           onStartWorkout={startOrResumeWorkout}
           onOpenPlanBuilder={() => setOverlay("planBuilder")}
+          onOpenQuick={(k) => {
+            setQuickKey(k);
+            setOverlay("quickWorkout");
+          }}
           onOpenRecords={() => setOverlay("records")}
           onOpenLibrary={() => {
             setLibraryReturnTo("main");
@@ -12387,6 +12782,7 @@ export default function AsmarFitApp() {
   return (
     <GenderCtx.Provider value={genderCtx}>
     <SeasonCtx.Provider value={seasonCtx}>
+    <AmpelCtx.Provider value={ampelOn}>
     <div style={{ display: "flex", justifyContent: "center", padding: isPhone ? 0 : "24px 12px", minHeight: "100%" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
@@ -12444,6 +12840,7 @@ export default function AsmarFitApp() {
         {introOn && !introDone && <StartIntro onDone={finishIntro} full={introFull} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
       </div>
     </div>
+    </AmpelCtx.Provider>
     </SeasonCtx.Provider>
     </GenderCtx.Provider>
   );
