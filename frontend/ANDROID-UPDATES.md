@@ -32,6 +32,8 @@ Android installiert eine neue APK nur über die alte, wenn beide mit demselben S
 
 **Häufiger Fehler:** den Befehl selbst statt seines Ergebnisses einfügen. Dann hat das Secret nur etwa 100 Zeichen. Der Android-Bau meldet das als Warnung („Länge … Zeichen") und baut trotzdem weiter, aber mit einem neuen Schlüssel.
 
+Tipp: Wenn der Befehl aus einem Chat-Fenster kommt, kopiert ein „Run“-Knopf ihn manchmal nur in die Zwischenablage und überschreibt damit den Schlüssel. Dann stimmt die Länge (etwa 100 statt 3400 Zeichen) nicht. Den Befehl lieber direkt im PowerShell-Fenster ausführen und danach nichts mehr kopieren.
+
 **Prüfen, ob es geklappt hat:** Ein Secret allein startet keinen Bau. Starte ihn über **Actions → Android-App bauen → Run workflow** oder durch einen Push. Im Lauf darf **keine** gelbe Warnung zum Secret stehen. Steht dort „Länge … Zeichen“, stimmt der Wert noch nicht.
 
 Den Wert niemandem schicken und nirgends einfügen (auch nicht in den Chat). Ohne dieses Secret läuft der Bau trotzdem, die APK hat dann aber bei jedem Lauf einen neuen Schlüssel und lässt sich nur nach Deinstallieren der alten App installieren (Daten vorher über „Backup" in den Einstellungen sichern).
