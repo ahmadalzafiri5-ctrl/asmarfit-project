@@ -45,11 +45,104 @@ export function speak(text, lang, opts = {}) {
 }
 
 export function stopSpeaking() {
+  stopClip();
   try {
     if (voiceSupported()) window.speechSynthesis.cancel();
   } catch {
     /* ignore */
   }
+}
+
+// ---- recorded voice clips (made once with ElevenLabs, shipped inside the app: same natural voice on every phone, works offline) ----
+// public/voice/manifest.json lists which clips exist per language; a line without a clip is spoken by the phone's own voice instead.
+let manifestPromise = null;
+const loadManifest = () => manifestPromise || (manifestPromise = fetch("/voice/manifest.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
+const langKey = (lang) => (lang === "de" ? "de" : "en");
+export const clipUrl = (lang, id) => "/voice/" + langKey(lang) + "/" + id + ".mp3";
+export async function hasClip(lang, id) {
+  const m = await loadManifest();
+  return Array.isArray(m[langKey(lang)]) && m[langKey(lang)].includes(id);
+}
+
+const decoded = new Map(); // url -> Promise<AudioBuffer | null>
+function decodeClip(url) {
+  if (!decoded.has(url)) {
+    decoded.set(
+      url,
+      (async () => {
+        try {
+          if (!audioCtx) return null;
+          const r = await fetch(url);
+          if (!r.ok) return null;
+          const data = await r.arrayBuffer();
+          const buf = await new Promise((res, rej) => {
+            const p = audioCtx.decodeAudioData(data, res, rej);
+            if (p && p.then) p.then(res, rej);
+          });
+          if (buf) buf.__clip = url;
+          return buf || null;
+        } catch {
+          return null;
+        }
+      })().then((b) => {
+        if (!b) decoded.delete(url); // not cached when it failed, so a later try can work
+        return b;
+      })
+    );
+  }
+  return decoded.get(url);
+}
+
+let playing = null;
+let playSeq = 0;
+function stopClip() {
+  playSeq++; // a clip that is still loading must not start any more
+  try {
+    if (playing) playing.stop();
+  } catch {
+    /* already stopped */
+  }
+  playing = null;
+}
+
+// plays the clip; resolves true when the clip is (or was about to be) played, false when there is none or it failed (then speak the text)
+export async function playClip(lang, id) {
+  stopClip();
+  const my = playSeq;
+  try {
+    if (!audioCtx || !(await hasClip(lang, id))) return false;
+    const buf = await decodeClip(clipUrl(lang, id));
+    if (!buf) return false;
+    if (my !== playSeq) return true; // a newer announcement took over while this one was loading
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+    playing = src;
+    src.onended = () => {
+      if (playing === src) playing = null;
+    };
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// get the next clips ready (download and decode) so they start the moment they are needed
+export function preloadClips(lang, ids) {
+  ids.forEach((id) => {
+    hasClip(lang, id)
+      .then((ok) => (ok ? decodeClip(clipUrl(lang, id)) : null))
+      .catch(() => {});
+  });
+}
+// only warm the download cache (before any tap, when sound is not unlocked yet)
+export function warmClips(lang, ids) {
+  ids.forEach((id) => {
+    hasClip(lang, id)
+      .then((ok) => (ok ? fetch(clipUrl(lang, id)).catch(() => {}) : null))
+      .catch(() => {});
+  });
 }
 
 let audioCtx = null;

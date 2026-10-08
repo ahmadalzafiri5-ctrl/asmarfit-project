@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/sync-basics.mjs",
+    "predev": "node scripts/sync-basics.mjs && node scripts/voice-manifest.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/sync-basics.mjs",
+    "prebuild": "node scripts/sync-basics.mjs && node scripts/voice-manifest.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
