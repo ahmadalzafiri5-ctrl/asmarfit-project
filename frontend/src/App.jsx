@@ -12,7 +12,7 @@ import { suggestNext } from "./progression.js";
 import { SEASONS, SEASON_KEYS, seasonFor, isSouthern } from "./seasons.js";
 import { lightOf, lightShares, LIGHT_COLORS, LIGHT_KEYS } from "./foodLight.js";
 import { QUICK_PRESETS, presetByKey, buildTimeline, totalSec, moveCount, presetMinutes, locate, activeMinutes } from "./quickWorkouts.js";
-import { speak, stopSpeaking, beep, unlockAudio, holdScreen } from "./voice.js";
+import { speak, stopSpeaking, beep, unlockAudio, holdScreen, voicesFor, voiceId, voiceSupported } from "./voice.js";
 import { installA11y } from "./a11y.js";
 import { allCountries, searchCountries, countryName, flagOf, guessCountry, ffRegionFor } from "./countries.js";
 import { alarmCfg, fastAlarmPlan, fastAlarmsDue, markFired, icsForFast, FAST_NOTIF_END, FAST_NOTIF_SOON } from "./fastAlarm.js";
@@ -430,6 +430,19 @@ const STR = {
     countryNone: "No country found",
     countryDb: "Database: {c}",
     countryHeader: "Country & database",
+    quickVoiceName: "Voice",
+    quickVoiceAutoShort: "Automatic",
+    quickVoiceChange: "Change",
+    quickVoiceDone: "Done",
+    quickVoiceAuto: "Automatic (best installed)",
+    quickVoiceTempo: "Speed",
+    quickVoiceSlow: "Slow",
+    quickVoiceNormal: "Normal",
+    quickVoiceFast: "Fast",
+    quickVoiceTest: "Test voice",
+    quickVoiceSample: "Get ready. Jumping jacks. Go!",
+    quickVoiceNone: "No English voice is installed on this device, so you only get the beeps.",
+    quickVoiceHelp: "Does the voice sound like a robot? It comes from your phone's speech engine, not from ASFIT and not from a browser. It gets better when you install a high-quality voice there. Android: Settings → General management → Language → Text-to-speech → Google speech services → install voice data. iPhone: Settings → Accessibility → Spoken content → Voices → pick one marked Enhanced or Premium. Then choose it here.",
     seasonLook: "Seasonal look",
     seasonAuto: "Automatic",
     seasonOff: "Off",
@@ -1499,6 +1512,19 @@ const STR = {
     countryNone: "Kein Land gefunden",
     countryDb: "Datenbank: {c}",
     countryHeader: "Land & Datenbank",
+    quickVoiceName: "Stimme",
+    quickVoiceAutoShort: "Automatisch",
+    quickVoiceChange: "Ändern",
+    quickVoiceDone: "Fertig",
+    quickVoiceAuto: "Automatisch (beste vorhandene)",
+    quickVoiceTempo: "Tempo",
+    quickVoiceSlow: "Langsam",
+    quickVoiceNormal: "Normal",
+    quickVoiceFast: "Schnell",
+    quickVoiceTest: "Stimme testen",
+    quickVoiceSample: "Mach dich bereit. Hampelmann. Los!",
+    quickVoiceNone: "Auf diesem Gerät ist keine deutsche Stimme installiert, du hörst dann nur die Töne.",
+    quickVoiceHelp: "Klingt die Stimme nach Roboter? Sie kommt von der Sprachausgabe deines Handys, nicht von ASFIT und nicht vom Browser. Besser wird sie, wenn du dort eine hochwertige Stimme lädst. Android: Einstellungen → Allgemeine Verwaltung → Sprache → Text-in-Sprache → Google-Sprachausgabe → Sprachdaten installieren. iPhone: Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → eine mit „Erweitert“ oder „Premium“ laden. Danach hier auswählen.",
     seasonLook: "Jahreszeiten-Look",
     seasonAuto: "Automatisch",
     seasonOff: "Aus",
@@ -4554,6 +4580,36 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const tl = useMemo(() => buildTimeline(preset), [preset]);
   const [phase, setPhase] = useState("intro"); // intro | run | done
   const [voiceOn, setVoiceOn] = usePersisted("quickVoice", true);
+  const [voiceCfg, setVoiceCfg] = usePersisted("voiceCfg", { de: null, en: null, rate: 1 }); // the voice the user picked per language, and the tempo
+  const [voiceOpen, setVoiceOpen] = useState(false); // the list of voices is folded away until the user wants to change it
+  const [voices, setVoices] = useState(() => voicesFor(lang));
+  useEffect(() => {
+    const sync = () => setVoices(voicesFor(lang));
+    sync();
+    try {
+      window.speechSynthesis.addEventListener("voiceschanged", sync);
+    } catch {
+      /* no speech engine */
+    }
+    return () => {
+      try {
+        window.speechSynthesis.removeEventListener("voiceschanged", sync);
+      } catch {
+        /* no speech engine */
+      }
+    };
+  }, [lang]);
+  const say = (txt) => speak(txt, lang, { voiceURI: voiceCfg[lang] || null, rate: voiceCfg.rate || 1 });
+  const pickVoice = (id) => {
+    unlockAudio();
+    setVoiceCfg((c) => ({ ...c, [lang]: id }));
+    speak(t.quickVoiceSample, lang, { voiceURI: id, rate: voiceCfg.rate || 1 });
+  };
+  const setTempo = (rate) => {
+    unlockAudio();
+    setVoiceCfg((c) => ({ ...c, rate }));
+    speak(t.quickVoiceSample, lang, { voiceURI: voiceCfg[lang] || null, rate });
+  };
   const [startedAt, setStartedAt] = useState(0);
   const [pausedAt, setPausedAt] = useState(null);
   const [pausedMs, setPausedMs] = useState(0);
@@ -4605,7 +4661,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
     const kcal = burnKcal(preset.met, weightKg || 70, activeMinutes(seconds));
     releaseWake();
     if (voiceOn && !partial) {
-      speak(t.quickSayDone, lang);
+      say(t.quickSayDone);
       beep(1000, 500);
     } else stopSpeaking();
     setResult({ seconds: Math.round(seconds), kcal, partial });
@@ -4626,7 +4682,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
       m.idx = loc.i;
       if (voiceOn) {
         const nm = nameOfKey(seg.key);
-        speak((seg.kind === "ready" ? t.quickSayReady : seg.kind === "work" ? t.quickSayWork : t.quickSayRest).replace("{name}", nm), lang);
+        say((seg.kind === "ready" ? t.quickSayReady : seg.kind === "work" ? t.quickSayWork : t.quickSayRest).replace("{name}", nm));
         if (seg.kind === "work") beep(1100, 300);
       }
     }
@@ -4637,7 +4693,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
     }
     if (voiceOn && seg.kind === "work" && seg.sec >= 40 && !m.half[loc.i] && loc.into >= seg.sec / 2) {
       m.half[loc.i] = true;
-      speak(t.quickSayHalf, lang);
+      say(t.quickSayHalf);
     }
   });
 
@@ -4676,6 +4732,8 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const fmt = (s) => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
   const card = { marginBottom: 14 };
 
+  const savedVoice = voices.find((x) => voiceId(x) === voiceCfg[lang]);
+  const currentVoiceName = savedVoice ? savedVoice.name : voices[0] ? t.quickVoiceAutoShort + " · " + voices[0].name : "–";
   if (phase === "intro") {
     return (
       <div data-quick-intro style={{ padding: "0 20px 24px" }}>
@@ -4686,6 +4744,61 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
           {preset.rounds > 1 ? " · " + t.quickRounds.replace("{n}", preset.rounds) : ""}
         </div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 14, lineHeight: 1.45 }}>{t.quickIntro}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text }}>{t.quickVoice}</span>
+          <div data-quick-voice style={{ display: "flex", gap: 8 }}>
+            <Chip label={t.optOn} active={!!voiceOn} onClick={() => setVoiceOn(true)} />
+            <Chip label={t.seasonOff} active={!voiceOn} onClick={() => setVoiceOn(false)} />
+          </div>
+        </div>
+        {voiceOn && voiceSupported() && (
+          <div data-voice-pick style={{ marginBottom: 14 }}>
+            <div data-voice-line onClick={() => setVoiceOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 12, background: COLORS.raised, border: "1px solid " + COLORS.border, cursor: "pointer", marginBottom: voiceOpen || voices.length === 0 ? 10 : 0 }}>
+              <span style={{ flex: 1, minWidth: 0, fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
+                {t.quickVoiceName}: <b>{currentVoiceName}</b>
+              </span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold }}>{voiceOpen ? t.quickVoiceDone : t.quickVoiceChange}</span>
+            </div>
+            {!(voiceOpen || voices.length === 0) ? null : voices.length === 0 ? (
+              <div data-voice-none style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, lineHeight: 1.5, marginBottom: 8 }}>{t.quickVoiceNone}</div>
+            ) : (
+              <>
+                <div data-voice-list style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+                  {[null, ...voices.slice(0, 8)].map((v) => {
+                    const id = v ? voiceId(v) : null;
+                    const saved = voices.some((x) => voiceId(x) === voiceCfg[lang]) ? voiceCfg[lang] : null; // a voice that is no longer installed counts as "automatic"
+                    const on = saved === id;
+                    return (
+                      <div key={id || "auto"} data-voice-option={id || "auto"} data-voice-on={on ? "1" : undefined} onClick={() => pickVoice(id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 12, background: on ? COLORS.goldSoft : COLORS.raised, border: "1px solid " + (on ? COLORS.gold : COLORS.border), cursor: "pointer" }}>
+                        <span style={{ flex: 1, minWidth: 0, fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
+                          {v ? v.name : t.quickVoiceAuto}
+                          {!v && <span style={{ color: COLORS.dim }}> · {voices[0].name}</span>}
+                        </span>
+                        {v && v.localService === false && <span style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: COLORS.dim }}>online</span>}
+                        {on && <Check size={15} color={COLORS.gold} />}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.quickVoiceTempo}</span>
+                  <div data-voice-speed style={{ display: "flex", gap: 6 }}>
+                    <Chip label={t.quickVoiceSlow} active={(voiceCfg.rate || 1) === 0.9} onClick={() => setTempo(0.9)} />
+                    <Chip label={t.quickVoiceNormal} active={(voiceCfg.rate || 1) === 1} onClick={() => setTempo(1)} />
+                    <Chip label={t.quickVoiceFast} active={(voiceCfg.rate || 1) === 1.1} onClick={() => setTempo(1.1)} />
+                  </div>
+                </div>
+                <div data-voice-test onClick={() => { unlockAudio(); speak(t.quickVoiceSample, lang, { voiceURI: voiceCfg[lang] || null, rate: voiceCfg.rate || 1 }); }} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, cursor: "pointer", marginBottom: 10 }}>
+                  ▶ {t.quickVoiceTest}
+                </div>
+              </>
+            )}
+            {(voiceOpen || voices.length === 0) && <div data-voice-help style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, lineHeight: 1.5 }}>{t.quickVoiceHelp}</div>}
+          </div>
+        )}
+        <button data-quick-start onClick={start} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 0", marginBottom: 18, fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
+          {t.quickStart}
+        </button>
         <Card style={{ padding: 4, ...card }}>
           {preset.exercises.map((k, i) => (
             <div key={k} data-quick-ex={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: i < preset.exercises.length - 1 ? "1px solid " + COLORS.border : "none", fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>
@@ -4694,16 +4807,6 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
             </div>
           ))}
         </Card>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text }}>{t.quickVoice}</span>
-          <div data-quick-voice style={{ display: "flex", gap: 8 }}>
-            <Chip label={t.optOn} active={!!voiceOn} onClick={() => setVoiceOn(true)} />
-            <Chip label={t.seasonOff} active={!voiceOn} onClick={() => setVoiceOn(false)} />
-          </div>
-        </div>
-        <button data-quick-start onClick={start} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 0", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
-          {t.quickStart}
-        </button>
       </div>
     );
   }

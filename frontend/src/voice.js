@@ -2,17 +2,42 @@
 // optional: if the phone has no speech voice or blocks audio, the workout simply stays silent.
 export const voiceSupported = () => typeof window !== "undefined" && "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
 
-export function speak(text, lang) {
+// The voices come from the phone's speech engine, not from the browser or the app. A robotic sound is the engine's basic
+// voice: the app picks the best one installed (natural / enhanced / online voices first, "compact" ones last) and lets the
+// user choose another.
+const GOOD = /natural|neural|premium|enhanced|erweitert|online|wavenet|siri|studio/i;
+const POOR = /compact|eloquence|espeak|robo/i;
+const quality = (v) => (GOOD.test(v.name || "") ? 4 : 0) + (v.localService === false ? 2 : 0) - (POOR.test(v.name || "") ? 5 : 0);
+const sameLang = (v, lang) => !!v.lang && v.lang.replace("_", "-").toLowerCase().startsWith(lang === "de" ? "de" : "en");
+
+// installed voices for the app language, best first
+export function voicesFor(lang) {
+  if (!voiceSupported()) return [];
+  let all = [];
+  try {
+    all = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() || [] : [];
+  } catch {
+    all = [];
+  }
+  return all.filter((v) => sameLang(v, lang)).sort((a, b) => quality(b) - quality(a) || String(a.name).localeCompare(String(b.name)));
+}
+export const voiceId = (v) => v.voiceURI || v.name;
+
+// opts: { voiceURI: the user's pick (falls back to the best voice when it is gone), rate: 0.8 .. 1.2 }
+export function speak(text, lang, opts = {}) {
   if (!voiceSupported() || !text) return;
   try {
     const synth = window.speechSynthesis;
     synth.cancel();
     const u = new window.SpeechSynthesisUtterance(text);
-    const tag = lang === "de" ? "de-DE" : "en-GB";
-    u.lang = tag;
-    const v = (synth.getVoices ? synth.getVoices() : []).find((x) => x.lang && x.lang.replace("_", "-").toLowerCase().startsWith(tag.slice(0, 2).toLowerCase()));
-    if (v) u.voice = v;
-    u.rate = 1;
+    u.lang = lang === "de" ? "de-DE" : "en-GB";
+    const list = voicesFor(lang);
+    const v = (opts.voiceURI && list.find((x) => voiceId(x) === opts.voiceURI)) || list[0];
+    if (v) {
+      u.voice = v;
+      if (v.lang) u.lang = v.lang;
+    }
+    u.rate = Number.isFinite(opts.rate) && opts.rate >= 0.5 && opts.rate <= 2 ? opts.rate : 1;
     synth.speak(u);
   } catch {
     /* no voice available */
