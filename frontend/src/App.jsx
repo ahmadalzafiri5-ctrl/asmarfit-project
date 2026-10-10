@@ -14,6 +14,8 @@ import { lightOf, lightShares, LIGHT_COLORS, LIGHT_KEYS } from "./foodLight.js";
 import { QUICK_PRESETS, presetByKey, buildTimeline, totalSec, moveCount, presetMinutes, locate, activeMinutes } from "./quickWorkouts.js";
 import { speak, stopSpeaking, beep, unlockAudio, holdScreen, playClip, preloadClips, warmClips } from "./voice.js";
 import { installA11y } from "./a11y.js";
+import { anatomySvg, anatomyLite, MUSCLE_IDS, RANK_GROUPS } from "./anatomy.js";
+import { rankPoints, tierFor, heatFor } from "./muscleRank.js";
 import { allCountries, searchCountries, countryName, flagOf, guessCountry, ffRegionFor } from "./countries.js";
 import { alarmCfg, fastAlarmPlan, fastAlarmsDue, markFired, icsForFast, FAST_NOTIF_END, FAST_NOTIF_SOON } from "./fastAlarm.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
@@ -957,6 +959,16 @@ const STR = {
     libSecondary: "Secondary muscles",
     libFront: "Front",
     libBack: "Back",
+    rankTitle: "Muscle ranks",
+    rankSub: "Weighted sets of the last 30 days: a set counts fully for the main muscle and half for helper muscles.",
+    rankEmpty: "No sets in the last 30 days yet. Log a workout and your body colours by rank.",
+    rank_none: "Unranked",
+    rank_bronze: "Bronze",
+    rank_silver: "Silver",
+    rank_gold: "Gold",
+    rank_platin: "Platinum",
+    rank_emerald: "Emerald",
+    rank_diamond: "Diamond",
     libYoutube: "Watch technique video",
     libBoard: "Leaderboard",
     shareTypePlan: "Training plan",
@@ -2026,6 +2038,16 @@ const STR = {
     libSecondary: "Nebenmuskeln",
     libFront: "Vorne",
     libBack: "Hinten",
+    rankTitle: "Muskel-Rangliste",
+    rankSub: "Gewichtete Sätze der letzten 30 Tage: Ein Satz zählt voll für den Hauptmuskel und halb für Hilfsmuskeln.",
+    rankEmpty: "Noch keine Sätze in den letzten 30 Tagen. Logge ein Training, dann färbt sich dein Körper nach Rang.",
+    rank_none: "Unbewertet",
+    rank_bronze: "Bronze",
+    rank_silver: "Silber",
+    rank_gold: "Gold",
+    rank_platin: "Platin",
+    rank_emerald: "Smaragd",
+    rank_diamond: "Diamant",
     libYoutube: "Technik-Video ansehen",
     libBoard: "Rangliste",
     shareTypePlan: "Trainingsplan",
@@ -4529,7 +4551,7 @@ function QuickWorkoutCards({ t, onOpen }) {
 }
 
 // start and end picture of a move that flip back and forth (tap to pause); a missing picture hands over to the figure
-function QuickPhoto({ media, item, name, cue, onFail }) {
+function QuickPhoto({ media, item, name, cue, onFail, muscles = null }) {
   const [paused, setPaused] = useState(false);
   const url = (n) => media.base + item.id + "/" + n + ".jpg";
   return (
@@ -4538,6 +4560,7 @@ function QuickPhoto({ media, item, name, cue, onFail }) {
         <style>{"@keyframes quickFlip { 0%, 42% { opacity: 0; } 50%, 92% { opacity: 1; } 100% { opacity: 0; } }"}</style>
         <img src={url(0)} alt={name} onError={onFail} style={{ display: "block", width: "100%" }} />
         <img src={url(1)} alt="" onError={onFail} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: 0, animation: "quickFlip 2.6s ease-in-out infinite", animationPlayState: paused ? "paused" : "running" }} />
+        <PhotoBody muscles={muscles} />
       </div>
       {cue && (
         <div style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: COLORS.dim }}>
@@ -4787,7 +4810,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
             </div>
           )}
           {tab === "photo" && photoItem ? (
-            <QuickPhoto key={seg.key} media={media} item={photoItem} name={nameOfKey(seg.key)} cue={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} onFail={() => setBadImg((b) => ({ ...b, [seg.key]: true }))} />
+            <QuickPhoto key={seg.key} muscles={mus} media={media} item={photoItem} name={nameOfKey(seg.key)} cue={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} onFail={() => setBadImg((b) => ({ ...b, [seg.key]: true }))} />
           ) : scene ? (
             <ExerciseAnimation key={seg.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
           ) : null}
@@ -5049,6 +5072,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
   return (
     <div style={{ padding: "0 20px 24px" }}>
       {weekly && <WeeklyReviewCard t={t} review={weekly} mode="progress" onApply={onApplyWeekly} />}
+      <MuscleRankCard t={t} workoutHistory={workoutHistory} />
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         {t.ranges.map((r, i) => (
           <Chip key={r} label={r} active={range === i} onClick={() => setRange(i)} />
@@ -9694,7 +9718,7 @@ function ExerciseVideoRow({ t, lang, exKey, name, onShare }) {
   );
 }
 
-function ExerciseDemo({ t, lang, media, item, bare = false }) {
+function ExerciseDemo({ t, lang, media, item, bare = false, muscles = null }) {
   const [paused, setPaused] = useState(false);
   const [imgOk, setImgOk] = useState(true);
   const l = lang === "de" ? "de" : "en";
@@ -9710,6 +9734,7 @@ function ExerciseDemo({ t, lang, media, item, bare = false }) {
             <style>{"@keyframes demoFlip { 0%, 42% { opacity: 0; } 50%, 92% { opacity: 1; } 100% { opacity: 0; } }"}</style>
             <img src={url(0)} alt="" loading="lazy" onError={() => setImgOk(false)} style={{ display: "block", width: "100%" }} />
             <img src={url(1)} alt="" loading="lazy" onError={() => setImgOk(false)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: 0, animation: "demoFlip 2.6s ease-in-out infinite", animationPlayState: paused ? "paused" : "running" }} />
+            <PhotoBody muscles={muscles} />
           </div>
           <div style={{ ...small, fontSize: 11.5, margin: "6px 0 10px" }}>{t.libStartEnd}</div>
         </>
@@ -9824,64 +9849,117 @@ function exerciseMuscles(ex) {
   return { primary, secondary: split(s).filter((m) => !primary.includes(m)) };
 }
 
-// Simple front and back body; each muscle is a shape that lights up red (primary) or blue (secondary).
-function MuscleMap({ primary = [], secondary = [] }) {
+// ---------- Anatomy: shaded body charts, small body icons ----------
+let anatomyUid = 0;
+// front and back of the body, shaded like a muscle atlas; main muscles red and pulsing, helpers blue, or a heat colour per muscle
+function AnatomyChart({ primary = [], secondary = [], heat = null, views = ["front", "back"], label = "", animate = true }) {
   const { gender } = useGender();
-  const fillOf = (id) => (primary.includes(id) ? "#E3262E" : secondary.includes(id) ? "#4A8DF6" : "rgba(128,128,128,0.28)");
-  const active = (id) => primary.includes(id) || secondary.includes(id);
-  const sil = { fill: "rgba(128,128,128,0.14)", stroke: "rgba(128,128,128,0.35)", strokeWidth: 0.8 };
-  const m = (id, node) => <g key={id + node.key} fill={fillOf(id)} opacity={active(id) ? 1 : 0.9}>{node}</g>;
-  const E = (cx, cy, rx, ry, rot = 0) => <ellipse key={cx + "-" + cy} cx={cx} cy={cy} rx={rx} ry={ry} transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined} />;
-  // silhouette: broad shoulders for men, waist and hips for women, the neutral one for everybody else
-  const torso =
-    gender === "female"
-      ? "M29 37 Q50 31 71 37 L67 62 Q62 74 65 90 Q70 102 66 112 L34 112 Q30 102 35 90 Q38 74 33 62 Z"
-      : gender === "male"
-      ? "M23 36 Q50 28 77 36 L71 70 Q69 96 63 110 L37 110 Q31 96 29 70 Z"
-      : "M27 36 Q50 29 73 36 L69 70 Q67 96 62 110 L38 110 Q33 96 31 70 Z";
-  const body = (
-    <>
-      <ellipse cx="50" cy="14" rx="9" ry="11" {...sil} />
-      {gender === "female" && <path d="M41 10 Q38 26 41 36 M59 10 Q62 26 59 36" fill="none" stroke="var(--c-gold)" strokeWidth="2.6" strokeLinecap="round" />}
-      <rect x="45" y="24" width="10" height="9" rx="3" {...sil} />
-      <path d={torso} {...sil} />
-      <ellipse cx="23" cy="58" rx={gender === "male" ? 7.2 : gender === "female" ? 5.6 : 6.5} ry="21" transform="rotate(7 23 58)" {...sil} />
-      <ellipse cx="77" cy="58" rx={gender === "male" ? 7.2 : gender === "female" ? 5.6 : 6.5} ry="21" transform="rotate(-7 77 58)" {...sil} />
-      <ellipse cx="18" cy="92" rx="5" ry="17" transform="rotate(5 18 92)" {...sil} />
-      <ellipse cx="82" cy="92" rx="5" ry="17" transform="rotate(-5 82 92)" {...sil} />
-      <ellipse cx="40" cy="138" rx="11.5" ry="29" {...sil} />
-      <ellipse cx="60" cy="138" rx="11.5" ry="29" {...sil} />
-      <ellipse cx="40" cy="185" rx="7.5" ry="24" {...sil} />
-      <ellipse cx="60" cy="185" rx="7.5" ry="24" {...sil} />
-    </>
+  const uid = useRef(null);
+  if (uid.current === null) uid.current = "an" + ++anatomyUid;
+  const key = views.join("+") + "|" + primary.join(",") + "|" + secondary.join(",");
+  const html = useMemo(
+    () => anatomySvg({ views, primary, secondary, heat, uid: uid.current, animate, gender: gender === "female" ? "female" : "neutral", accent: "var(--c-gold)", label }).replace("<svg ", "<svg data-gender=\"" + (gender === "female" || gender === "male" ? gender : "diverse") + "\" "),
+    [key, heat, animate, gender, label]
   );
+  return <div data-anatomy-chart dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+// small body icon: the silhouette with only the lit muscles (library list, filter bar, photo corner)
+function BodyIcon({ primary = [], secondary = [], width = 30, label = "" }) {
+  return <div data-body-icon aria-hidden={label ? undefined : "true"} style={{ width, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: anatomyLite({ primary, secondary, label }) }} />;
+}
+
+// the body in the corner of an exercise photo: shows at a glance where the move works
+function PhotoBody({ muscles }) {
+  if (!muscles || !muscles.primary || muscles.primary.length === 0) return null;
   return (
-    <svg viewBox="0 0 210 212" style={{ width: "100%", display: "block" }} role="img" aria-hidden="true" data-gender={gender}>
-      <g>
-        {body}
-        {m("shoulders", <g key="a">{E(27, 43, 7, 8.5)}{E(73, 43, 7, 8.5)}</g>)}
-        {m("chest", <g key="b"><path d="M49 40 Q38 38 31 47 Q33 59 49 61 Z" /><path d="M51 40 Q62 38 69 47 Q67 59 51 61 Z" /></g>)}
-        {m("biceps", <g key="c">{E(22, 60, 5, 13, 7)}{E(78, 60, 5, 13, -7)}</g>)}
-        {m("forearms", <g key="d">{E(18, 92, 4.2, 15, 5)}{E(82, 92, 4.2, 15, -5)}</g>)}
-        {m("abs", <g key="e"><rect x="44" y="64" width="12" height="10" rx="3" /><rect x="44" y="76" width="12" height="10" rx="3" /><rect x="44" y="88" width="12" height="11" rx="3" /></g>)}
-        {m("obliques", <g key="f">{E(38, 82, 4.2, 15, -6)}{E(62, 82, 4.2, 15, 6)}</g>)}
-        {m("adductors", <g key="g">{E(50, 128, 3.6, 17)}</g>)}
-        {m("quads", <g key="h">{E(39.5, 135, 9, 25)}{E(60.5, 135, 9, 25)}</g>)}
-        {m("calves", <g key="i">{E(40, 182, 5.5, 19)}{E(60, 182, 5.5, 19)}</g>)}
-      </g>
-      <g transform="translate(110 0)">
-        {body}
-        {m("traps", <g key="j"><path d="M50 28 L38 35 Q40 45 50 55 Q60 45 62 35 Z" /></g>)}
-        {m("shoulders", <g key="k">{E(27, 43, 7, 8.5)}{E(73, 43, 7, 8.5)}</g>)}
-        {m("lats", <g key="l"><path d="M37 47 Q31 63 40 84 L49 82 L49 56 Z" /><path d="M63 47 Q69 63 60 84 L51 82 L51 56 Z" /></g>)}
-        {m("triceps", <g key="m">{E(22, 60, 5.2, 13, 7)}{E(78, 60, 5.2, 13, -7)}</g>)}
-        {m("forearms", <g key="n">{E(18, 92, 4.2, 15, 5)}{E(82, 92, 4.2, 15, -5)}</g>)}
-        {m("lower_back", <g key="o"><rect x="42" y="86" width="16" height="15" rx="4" /></g>)}
-        {m("glutes", <g key="p">{E(42, 110, 9.5, 9)}{E(58, 110, 9.5, 9)}</g>)}
-        {m("hamstrings", <g key="q">{E(39.5, 140, 9, 22)}{E(60.5, 140, 9, 22)}</g>)}
-        {m("calves", <g key="r">{E(40, 182, 6.3, 19)}{E(60, 182, 6.3, 19)}</g>)}
-      </g>
-    </svg>
+    <div data-photo-body style={{ position: "absolute", right: 8, bottom: 8, width: 46, padding: "5px 5px 4px", borderRadius: 10, background: "rgba(11,12,14,0.86)", pointerEvents: "none" }}>
+      <BodyIcon primary={muscles.primary} secondary={muscles.secondary} width={36} />
+    </div>
+  );
+}
+
+// muscle groups of the library filter, as the muscles that light up on the little body
+const FILTER_MUSCLES = {
+  chest: ["chest"],
+  back: ["lats", "traps", "lower_back"],
+  legs: ["quads", "hamstrings", "adductors", "calves"],
+  shoulders: ["shoulders"],
+  arms: ["biceps", "triceps", "forearms"],
+  core: ["abs", "obliques"],
+  glutes: ["glutes"],
+  full: MUSCLE_IDS,
+};
+
+function BodyTile({ label, active, onClick, ids }) {
+  return (
+    <div data-body-tile={active ? "on" : "off"} onClick={onClick} style={{ flexShrink: 0, width: 64, padding: "6px 4px 5px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: "#0b0c0e", border: "1.5px solid " + (active ? COLORS.gold : "#262a30") }}>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <BodyIcon primary={ids} width={22} />
+      </div>
+      <div style={{ marginTop: 4, fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 600, color: active ? COLORS.gold : "#A9B1B7", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
+    </div>
+  );
+}
+
+// ---------- Muscle ranks (like a muscle tracker): how much each body group was trained in the last 30 days ----------
+function MuscleRankCard({ t, workoutHistory }) {
+  const pts = useMemo(
+    () =>
+      rankPoints(workoutHistory, (k) => {
+        const ex = EXERCISE_LIBRARY.find((e) => e.key === k);
+        return ex ? exerciseMuscles(ex) : null;
+      }),
+    [workoutHistory]
+  );
+  const heat = useMemo(() => heatFor(pts), [pts]);
+  const total = RANK_GROUPS.reduce((a, g) => a + (pts[g.key] || 0), 0);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setReady(true), 80);
+    return () => clearTimeout(id);
+  }, []);
+  const groupLabel = { chest: t.muscleChest, back: t.muscleBack, shoulders: t.muscleShoulders, arms: t.muscleArms, core: t.muscleCore, legs: t.muscleLegs, glutes: t.muscleGlutes };
+  const dim = "#A9B1B7";
+  return (
+    <div data-rank-card style={{ background: "#0b0c0e", borderRadius: 18, padding: "14px 14px 6px", marginBottom: 18 }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: "#F1F4F5" }}>{t.rankTitle}</div>
+      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, lineHeight: 1.4, color: dim, margin: "3px 0 10px" }}>{t.rankSub}</div>
+      <AnatomyChart heat={heat} label={t.rankTitle} />
+      <div style={{ display: "flex", justifyContent: "space-around", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: dim, margin: "2px 0 10px" }}>
+        <span>{t.libFront}</span>
+        <span>{t.libBack}</span>
+      </div>
+      {total === 0 && <div data-rank-empty style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: dim, marginBottom: 10 }}>{t.rankEmpty}</div>}
+      {RANK_GROUPS.map((g) => {
+        const p = pts[g.key] || 0;
+        const r = tierFor(p);
+        const shown = Math.round(p * 2) / 2;
+        return (
+          <div key={g.key} data-rank-row={g.key} data-rank-tier={r.tier.key} style={{ padding: "8px 0", borderTop: "1px solid #1d2126" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: "#F1F4F5" }}>{groupLabel[g.key]}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: r.tier.color }}>
+                {t["rank_" + r.tier.key]} · {r.next ? shown + "/" + r.next.min : shown}
+              </span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: "#1d2126", marginTop: 6, overflow: "hidden" }}>
+              <div data-rank-bar style={{ height: "100%", width: ready ? Math.round(r.frac * 100) + "%" : "0%", background: r.tier.color, borderRadius: 3, transition: "width 900ms cubic-bezier(.2,.7,.2,1)" }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// small body next to an exercise in the list
+function BodyThumb({ ex }) {
+  const m = exerciseMuscles(ex);
+  return (
+    <div data-ex-thumb style={{ width: 34, height: 54, borderRadius: 8, background: "#0b0c0e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <BodyIcon primary={m.primary} secondary={m.secondary} width={20} />
+    </div>
   );
 }
 
@@ -10033,7 +10111,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                     </div>
                     {tab === "photo" && item ? (
                       <>
-                        <ExerciseDemo bare t={t} lang={lang} media={media} item={item} />
+                        <ExerciseDemo bare t={t} lang={lang} media={media} item={item} muscles={mus} />
                         {tipLine}
                       </>
                     ) : scene ? (
@@ -10048,10 +10126,17 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
               {(mus.primary.length > 0 || mus.secondary.length > 0) && (
                 <Card style={{ marginBottom: 14 }}>
                   <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>{t.libTargetMuscles}</div>
-                  <MuscleMap primary={mus.primary} secondary={mus.secondary} />
-                  <div style={{ display: "flex", justifyContent: "space-around", ...small, fontSize: 11.5, margin: "2px 0 12px" }}>
-                    <span>{t.libFront}</span>
-                    <span>{t.libBack}</span>
+                  <div data-anatomy-panel style={{ background: "#0b0c0e", borderRadius: 16, padding: "12px 10px 8px", marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                      <span data-anatomy-pill style={{ background: COLORS.gold, color: COLORS.bg, borderRadius: 8, padding: "5px 14px", fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>
+                        {(muscles.find((m) => m.key === selected.muscle) || {}).label}
+                      </span>
+                    </div>
+                    <AnatomyChart primary={mus.primary} secondary={mus.secondary} label={t.libTargetMuscles + ": " + names(mus.primary)} />
+                    <div style={{ display: "flex", justifyContent: "space-around", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "#A9B1B7", marginTop: 2 }}>
+                      <span>{t.libFront}</span>
+                      <span>{t.libBack}</span>
+                    </div>
                   </div>
                   {mus.primary.length > 0 && (
                     <div style={{ ...small, color: COLORS.text, marginBottom: 6 }}>
@@ -10129,9 +10214,9 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           <Chip label={t.libAllEx} active={gx.showAll} onClick={() => gx.setShowAll(true)} />
         </div>
       )}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", paddingBottom: 2 }}>
+      <div data-muscle-filter style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", paddingBottom: 2, alignItems: "center" }}>
         {muscles.map((m) => (
-          <Chip key={m.key} label={m.label} active={muscle === m.key} onClick={() => setMuscle(m.key)} />
+          FILTER_MUSCLES[m.key] ? <BodyTile key={m.key} label={m.label} active={muscle === m.key} onClick={() => setMuscle(m.key)} ids={FILTER_MUSCLES[m.key]} /> : <Chip key={m.key} label={m.label} active={muscle === m.key} onClick={() => setMuscle(m.key)} />
         ))}
       </div>
 
@@ -10145,9 +10230,12 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
             onClick={mode === "pick" ? undefined : () => setSelected(ex)}
             style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? "1px solid " + COLORS.border : "none", cursor: mode === "pick" ? "default" : "pointer" }}
           >
-            <div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(ex)}</div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{cueOf(ex)}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              <BodyThumb ex={ex} />
+              <div>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(ex)}</div>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{cueOf(ex)}</div>
+              </div>
             </div>
             {mode === "pick" ? (
               <div onClick={() => onAdd(ex)} style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
