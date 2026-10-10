@@ -180,7 +180,13 @@ const STR = {
     weeksLabel: "weeks",
     notLoggedYet: "Not logged yet",
     avgSession: "avg. session",
-    startWorkout: "Start workout",
+    startWorkout: "Start training",
+    workoutTitle: "Your workout",
+    libraryCardSub: "Every exercise with the muscles it trains",
+    startHeroTitle: "Start training",
+    startHeroResume: "Resume training",
+    startHeroFree: "You pick the exercises yourself",
+    emptyWorkoutTitle: "Let's go",
     protein: "Protein",
     carbs: "Carbs",
     fat: "Fat",
@@ -319,7 +325,7 @@ const STR = {
     weight: "Weight (kg)",
     completeSet: "Complete set",
     nextExercise: "Next exercise",
-    finishWorkout: "Finish workout",
+    finishWorkout: "Finish training",
     resting: "Resting",
     skipRest: "Skip rest",
     workoutDone: "Workout complete",
@@ -1259,7 +1265,13 @@ const STR = {
     notLoggedYet: "Noch nicht trainiert",
     avgSession: "Ø Sitzung",
     todaysNote: "Heutige Notiz",
-    startWorkout: "Workout starten",
+    startWorkout: "Training starten",
+    workoutTitle: "Dein Training",
+    libraryCardSub: "Alle Übungen mit den Muskeln, die sie trainieren",
+    startHeroTitle: "Training starten",
+    startHeroResume: "Training fortsetzen",
+    startHeroFree: "Du wählst die Übungen selbst",
+    emptyWorkoutTitle: "Los geht's",
     protein: "Protein",
     carbs: "Kohlenhydrate",
     fat: "Fett",
@@ -1290,7 +1302,7 @@ const STR = {
     restDone: "Pause vorbei — nächster Satz!",
     lastTime: "Letztes Mal",
     restStart: "Pause starten",
-    workoutPause: "Workout pausieren",
+    workoutPause: "Training pausieren",
     workoutResume: "Weiter",
     workoutPaused: "Workout pausiert",
     editAmount: "Menge ändern",
@@ -1398,7 +1410,7 @@ const STR = {
     weight: "Gewicht (kg)",
     completeSet: "Satz abschließen",
     nextExercise: "Nächste Übung",
-    finishWorkout: "Workout beenden",
+    finishWorkout: "Training beenden",
     resting: "Pause",
     skipRest: "Pause überspringen",
     workoutDone: "Workout abgeschlossen",
@@ -1422,7 +1434,7 @@ const STR = {
     bestLabel: "Bestwert",
     addSet: "Satz hinzufügen",
     emptyWorkout: "Füge deine erste Übung hinzu.",
-    discardWorkout: "Workout verwerfen",
+    discardWorkout: "Training verwerfen",
     workoutRunning: "Workout läuft",
     resumeWorkout: "Fortsetzen",
     addExerciseBtn: "Übung hinzufügen",
@@ -4041,7 +4053,7 @@ function TodayOpen({ t, lang, cfg, info, hideIntake, onGo, onSettings }) {
   );
 }
 
-function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, weeklyCard = null, onReviewDone = () => {}, onReviewApply = () => {}, onOpenFasting = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
+function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, weeklyCard = null, onReviewDone = () => {}, onReviewApply = () => {}, onOpenFasting = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -4137,9 +4149,16 @@ function HomeScreen({ t, profile, meals, weightLog, workoutHistory, notes, water
         </Card>
       )}
 
+      <div data-start-hero onClick={() => onQuick("startworkout")} style={{ display: "flex", alignItems: "center", gap: 14, background: COLORS.gold, color: COLORS.bg, borderRadius: 18, padding: "16px 18px", marginBottom: 12, cursor: "pointer" }}>
+        <Dumbbell size={26} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16.5, fontWeight: 700 }}>{trainingActive ? t.startHeroResume : t.startHeroTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, opacity: 0.8, marginTop: 2 }}>{planLabel || t.startHeroFree}</div>
+        </div>
+        <Play size={22} />
+      </div>
       <div data-quick-actions style={{ display: "flex", gap: 10, marginBottom: 4 }}>
         <QuickAction icon={UtensilsCrossed} label={t.qaFood} onClick={() => onQuick("food")} />
-        <QuickAction icon={Dumbbell} label={t.qaTrain} onClick={() => onQuick("train")} />
         <QuickAction icon={Scale} label={t.qaWeigh} onClick={() => onQuick("weigh")} />
         <QuickAction icon={MessageCircle} label={t.qaCoach} onClick={() => onQuick("coach")} />
       </div>
@@ -4831,6 +4850,16 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   );
 }
 
+// small square on the Training tab (library, records, friends)
+function TrainTile({ emoji, label, onClick }) {
+  return (
+    <Card onClick={onClick} style={{ cursor: "pointer", padding: "14px 8px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" }}>
+      <div style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</div>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.text, lineHeight: 1.2, overflowWrap: "anywhere" }}>{label}</div>
+    </Card>
+  );
+}
+
 function TrainingScreen({ t, lang, planName, planDays = [], personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout, onSharePlan, onOpenFriends, onOpenQuick = () => {} }) {
   const timed = workoutHistory.filter((w) => w.durationSec > 0);
   const avgSessionSec = timed.length ? Math.round(timed.reduce((s, w) => s + w.durationSec, 0) / timed.length) : null;
@@ -4852,82 +4881,75 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
   };
   return (
     <div style={{ padding: "0 20px 24px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim }}>{t.activePlan}</span>
-        <span onClick={onOpenPlanBuilder} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
-          + {t.newPlan}
-        </span>
-      </div>
-      <Card style={{ marginBottom: 18, background: COLORS.raised }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 700, color: COLORS.text }}>{planName || t.freeWorkout}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>
-              {selectedDay ? selectedDay.name + " · " + selectedDay.exercises.length + " " + (selectedDay.exercises.length === 1 ? t.exerciseSingular : t.exercises) : t.freeWorkoutSub}
-            </div>
+      <div data-train-hero>
+        <Card style={{ marginBottom: 14, background: COLORS.raised, padding: "18px 16px" }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.text }}>{planName || t.freeWorkout}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginTop: 4, lineHeight: 1.4 }}>
+            {selectedDay ? selectedDay.name + " · " + selectedDay.exercises.length + " " + (selectedDay.exercises.length === 1 ? t.exerciseSingular : t.exercises) : t.freeWorkoutSub}
           </div>
-          <button onClick={startFromCard} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", flexShrink: 0 }}>
+          {hasPlanDays && planDays.length > 1 && (
+            <div style={{ display: "flex", gap: 8, marginTop: 14, overflowX: "auto", paddingBottom: 2 }}>
+              {planDays.map((d) => (
+                <Chip key={d.id} label={d.name} active={(selectedDay && selectedDay.id) === d.id} onClick={() => setSelectedDayId(d.id)} />
+              ))}
+            </div>
+          )}
+          <button data-train-start onClick={startFromCard} style={{ width: "100%", marginTop: 16, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15.5, cursor: "pointer" }}>
             {activeWorkout ? t.resumeWorkout : t.startWorkout}
           </button>
-        </div>
-        {!hasPlanDays && (
-          <div data-tpl-hint onClick={onOpenPlanBuilder} style={{ marginTop: 12, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
-            {t.tplHint}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+            {!hasPlanDays ? (
+              <span data-tpl-hint onClick={onOpenPlanBuilder} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+                {t.tplHint}
+              </span>
+            ) : (
+              <span onClick={onSharePlan} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+                <Share2 size={14} /> {t.sharePlanLink}
+              </span>
+            )}
+            {hasPlanDays && (
+              <span onClick={onOpenPlanBuilder} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+                + {t.newPlan}
+              </span>
+            )}
           </div>
-        )}
-        {hasPlanDays && planDays.length > 1 && (
-          <div style={{ display: "flex", gap: 8, marginTop: 14, overflowX: "auto", paddingBottom: 2 }}>
-            {planDays.map((d) => (
-              <Chip key={d.id} label={d.name} active={(selectedDay && selectedDay.id) === d.id} onClick={() => setSelectedDayId(d.id)} />
-            ))}
-          </div>
-        )}
-        {hasPlanDays && (
-          <div onClick={onSharePlan} style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 12, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
-            <Share2 size={14} /> {t.sharePlanLink}
-          </div>
-        )}
-      </Card>
+        </Card>
+      </div>
 
       <QuickWorkoutCards t={t} onOpen={onOpenQuick} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-        <Card onClick={onOpenFriends} style={{ cursor: "pointer", padding: "14px 14px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 26, lineHeight: 1 }}>⚔️</div>
-          <div>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.friendsTitle}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 3, lineHeight: 1.35 }}>{t.friendsCardSub}</div>
-          </div>
-        </Card>
-        <Card onClick={onOpenRecords} style={{ cursor: "pointer", padding: "14px 14px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 26, lineHeight: 1 }}>🏆</div>
-          <div>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.recordsTitle}</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 3, lineHeight: 1.35 }}>{t.recordsCardSub}</div>
-          </div>
-        </Card>
+      <div data-train-library><Card onClick={onOpenLibrary} style={{ cursor: "pointer", marginBottom: 12, display: "flex", alignItems: "center", gap: 14, padding: "14px 16px" }}>
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: "#0b0c0e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <BodyIcon primary={["chest", "biceps", "quads"]} width={16} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.viewLibrary}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>{t.libraryCardSub}</div>
+        </div>
+        <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+      </Card></div>
+      <div data-train-tiles style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+        <TrainTile emoji="🏆" label={t.recordsTitle} onClick={onOpenRecords} />
+        <TrainTile emoji="⚔️" label={t.friendsTitle} onClick={onOpenFriends} />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.yourExercises}</span>
-        <span onClick={onOpenLibrary} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
-          {t.viewLibrary}
-        </span>
-      </div>
-      <Card style={{ padding: 4, marginBottom: 18 }}>
-        {trained.length === 0 ? (
-          <div style={{ padding: 14, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.noExercisesYet}</div>
-        ) : (
-          trained.map(({ ex, best }, i) => (
-            <div key={ex.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 12px", borderBottom: i < trained.length - 1 ? `1px solid ${COLORS.border}` : "none" }}>
-              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, fontWeight: 500 }}>{lang === "de" ? ex.nameDe : ex.name}</span>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.gold, fontWeight: 700 }}>
-                {t.bestLabel}: {best} kg
-              </span>
-            </div>
-          ))
-        )}
-      </Card>
+      {trained.length > 0 && (
+        <>
+          <div style={{ marginBottom: 10 }}>
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.yourExercises}</span>
+          </div>
+          <Card style={{ padding: 4, marginBottom: 18 }}>
+            {trained.map(({ ex, best }, i) => (
+              <div key={ex.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 12px", borderBottom: i < trained.length - 1 ? `1px solid ${COLORS.border}` : "none" }}>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, fontWeight: 500 }}>{lang === "de" ? ex.nameDe : ex.name}</span>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.gold, fontWeight: 700 }}>
+                  {t.bestLabel}: {best} kg
+                </span>
+              </div>
+            ))}
+          </Card>
+        </>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <Card>
@@ -5491,6 +5513,7 @@ const estimate1RM = (w, r) => (w > 0 && r > 0 && r <= 12 ? Math.round((r === 1 ?
 function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onTogglePause, entries, onChangeEntries, onFinish, onDiscard, workoutHistory = [] }) {
   const gx = useGender();
   const [picking, setPicking] = useState(false);
+  const [pickGroup, setPickGroup] = useState("all");
   const [query, setQuery] = useState("");
   const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
 
@@ -5623,23 +5646,50 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
 
   if (picking) {
     const q = query.trim().toLowerCase();
-    const list = EXERCISE_LIBRARY.filter((ex) => (gx.gender === "diverse" || gx.showAll || visibleFor(ex.key, gx.gender)) && (!q || ex.name.toLowerCase().includes(q) || ex.nameDe.toLowerCase().includes(q)));
+    const groups = [["all", t.muscleAll], ["chest", t.muscleChest], ["back", t.muscleBack], ["legs", t.muscleLegs], ["shoulders", t.muscleShoulders], ["arms", t.muscleArms], ["core", t.muscleCore], ["glutes", t.muscleGlutes], ["cardio", t.muscleCardio]];
+    const list = EXERCISE_LIBRARY.filter((ex) => (gx.gender === "diverse" || gx.showAll || visibleFor(ex.key, gx.gender)) && (pickGroup === "all" || ex.muscle === pickGroup) && (!q || ex.name.toLowerCase().includes(q) || ex.nameDe.toLowerCase().includes(q)));
     return (
-      <div style={{ padding: "0 20px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 14 }}>
+      <div data-pick style={{ padding: "0 20px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "11px 14px", marginBottom: 12 }}>
           <Search size={16} color={COLORS.dim} />
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.libSearchPlaceholder} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
         </div>
+        <div data-pick-filter style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", paddingBottom: 2, alignItems: "center" }}>
+          {groups.map(([k, label]) =>
+            FILTER_MUSCLES[k] ? <BodyTile key={k} label={label} active={pickGroup === k} onClick={() => setPickGroup(k)} ids={FILTER_MUSCLES[k]} /> : <Chip key={k} label={label} active={pickGroup === k} onClick={() => setPickGroup(k)} />
+          )}
+        </div>
         <Card style={{ padding: 4, maxHeight: 520, overflowY: "auto", marginBottom: 14 }}>
+          {list.length === 0 && <div style={{ padding: 14, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{t.libNoResults}</div>}
           {list.map((ex, i) => (
-            <div key={ex.key} onClick={() => addExercise(ex.key)} style={{ padding: "12px", cursor: "pointer", borderBottom: i < list.length - 1 ? `1px solid ${COLORS.border}` : "none", fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>
-              {nameOf(ex)}
+            <div key={ex.key} onClick={() => addExercise(ex.key)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", cursor: "pointer", borderBottom: i < list.length - 1 ? `1px solid ${COLORS.border}` : "none" }}>
+              <BodyThumb ex={ex} />
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(ex)}</span>
             </div>
           ))}
         </Card>
         <button onClick={() => setPicking(false)} style={{ width: "100%", background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.dim, borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
           {t.back}
         </button>
+      </div>
+    );
+  }
+
+  // nothing in the workout yet: one clear next step instead of timers and rest buttons
+  if (entries.length === 0) {
+    return (
+      <div data-workout-empty style={{ padding: "0 20px 24px" }}>
+        <Card style={{ textAlign: "center", padding: "30px 18px 24px" }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.text }}>{t.emptyWorkoutTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "6px 0 20px" }}>{t.emptyWorkout}</div>
+          <button data-pick-first onClick={() => setPicking(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+            <Plus size={18} />
+            <span>{t.addExerciseBtn}</span>
+          </button>
+        </Card>
+        <div onClick={onDiscard} style={{ textAlign: "center", marginTop: 18, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
+          {t.discardWorkout}
+        </div>
       </div>
     );
   }
@@ -5680,14 +5730,15 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
       {!restEnd && restDoneUntil > now && (
         <div style={{ textAlign: "center", background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 14, padding: "10px 14px", marginBottom: 14, fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{t.restDone}</div>
       )}
-      {entries.length === 0 && <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, marginTop: 0 }}>{t.emptyWorkout}</p>}
-
       {entries.map((en, ei) => {
         const ex = EXERCISE_LIBRARY.find((e) => e.key === en.key);
         return (
           <Card key={ei} style={{ marginBottom: 14, borderLeft: en.ss || entries[ei + 1]?.ss ? "3px solid " + COLORS.gold : undefined }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <span style={{ flex: 1, fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{ex ? nameOf(ex) : en.key}</span>
+              <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                {ex && <BodyThumb ex={ex} small />}
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{ex ? nameOf(ex) : en.key}</span>
+              </div>
               {ei > 0 && !en.cardio && !entries[ei - 1].cardio && (
                 <span onClick={() => toggleSuperset(ei)} style={{ padding: "4px 10px", borderRadius: 999, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, background: en.ss ? COLORS.gold : COLORS.raised, color: en.ss ? COLORS.bg : COLORS.dim, border: "1px solid " + (en.ss ? COLORS.gold : COLORS.border) }}>
                   {t.superset}
@@ -9954,11 +10005,11 @@ function MuscleRankCard({ t, workoutHistory }) {
 }
 
 // small body next to an exercise in the list
-function BodyThumb({ ex }) {
+function BodyThumb({ ex, small = false }) {
   const m = exerciseMuscles(ex);
   return (
-    <div data-ex-thumb style={{ width: 34, height: 54, borderRadius: 8, background: "#0b0c0e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-      <BodyIcon primary={m.primary} secondary={m.secondary} width={20} />
+    <div data-ex-thumb style={{ width: small ? 26 : 34, height: small ? 42 : 54, borderRadius: 8, background: "#0b0c0e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <BodyIcon primary={m.primary} secondary={m.secondary} width={small ? 16 : 20} />
     </div>
   );
 }
@@ -12789,7 +12840,7 @@ export default function AsmarFitApp() {
         }}
       />
     );
-    topTitle = t.startWorkout;
+    topTitle = t.workoutTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "workoutSummary") {
     content = <WorkoutSummary t={t} lang={lang} summary={lastWorkoutSummary} onDone={() => setOverlay(null)} />;
@@ -13093,10 +13144,17 @@ export default function AsmarFitApp() {
           onReviewDone={reviewDone}
           onReviewApply={applyWeekly}
           onOpenFasting={() => setOverlay("fasting")}
+          trainingActive={!!activeWorkout}
+          planLabel={planName}
           onQuick={(k) => {
             if (k === "food") {
               setActiveMealKey(mealKeyForNow());
               setOverlay("foodSearch");
+            } else if (k === "startworkout") {
+              // one plan day (or no plan): start right away; several days: the Training tab asks which one
+              if (activeWorkout || !planName || planDays.length === 0) startOrResumeWorkout();
+              else if (planDays.length === 1) startOrResumeWorkout(planDays[0].exercises.map((ex) => (ex.muscle === "cardio" ? { key: ex.key, cardio: true, minutes: "" } : { key: ex.key, sets: [] })));
+              else setTab("training");
             } else if (k === "train") setTab("training");
             else if (k === "weigh") setTab("progress");
             else setOverlay("assistant");
