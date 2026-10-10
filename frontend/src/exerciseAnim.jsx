@@ -2,6 +2,7 @@
 // Everything is drawn as SVG from bone lengths and angles, so it works offline and needs no images or videos.
 // The scenes (key poses + equipment) live in exerciseScenes.js; this file is the engine and the player.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { OUT, SKIN, SKIN_FAR, RED, WIDTHS, limbPath, litNormal, torsoShape, smoothClosed, unit } from "./muscleDraw.js";
 
 // ----- bones (viewBox is 240 x 170, the floor is y = 148, the figure looks to the right) -----
 export const FLOOR = 148;
@@ -324,8 +325,8 @@ const HOT = "#E3262E";
 
 function Eq({ it, j }) {
   const st = (kind) => {
-    if (kind === "pad") return { stroke: "#5E7391", fill: "#5E7391" };
-    if (kind === "mach") return { stroke: "#8FA6C4", fill: "none" };
+    if (kind === "pad") return { stroke: "#7a828d", fill: "#3b4048" };
+    if (kind === "mach") return { stroke: "#8e98a5", fill: "none" };
     if (kind === "plate") return { stroke: INK, fill: "var(--c-dim)" };
     return { stroke: DIM, fill: "none" };
   };
@@ -417,71 +418,121 @@ export const BODY = {
   female: { torso: 11, up: 6, fo: 5.2, th: 9.4, sh: 6.2, ft: 5, sw: 12.5, hw: 11, trF: 11, shBar: 8 },
 };
 const GOLD = "var(--c-gold)";
-const FAR = "var(--c-dim)";
 
 export function Figure({ scene, j, primary, style = "neutral" }) {
   if (j.view === "front") return <FigureFront scene={scene} j={j} primary={primary} style={style} />;
   if (j.view === "top") return <FigureTop scene={scene} j={j} primary={primary} style={style} />;
-  const hot = hotParts(primary);
-  const B = BODY[style] || BODY.neutral;
-  const seg = (a, b, w, color, o = 1, ol = true) => (
+  return <FigureSide scene={scene} j={j} primary={primary} style={style} />;
+}
+
+let figUid = 0;
+function useFigUid() {
+  const r = useRef(null);
+  if (r.current === null) r.current = "fg" + ++figUid;
+  return r.current;
+}
+
+// A chain of limbs that share one outline (no seams at the joints), each shaded across its width, red when the muscle is trained.
+// parts: [{ a, b, w: [start, belly, end, bellyAt], red }]
+function LimbChain({ id, parts, far }) {
+  return (
     <g>
-      {ol && <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="var(--c-raised)" strokeWidth={w + 3.2} strokeLinecap="round" />}
-      <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={color} strokeWidth={w} strokeLinecap="round" opacity={o} />
+      <defs>
+        {parts.map((p, i) => {
+          const pal = p.red ? RED : far ? SKIN_FAR : SKIN;
+          const n = litNormal(p.a, p.b);
+          const c = [(p.a[0] + p.b[0]) / 2, (p.a[1] + p.b[1]) / 2];
+          const r = Math.max(p.w[0], p.w[1]) + 0.4;
+          return (
+            <linearGradient key={i} id={id + "-" + i} gradientUnits="userSpaceOnUse" x1={c[0] + n[0] * r} y1={c[1] + n[1] * r} x2={c[0] - n[0] * r} y2={c[1] - n[1] * r}>
+              <stop offset="0" stopColor={pal.lit} />
+              <stop offset="0.4" stopColor={pal.mid} />
+              <stop offset="1" stopColor={pal.dark} />
+            </linearGradient>
+          );
+        })}
+      </defs>
+      {parts.map((p, i) => <path key={"o" + i} d={limbPath(p.a, p.b, p.w[0], p.w[1], p.w[2], p.w[3])} fill={OUT} stroke={OUT} strokeWidth="2.4" strokeLinejoin="round" />)}
+      {parts.map((p, i) => <path key={"f" + i} d={limbPath(p.a, p.b, p.w[0], p.w[1], p.w[2], p.w[3])} fill={"url(#" + id + "-" + i + ")"} />)}
+      {!far && parts.map((p, i) => {
+        const len = Math.hypot(p.b[0] - p.a[0], p.b[1] - p.a[1]);
+        if (len < 14 || p.w[1] < 3.6) return null;
+        const n = litNormal(p.a, p.b);
+        const q = (k, o) => [p.a[0] + (p.b[0] - p.a[0]) * k + n[0] * o, p.a[1] + (p.b[1] - p.a[1]) * k + n[1] * o];
+        const s0 = q(0.2, p.w[1] * 0.3);
+        const c0 = q(0.5, p.w[1] * 0.62);
+        const e0 = q(0.8, p.w[2] * 0.3);
+        return <path key={"d" + i} d={"M" + s0[0].toFixed(1) + " " + s0[1].toFixed(1) + "Q" + c0[0].toFixed(1) + " " + c0[1].toFixed(1) + " " + e0[0].toFixed(1) + " " + e0[1].toFixed(1)} fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="0.8" strokeLinecap="round" />;
+      })}
     </g>
   );
-  const along = (t) => [j.hip[0] + (j.sh[0] - j.hip[0]) * t, j.hip[1] + (j.sh[1] - j.hip[1]) * t];
-  const off = (p, s) => [p[0] + j.front[0] * s, p[1] + j.front[1] * s];
-  const bodyO = 0.92;
-  const farO = 0.45;
+}
+
+const HAIR = "#262a30";
+
+function FigureSide({ scene, j, primary, style = "neutral" }) {
+  const uid = useFigUid();
+  const hot = hotParts(primary);
+  const W = WIDTHS[style] || WIDTHS.neutral;
   const held = scene.held;
   const eq = scene.eq || [];
   const back = eq.filter((e) => !e.front);
   const front = eq.filter((e) => e.front);
-  // ponytail: hangs from the back of the head
-  const nd = (() => {
-    const d = Math.hypot(j.head[0] - j.sh[0], j.head[1] - j.sh[1]) || 1;
-    return [(j.head[0] - j.sh[0]) / d, (j.head[1] - j.sh[1]) / d];
-  })();
-  const at = (b, n) => [j.head[0] - j.front[0] * b + nd[0] * n, j.head[1] - j.front[1] * b + nd[1] * n];
-  const tail = style === "female" ? "M" + at(6, 3).join(" ") + " Q" + at(18, 0).join(" ") + " " + at(14, -14).join(" ") : null;
-  const bust = style === "female" ? off(along(0.8), 5.4) : null;
+  const sh = torsoShape(j, style);
+  const f = j.front;
+  const nd = unit(j.sh, j.head);
+  const headRot = (Math.atan2(nd[0], -nd[1]) * 180) / Math.PI;
+  const at = (b, n) => [j.head[0] - f[0] * b + nd[0] * n, j.head[1] - f[1] * b + nd[1] * n];
+  const tail = style === "female" ? "M" + at(6, 3).join(" ") + " Q" + at(18, 0).join(" ") + " " + at(14, -16).join(" ") : null;
+  const arm = (shoulder, elbow, hand, far, id) => (
+    <LimbChain id={uid + id} far={far} parts={[{ a: shoulder, b: elbow, w: W.arm, red: !far && hot.uarm }, { a: elbow, b: hand, w: W.fore, red: !far && hot.farm }]} />
+  );
+  const leg = (knee, ankle, toe, far, id) => (
+    <LimbChain id={uid + id} far={far} parts={[{ a: j.hip, b: knee, w: W.thigh, red: !far && hot.thigh }, { a: knee, b: ankle, w: W.shin, red: !far && hot.shin }, { a: ankle, b: toe, w: W.foot }]} />
+  );
+  const red = (d, key) => <path key={key} d={d} fill={"url(#" + uid + "-red)"} stroke="#5a0a0f" strokeWidth="0.6" strokeLinejoin="round" />;
+  const hotPatch = [hot.chest && "chest", hot.back && "back", hot.lowback && "lowback", hot.abs && "abs"].filter(Boolean);
+  const hand = j.hand;
   return (
-    <g data-fig={style}>
+    <g data-fig={style} data-hair={style === "female" ? "tail" : "short"}>
+      <defs>
+        <linearGradient id={uid + "-torso"} gradientUnits="userSpaceOnUse" x1={j.hip[0] + f[0] * 10} y1={j.hip[1] + f[1] * 10} x2={j.hip[0] - f[0] * 10} y2={j.hip[1] - f[1] * 10}>
+          <stop offset="0" stopColor={SKIN.lit} />
+          <stop offset="0.4" stopColor={SKIN.mid} />
+          <stop offset="1" stopColor={SKIN.dark} />
+        </linearGradient>
+        <linearGradient id={uid + "-red"} gradientUnits="userSpaceOnUse" x1={j.hip[0] + f[0] * 10} y1={j.hip[1] + f[1] * 10} x2={j.hip[0] - f[0] * 10} y2={j.hip[1] - f[1] * 10}>
+          <stop offset="0" stopColor={RED.lit} />
+          <stop offset="0.45" stopColor={RED.mid} />
+          <stop offset="1" stopColor={RED.dark} />
+        </linearGradient>
+      </defs>
       <line x1="-60" y1={FLOOR + 3} x2="300" y2={FLOOR + 3} stroke="var(--c-border)" strokeWidth="2" strokeLinecap="round" />
       {scene.scroll && <line x1="-60" y1={FLOOR + 3} x2="300" y2={FLOOR + 3} stroke="var(--c-dim)" strokeWidth="2" strokeDasharray="10 14" strokeDashoffset={-(j.u || 0) * 24 * scene.scroll} />}
+      {Math.max(j.ankle[1], j.ankle2[1]) > FLOOR - 14 && <ellipse cx={(j.ankle[0] + j.ankle2[0]) / 2} cy={FLOOR + 2.5} rx="26" ry="3.2" fill="#000" opacity="0.4" />}
       {back.map((e, i) => <Eq key={"b" + i} it={e} j={j} />)}
       {/* far arm and leg */}
-      {seg(j.sh, j.elbow2, B.up - 1, hot.uarm ? HOT : FAR, 1)}
-      {seg(j.elbow2, j.hand2, B.fo - 0.5, hot.farm ? HOT : FAR, 1)}
-      {seg(j.hip, j.knee2, B.th - 1, hot.thigh ? HOT : FAR, 1)}
-      {seg(j.knee2, j.ankle2, B.sh - 0.5, hot.shin ? HOT : FAR, 1)}
-      {seg(j.ankle2, j.toe2, B.ft - 0.5, FAR, 1)}
+      {arm(j.sh, j.elbow2, j.hand2, true, "-fa")}
+      {leg(j.knee2, j.ankle2, j.toe2, true, "-fl")}
       {held && held !== "plate" && <Held kind={held} p={j.fist2} far />}
-      {/* torso, head */}
-      {tail && <path d={tail} fill="none" stroke={GOLD} strokeWidth="5.5" strokeLinecap="round" />}
-      {seg(j.hip, j.sh, B.torso, INK, bodyO)}
-      {style === "female" && <circle cx={j.hip[0]} cy={j.hip[1]} r="8.4" fill={INK} opacity={bodyO} />}
-      {style === "male" && <circle cx={j.sh[0]} cy={j.sh[1]} r="8.6" fill={INK} opacity={bodyO} />}
-      {bust && <circle cx={bust[0]} cy={bust[1]} r="4.4" fill={INK} opacity={bodyO} />}
-      {hot.chest && seg(off(along(0.55), B.torso / 3.7), off(along(0.95), B.torso / 3.7), 7, HOT, 1, false)}
-      {hot.back && seg(off(along(0.55), -B.torso / 3.7), off(along(0.95), -B.torso / 3.7), 7, HOT, 1, false)}
-      {hot.lowback && seg(off(along(0.08), -B.torso / 3.7), off(along(0.5), -B.torso / 3.7), 7, HOT, 1, false)}
-      {hot.abs && seg(off(along(0.1), B.torso / 3.7), off(along(0.5), B.torso / 3.7), 7, HOT, 1, false)}
-      {hot.glute && <circle cx={off(j.hip, -3)[0]} cy={off(j.hip, -3)[1]} r="7.5" fill={HOT} />}
-      {seg(j.sh, j.head, 5, INK, bodyO)}
-      <circle cx={j.head[0]} cy={j.head[1]} r={HEAD_R} fill={INK} opacity={bodyO} />
-      {style === "female" && <path d={"M" + at(-1, 8).join(" ") + " Q" + at(8, 11).join(" ") + " " + at(8.5, 1).join(" ")} fill="none" stroke={GOLD} strokeWidth="3.4" strokeLinecap="round" />}
-      {/* near leg */}
-      {seg(j.hip, j.knee, B.th, hot.thigh ? HOT : INK, bodyO)}
-      {seg(j.knee, j.ankle, B.sh, hot.shin ? HOT : INK, bodyO)}
-      {seg(j.ankle, j.toe, B.ft, INK, bodyO)}
-      {/* near arm */}
-      {seg(j.sh, j.elbow, B.up, hot.uarm ? HOT : INK, bodyO)}
-      {seg(j.elbow, j.hand, B.fo, hot.farm ? HOT : INK, bodyO)}
-      {hot.delt && <circle cx={j.sh[0]} cy={j.sh[1]} r="6.5" fill={HOT} />}
-      <circle cx={j.hand[0]} cy={j.hand[1]} r="3.4" fill={INK} opacity={bodyO} />
-      {j.fist !== j.hand && seg(j.hand, j.fist, 4, INK, bodyO)}
+      {/* torso, neck, head */}
+      {tail && <path d={tail} fill="none" stroke={HAIR} strokeWidth="6" strokeLinecap="round" />}
+      <path d={sh.outline} fill={OUT} stroke={OUT} strokeWidth="2.4" strokeLinejoin="round" />
+      <circle cx={j.hip[0] - f[0] * 1.5} cy={j.hip[1] - f[1] * 1.5} r={style === "female" ? 8.2 : 7.2} fill={OUT} stroke={OUT} strokeWidth="2.4" />
+      <path d={sh.outline} fill={"url(#" + uid + "-torso)"} />
+      <circle cx={j.hip[0] - f[0] * 1.5} cy={j.hip[1] - f[1] * 1.5} r={style === "female" ? 8.2 : 7.2} fill={"url(#" + uid + "-torso)"} />
+      <LimbChain id={uid + "-nk"} parts={[{ a: j.sh, b: j.head, w: [W.neck[0], W.neck[1], W.neck[1], 0.5] }]} />
+      <ellipse cx={j.head[0]} cy={j.head[1]} rx={W.head[0]} ry={W.head[1]} transform={"rotate(" + headRot.toFixed(1) + " " + j.head[0] + " " + j.head[1] + ")"} fill={SKIN.mid} stroke={OUT} strokeWidth="1.2" />
+      <path d={"M" + at(-1, 7).join(" ") + " Q" + at(9, 11).join(" ") + " " + at(9.5, 0).join(" ")} fill="none" stroke={HAIR} strokeWidth={style === "female" ? 4.4 : 3.2} strokeLinecap="round" />
+      <path d={"M" + [j.head[0] + f[0] * (W.head[0] - 0.4) + nd[0] * 0.8, j.head[1] + f[1] * (W.head[0] - 0.4) + nd[1] * 0.8].map((v) => v.toFixed(1)).join(" ") + "l" + (f[0] * 2.6 + nd[0] * -1.6).toFixed(1) + " " + (f[1] * 2.6 + nd[1] * -1.6).toFixed(1) + "l" + (-f[0] * 0.9 - nd[0] * 2.4).toFixed(1) + " " + (-f[1] * 0.9 - nd[1] * 2.4).toFixed(1) + "z"} fill={SKIN.mid} stroke={OUT} strokeWidth="0.8" strokeLinejoin="round" />
+      {/* near leg and arm */}
+      {leg(j.knee, j.ankle, j.toe, false, "-nl")}
+      {hot.glute && <circle cx={j.hip[0] - f[0] * 2.5} cy={j.hip[1] - f[1] * 2.5} r="6.4" fill={"url(#" + uid + "-red)"} stroke="#5a0a0f" strokeWidth="0.6" />}
+      {arm(j.sh, j.elbow, hand, false, "-na")}
+      <g opacity="0.94">{hotPatch.map((k) => red(sh.patches[k], k))}</g>
+      {hot.delt && <LimbChain id={uid + "-dl"} parts={[{ a: j.sh, b: [j.sh[0] + (j.elbow[0] - j.sh[0]) * 0.5, j.sh[1] + (j.elbow[1] - j.sh[1]) * 0.5], w: W.delt, red: true }]} />}
+      <circle cx={hand[0]} cy={hand[1]} r="3.6" fill={SKIN.mid} stroke={OUT} strokeWidth="1" />
+      {j.fist !== j.hand && <LimbChain id={uid + "-fi"} parts={[{ a: j.hand, b: j.fist, w: [2.6, 2.6, 2.2, 0.5] }]} />}
       {held && <Held kind={held} p={j.fist} />}
       {front.map((e, i) => <Eq key={"f" + i} it={e} j={j} />)}
     </g>
@@ -489,58 +540,84 @@ export function Figure({ scene, j, primary, style = "neutral" }) {
 }
 
 function FigureFront({ scene, j, primary, style = "neutral" }) {
+  const uid = useFigUid();
   const hot = hotParts(primary);
   const B = BODY[style] || BODY.neutral;
-  const seg = (a, b, w, color, o = 1, ol = true) => (
-    <g>
-      {ol && <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="var(--c-raised)" strokeWidth={w + 3.2} strokeLinecap="round" />}
-      <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={color} strokeWidth={w} strokeLinecap="round" opacity={o} />
-    </g>
-  );
-  const along = (t) => [j.hip[0] + (j.sh[0] - j.hip[0]) * t, j.hip[1] + (j.sh[1] - j.hip[1]) * t];
+  const W = WIDTHS[style] || WIDTHS.neutral;
   const held = scene.held;
   const back = (scene.eq || []).filter((e) => !e.front);
   const front = (scene.eq || []).filter((e) => e.front);
-  const o = 0.92;
-  const waist = along(0.45);
-  const hourglass = "M" + j.shL.join(" ") + " L" + j.shR.join(" ") + " L" + (waist[0] + 5) + " " + waist[1] + " L" + (j.hipR[0] + 3.5) + " " + j.hipR[1] + " L" + (j.hipL[0] - 3.5) + " " + j.hipL[1] + " L" + (waist[0] - 5) + " " + waist[1] + " Z";
+  const t = unit(j.hip, j.sh);
+  const r = [-t[1], t[0]];
+  const L = Math.hypot(j.sh[0] - j.hip[0], j.sh[1] - j.hip[1]) || 1;
+  const SW = B.sw;
+  const HW = B.hw;
+  // trunk outline: [height u (0 = hips, 1 = shoulders), half width]
+  const female = style === "female";
+  const chest = SW * (female ? 0.98 : 1.04);
+  const waist = female ? HW * 0.62 + 0.4 : HW * 0.88 + 1.8;
+  const hips = HW + (female ? 3.2 : 2.4);
+  const prof = [[1.07, SW * 0.3], [1.0, SW * 0.64], [0.93, SW * 0.98], [0.78, chest], [0.58, (chest + waist) * 0.5 + 1], [0.4, waist], [0.18, (waist + hips) * 0.55 + hips * 0.1], [0.04, hips], [0, hips * 0.82]];
+  const c = (u) => [j.hip[0] + t[0] * L * u, j.hip[1] + t[1] * L * u];
+  const at = (u, w, k) => [c(u)[0] + r[0] * w * k, c(u)[1] + r[1] * w * k];
+  const outline = smoothClosed(prof.map(([u, w]) => at(u, w, 1)).concat(prof.slice().reverse().map(([u, w]) => at(u, w, -1))), 0.5);
+  const inner = (u, w) => [c(u)[0] + r[0] * w, c(u)[1] + r[1] * w];
+  const patch = (list) => smoothClosed(list.map(([u, w]) => inner(u, w * SW)), 0.6);
+  const patches = [];
+  if (hot.chest) {
+    patches.push(patch([[0.62, 0.06], [0.62, 0.6], [0.78, 0.92], [0.93, 0.7], [0.93, 0.12], [0.78, 0.04]]));
+    patches.push(patch([[0.62, -0.06], [0.62, -0.6], [0.78, -0.92], [0.93, -0.7], [0.93, -0.12], [0.78, -0.04]]));
+  }
+  if (hot.back) {
+    patches.push(patch([[0.46, 0.72], [0.52, 1.0], [0.84, 0.92], [0.8, 0.7], [0.62, 0.6]]));
+    patches.push(patch([[0.46, -0.72], [0.52, -1.0], [0.84, -0.92], [0.8, -0.7], [0.62, -0.6]]));
+  }
+  if (hot.abs) patches.push(patch([[0.1, 0.26], [0.1, -0.26], [0.5, -0.28], [0.5, 0.28]]));
+  const limbOf = (root, mid, end, w1, w2, far, red1, red2) => [{ a: root, b: mid, w: w1, red: red1 }, { a: mid, b: end, w: w2, red: red2 }];
+  const nd = unit(j.sh, j.head);
+  const headRot = (Math.atan2(nd[0], -nd[1]) * 180) / Math.PI;
+  const legs = (hip, knee, ankle, toe, id) => (
+    <LimbChain id={uid + id} parts={[...limbOf(hip, knee, ankle, W.thigh, W.shin, false, hot.thigh, hot.shin), { a: ankle, b: toe, w: W.foot }]} />
+  );
+  const arms = (sh, el, hand, id) => <LimbChain id={uid + id} parts={limbOf(sh, el, hand, W.arm, W.fore, false, hot.uarm, hot.farm)} />;
   return (
-    <g data-fig={style}>
+    <g data-fig={style} data-hair={style === "female" ? "long" : "short"}>
+      <defs>
+        <linearGradient id={uid + "-torso"} gradientUnits="userSpaceOnUse" x1={j.hip[0] - SW * 1.6} y1={j.hip[1] - L * 0.6} x2={j.hip[0] + SW * 1.6} y2={j.hip[1] + L * 0.3}>
+          <stop offset="0" stopColor={SKIN.lit} />
+          <stop offset="0.5" stopColor={SKIN.mid} />
+          <stop offset="1" stopColor={SKIN.dark} />
+        </linearGradient>
+        <linearGradient id={uid + "-red"} gradientUnits="userSpaceOnUse" x1={j.hip[0] - SW * 1.6} y1={j.hip[1] - L * 0.6} x2={j.hip[0] + SW * 1.6} y2={j.hip[1] + L * 0.3}>
+          <stop offset="0" stopColor={RED.lit} />
+          <stop offset="0.5" stopColor={RED.mid} />
+          <stop offset="1" stopColor={RED.dark} />
+        </linearGradient>
+      </defs>
       <line x1="-60" y1={FLOOR + 3} x2="300" y2={FLOOR + 3} stroke="var(--c-border)" strokeWidth="2" strokeLinecap="round" />
       {scene.scroll && <line x1="-60" y1={FLOOR + 3} x2="300" y2={FLOOR + 3} stroke="var(--c-dim)" strokeWidth="2" strokeDasharray="10 14" strokeDashoffset={-(j.u || 0) * 24 * scene.scroll} />}
       {back.map((e, i) => <Eq key={"b" + i} it={e} j={j} />)}
-      {seg(j.hipL, j.kneeL, B.th, hot.thigh ? HOT : INK, o)}
-      {seg(j.kneeL, j.ankleL, B.sh, hot.shin ? HOT : INK, o)}
-      {seg(j.ankleL, j.toeL, B.ft, INK, o)}
-      {seg(j.hipR, j.kneeR, B.th, hot.thigh ? HOT : INK, o)}
-      {seg(j.kneeR, j.ankleR, B.sh, hot.shin ? HOT : INK, o)}
-      {seg(j.ankleR, j.toeR, B.ft, INK, o)}
-      {seg(j.hipL, j.hipR, B.hw + 3, INK, o)}
-      {style === "female" ? <path d={hourglass} fill={INK} stroke={INK} strokeWidth="3" strokeLinejoin="round" opacity={o} /> : seg(j.hip, j.sh, B.trF, INK, o)}
-      {style !== "female" && seg(j.shL, j.shR, B.shBar, INK, o)}
-      {hot.chest && seg(along(0.62), along(0.9), B.trF - 1, HOT, 1, false)}
-      {hot.back && seg(along(0.62), along(0.9), B.trF - 1, HOT, 1, false)}
-      {hot.abs && seg(along(0.12), along(0.5), B.trF - 4, HOT, 1, false)}
-      {hot.lowback && seg(along(0.1), along(0.45), B.trF - 4, HOT, 1, false)}
-      {hot.glute && seg(j.hipL, j.hipR, B.hw + 3, HOT, 1, false)}
+      {legs(j.hipL, j.kneeL, j.ankleL, j.toeL, "-ll")}
+      {legs(j.hipR, j.kneeR, j.ankleR, j.toeR, "-lr")}
+      {hot.glute && <ellipse cx={j.hip[0]} cy={j.hip[1] + 2} rx={HW + 4} ry="7" fill={"url(#" + uid + "-red)"} />}
+      <path d={outline} fill={OUT} stroke={OUT} strokeWidth="2.4" strokeLinejoin="round" />
+      <path d={outline} fill={"url(#" + uid + "-torso)"} />
+      {patches.map((d, i) => <path key={i} d={d} fill={"url(#" + uid + "-red)"} stroke="#5a0a0f" strokeWidth="0.6" strokeLinejoin="round" />)}
       {style === "female" && (
         <>
-          <path d={"M" + (j.head[0] - 7) + " " + (j.head[1] - 2) + " Q" + (j.head[0] - 13) + " " + (j.head[1] + 12) + " " + (j.shL[0] - 1) + " " + (j.shL[1] + 6)} fill="none" stroke={GOLD} strokeWidth="4.2" strokeLinecap="round" />
-          <path d={"M" + (j.head[0] + 7) + " " + (j.head[1] - 2) + " Q" + (j.head[0] + 13) + " " + (j.head[1] + 12) + " " + (j.shR[0] + 1) + " " + (j.shR[1] + 6)} fill="none" stroke={GOLD} strokeWidth="4.2" strokeLinecap="round" />
+          <path d={"M" + (j.head[0] - 7) + " " + (j.head[1] - 2) + " Q" + (j.head[0] - 13) + " " + (j.head[1] + 12) + " " + (j.shL[0] - 1) + " " + (j.shL[1] + 6)} fill="none" stroke={HAIR} strokeWidth="4.4" strokeLinecap="round" />
+          <path d={"M" + (j.head[0] + 7) + " " + (j.head[1] - 2) + " Q" + (j.head[0] + 13) + " " + (j.head[1] + 12) + " " + (j.shR[0] + 1) + " " + (j.shR[1] + 6)} fill="none" stroke={HAIR} strokeWidth="4.4" strokeLinecap="round" />
         </>
       )}
-      {seg(j.sh, j.head, 5, INK, o)}
-      <circle cx={j.head[0]} cy={j.head[1]} r={HEAD_R} fill={INK} opacity={o} />
-      {seg(j.shL, j.elbowL, B.up, hot.uarm || hot.delt ? HOT : INK, o)}
-      {seg(j.elbowL, j.handL, B.fo, hot.farm ? HOT : INK, o)}
-      {seg(j.shR, j.elbowR, B.up, hot.uarm || hot.delt ? HOT : INK, o)}
-      {seg(j.elbowR, j.handR, B.fo, hot.farm ? HOT : INK, o)}
-      {style === "male" && <circle cx={j.shL[0]} cy={j.shL[1]} r="6.2" fill={INK} opacity={o} />}
-      {style === "male" && <circle cx={j.shR[0]} cy={j.shR[1]} r="6.2" fill={INK} opacity={o} />}
-      {hot.delt && <circle cx={j.shL[0]} cy={j.shL[1]} r="6.5" fill={HOT} />}
-      {hot.delt && <circle cx={j.shR[0]} cy={j.shR[1]} r="6.5" fill={HOT} />}
-      <circle cx={j.handL[0]} cy={j.handL[1]} r="3.4" fill={INK} />
-      <circle cx={j.handR[0]} cy={j.handR[1]} r="3.4" fill={INK} />
+      <LimbChain id={uid + "-nk"} parts={[{ a: j.sh, b: j.head, w: [W.neck[0], W.neck[1], W.neck[1], 0.5] }]} />
+      <ellipse cx={j.head[0]} cy={j.head[1]} rx={W.head[0] - 0.4} ry={W.head[1] - 0.2} transform={"rotate(" + headRot.toFixed(1) + " " + j.head[0] + " " + j.head[1] + ")"} fill={SKIN.mid} stroke={OUT} strokeWidth="1.2" />
+      <path d={"M" + (j.head[0] - 7) + " " + (j.head[1] - 2) + " Q" + j.head[0] + " " + (j.head[1] - 14) + " " + (j.head[0] + 7) + " " + (j.head[1] - 2)} fill="none" stroke={HAIR} strokeWidth={style === "female" ? 4 : 3} strokeLinecap="round" />
+      {arms(j.shL, j.elbowL, j.handL, "-al")}
+      {arms(j.shR, j.elbowR, j.handR, "-ar")}
+      {hot.delt && <LimbChain id={uid + "-dl"} parts={[{ a: j.shL, b: [j.shL[0] + (j.elbowL[0] - j.shL[0]) * 0.5, j.shL[1] + (j.elbowL[1] - j.shL[1]) * 0.5], w: W.delt, red: true }]} />}
+      {hot.delt && <LimbChain id={uid + "-dr"} parts={[{ a: j.shR, b: [j.shR[0] + (j.elbowR[0] - j.shR[0]) * 0.5, j.shR[1] + (j.elbowR[1] - j.shR[1]) * 0.5], w: W.delt, red: true }]} />}
+      <circle cx={j.handL[0]} cy={j.handL[1]} r="3.6" fill={SKIN.mid} stroke={OUT} strokeWidth="1" />
+      <circle cx={j.handR[0]} cy={j.handR[1]} r="3.6" fill={SKIN.mid} stroke={OUT} strokeWidth="1" />
       {held && held !== "plate" && <Held kind={held} p={j.handL} />}
       {held && <Held kind={held} p={j.handR} />}
       {front.map((e, i) => <Eq key={"f" + i} it={e} j={j} />)}
@@ -751,7 +828,7 @@ function MoveArrow({ scene, u, j, style }) {
 }
 
 // the player: loops the scene like a short video (timeline, repetition counter, slow motion, full screen with the written steps)
-export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay, slow, bodyStyle = "neutral", labelRep = "Rep", labelFull = "Full screen", labelClose = "Close", steps = [], title = "", tip = "", muscleText = "", labelTop = "View from above" }) {
+export function ExerciseAnimation({ corner = null, scene, primary, lang, labelPause, labelPlay, slow, bodyStyle = "neutral", labelRep = "Rep", labelFull = "Full screen", labelClose = "Close", steps = [], title = "", tip = "", muscleText = "", labelTop = "View from above" }) {
   const [u, setU] = useState(0);
   const [paused, setPaused] = useState(() => {
     try {
@@ -804,18 +881,19 @@ export function ExerciseAnimation({ scene, primary, lang, labelPause, labelPlay,
   const label = caps ? caps[Math.min(caps.length - 1, Math.floor((seg / segs) * caps.length))] : "";
   const pill = { background: "var(--c-bg)", borderRadius: 999, padding: "3px 10px", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700 };
   const stage = (big) => (
-    <div onClick={() => setPaused((p) => !p)} style={{ position: "relative", cursor: "pointer", borderRadius: 14, background: "var(--c-raised)", overflow: "hidden" }}>
+    <div data-stage onClick={() => setPaused((p) => !p)} style={{ position: "relative", cursor: "pointer", borderRadius: 14, background: "#0e1013", overflow: "hidden", "--c-text": "#EEF1F3", "--c-dim": "#9AA5AC", "--c-border": "#2b3037", "--c-bg": "#0b0c0e" }}>
       <svg viewBox={vbOf(scene)} width="100%" style={{ display: "block" }} role="img" aria-label={label}>
         {ghosts.map((g, i) => <Ghost key={i} j={g} />)}
         <Figure scene={scene} j={j} primary={primary} style={bodyStyle} />
         {!paused && !scene.loop && <MoveArrow scene={scene} u={u} j={j} style={bodyStyle} />}
       </svg>
+      {corner}
       {label && (
         <div data-phase style={{ ...pill, position: "absolute", left: 10, bottom: 14, color: "var(--c-text)", opacity: 0.92, fontSize: big ? 14 : 11.5 }}>
           {label}
         </div>
       )}
-      {scene.view === "top" && <div data-topview style={{ ...pill, position: "absolute", left: 10, top: 10, color: "var(--c-dim)", opacity: 0.92 }}>{labelTop}</div>}
+      {scene.view === "top" && <div data-topview style={{ ...pill, position: "absolute", left: corner ? 64 : 10, top: 10, color: "var(--c-dim)", opacity: 0.92 }}>{labelTop}</div>}
       <div data-reps style={{ ...pill, position: "absolute", right: 10, top: 10, color: "var(--c-dim)", opacity: 0.92 }}>
         {labelRep} {reps}
       </div>

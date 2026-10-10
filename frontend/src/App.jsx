@@ -947,7 +947,7 @@ const STR = {
     libHowTo: "Step by step",
     libAnim: "How it works",
     libTabPhoto: "Photo",
-    libTabFigure: "Figure",
+    libTabFigure: "Animation",
     libTopView: "View from above",
     libAnimHint: "The figure shows the movement. Red = the muscles that work. Tap to pause.",
     libPause: "Pause",
@@ -2032,7 +2032,7 @@ const STR = {
     libHowTo: "Schritt für Schritt",
     libAnim: "So geht's",
     libTabPhoto: "Foto",
-    libTabFigure: "Figur",
+    libTabFigure: "Animation",
     libTopView: "Ansicht von oben",
     libAnimHint: "Die Figur zeigt die Bewegung. Rot = die Muskeln, die arbeiten. Tippen hält an.",
     libPause: "Pause",
@@ -4617,7 +4617,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const [, setTick] = useState(0);
   const [result, setResult] = useState(null);
   const [media, setMedia] = useState(null); // real photos of the moves (start / end position), same source as the exercise library
-  const [demoTab, setDemoTab] = usePersisted("demoTab", "photo");
+  const [demoTab, setDemoTab] = usePersisted("demoTab", "figure");
   const [badImg, setBadImg] = useState({});
   useEffect(() => {
     let alive = true;
@@ -4824,14 +4824,14 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
         <Card style={{ margin: "14px 0", padding: 10 }}>
           {photoItem && scene && (
             <div data-demo-tabs style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-              <Chip label={t.libTabPhoto} active={tab === "photo"} onClick={() => setDemoTab("photo")} />
               <Chip label={t.libTabFigure} active={tab === "figure"} onClick={() => setDemoTab("figure")} />
+              <Chip label={t.libTabPhoto} active={tab === "photo"} onClick={() => setDemoTab("photo")} />
             </div>
           )}
           {tab === "photo" && photoItem ? (
             <QuickPhoto key={seg.key} muscles={mus} media={media} item={photoItem} name={nameOfKey(seg.key)} cue={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} onFail={() => setBadImg((b) => ({ ...b, [seg.key]: true }))} />
           ) : scene ? (
-            <ExerciseAnimation key={seg.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
+            <ExerciseAnimation key={seg.key} corner={<PhotoBody muscles={mus} pos="tl" />} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
           ) : null}
         </Card>
       )}
@@ -9921,10 +9921,10 @@ function BodyIcon({ primary = [], secondary = [], width = 30, label = "" }) {
 }
 
 // the body in the corner of an exercise photo: shows at a glance where the move works
-function PhotoBody({ muscles }) {
+function PhotoBody({ muscles, pos = "br" }) {
   if (!muscles || !muscles.primary || muscles.primary.length === 0) return null;
   return (
-    <div data-photo-body style={{ position: "absolute", right: 8, bottom: 8, width: 46, padding: "5px 5px 4px", borderRadius: 10, background: "rgba(11,12,14,0.86)", pointerEvents: "none" }}>
+    <div data-photo-body style={{ position: "absolute", ...(pos === "tl" ? { left: 8, top: 8 } : { right: 8, bottom: 8 }), width: 46, padding: "5px 5px 4px", borderRadius: 10, background: "rgba(11,12,14,0.86)", pointerEvents: "none" }}>
       <BodyIcon primary={muscles.primary} secondary={muscles.secondary} width={36} />
     </div>
   );
@@ -10024,7 +10024,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
   const [media, setMedia] = useState(null); // pictures + steps for the "how to do it" card
   const gx = useGender();
   const gender = gx.gender;
-  const [demoTab, setDemoTab] = usePersisted("demoTab", "photo");
+  const [demoTab, setDemoTab] = usePersisted("demoTab", "figure");
   useEffect(() => {
     let alive = true;
     loadExerciseMedia().then((m) => {
@@ -10155,8 +10155,8 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text }}>{t.libAnim}</div>
                       {item && scene && (
                         <div data-demo-tabs style={{ display: "flex", gap: 6 }}>
-                          <Chip label={t.libTabPhoto} active={tab === "photo"} onClick={() => setDemoTab("photo")} />
                           <Chip label={t.libTabFigure} active={tab === "figure"} onClick={() => setDemoTab("figure")} />
+                          <Chip label={t.libTabPhoto} active={tab === "photo"} onClick={() => setDemoTab("photo")} />
                         </div>
                       )}
                     </div>
@@ -10167,7 +10167,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                       </>
                     ) : scene ? (
                       <>
-                        <ExerciseAnimation key={selected.key} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOf(selected)} tip={cueOf(selected)} muscleText={t.libRedMeans + " " + names(mus.primary)} steps={item ? (lang === "de" ? item.de : item.en) || [] : []} bodyStyle={gender === "diverse" ? "neutral" : gender} />
+                        <ExerciseAnimation key={selected.key} corner={<PhotoBody muscles={mus} pos="tl" />} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOf(selected)} tip={cueOf(selected)} muscleText={t.libRedMeans + " " + names(mus.primary)} steps={item ? (lang === "de" ? item.de : item.en) || [] : []} bodyStyle={gender === "diverse" ? "neutral" : gender} />
                         <div style={{ ...small, fontSize: 11.5, marginTop: 6 }}>{t.libAnimHint}</div>
                       </>
                     ) : null}
