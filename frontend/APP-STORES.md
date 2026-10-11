@@ -63,6 +63,17 @@ Das Wichtigste vorweg: Apple-Apps lassen sich nur auf einem Mac bauen und hochla
 - Render-Server für echte Nutzer: ab ca. 7 US-Dollar im Monat (optional, sonst schläft er ein).
 - ElevenLabs für die Stimmen: bezahlter Tarif nötig, sobald die App verkauft oder öffentlich angeboten wird.
 
+## Rechtstexte ausfüllen (30 Platzhalter mit einem Befehl)
+
+1. `frontend/legal.json` öffnen und die Felder füllen: `name`, `strasse`, `plz`, `ort`, `land`, `email`, `telefon` (darf leer bleiben), `datum` (z. B. „12. Oktober 2026"), `datum_en` („12 October 2026"), `gerichtsstand` (Kanton), optional `verantwortlich`.
+2. In PowerShell im Ordner `frontend`:
+
+   ```bash
+   node tools/fill-legal.cjs
+   ```
+
+   Der Befehl ersetzt die Platzhalter in `impressum.html`, `privacypolicy.html` und `terms.html` (DE und EN) und zeigt, ob etwas offen bleibt (`--check` zeigt nur den Stand). Danach committen; die Seiten sind nach dem Deploy live.
+
 ## Reihenfolge, die ich vorschlage
 
 1. Du legst beide Entwicklerkonten an (Google zuerst, Apple parallel beantragen).
