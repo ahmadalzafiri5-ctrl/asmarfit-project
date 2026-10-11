@@ -1,0 +1,131 @@
+# Baut das Android App Bundle (.aab) fuer Google Play: Store-Variante (ohne Einnahme-Tagebuch), signiert mit dem
+# Upload-Schluessel aus den Secrets. Ohne die Secrets baut der Lauf trotzdem (unsigniert, nur zur Probe).
+# Ergebnis: Actions -> (Lauf anklicken) -> unten "Artifacts" -> ASFIT-android-store-aab
+#
+# Secrets (Anleitung: frontend/APP-STORES.md):
+#   UPLOAD_KEYSTORE_BASE64    der Upload-Schluessel als Text (Skript frontend/tools/make-upload-key.ps1)
+#   UPLOAD_KEYSTORE_PASSWORD  das Passwort, das du beim Erzeugen gewaehlt hast
+#   UPLOAD_KEY_ALIAS          optional, Standard "asfit"
+name: Android-Store-Bundle bauen
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Versionsname im Store (leer = 1.0.<Laufnummer>)"
+        type: string
+        default: ""
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/android-release.yml"
+
+concurrency:
+  group: android-release
+  cancel-in-progress: true
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Android-SDK pruefen
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Web-App bauen (Store-Variante) und in das Android-Projekt kopieren
+        working-directory: frontend
+        env:
+          VITE_HIDE_INTAKE: "1"
+        run: |
+          npm ci
+          npm run build
+          npx cap sync android
+
+      - name: Upload-Schluessel aus dem Secret holen (wenn vorhanden)
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+        run: |
+          if [ -z "$UPLOAD_KEYSTORE_BASE64" ] || [ -z "$UPLOAD_KEYSTORE_PASSWORD" ]; then
+            echo "::warning::Secrets UPLOAD_KEYSTORE_BASE64 / UPLOAD_KEYSTORE_PASSWORD fehlen: das Bundle wird unsigniert gebaut (nur zur Probe, Google Play nimmt es so nicht an)."
+            echo "ASFIT_SIGNED=0" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          printf '%s' "$UPLOAD_KEYSTORE_BASE64" | tr -d ' \r\n\t"' > /tmp/ks.b64
+          LEN=$(wc -c < /tmp/ks.b64)
+          echo "Secret gefunden: $LEN Zeichen"
+          ALIAS="${UPLOAD_KEY_ALIAS:-asfit}"
+          OK=nein
+          if base64 -d /tmp/ks.b64 > "$RUNNER_TEMP/upload.jks" 2>/dev/null; then
+            keytool -list -keystore "$RUNNER_TEMP/upload.jks" -storepass "$UPLOAD_KEYSTORE_PASSWORD" -alias "$ALIAS" > /dev/null 2>&1 && OK=ja
+          fi
+          rm -f /tmp/ks.b64
+          if [ "$OK" != "ja" ]; then
+            rm -f "$RUNNER_TEMP/upload.jks"
+            echo "::error::Der Upload-Schluessel laesst sich nicht oeffnen (Laenge $LEN Zeichen, Alias $ALIAS). Passwort oder Alias stimmen nicht, oder es wurde der Befehl statt seines Ergebnisses eingefuegt."
+            exit 1
+          fi
+          echo "Upload-Schluessel in Ordnung, das Bundle wird signiert."
+          echo "ASFIT_SIGNED=1" >> "$GITHUB_ENV"
+          echo "ASFIT_UPLOAD_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+          echo "ASFIT_UPLOAD_KEY_ALIAS=$ALIAS" >> "$GITHUB_ENV"
+          echo "ASFIT_UPLOAD_STORE_PASSWORD=$UPLOAD_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "::add-mask::$UPLOAD_KEYSTORE_PASSWORD"
+
+      # Google Play verlangt eine streng steigende versionCode; die Store-Nummern liegen ueber denen der Debug-APKs
+      - name: Versionsnummer setzen
+        run: |
+          echo "ASFIT_VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          NAME="${{ inputs.version_name }}"
+          echo "ASFIT_VERSION_NAME=${NAME:-1.0.$GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: App Bundle bauen
+        working-directory: frontend/android
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
+          ls -la app/build/outputs/bundle/release/
+
+      - name: Signatur pruefen
+        run: |
+          AAB=frontend/android/app/build/outputs/bundle/release/app-release.aab
+          if [ "$ASFIT_SIGNED" = "1" ]; then
+            jarsigner -verify "$AAB" | tee verify.txt
+            grep -q "jar verified" verify.txt
+            echo "Bundle ist signiert (versionCode $ASFIT_VERSION_CODE, versionName $ASFIT_VERSION_NAME)."
+          else
+            echo "Unsigniertes Probe-Bundle (versionCode $ASFIT_VERSION_CODE)."
+          fi
+
+      - name: Pruefung Gesundheitsrechte im Manifest (nur Schritte, Gewicht, Workouts; kein SCHEDULE_EXACT_ALARM)
+        run: |
+          M=frontend/android/app/build/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml
+          [ -f "$M" ] || M=$(find frontend/android/app/build/intermediates -name AndroidManifest.xml -path "*release*" | head -1)
+          echo "Manifest: $M"
+          HEALTH=$(grep -o "android.permission.health.[A-Z_]*" "$M" | sort -u | tr '\n' ' ')
+          echo "Gesundheitsrechte: $HEALTH"
+          [ "$HEALTH" = "android.permission.health.READ_EXERCISE android.permission.health.READ_STEPS android.permission.health.READ_WEIGHT " ]
+          ! grep -q SCHEDULE_EXACT_ALARM "$M"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ASFIT-android-store-aab
+          path: frontend/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 90

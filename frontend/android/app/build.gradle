@@ -3,6 +3,9 @@ apply plugin: 'com.android.application'
 // the automatic build (GitHub Actions) counts the version up on every run; a build on this PC keeps 1 / "1.0"
 def asfitVersionCode = (System.getenv("ASFIT_VERSION_CODE") ?: "1") as int
 def asfitVersionName = System.getenv("ASFIT_VERSION_NAME") ?: "1.0"
+// store build: the upload key comes from the environment (GitHub secrets); without it the release bundle stays unsigned
+def asfitUploadKeystore = System.getenv("ASFIT_UPLOAD_KEYSTORE")
+def asfitUploadSigned = asfitUploadKeystore != null && !asfitUploadKeystore.isEmpty() && new File(asfitUploadKeystore).exists()
 
 android {
     namespace = "com.asmarfit.app"
@@ -20,10 +23,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (asfitUploadSigned) {
+                storeFile file(asfitUploadKeystore)
+                storePassword System.getenv("ASFIT_UPLOAD_STORE_PASSWORD")
+                keyAlias System.getenv("ASFIT_UPLOAD_KEY_ALIAS") ?: "asfit"
+                keyPassword System.getenv("ASFIT_UPLOAD_KEY_PASSWORD") ?: System.getenv("ASFIT_UPLOAD_STORE_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (asfitUploadSigned) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
