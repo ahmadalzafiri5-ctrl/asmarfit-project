@@ -1007,6 +1007,40 @@ app.post("/api/recipe-import", async (req, res) => {
   }
 });
 
+// ---- reports of AI answers: the stores require a way to flag AI content. Every report goes to the server log;
+// the last 200 stay in memory and can be read with the admin key from the environment (REPORT_ADMIN_KEY).
+const reportHits = new Map();
+const REPORT_KINDS = new Set(["coach", "recipe", "mealplan", "potential", "other"]);
+const REPORT_REASONS = new Set(["wrong", "harmful", "inappropriate", "other"]);
+const reports = [];
+app.post("/api/report", (req, res) => {
+  const now = Date.now();
+  for (const [ip, hits] of reportHits) if (!hits.some((ts) => now - ts < 60_000)) reportHits.delete(ip);
+  if (isRateLimited(reportHits, req.ip, 10)) return res.status(429).json({ error: "rate_limited" });
+  const body = req.body || {};
+  const content = typeof body.content === "string" ? body.content.slice(0, 4000) : "";
+  const note = typeof body.note === "string" ? body.note.slice(0, 500) : "";
+  if (!content.trim() && !note.trim()) return res.status(400).json({ error: "empty" });
+  const entry = {
+    at: new Date().toISOString(),
+    kind: REPORT_KINDS.has(body.kind) ? body.kind : "other",
+    reason: REPORT_REASONS.has(body.reason) ? body.reason : "other",
+    lang: body.lang === "en" ? "en" : "de",
+    note,
+    content,
+  };
+  reports.push(entry);
+  if (reports.length > 200) reports.shift();
+  console.log("AI report:", JSON.stringify(entry));
+  res.json({ ok: true });
+});
+app.get("/api/reports", (req, res) => {
+  const key = process.env.REPORT_ADMIN_KEY;
+  if (!key) return res.status(404).json({ error: "disabled" });
+  if (req.get("x-admin-key") !== key) return res.status(401).json({ error: "unauthorized" });
+  res.json({ reports });
+});
+
 app.listen(PORT, () => {
   console.log(`AsmarFit food API running on http://localhost:${PORT}`);
   console.log(`  GET /api/food/search?q=banana`);

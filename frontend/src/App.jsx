@@ -948,6 +948,18 @@ const STR = {
     libAnim: "How it works",
     libTabPhoto: "Photo",
     libTab3d: "3D",
+    aiReport: "Report this answer",
+    aiReportWhy: "What is wrong with it?",
+    aiReportWrong: "Wrong",
+    aiReportHarmful: "Dangerous",
+    aiReportInapp: "Inappropriate",
+    aiReportOther: "Other",
+    aiReportNote: "Optional: what exactly?",
+    aiReportSend: "Send report",
+    aiReportCancel: "Cancel",
+    aiReportSent: "Reported. Thank you.",
+    aiReportFail: "Could not send. Please try again.",
+    aiReportPrivacy: "The report sends this answer and your note to the ASFIT server. No name, no account.",
     libTabFigure: "Animation",
     libTopView: "View from above",
     libAnimHint: "The figure shows the movement. Red = the muscles that work. Tap to pause.",
@@ -2037,6 +2049,18 @@ const STR = {
     libAnim: "So geht's",
     libTabPhoto: "Foto",
     libTab3d: "3D",
+    aiReport: "Antwort melden",
+    aiReportWhy: "Was stimmt nicht?",
+    aiReportWrong: "Falsch",
+    aiReportHarmful: "Gefährlich",
+    aiReportInapp: "Unpassend",
+    aiReportOther: "Sonstiges",
+    aiReportNote: "Optional: Was genau?",
+    aiReportSend: "Meldung senden",
+    aiReportCancel: "Abbrechen",
+    aiReportSent: "Gemeldet. Danke.",
+    aiReportFail: "Konnte nicht senden. Bitte noch einmal versuchen.",
+    aiReportPrivacy: "Die Meldung schickt diese Antwort und deine Notiz an den ASFIT-Server. Ohne Name, ohne Konto.",
     libTabFigure: "Animation",
     libTopView: "Ansicht von oben",
     libAnimHint: "Die Figur zeigt die Bewegung. Rot = die Muskeln, die arbeiten. Tippen hält an.",
@@ -3966,6 +3990,7 @@ function MealPlanScreen({ t, lang, targets, onAddToMeal }) {
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.mpDayTotal}</span>
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>{day.total.kcal} kcal · {day.total.protein} g {t.protein}</span>
           </div>
+          <div style={{ marginBottom: 10 }}><ReportAi key={plan.createdAt} t={t} lang={lang} kind="mealplan" content={plan.days.map((d) => d.meals.map((m) => m.name).join(", ")).join("\n")} /></div>
           {day.meals.map((m, mi) => {
             const k = dayIdx + "-" + mi;
             return (
@@ -7545,6 +7570,54 @@ function plainChat(text) {
     .replace(/`([^`]+)`/g, "$1");
 }
 
+// "report this answer": every AI answer can be flagged (a store rule for AI content); the report goes to the ASFIT server log
+function ReportAi({ t, lang, kind, content }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("wrong");
+  const [note, setNote] = useState("");
+  const [state, setState] = useState("idle"); // idle | busy | sent | fail
+  const reasons = [["wrong", t.aiReportWrong], ["harmful", t.aiReportHarmful], ["inappropriate", t.aiReportInapp], ["other", t.aiReportOther]];
+  const send = async () => {
+    setState("busy");
+    try {
+      const res = await fetch(API_BASE + "/api/report", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, reason, note: note.trim(), content: String(content || "").slice(0, 4000), lang }) });
+      setState(res.ok ? "sent" : "fail");
+    } catch {
+      setState("fail");
+    }
+  };
+  const tiny = { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim };
+  if (state === "sent") return <div data-ai-report-sent style={{ ...tiny, marginTop: 4 }}>✓ {t.aiReportSent}</div>;
+  if (!open) {
+    return (
+      <span data-ai-report onClick={() => setOpen(true)} style={{ ...tiny, display: "inline-block", marginTop: 4, cursor: "pointer", textDecoration: "underline" }}>
+        {t.aiReport}
+      </span>
+    );
+  }
+  return (
+    <div data-ai-report-form style={{ marginTop: 6, padding: "10px 12px", borderRadius: 12, background: COLORS.raised, border: "1px solid " + COLORS.border, maxWidth: "92%" }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>{t.aiReportWhy}</div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+        {reasons.map(([k, l]) => (
+          <Chip key={k} label={l} active={reason === k} onClick={() => setReason(k)} />
+        ))}
+      </div>
+      <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} placeholder={t.aiReportNote} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
+      <div style={{ display: "flex", gap: 8 }}>
+        <button data-ai-report-send onClick={send} disabled={state === "busy"} style={{ flex: 1, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "9px 0", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+          {state === "busy" ? "…" : t.aiReportSend}
+        </button>
+        <button data-ai-report-cancel onClick={() => setOpen(false)} style={{ flex: 1, background: "transparent", color: COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "9px 0", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
+          {t.aiReportCancel}
+        </button>
+      </div>
+      {state === "fail" && <div data-ai-report-fail style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.coral, marginTop: 6 }}>{t.aiReportFail}</div>}
+      <div style={{ ...tiny, fontSize: 11, marginTop: 6, lineHeight: 1.4 }}>{t.aiReportPrivacy}</div>
+    </div>
+  );
+}
+
 function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, chips = [] }) {
   const { code: cc } = useCountry();
   const [messages, setMessages] = useState([]);
@@ -7587,7 +7660,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
   };
 
   const bubble = (m, i) => (
-    <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
+    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
       <div
         style={{
           maxWidth: "86%",
@@ -7604,6 +7677,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
       >
         {m.role === "assistant" ? plainChat(m.content) : m.content}
       </div>
+      {m.role === "assistant" && i !== "hello" && <ReportAi t={t} lang={lang} kind="coach" content={m.content} />}
     </div>
   );
 
@@ -7862,6 +7936,7 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
           <WeightPath start={saved.startWeight} end={pj.weightKg} monthsText={saved.months === 1 ? t.potMonth1 : n(t.potMonthsN, saved.months)} labelNow={t.potBefore} labelThen={n(t.potAfter, saved.months)} />
         )}
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, lineHeight: 1.55, margin: "14px 0 10px" }}>{saved.summary}</div>
+        <div style={{ marginBottom: 10 }}><ReportAi t={t} lang={lang} kind="potential" content={saved.summary + "\n" + (saved.changes || []).join("\n")} /></div>
         {saved.changes && saved.changes.length > 0 && (
           <div style={{ marginBottom: 12 }}>
             {saved.changes.map((c) => (
@@ -9311,6 +9386,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
 
   const num = (v) => Math.max(0, Math.round(parseFloat(String(v).replace(",", ".")) || 0));
 
+  const [aiLast, setAiLast] = useState(null); // the last AI recipe, so it can be reported
   const generate = async () => {
     const wish = aiPrompt.trim();
     if (!wish || aiBusy) return;
@@ -9327,6 +9403,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       else {
         const r = await res.json();
         setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n"), image: "" });
+        setAiLast(r.name + "\n" + r.ingredients.join("\n") + "\n" + r.kcal + " kcal");
       }
     } catch {
       setAiError(t.serverError);
@@ -9412,6 +9489,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
                 ✓ {t.importFound}: {form.name} · {impInfo.servings} {t.importPortions} · {impInfo.estimated ? t.importEstimated : t.importFromSource}
               </div>
             )}
+            {impInfo && <ReportAi key={form.name} t={t} lang={lang} kind="recipe" content={form.name + "\n" + form.ingredients + "\n" + form.kcal + " kcal"} />}
           </Card>
 
           <Card style={{ marginBottom: 14 }}>
@@ -9421,6 +9499,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
               {aiBusy ? t.recipeAiBusy : t.recipeAiGo}
             </button>
             {aiError && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginTop: 8 }}>{aiError}</div>}
+            {aiLast && <ReportAi key={aiLast} t={t} lang={lang} kind="recipe" content={aiLast} />}
           </Card>
 
           <Card>
