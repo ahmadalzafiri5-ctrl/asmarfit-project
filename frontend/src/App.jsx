@@ -14,8 +14,8 @@ import { lightOf, lightShares, LIGHT_COLORS, LIGHT_KEYS } from "./foodLight.js";
 import { QUICK_PRESETS, presetByKey, buildTimeline, totalSec, moveCount, presetMinutes, locate, activeMinutes } from "./quickWorkouts.js";
 import { speak, stopSpeaking, beep, unlockAudio, holdScreen, playClip, preloadClips, warmClips } from "./voice.js";
 import { installA11y } from "./a11y.js";
-import { anatomySvg, anatomyLite, MUSCLE_IDS, RANK_GROUPS } from "./anatomy.js";
-import { rankPoints, tierFor, heatFor } from "./muscleRank.js";
+import { MUSCLE_IDS, RANK_GROUPS, viewFor } from "./anatomy.js";
+import { rankPoints, tierFor, heatFor, TIERS } from "./muscleRank.js";
 import { allCountries, searchCountries, countryName, flagOf, guessCountry, ffRegionFor } from "./countries.js";
 import { alarmCfg, fastAlarmPlan, fastAlarmsDue, markFired, icsForFast, FAST_NOTIF_END, FAST_NOTIF_SOON } from "./fastAlarm.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
@@ -966,6 +966,9 @@ const STR = {
     libSecondary: "Secondary muscles",
     libFront: "Front",
     libBack: "Back",
+    body3dLoading: "Loading 3D body …",
+    body3dError: "The 3D body could not be shown on this device.",
+    body3dHint: "Drag to turn · tap a muscle",
     rankTitle: "Muscle ranks",
     rankSub: "Weighted sets of the last 30 days: a set counts fully for the main muscle and half for helper muscles.",
     rankEmpty: "No sets in the last 30 days yet. Log a workout and your body colours by rank.",
@@ -2052,6 +2055,9 @@ const STR = {
     libSecondary: "Nebenmuskeln",
     libFront: "Vorne",
     libBack: "Hinten",
+    body3dLoading: "3D-Körper wird geladen …",
+    body3dError: "Der 3D-Körper kann auf diesem Gerät nicht angezeigt werden.",
+    body3dHint: "Ziehen zum Drehen · Muskel antippen",
     rankTitle: "Muskel-Rangliste",
     rankSub: "Gewichtete Sätze der letzten 30 Tage: Ein Satz zählt voll für den Hauptmuskel und halb für Hilfsmuskeln.",
     rankEmpty: "Noch keine Sätze in den letzten 30 Tagen. Logge ein Training, dann färbt sich dein Körper nach Rang.",
@@ -9914,24 +9920,97 @@ function exerciseMuscles(ex) {
   return { primary, secondary: split(s).filter((m) => !primary.includes(m)) };
 }
 
-// ---------- Anatomy: shaded body charts, small body icons ----------
-let anatomyUid = 0;
-// front and back of the body, shaded like a muscle atlas; main muscles red and pulsing, helpers blue, or a heat colour per muscle
-function AnatomyChart({ primary = [], secondary = [], heat = null, views = ["front", "back"], label = "", animate = true }) {
-  const { gender } = useGender();
-  const uid = useRef(null);
-  if (uid.current === null) uid.current = "an" + ++anatomyUid;
-  const key = views.join("+") + "|" + primary.join(",") + "|" + secondary.join(",");
-  const html = useMemo(
-    () => anatomySvg({ views, primary, secondary, heat, uid: uid.current, animate, gender: gender === "female" ? "female" : "neutral", accent: "var(--c-gold)", label }).replace("<svg ", "<svg data-gender=\"" + (gender === "female" || gender === "male" ? gender : "diverse") + "\" "),
-    [key, heat, animate, gender, label]
+// ---------- Anatomy: the 3D muscle body (anatomy3d.js, loaded on demand) and small still pictures of it ----------
+const isDE = (t) => t === STR.de;
+const statesFor = (primary = [], secondary = []) => {
+  const s = {};
+  secondary.forEach((m) => (s[m] = 2));
+  primary.forEach((m) => (s[m] = 1));
+  return s;
+};
+
+// the turnable body: main muscles red, helpers blue, or a heat colour per muscle (rank map); tap shows a muscle's name
+function AnatomyChart({ t, primary = [], secondary = [], heat = null, label = "", height = 360 }) {
+  const host = useRef(null);
+  const viewer = useRef(null);
+  const [status, setStatus] = useState("loading");
+  const [picked, setPicked] = useState(null);
+  const key = primary.join(",") + "|" + secondary.join(",");
+  const heatKey = heat ? JSON.stringify(heat) : "";
+  const apply = () => {
+    const v = viewer.current;
+    if (!v) return;
+    if (heat) {
+      const h = {};
+      Object.keys(heat).forEach((id) => (h[id] = heat[id] === TIERS[0].color ? null : heat[id]));
+      v.setHeat(h);
+    } else {
+      const s = statesFor(primary, secondary);
+      if (picked) s[picked] = 3;
+      v.setStates(s);
+    }
+  };
+  useEffect(() => {
+    let dead = false;
+    import("./anatomy3d.js")
+      .then(async (m) => {
+        const geo = await m.loadBody();
+        if (dead || !host.current) return;
+        viewer.current = m.createAnatomy3D(host.current, geo, { az: 0.35, onPick: (name) => setPicked(name) });
+        apply();
+        setStatus("ready");
+      })
+      .catch(() => !dead && setStatus("error"));
+    return () => {
+      dead = true;
+      if (viewer.current) viewer.current.dispose();
+      viewer.current = null;
+    };
+  }, []);
+  useEffect(apply, [key, heatKey, picked]);
+  const btn = { background: "#1d2126", color: "#E6EAED", border: "1px solid #2a2f36", borderRadius: 999, padding: "6px 14px", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer" };
+  const name = picked && MUSCLE_NAMES[picked] ? MUSCLE_NAMES[picked][isDE(t) ? "de" : "en"] : null;
+  return (
+    <div data-anatomy-chart data-anatomy-3d={status} style={{ position: "relative" }}>
+      <div ref={host} role="img" aria-label={label} style={{ width: "100%", height, borderRadius: 12, overflow: "hidden", background: "radial-gradient(ellipse at 50% 40%, #2b2f35, #0b0c0e 75%)" }} />
+      {status !== "ready" && (
+        <div style={{ position: "absolute", left: 0, right: 0, top: 0, height, display: "grid", placeItems: "center", padding: 16, textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "#A9B1B7" }}>
+          {status === "loading" ? t.body3dLoading : t.body3dError}
+        </div>
+      )}
+      {name && (
+        <span data-anatomy-picked style={{ position: "absolute", left: 10, top: 10, background: "#F59E0B", color: "#0b0c0e", borderRadius: 999, padding: "4px 12px", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700 }}>
+          {name}
+        </span>
+      )}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+        <button type="button" data-anatomy-view="front" style={btn} onClick={() => viewer.current && viewer.current.setView(0, 0.08, true)}>{t.libFront}</button>
+        <button type="button" data-anatomy-view="back" style={btn} onClick={() => viewer.current && viewer.current.setView(Math.PI, 0.08, true)}>{t.libBack}</button>
+      </div>
+      <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11, color: "#7d858d", margin: "6px 0 2px" }}>{t.body3dHint}</div>
+    </div>
   );
-  return <div data-anatomy-chart dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-// small body icon: the silhouette with only the lit muscles (library list, filter bar, photo corner)
+// small body icon: a still picture of the 3D body from the side that shows the lit muscles (library list, filter bar, photo corner)
 function BodyIcon({ primary = [], secondary = [], width = 30, label = "" }) {
-  return <div data-body-icon aria-hidden={label ? undefined : "true"} style={{ width, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: anatomyLite({ primary, secondary, label }) }} />;
+  const [src, setSrc] = useState(null);
+  const key = primary.join(",") + "|" + secondary.join(",");
+  useEffect(() => {
+    let dead = false;
+    import("./anatomy3d.js")
+      .then((m) => m.bodyThumb({ states: statesFor(primary, secondary), view: viewFor(primary, secondary) }))
+      .then((url) => !dead && setSrc(url))
+      .catch(() => {});
+    return () => {
+      dead = true;
+    };
+  }, [key]);
+  return (
+    <div data-body-icon aria-hidden={label ? undefined : "true"} style={{ width, aspectRatio: "1 / 2", flexShrink: 0 }}>
+      {src && <img src={src} alt={label} draggable={false} style={{ display: "block", width: "100%", height: "100%" }} />}
+    </div>
+  );
 }
 
 // the body in the corner of an exercise photo: shows at a glance where the move works
@@ -9990,11 +10069,8 @@ function MuscleRankCard({ t, workoutHistory }) {
     <div data-rank-card style={{ background: "#0b0c0e", borderRadius: 18, padding: "14px 14px 6px", marginBottom: 18 }}>
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: "#F1F4F5" }}>{t.rankTitle}</div>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, lineHeight: 1.4, color: dim, margin: "3px 0 10px" }}>{t.rankSub}</div>
-      <AnatomyChart heat={heat} label={t.rankTitle} />
-      <div style={{ display: "flex", justifyContent: "space-around", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: dim, margin: "2px 0 10px" }}>
-        <span>{t.libFront}</span>
-        <span>{t.libBack}</span>
-      </div>
+      <AnatomyChart t={t} heat={heat} label={t.rankTitle} />
+      <div style={{ height: 8 }} />
       {total === 0 && <div data-rank-empty style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: dim, marginBottom: 10 }}>{t.rankEmpty}</div>}
       {RANK_GROUPS.map((g) => {
         const p = pts[g.key] || 0;
@@ -10198,11 +10274,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                         {(muscles.find((m) => m.key === selected.muscle) || {}).label}
                       </span>
                     </div>
-                    <AnatomyChart primary={mus.primary} secondary={mus.secondary} label={t.libTargetMuscles + ": " + names(mus.primary)} />
-                    <div style={{ display: "flex", justifyContent: "space-around", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "#A9B1B7", marginTop: 2 }}>
-                      <span>{t.libFront}</span>
-                      <span>{t.libBack}</span>
-                    </div>
+                    <AnatomyChart t={t} primary={mus.primary} secondary={mus.secondary} label={t.libTargetMuscles + ": " + names(mus.primary)} />
                   </div>
                   {mus.primary.length > 0 && (
                     <div style={{ ...small, color: COLORS.text, marginBottom: 6 }}>
