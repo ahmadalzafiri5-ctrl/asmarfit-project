@@ -4,6 +4,77 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { OUT, SKIN, SKIN_FAR, RED, WIDTHS, limbPath, litNormal, torsoShape, smoothClosed, unit } from "./muscleDraw.js";
 
+// is WebGL there (the 3D view needs it)? A test can switch it off with window.__asfitNo3d.
+let gl3dOk = null;
+export function webgl3d() {
+  if (gl3dOk !== null) return gl3dOk;
+  try {
+    if (typeof window === "undefined" || window.__asfitNo3d) {
+      gl3dOk = false;
+      return false;
+    }
+    const c = document.createElement("canvas");
+    const ctx = c.getContext("webgl2") || c.getContext("webgl");
+    gl3dOk = !!ctx;
+    const lose = ctx && ctx.getExtension && ctx.getExtension("WEBGL_lose_context");
+    if (lose) lose.loseContext();
+  } catch {
+    gl3dOk = false;
+  }
+  return gl3dOk;
+}
+
+// The 3D view: the three.js stage is loaded on first use (separate download), then it follows the player's clock.
+function Stage3D({ scene, u, primary, style, onFail }) {
+  const host = useRef(null);
+  const api = useRef(null);
+  const latest = useRef(null);
+  latest.current = { u, scene, primary, style };
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let dead = false;
+    import("./stage3d.js")
+      .then((m) => {
+        if (dead || !host.current) return;
+        try {
+          const st = m.createStage(host.current, { sceneAt, BODY, WIDTHS, FLOOR });
+          api.current = st;
+          const l = latest.current;
+          st.load(l.scene, l.primary, l.style);
+          st.frame(l.u);
+          setReady(true);
+        } catch (err) {
+          if (onFail) onFail(err);
+        }
+      })
+      .catch((err) => {
+        if (!dead && onFail) onFail(err);
+      });
+    return () => {
+      dead = true;
+      if (api.current) {
+        api.current.dispose();
+        api.current = null;
+      }
+    };
+  }, []);
+  const pk = (primary || []).join(",");
+  useEffect(() => {
+    if (api.current) {
+      api.current.load(scene, primary, style);
+      api.current.frame(latest.current.u);
+    }
+  }, [scene, pk, style, ready]);
+  useEffect(() => {
+    if (api.current) api.current.frame(u);
+  }, [u]);
+  return (
+    <div ref={host} data-stage3d-host style={{ position: "relative", width: "100%", aspectRatio: "240 / 170" }}>
+      {!ready && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--c-dim)", fontFamily: "Sora, sans-serif", fontSize: 12 }}>3D …</div>}
+    </div>
+  );
+}
+
 // ----- bones (viewBox is 240 x 170, the floor is y = 148, the figure looks to the right) -----
 export const FLOOR = 148;
 const LT = 42; // torso: hip -> shoulder
@@ -828,7 +899,7 @@ function MoveArrow({ scene, u, j, style }) {
 }
 
 // the player: loops the scene like a short video (timeline, repetition counter, slow motion, full screen with the written steps)
-export function ExerciseAnimation({ corner = null, scene, primary, lang, labelPause, labelPlay, slow, bodyStyle = "neutral", labelRep = "Rep", labelFull = "Full screen", labelClose = "Close", steps = [], title = "", tip = "", muscleText = "", labelTop = "View from above" }) {
+export function ExerciseAnimation({ mode3d = false, on3dFail = null, corner = null, scene, primary, lang, labelPause, labelPlay, slow, bodyStyle = "neutral", labelRep = "Rep", labelFull = "Full screen", labelClose = "Close", steps = [], title = "", tip = "", muscleText = "", labelTop = "View from above" }) {
   const [u, setU] = useState(0);
   const [paused, setPaused] = useState(() => {
     try {
@@ -881,12 +952,16 @@ export function ExerciseAnimation({ corner = null, scene, primary, lang, labelPa
   const label = caps ? caps[Math.min(caps.length - 1, Math.floor((seg / segs) * caps.length))] : "";
   const pill = { background: "var(--c-bg)", borderRadius: 999, padding: "3px 10px", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700 };
   const stage = (big) => (
-    <div data-stage onClick={() => setPaused((p) => !p)} style={{ position: "relative", cursor: "pointer", borderRadius: 14, background: "#0e1013", overflow: "hidden", "--c-text": "#EEF1F3", "--c-dim": "#9AA5AC", "--c-border": "#2b3037", "--c-bg": "#0b0c0e" }}>
-      <svg viewBox={vbOf(scene)} width="100%" style={{ display: "block" }} role="img" aria-label={label}>
-        {ghosts.map((g, i) => <Ghost key={i} j={g} />)}
-        <Figure scene={scene} j={j} primary={primary} style={bodyStyle} />
-        {!paused && !scene.loop && <MoveArrow scene={scene} u={u} j={j} style={bodyStyle} />}
-      </svg>
+    <div data-stage data-mode={mode3d ? "3d" : "2d"} onClick={() => setPaused((p) => !p)} style={{ position: "relative", cursor: "pointer", borderRadius: 14, background: "#0e1013", overflow: "hidden", "--c-text": "#EEF1F3", "--c-dim": "#9AA5AC", "--c-border": "#2b3037", "--c-bg": "#0b0c0e" }}>
+      {mode3d ? (
+        <Stage3D scene={scene} u={u} primary={primary} style={bodyStyle} onFail={on3dFail} />
+      ) : (
+        <svg viewBox={vbOf(scene)} width="100%" style={{ display: "block" }} role="img" aria-label={label}>
+          {ghosts.map((g, i) => <Ghost key={i} j={g} />)}
+          <Figure scene={scene} j={j} primary={primary} style={bodyStyle} />
+          {!paused && !scene.loop && <MoveArrow scene={scene} u={u} j={j} style={bodyStyle} />}
+        </svg>
+      )}
       {corner}
       {label && (
         <div data-phase style={{ ...pill, position: "absolute", left: 10, bottom: 14, color: "var(--c-text)", opacity: 0.92, fontSize: big ? 14 : 11.5 }}>

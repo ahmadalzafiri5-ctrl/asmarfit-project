@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, Children, cloneElement, createCon
 import { Capacitor } from "@capacitor/core";
 import { searchBasics } from "./basics.js";
 import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal, customItem, checkCatalog, catalogCounts } from "./fastfood.js";
-import { ExerciseAnimation } from "./exerciseAnim.jsx";
+import { ExerciseAnimation, webgl3d } from "./exerciseAnim.jsx";
 import { sceneFor } from "./exerciseScenes.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
@@ -947,6 +947,7 @@ const STR = {
     libHowTo: "Step by step",
     libAnim: "How it works",
     libTabPhoto: "Photo",
+    libTab3d: "3D",
     libTabFigure: "Animation",
     libTopView: "View from above",
     libAnimHint: "The figure shows the movement. Red = the muscles that work. Tap to pause.",
@@ -2032,6 +2033,7 @@ const STR = {
     libHowTo: "Schritt für Schritt",
     libAnim: "So geht's",
     libTabPhoto: "Foto",
+    libTab3d: "3D",
     libTabFigure: "Animation",
     libTopView: "Ansicht von oben",
     libAnimHint: "Die Figur zeigt die Bewegung. Rot = die Muskeln, die arbeiten. Tippen hält an.",
@@ -4617,7 +4619,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const [, setTick] = useState(0);
   const [result, setResult] = useState(null);
   const [media, setMedia] = useState(null); // real photos of the moves (start / end position), same source as the exercise library
-  const [demoTab, setDemoTab] = usePersisted("demoTab", "figure");
+  const [demoTab, setDemoTab] = usePersisted("demoTab", "3d");
   const [badImg, setBadImg] = useState({});
   useEffect(() => {
     let alive = true;
@@ -4798,7 +4800,9 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const nextWork = tl.slice(loc.i + 1).find((x) => x.kind === "work");
   const photoOf = (k) => (media && media.items && media.items[k] && !badImg[k] ? media.items[k] : null);
   const photoItem = photoOf(seg.key);
-  const tab = photoItem && scene ? demoTab : photoItem ? "photo" : "figure";
+  const can3d = !!scene && scene.view !== "top" && webgl3d();
+  const avail = [can3d && "3d", scene && "figure", photoItem && "photo"].filter(Boolean);
+  const tab = pickDemoTab(demoTab, avail);
   const nextPhoto = nextWork && nextWork.key !== seg.key ? photoOf(nextWork.key) : null; // loaded in the background so the next move shows at once
   const label = seg.kind === "ready" ? t.quickReady : seg.kind === "rest" ? t.quickRest : t.quickMove.replace("{n}", seg.n).replace("{m}", seg.of);
   const title = seg.kind === "rest" ? t.quickNext.replace("{name}", nameOfKey(seg.key)) : nameOfKey(seg.key);
@@ -4822,16 +4826,15 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
       </div>
       {(scene || photoItem) && (
         <Card style={{ margin: "14px 0", padding: 10 }}>
-          {photoItem && scene && (
+          {avail.length > 1 && (
             <div data-demo-tabs style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-              <Chip label={t.libTabFigure} active={tab === "figure"} onClick={() => setDemoTab("figure")} />
-              <Chip label={t.libTabPhoto} active={tab === "photo"} onClick={() => setDemoTab("photo")} />
+              <DemoChips t={t} avail={avail} tab={tab} setTab={setDemoTab} />
             </div>
           )}
           {tab === "photo" && photoItem ? (
             <QuickPhoto key={seg.key} muscles={mus} media={media} item={photoItem} name={nameOfKey(seg.key)} cue={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} onFail={() => setBadImg((b) => ({ ...b, [seg.key]: true }))} />
           ) : scene ? (
-            <ExerciseAnimation key={seg.key} corner={<PhotoBody muscles={mus} pos="tl" />} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
+            <ExerciseAnimation key={seg.key} mode3d={tab === "3d"} on3dFail={() => setDemoTab("figure")} corner={<PhotoBody muscles={mus} pos="tl" />} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
           ) : null}
         </Card>
       )}
@@ -4851,6 +4854,17 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
 }
 
 // small square on the Training tab (library, records, friends)
+// which demo is shown: the saved choice when this exercise has it, otherwise the first one that exists
+function pickDemoTab(saved, avail) {
+  return avail.includes(saved) ? saved : avail[0] || "figure";
+}
+
+// the switch between 3D, animation and photo
+function DemoChips({ t, avail, tab, setTab }) {
+  const label = { "3d": t.libTab3d, figure: t.libTabFigure, photo: t.libTabPhoto };
+  return avail.map((k) => <Chip key={k} label={label[k]} active={tab === k} onClick={() => setTab(k)} />);
+}
+
 function TrainTile({ emoji, label, onClick }) {
   return (
     <Card onClick={onClick} style={{ cursor: "pointer", padding: "14px 8px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" }}>
@@ -10024,7 +10038,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
   const [media, setMedia] = useState(null); // pictures + steps for the "how to do it" card
   const gx = useGender();
   const gender = gx.gender;
-  const [demoTab, setDemoTab] = usePersisted("demoTab", "figure");
+  const [demoTab, setDemoTab] = usePersisted("demoTab", "3d");
   useEffect(() => {
     let alive = true;
     loadExerciseMedia().then((m) => {
@@ -10142,7 +10156,9 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
               {(() => {
                 const scene = sceneFor(selected.key);
                 const item = media && media.items && media.items[selected.key];
-                const tab = item && scene ? demoTab : item ? "photo" : "figure";
+                const can3d = !!scene && scene.view !== "top" && webgl3d();
+                const avail = [can3d && "3d", scene && "figure", item && "photo"].filter(Boolean);
+                const tab = pickDemoTab(demoTab, avail);
                 const tipLine = (
                   <div data-tip style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: COLORS.dim }}>
                     <div><span style={{ color: COLORS.gold, fontWeight: 700 }}>💡</span> {cueOf(selected)}</div>
@@ -10153,10 +10169,9 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                   <Card style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
                       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text }}>{t.libAnim}</div>
-                      {item && scene && (
+                      {avail.length > 1 && (
                         <div data-demo-tabs style={{ display: "flex", gap: 6 }}>
-                          <Chip label={t.libTabFigure} active={tab === "figure"} onClick={() => setDemoTab("figure")} />
-                          <Chip label={t.libTabPhoto} active={tab === "photo"} onClick={() => setDemoTab("photo")} />
+                          <DemoChips t={t} avail={avail} tab={tab} setTab={setDemoTab} />
                         </div>
                       )}
                     </div>
@@ -10167,7 +10182,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                       </>
                     ) : scene ? (
                       <>
-                        <ExerciseAnimation key={selected.key} corner={<PhotoBody muscles={mus} pos="tl" />} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOf(selected)} tip={cueOf(selected)} muscleText={t.libRedMeans + " " + names(mus.primary)} steps={item ? (lang === "de" ? item.de : item.en) || [] : []} bodyStyle={gender === "diverse" ? "neutral" : gender} />
+                        <ExerciseAnimation key={selected.key} mode3d={tab === "3d"} on3dFail={() => setDemoTab("figure")} corner={<PhotoBody muscles={mus} pos="tl" />} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOf(selected)} tip={cueOf(selected)} muscleText={t.libRedMeans + " " + names(mus.primary)} steps={item ? (lang === "de" ? item.de : item.en) || [] : []} bodyStyle={gender === "diverse" ? "neutral" : gender} />
                         <div style={{ ...small, fontSize: 11.5, marginTop: 6 }}>{t.libAnimHint}</div>
                       </>
                     ) : null}
