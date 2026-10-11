@@ -57,7 +57,11 @@ jobs:
             echo "ios/ ist schon da."
             exit 0
           fi
-          npx cap add ios
+          # CocoaPods statt Swift Package Manager: der Barcode-Scanner (ML Kit) gibt es nur als Pod; ML Kit verlangt iOS 15.5
+          npx cap add ios --packagemanager CocoaPods
+          sed -i '' "s/platform :ios, '15.0'/platform :ios, '15.5'/" ios/App/Podfile
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/IPHONEOS_DEPLOYMENT_TARGET = 15.5;/g' ios/App/App.xcodeproj/project.pbxproj
+          grep -n "platform :ios" ios/App/Podfile
           P=ios/App/App/Info.plist
           PB=/usr/libexec/PlistBuddy
           set_str() { "$PB" -c "Set :$1 '$2'" "$P" 2>/dev/null || "$PB" -c "Add :$1 string '$2'" "$P"; }
@@ -105,6 +109,9 @@ jobs:
       - name: Probe-Bau ohne Signatur (zeigt, ob alles kompiliert)
         working-directory: frontend/ios/App
         run: |
+          ls
+          # legt fehlende Schemata automatisch an und zeigt, was es gibt
+          xcodebuild -list -workspace App.xcworkspace | head -30
           xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO MARKETING_VERSION="$ASFIT_VERSION" CURRENT_PROJECT_VERSION="$ASFIT_BUILD" \
             build | tail -40
