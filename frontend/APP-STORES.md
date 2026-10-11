@@ -10,10 +10,11 @@ Kurzfassung: Google Play geht von deinem Windows-PC aus. Für Apple braucht es e
 | App-Symbol 512×512, App-Name „ASFIT" | fertig (`public/icon-512.png`) | – |
 | Datenschutzerklärung als Web-Adresse | `https://asmarfit-project.onrender.com/privacypolicy.html`, Platzhalter für Name, Adresse, E-Mail, Datum sind noch leer | du füllst die Platzhalter aus, ich trage sie ein |
 | Impressum und Nutzungsbedingungen | Platzhalter wie oben | du |
-| Store-Texte (Kurzbeschreibung, lange Beschreibung, Stichwörter) DE/EN | fehlen | ich schreibe sie |
-| Bildschirmfotos vom Handy (je Store eigene Größen) | fehlen | ich erzeuge sie aus der App |
-| „Antwort melden"-Knopf für KI-Antworten (Coach, Rezepte) | fehlt, Google verlangt ihn, bei Apple hilft er bei der Prüfung | ich baue ihn |
-| Gesundheitsdaten: nur Schritte, Gewicht, Training lesen | fertig, Begründungstexte für die Formulare schreibe ich | ich |
+| Store-Texte (Kurzbeschreibung, lange Beschreibung, Stichwörter) DE/EN | fertig: `frontend/store/store-texte.md` | – |
+| Bildschirmfotos vom Handy (je Store eigene Größen) | fertig: `C:\Users\StartKlar\Downloads\ASFIT-Store\` → `de`/`en` mit `apple-6.7` (1290×2796), `apple-6.5` (1242×2688), `google-phone` (1080×2160), `google-feature-1024x500.png`. Neu erzeugen: `node store-shots.cjs de` und `node store-frames.cjs de` in `asfit-shots` | – |
+| „Antwort melden"-Knopf für KI-Antworten | fertig (unter jeder KI-Antwort; Meldungen stehen im Server-Protokoll bei Render, Leseroute mit `REPORT_ADMIN_KEY`) | – |
+| Formular-Antworten (Datensicherheit, App-Datenschutz, HealthKit-Texte) | fertig: `frontend/store/formulare.md` | – |
+| Gesundheitsdaten: nur Schritte, Gewicht, Training lesen | fertig | – |
 | Server im Gratis-Tarif schläft ein (erste KI-Antwort langsam) | für echte Nutzer später bezahlter Tarif | du entscheidest |
 | ElevenLabs-Stimmen: kommerzielle Nutzung nur mit bezahltem Tarif | prüfen, bevor die App öffentlich ist | du |
 
@@ -43,8 +44,14 @@ Das Wichtigste vorweg: Apple-Apps lassen sich nur auf einem Mac bauen und hochla
 
 1. **Apple Developer Program:** <https://developer.apple.com/programs/>, 99 US-Dollar **pro Jahr**, Apple-ID mit Zwei-Faktor, Ausweisprüfung, 1 bis 2 Tage Wartezeit. Machst du selbst.
 2. **iPhone-Projekt anlegen:** Ich füge `@capacitor/ios` hinzu und lege den `ios`-Ordner an. Das geht auf dem GitHub-Mac, nicht auf deinem PC.
-3. **Zertifikate und Profile:** In deinem Apple-Konto entstehen ein Verteilungszertifikat und ein Provisioning-Profil. Beides legst du als GitHub-Secrets ab, zusammen mit einem App-Store-Connect-API-Schlüssel. Ich schreibe dir dafür eine Schritt-für-Schritt-Liste, die Werte selbst sehe ich nie.
-4. **GitHub-Lauf für iPhone:** baut die App, signiert sie und lädt sie zu App Store Connect hoch. Ohne die Secrets baut er nur zur Probe (unsigniert), damit wir früh sehen, ob alles kompiliert.
+3. **Zertifikate und Profile (Klickliste, sobald das Konto freigeschaltet ist):**
+   1. <https://developer.apple.com/account> → Identifiers → „+" → App IDs → Bundle ID `com.asmarfit.app` (Explicit), Capabilities: **HealthKit** anhaken → Register.
+   2. Certificates → „+" → **Apple Distribution**. Dafür brauchst du eine Zertifikatsanforderung (.certSigningRequest). Ohne Mac geht das mit OpenSSL in PowerShell; ich gebe dir den Befehl, wenn es so weit ist. Das fertige Zertifikat (.cer) plus dein privater Schlüssel ergeben eine `.p12`-Datei mit Passwort.
+   3. Profiles → „+" → **App Store Connect** → App ID `com.asmarfit.app` → dein Zertifikat → Name z. B. „ASFIT App Store" → Download (`.mobileprovision`).
+   4. <https://appstoreconnect.apple.com> → Users and Access → **Integrations → App Store Connect API** → Team Keys → „+" → Name „GitHub", Zugriff „App Manager" → Download der `.p8`-Datei (nur einmal möglich). Notiere Key ID und Issuer ID.
+   5. App Store Connect → Apps → „+" → Name ASFIT, Bundle ID `com.asmarfit.app`, SKU `asfit`.
+   6. GitHub → Settings → Secrets and variables → Actions → New repository secret, je einmal: `APPLE_TEAM_ID` (10 Zeichen, steht oben rechts im Developer-Konto), `APPLE_CERT_P12_BASE64` (Inhalt der .p12 als Text, Skript folgt), `APPLE_CERT_PASSWORD`, `APPLE_PROFILE_BASE64` (.mobileprovision als Text), `APPSTORE_API_KEY_ID`, `APPSTORE_API_ISSUER_ID`, `APPSTORE_API_KEY_P8_BASE64` (.p8 als Text). Für die „als Text"-Werte gibt es ein Skript wie beim Android-Schlüssel; die Werte sehe ich nie.
+4. **GitHub-Lauf „iPhone-App bauen" (fertig eingerichtet):** Beim ersten Mal legt er den Ordner `frontend/ios` an (CocoaPods, Berechtigungstexte für Kamera, Fotos und Apple Health, HealthKit-Entitlement, iOS 15.5) und schreibt ihn ins Repository. Jeder Lauf baut unsigniert zur Probe; sind die Secrets da, baut er zusätzlich das signierte Archiv und lädt es zu App Store Connect hoch (erscheint dann unter TestFlight).
 5. **TestFlight:** Nach dem Hochladen installierst du die App über die TestFlight-App auf deinem iPhone. Das ersetzt die heutige Variante „Web-App auf dem Home-Bildschirm".
 6. **App Store Connect ausfüllen:** Name, Untertitel, Beschreibung, Stichwörter, Bildschirmfotos für 6,7-Zoll- und 6,5-Zoll-iPhones, Altersfreigabe, Datenschutz-Angaben („App Privacy"), Support-Adresse, Datenschutz-Link. Gesundheitsdaten laufen auf dem iPhone über HealthKit (dasselbe Plugin), Apple verlangt dafür Klartext-Begründungen in der App, die ich eintrage.
 7. **Einreichen:** Prüfung durch Apple dauert meist 1 bis 3 Tage. Häufige Ablehngründe, die wir vorher abhaken: fehlende Datenschutz-Angaben, Gesundheitsdaten ohne Erklärung, Platzhalter-Texte, Abstürze beim ersten Start, KI-Inhalte ohne Melden-Funktion.
