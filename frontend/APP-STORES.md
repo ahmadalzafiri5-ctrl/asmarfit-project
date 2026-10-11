@@ -20,8 +20,17 @@ Kurzfassung: Google Play geht von deinem Windows-PC aus. Für Apple braucht es e
 ## Google Play (Android), von deinem PC aus
 
 1. **Konto:** <https://play.google.com/console>, einmalig ca. 25 US-Dollar, Ausweisprüfung. Machst du selbst.
-2. **Signierter Bau:** Google will ein App Bundle (`.aab`), keine Debug-APK. Ich baue einen zweiten GitHub-Lauf, der ein signiertes Bundle erzeugt. Du erzeugst dafür einmal einen Upload-Schlüssel mit einem Skript (wie beim Debug-Schlüssel, das Passwort bleibt bei dir und kommt nicht in den Chat) und legst ihn als Secret in GitHub ab.
-3. **Store-Variante:** Der Bau mit `store` blendet das Einnahme-Tagebuch aus. Diese Variante einreichen.
+2. **Signierter Bau (fertig eingerichtet):** Google will ein App Bundle (`.aab`), keine Debug-APK. Der GitHub-Lauf **„Android-Store-Bundle bauen"** erzeugt es, immer als Store-Variante (ohne Einnahme-Tagebuch). Einmalig musst du den Upload-Schlüssel anlegen:
+   1. In PowerShell auf deinem PC ausführen (keytool fragt dich zweimal nach einem Passwort; es wird nirgends gespeichert):
+
+      ```powershell
+      powershell -ExecutionPolicy Bypass -File "C:\Users\StartKlar\Downloads\asmarfit-project\frontend\tools\make-upload-key.ps1"
+      ```
+
+   2. GitHub → Settings → Secrets and variables → Actions → **New repository secret**: `UPLOAD_KEYSTORE_BASE64` (Wert mit Strg+V aus der Zwischenablage) und `UPLOAD_KEYSTORE_PASSWORD` (dein Passwort von eben).
+   3. Die Datei `%USERPROFILE%\.android\asfit-upload.jks` an einem zweiten Ort sichern.
+   4. Actions → „Android-Store-Bundle bauen" → **Run workflow**. Unten beim Lauf unter „Artifacts" liegt `ASFIT-android-store-aab`. Ohne die Secrets baut der Lauf nur eine unsignierte Probe.
+3. **Play App Signing:** Beim ersten Hochladen des Bundles in der Play Console „Google verwaltet den Signaturschlüssel" wählen. Dein Upload-Schlüssel bleibt der Schlüssel, mit dem du Updates hochlädst.
 4. **Play Console ausfüllen:** Store-Eintrag, Datensicherheit, Gesundheits-Berechtigungen (Health Connect) mit Begründung, Inhaltseinstufung, Zielgruppe (18+ ist am einfachsten), KI-Inhalte.
 5. **Tests:** interner Test (sofort, bis 100 Personen), dann geschlossener Test. Neue private Konten müssen etwa 12 Tester 14 Tage lang dabeihaben, bevor die App für alle freigegeben wird. Die Console zeigt dir die genaue Zahl.
 6. **Deine jetzige App:** einmal deinstallieren, aus dem Store neu installieren, weil die Signatur anders ist. Vorher CSV-Export in der App.

@@ -1,0 +1,179 @@
+# Baut die iPhone-App auf einem Mac bei GitHub (auf dem Windows-PC geht das nicht).
+# 1. Lauf: legt frontend/ios an (Capacitor), traegt Berechtigungstexte und HealthKit ein und schreibt den Ordner ins Repository.
+# Jeder Lauf: baut die App unsigniert zur Probe. Mit den Apple-Secrets (Anleitung: frontend/APP-STORES.md) baut er
+# zusaetzlich ein signiertes Archiv und laedt es zu App Store Connect hoch (TestFlight).
+#
+# Secrets fuer den signierten Bau:
+#   APPLE_TEAM_ID                   die 10-stellige Team-ID
+#   APPLE_CERT_P12_BASE64           Verteilungszertifikat (.p12) als Text
+#   APPLE_CERT_PASSWORD             Passwort der .p12-Datei
+#   APPLE_PROFILE_BASE64            Provisioning-Profil (App Store, Bundle com.asmarfit.app) als Text
+#   APPSTORE_API_KEY_ID             App-Store-Connect-API-Schluessel: Key ID
+#   APPSTORE_API_ISSUER_ID          App-Store-Connect-API-Schluessel: Issuer ID
+#   APPSTORE_API_KEY_P8_BASE64      die .p8-Datei als Text
+name: iPhone-App bauen
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/ios-build.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-build
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Web-App bauen
+        working-directory: frontend
+        env:
+          VITE_HIDE_INTAKE: "1"
+        run: |
+          npm ci
+          npm run build
+
+      - name: iOS-Projekt anlegen (nur beim ersten Mal)
+        id: add
+        working-directory: frontend
+        run: |
+          if [ -d ios/App ]; then
+            echo "created=0" >> "$GITHUB_OUTPUT"
+            echo "ios/ ist schon da."
+            exit 0
+          fi
+          npx cap add ios
+          P=ios/App/App/Info.plist
+          PB=/usr/libexec/PlistBuddy
+          set_str() { "$PB" -c "Set :$1 '$2'" "$P" 2>/dev/null || "$PB" -c "Add :$1 string '$2'" "$P"; }
+          set_str CFBundleDisplayName "ASFIT"
+          set_str NSCameraUsageDescription "Die Kamera scannt Barcodes und fotografiert Mahlzeiten, um Kalorien zu schätzen."
+          set_str NSPhotoLibraryUsageDescription "Fotos aus der Mediathek für Fortschrittsfotos, Profilbild, Rezeptfoto und die Potenzial-Vorschau."
+          set_str NSHealthShareUsageDescription "ASFIT liest Schritte, Gewicht und Trainings aus Apple Health, um sie im Startbildschirm und in der Kalorienbilanz anzuzeigen."
+          set_str NSHealthUpdateUsageDescription "ASFIT schreibt keine Daten in Apple Health."
+          "$PB" -c "Add :ITSAppUsesNonExemptEncryption bool false" "$P" 2>/dev/null || true
+          cat > ios/App/App/App.entitlements <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.developer.healthkit</key>
+            <true/>
+            <key>com.apple.developer.healthkit.access</key>
+            <array/>
+          </dict>
+          </plist>
+          EOF
+          # die Entitlements-Datei an das App-Ziel haengen (vor jeder Bundle-ID-Zeile des App-Ziels)
+          sed -i '' 's#PRODUCT_BUNDLE_IDENTIFIER = com.asmarfit.app;#CODE_SIGN_ENTITLEMENTS = App/App.entitlements; PRODUCT_BUNDLE_IDENTIFIER = com.asmarfit.app;#g' ios/App/App.xcodeproj/project.pbxproj
+          grep -c "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj
+          echo "created=1" >> "$GITHUB_OUTPUT"
+
+      - name: Native Teile synchronisieren (CocoaPods)
+        working-directory: frontend
+        run: npx cap sync ios
+
+      - name: iOS-Projekt ins Repository schreiben (nur beim ersten Mal)
+        if: steps.add.outputs.created == '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/ios
+          git commit -m "iOS-Projekt angelegt (automatisch vom Lauf 'iPhone-App bauen')"
+          git push
+
+      - name: Versionsnummer setzen
+        run: |
+          echo "ASFIT_BUILD=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          echo "ASFIT_VERSION=1.0.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+
+      - name: Probe-Bau ohne Signatur (zeigt, ob alles kompiliert)
+        working-directory: frontend/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO MARKETING_VERSION="$ASFIT_VERSION" CURRENT_PROJECT_VERSION="$ASFIT_BUILD" \
+            build | tail -40
+          test "${PIPESTATUS[0]}" -eq 0
+
+      - name: Apple-Secrets vorhanden?
+        id: secrets
+        env:
+          T: ${{ secrets.APPLE_TEAM_ID }}
+          C: ${{ secrets.APPLE_CERT_P12_BASE64 }}
+          P: ${{ secrets.APPLE_PROFILE_BASE64 }}
+          K: ${{ secrets.APPSTORE_API_KEY_P8_BASE64 }}
+        run: |
+          if [ -n "$T" ] && [ -n "$C" ] && [ -n "$P" ] && [ -n "$K" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "ok=0" >> "$GITHUB_OUTPUT"; echo "::warning::Apple-Secrets fehlen: nur der unsignierte Probe-Bau wurde gemacht."; fi
+
+      - name: Zertifikat und Profil einrichten
+        if: steps.secrets.outputs.ok == '1'
+        env:
+          APPLE_CERT_P12_BASE64: ${{ secrets.APPLE_CERT_P12_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_PROFILE_BASE64: ${{ secrets.APPLE_PROFILE_BASE64 }}
+          APPSTORE_API_KEY_P8_BASE64: ${{ secrets.APPSTORE_API_KEY_P8_BASE64 }}
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+        run: |
+          KC="$RUNNER_TEMP/build.keychain-db"
+          KCPW=$(openssl rand -hex 16)
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          printf '%s' "$APPLE_CERT_P12_BASE64" | tr -d ' \r\n\t"' | base64 -d > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -P "$APPLE_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" > /dev/null
+          security list-keychains -d user -s "$KC" login.keychain-db
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          printf '%s' "$APPLE_PROFILE_BASE64" | tr -d ' \r\n\t"' | base64 -d > "$RUNNER_TEMP/app.mobileprovision"
+          UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/app.mobileprovision")")
+          NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/app.mobileprovision")")
+          cp "$RUNNER_TEMP/app.mobileprovision" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s' "$APPSTORE_API_KEY_P8_BASE64" | tr -d ' \r\n\t"' | base64 -d > ~/.appstoreconnect/private_keys/AuthKey_"$APPSTORE_API_KEY_ID".p8
+          echo "Profil: $NAME"
+
+      - name: Signiertes Archiv bauen und zu App Store Connect hochladen
+        if: steps.secrets.outputs.ok == '1'
+        working-directory: frontend/ios/App
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" archive \
+            CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            MARKETING_VERSION="$ASFIT_VERSION" CURRENT_PROJECT_VERSION="$ASFIT_BUILD" | tail -30
+          test "${PIPESTATUS[0]}" -eq 0
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key><dict><key>com.asmarfit.app</key><string>$PROFILE_NAME</string></dict>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_"$APPSTORE_API_KEY_ID".p8 \
+            -authenticationKeyID "$APPSTORE_API_KEY_ID" -authenticationKeyIssuerID "$APPSTORE_API_ISSUER_ID" | tail -30
+          test "${PIPESTATUS[0]}" -eq 0
+          echo "Hochgeladen: Version $ASFIT_VERSION (Build $ASFIT_BUILD). In App Store Connect unter TestFlight nach einigen Minuten sichtbar."
