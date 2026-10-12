@@ -972,6 +972,8 @@ const STR = {
     libStartEnd: "Start and end position alternate. Tap to pause the animation.",
     libSource: "Pictures and instructions: free-exercise-db (public domain).",
     libFavs: "Favorites",
+    libSwitch: "Switch exercise",
+    libSwitchHint: "Search another exercise…",
     libAddFav: "Add to favorites",
     libTargetMuscles: "Target muscles",
     libPrimary: "Primary muscles",
@@ -999,6 +1001,7 @@ const STR = {
     shareTypeRecipe: "Recipe",
     shareTypePantry: "Pantry folder",
     shareTypeDuel: "Week duel",
+    shareTypeHist: "Training history",
     shareFrom: "{n} shares with you",
     sharePlanReplace: "This replaces your current training plan.",
     shareImport: "Import",
@@ -1012,9 +1015,11 @@ const STR = {
     shareRecipeBtn: "Share recipe",
     friendsTitle: "Friends & duel",
     friendsCardSub: "Share plans and compare the week with friends",
-    friendsIntro: "Send a friend your week code. When they import it and send you theirs, you both see who did better in the last 7 days. No account needed, just a link or code.",
+    friendsIntro: "Send a friend your week code. When they import it and send you theirs, you both see who did better in the last 7 days. You can also share your last workouts and your plan; your friend sees them here. No account needed, just a link or code.",
     friendsName: "Your name (how friends see you)",
     friendsShareMine: "Share my week code",
+    friendsShareHistory: "Share my training history",
+    friendsFeeds: "Training of my friends",
     friendsPaste: "Paste a friend's link or code",
     friendsImport: "Import",
     friendsBadCode: "That is not a valid ASFIT link or code.",
@@ -1129,6 +1134,13 @@ const STR = {
     setProfileRow: "Edit profile",
     setGoalsRow: "My goals",
     setDisplayRow: "Appearance & language",
+    setSearch: "Search settings…",
+    setSearchHits: "Results",
+    setSearchNone: "Nothing found",
+    setFriendsCount: "{n} friends",
+    setFriendsOne: "1 friend",
+    setFriendsNone: "No friends yet",
+    setDataSub: "Backup, export, delete",
     setDataRow: "Backup & delete data",
     setHelpRow: "Help & FAQ",
     setShareRow: "Recommend ASFIT",
@@ -2073,6 +2085,8 @@ const STR = {
     libStartEnd: "Start und Ende im Wechsel. Tippen hält die Animation an.",
     libSource: "Bilder und englische Anleitung: free-exercise-db (gemeinfrei). Deutsche Schritte: ASFIT.",
     libFavs: "Favoriten",
+    libSwitch: "Übung wechseln",
+    libSwitchHint: "Andere Übung suchen …",
     libAddFav: "Zu Favoriten hinzufügen",
     libTargetMuscles: "Zielmuskeln",
     libPrimary: "Hauptmuskeln",
@@ -2100,6 +2114,7 @@ const STR = {
     shareTypeRecipe: "Rezept",
     shareTypePantry: "Speisekammer-Ordner",
     shareTypeDuel: "Wochen-Duell",
+    shareTypeHist: "Trainingsverlauf",
     shareFrom: "{n} teilt mit dir",
     sharePlanReplace: "Ersetzt deinen aktuellen Trainingsplan.",
     shareImport: "Importieren",
@@ -2113,9 +2128,11 @@ const STR = {
     shareRecipeBtn: "Rezept teilen",
     friendsTitle: "Freunde & Duell",
     friendsCardSub: "Teile Pläne und vergleiche die Woche mit Freunden",
-    friendsIntro: "Schick einem Freund deinen Wochen-Code. Importiert er ihn und schickt dir seinen, seht ihr beide, wer in den letzten 7 Tagen besser war. Läuft ohne Konto, nur über Link oder Code.",
+    friendsIntro: "Schick einem Freund deinen Wochen-Code. Importiert er ihn und schickt dir seinen, seht ihr beide, wer in den letzten 7 Tagen besser war. Auch deine letzten Trainings und deinen Plan kannst du teilen; dein Freund sieht sie hier. Läuft ohne Konto, nur über Link oder Code.",
     friendsName: "Dein Name (so sehen dich Freunde)",
     friendsShareMine: "Meinen Wochen-Code teilen",
+    friendsShareHistory: "Meinen Trainingsverlauf teilen",
+    friendsFeeds: "Training meiner Freunde",
     friendsPaste: "Link oder Code von einem Freund einfügen",
     friendsImport: "Importieren",
     friendsBadCode: "Das ist kein gültiger ASFIT-Link oder -Code.",
@@ -2230,6 +2247,13 @@ const STR = {
     setProfileRow: "Profil bearbeiten",
     setGoalsRow: "Meine Ziele",
     setDisplayRow: "Darstellung & Sprache",
+    setSearch: "Einstellungen suchen …",
+    setSearchHits: "Treffer",
+    setSearchNone: "Nichts gefunden",
+    setFriendsCount: "{n} Freunde",
+    setFriendsOne: "1 Freund",
+    setFriendsNone: "Noch keine Freunde",
+    setDataSub: "Sicherung, Export, Löschen",
     setDataRow: "Daten sichern & löschen",
     setHelpRow: "Hilfe & FAQ",
     setShareRow: "ASFIT weiterempfehlen",
@@ -10190,6 +10214,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
   const [wInput, setWInput] = useState("");
   const [rInput, setRInput] = useState("");
   const [saved, setSaved] = useState(false);
+  const [swQ, setSwQ] = useState(""); // search field of the "switch exercise" bar in the detail
   const [media, setMedia] = useState(null); // pictures + steps for the "how to do it" card
   const gx = useGender();
   const gender = gx.gender;
@@ -10300,6 +10325,66 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
             {maxReps ? <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.teal }}>{t.exerciseMaxReps}: {maxReps}</div> : null}
           </div>
         </Card>
+
+        {(() => {
+          // switch to another exercise right here instead of going back to the list each time:
+          // arrows walk through the current filter/search result, the field finds any exercise
+          const pool = results.some((e) => e.key === selected.key) ? results : EXERCISE_LIBRARY.filter((e) => e.muscle === selected.muscle);
+          const idx = pool.findIndex((e) => e.key === selected.key);
+          const prev = idx > 0 ? pool[idx - 1] : null;
+          const next = idx >= 0 && idx < pool.length - 1 ? pool[idx + 1] : null;
+          const q = swQ.trim().toLowerCase();
+          const hits = q ? EXERCISE_LIBRARY.filter((e) => e.key !== selected.key && (e.name.toLowerCase().includes(q) || e.nameDe.toLowerCase().includes(q))).slice(0, 6) : [];
+          const go = (ex) => {
+            if (!ex) return;
+            setSelected(ex);
+            setSwQ("");
+            setWInput("");
+            setRInput("");
+            try {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } catch {
+              /* old browsers */
+            }
+          };
+          const arrow = (ex, dir) => (
+            <div data-lib-prev={dir === "prev" ? (ex ? ex.key : "") : undefined} data-lib-next={dir === "next" ? (ex ? ex.key : "") : undefined} onClick={() => go(ex)} style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, justifyContent: dir === "prev" ? "flex-start" : "flex-end", cursor: ex ? "pointer" : "default", opacity: ex ? 1 : 0.35, minWidth: 0 }}>
+              {dir === "prev" && <ChevronLeft size={16} color={COLORS.gold} style={{ flexShrink: 0 }} />}
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ex ? nameOf(ex) : "–"}</span>
+              {dir === "next" && <ChevronLeft size={16} color={COLORS.gold} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />}
+            </div>
+          );
+          return (
+            <div data-lib-switch>
+              <Card style={{ marginBottom: 14, padding: "12px 14px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {arrow(prev, "prev")}
+                  <div data-lib-pos style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, flexShrink: 0 }}>{idx >= 0 ? idx + 1 + " / " + pool.length : ""}</div>
+                  {arrow(next, "next")}
+                </div>
+                <div style={{ position: "relative", marginTop: 10 }}>
+                  <Search size={15} color={COLORS.dim} style={{ position: "absolute", left: 12, top: 13 }} />
+                  <input data-lib-switch-input value={swQ} onChange={(e) => setSwQ(e.target.value)} placeholder={t.libSwitchHint} aria-label={t.libSwitch} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", paddingLeft: 36, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
+                </div>
+                {hits.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    {hits.map((ex) => (
+                      <div key={ex.key} data-lib-switch-item={ex.key} onClick={() => go(ex)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 4px", borderTop: "1px solid " + COLORS.border, cursor: "pointer" }}>
+                        <BodyThumb ex={ex} small />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{nameOf(ex)}</div>
+                          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{muscles.find((m) => m.key === ex.muscle)?.label}</div>
+                        </div>
+                        <ChevronLeft size={14} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {q && hits.length === 0 && <div data-lib-switch-none style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 8 }}>{t.libNoResults}</div>}
+              </Card>
+            </div>
+          );
+        })()}
 
         {(() => {
           const mus = exerciseMuscles(selected);
@@ -10914,6 +10999,27 @@ function sanitizeShare(o) {
       const e = EXERCISE_LIBRARY.find((x) => x.key === o.k);
       return e ? { t: "ex", from, key: e.key } : null;
     }
+    case "hist": {
+      // the last workouts of a friend: date, minutes, volume and the sets as [key, kg, reps]
+      const key = (k) => (/^[A-Za-z0-9_]{1,40}$/.test(String(k)) ? String(k) : null);
+      const workouts = (Array.isArray(o.w) ? o.w : [])
+        .slice(0, 10)
+        .map((w) => {
+          const d = new Date(w && w.d);
+          if (!w || isNaN(d.getTime())) return null;
+          const sets = (Array.isArray(w.s) ? w.s : [])
+            .slice(0, 40)
+            .map((x) => (Array.isArray(x) && key(x[0]) ? { exerciseKey: key(x[0]), weight: Math.round(shNum(x[1], 2000) * 10) / 10, reps: Math.round(shNum(x[2], 999)) } : null))
+            .filter(Boolean);
+          const cardio = (Array.isArray(w.c) ? w.c : [])
+            .slice(0, 10)
+            .map((x) => (Array.isArray(x) && key(x[0]) && Number(x[1]) > 0 ? { exerciseKey: key(x[0]), minutes: Math.round(shNum(x[1], 1440)) } : null))
+            .filter(Boolean);
+          return { dateISO: d.toISOString(), minutes: Math.round(shNum(w.m, 1440)), volumeKg: Math.round(shNum(w.v, 1000000)), sets, cardio };
+        })
+        .filter(Boolean);
+      return workouts.length ? { t: "hist", from, id: shStr(o.id, 24) || from, ts: Number(o.ts) || Date.now(), plan: shStr(o.p, 40), workouts } : null;
+    }
     case "duel": {
       const s = o.s || {};
       const bests = {};
@@ -10939,7 +11045,7 @@ function ShareImportModal({ t, lang, item, onImport, onClose }) {
     { key: "dinner", label: t.dinner },
     { key: "snacks", label: t.snacks },
   ];
-  const typeLabel = { plan: t.shareTypePlan, meal: t.shareTypeMeal, day: t.shareTypeDay, recipe: t.shareTypeRecipe, pantry: t.shareTypePantry, duel: t.shareTypeDuel, ex: t.shareTypeEx }[item.t];
+  const typeLabel = { plan: t.shareTypePlan, meal: t.shareTypeMeal, day: t.shareTypeDay, recipe: t.shareTypeRecipe, pantry: t.shareTypePantry, duel: t.shareTypeDuel, ex: t.shareTypeEx, hist: t.shareTypeHist }[item.t];
   let lines = [];
   if (item.t === "plan") lines = [item.name, ...item.days.map((d) => d.name + " · " + d.exercises.length + " " + t.exercises)];
   else if (item.t === "meal") lines = [item.title || t.shareTypeMeal, item.items.length + " " + t.pantryItemMany + " · " + sumKcal(item.items) + " kcal"];
@@ -10949,6 +11055,7 @@ function ShareImportModal({ t, lang, item, onImport, onClose }) {
   } else if (item.t === "recipe") lines = [item.r.name, item.r.kcal + " kcal " + t.perServing];
   else if (item.t === "pantry") lines = [item.folder.emoji + " " + item.folder.name, item.folder.items.length + " " + t.pantryItemMany];
   else if (item.t === "duel") lines = [item.from || "?", item.stats.tr + "× " + t.duelTrainings + " · " + item.stats.vol + " kg"];
+  else if (item.t === "hist") lines = [(item.from || "?") + (item.plan ? " · " + item.plan : ""), item.workouts.length + "× " + t.duelTrainings + " · " + item.workouts.reduce((a, w) => a + w.volumeKg, 0) + " kg"];
   else if (item.t === "ex") {
     const e = EXERCISE_LIBRARY.find((x) => x.key === item.key);
     lines = e ? [lang === "de" ? e.nameDe : e.name, lang === "de" ? e.cueDe : e.cue] : [];
@@ -11008,7 +11115,7 @@ function duelScore(mine, theirs) {
   return { me, them };
 }
 
-function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMine, onImportText, onRemove }) {
+function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMine, onShareHistory, onImportText, onRemove, feeds = [], onRemoveFeed, myHistoryCount = 0 }) {
   const [text, setText] = useState("");
   const [msg, setMsg] = useState(null);
   const ageText = (ts) => {
@@ -11045,6 +11152,9 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
         <button onClick={onShareMine} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
           {t.friendsShareMine}
         </button>
+        <button data-share-history onClick={onShareHistory} disabled={!myHistoryCount} style={{ width: "100%", marginTop: 8, background: COLORS.raised, color: myHistoryCount ? COLORS.gold : COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: myHistoryCount ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+          <Share2 size={14} /> {t.friendsShareHistory}{myHistoryCount ? " (" + Math.min(10, myHistoryCount) + ")" : ""}
+        </button>
       </Card>
 
       <Card style={{ marginBottom: 18 }}>
@@ -11054,6 +11164,63 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
         </button>
         {msg && <div style={{ ...small, color: COLORS.coral, marginTop: 8 }}>{msg}</div>}
       </Card>
+
+      {feeds.length > 0 && (
+        <div data-friend-feeds style={{ marginBottom: 18 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: COLORS.dim, textTransform: "uppercase", letterSpacing: 0.8, margin: "0 6px 8px" }}>{t.friendsFeeds}</div>
+          {feeds
+            .slice()
+            .sort((a, b) => (b.ts || 0) - (a.ts || 0))
+            .map((f) => {
+              const exName = (k) => {
+                const e = EXERCISE_LIBRARY.find((x) => x.key === k);
+                return e ? (lang === "de" ? e.nameDe : e.name) : k;
+              };
+              const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-CH" : "en-GB", { weekday: "short", day: "numeric", month: "short" });
+              const list = f.workouts.slice().sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO)).slice(0, 10);
+              return (
+                <div key={f.id} data-friend-feed={f.id}>
+                <Card style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                    <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{f.name}</div>
+                    <div style={{ ...small, fontSize: 11.5 }}>{t.friendsAsOf.replace("{d}", ageText(f.ts))}</div>
+                  </div>
+                  <div style={{ ...small, marginTop: 2, marginBottom: 10 }}>
+                    {f.workouts.length}× {t.duelTrainings} · {f.workouts.reduce((a, w) => a + w.volumeKg, 0)} kg{f.plan ? " · " + f.plan : ""}
+                  </div>
+                  {list.map((w, i) => {
+                    const groups = [];
+                    w.sets.forEach((x) => {
+                      const g = groups.find((y) => y.key === x.exerciseKey);
+                      if (g) g.sets.push(x);
+                      else groups.push({ key: x.exerciseKey, sets: [x] });
+                    });
+                    return (
+                      <div key={i} data-feed-workout style={{ padding: "8px 0", borderTop: "1px solid " + COLORS.border }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>{fmtDate(w.dateISO)}</span>
+                          <span style={{ ...small, fontSize: 12 }}>
+                            {w.minutes ? w.minutes + " min · " : ""}
+                            {w.volumeKg} kg
+                          </span>
+                        </div>
+                        <div style={{ ...small, fontSize: 12, lineHeight: 1.5, marginTop: 2 }}>
+                          {groups.slice(0, 6).map((g) => exName(g.key) + " " + g.sets.length + "×" + Math.max(...g.sets.map((x) => x.reps)) + (g.sets.some((x) => x.weight > 0) ? " @ " + Math.max(...g.sets.map((x) => x.weight)) + " kg" : "")).join(" · ")}
+                          {groups.length > 6 ? " · +" + (groups.length - 6) : ""}
+                          {w.cardio.length ? (groups.length ? " · " : "") + w.cardio.map((c) => exName(c.exerciseKey) + " " + c.minutes + " min").join(" · ") : ""}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                    <span data-feed-remove onClick={() => onRemoveFeed && onRemoveFeed(f.id)} style={{ ...small, cursor: "pointer" }}>{t.friendsRemove}</span>
+                  </div>
+                </Card>
+                </div>
+              );
+            })}
+        </div>
+      )}
 
       {rivals.length === 0 ? (
         <div style={{ ...small, textAlign: "center", lineHeight: 1.5, padding: "0 12px" }}>{t.friendsNone}</div>
@@ -11557,13 +11724,64 @@ function SettingsLabel({ children }) {
   return <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, margin: "16px 0 8px" }}>{children}</div>;
 }
 
-function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
+function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang = "de", setLang, appearance = "dark", setAppearance, friendsCount = 0 }) {
   const { code: ccSet, name: ccSetName } = useCountry();
   const remOn = NOTIF_KINDS.filter((k) => reminders[k] && reminders[k].on).length;
+  const [q, setQ] = useState("");
   const stat = (value, label) => (
     <div style={{ flex: 1, background: COLORS.bg, borderRadius: 12, padding: "9px 6px", textAlign: "center", border: "1px solid " + COLORS.border }}>
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{value}</div>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim, marginTop: 1 }}>{label}</div>
+    </div>
+  );
+  const lookLabel = { light: t.setLight, dark: t.setDark, system: t.setSystem }[appearance] || t.setDark;
+  // every row in one list: that is what the search field filters
+  const groups = [
+    {
+      title: t.setGroupMine,
+      rows: [
+        { icon: Target, label: t.setGoalsRow, sub: profile.kcalGoal + " kcal", key: "settingsGoals" },
+        { icon: Bell, label: t.reminders, sub: remOn + " / " + NOTIF_KINDS.length, key: "settingsReminders" },
+        { icon: Palette, label: t.setDisplayRow, sub: lookLabel + " · " + (lang === "de" ? "Deutsch" : "English"), key: "settingsDisplay" },
+      ],
+    },
+    {
+      title: t.setGroupFeatures,
+      rows: [
+        { tint: "teal", icon: Link2, label: t.connSettings, key: "connections" },
+        { tint: "teal", icon: Globe, label: t.countryRow, sub: ccSet ? flagOf(ccSet) + " " + ccSetName : t.countryNone2, key: "country" },
+        { tint: "teal", icon: Users, label: t.friendsTitle, sub: friendsCount === 1 ? t.setFriendsOne : friendsCount ? t.setFriendsCount.replace("{n}", friendsCount) : t.setFriendsNone, key: "friends" },
+        ...(!HIDE_INTAKE ? [{ tint: "teal", icon: Pill, label: t.intakeTitle, key: "intake" }] : []),
+      ],
+    },
+    { title: t.setGroupData, rows: [{ tint: "coral", icon: Database, label: t.setDataRow, sub: t.setDataSub, key: "settingsData" }] },
+    {
+      title: t.setGroupHelp,
+      rows: [
+        { icon: MessageCircle, label: t.settingsSupport, key: "assistant" },
+        { icon: HelpCircle, label: t.setHelpRow, key: "settingsHelp" },
+        { icon: Share2, label: t.setShareRow, sub: shareMsg, onClick: onShare },
+        { icon: Info, label: t.setAboutRow, sub: t.setVersion, key: "settingsAbout" },
+      ],
+    },
+    {
+      title: t.setGroupLegal,
+      rows: [
+        { tint: "dim", icon: Shield, label: t.settingsPrivacy, key: "privacy" },
+        { tint: "dim", icon: FileText, label: t.setTermsRow, key: "terms" },
+        { tint: "dim", icon: Landmark, label: t.setImprintRow, key: "impressum" },
+      ],
+    },
+  ];
+  const needle = q.trim().toLowerCase();
+  const shown = needle ? [{ title: t.setSearchHits, rows: groups.flatMap((g) => g.rows.filter((r) => (r.label + " " + (r.sub || "") + " " + g.title).toLowerCase().includes(needle))) }] : groups;
+  const seg = (items, value, onPick, name) => (
+    <div data-settings-seg={name} style={{ display: "flex", background: COLORS.raised, borderRadius: 12, padding: 3, flex: 1 }}>
+      {items.map((it) => (
+        <div key={it.v} data-seg-value={it.v} onClick={() => onPick && onPick(it.v)} style={{ flex: 1, textAlign: "center", padding: "7px 4px", borderRadius: 10, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: value === it.v ? COLORS.bg : COLORS.dim, background: value === it.v ? COLORS.gold : "transparent", whiteSpace: "nowrap" }}>
+          {it.l}
+        </div>
+      ))}
     </div>
   );
   return (
@@ -11590,35 +11808,33 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg }) {
         </div>
       </Card>
 
-      <SettingsGroup title={t.setGroupMine}>
-        <SettingsRow icon={Target} label={t.setGoalsRow} sub={profile.kcalGoal + " kcal"} onClick={() => onNav("settingsGoals")} />
-        <SettingsRow icon={Bell} label={t.reminders} sub={remOn + " / " + NOTIF_KINDS.length} onClick={() => onNav("settingsReminders")} />
-        <SettingsRow icon={Palette} label={t.setDisplayRow} onClick={() => onNav("settingsDisplay")} />
-      </SettingsGroup>
+      <div style={{ position: "relative", marginBottom: 12 }}>
+        <Search size={15} color={COLORS.dim} style={{ position: "absolute", left: 12, top: 13 }} />
+        <input data-settings-search value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.setSearch} aria-label={t.setSearch} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", paddingLeft: 36, fontFamily: "Inter, sans-serif", fontSize: 13.5 }} />
+        {q && (
+          <div onClick={() => setQ("")} style={{ position: "absolute", right: 10, top: 10, cursor: "pointer" }}>
+            <X size={16} color={COLORS.dim} />
+          </div>
+        )}
+      </div>
+      {!needle && (
+        <div data-settings-quick style={{ display: "flex", gap: 8, marginBottom: 22 }}>
+          {seg([{ v: "light", l: "☀️ " + t.setLight }, { v: "dark", l: "🌙 " + t.setDark }, { v: "system", l: t.setSystem }], appearance, setAppearance, "look")}
+          {seg([{ v: "de", l: "DE" }, { v: "en", l: "EN" }], lang, setLang, "lang")}
+        </div>
+      )}
 
-      <SettingsGroup title={t.setGroupFeatures}>
-        <SettingsRow tint="teal" icon={Link2} label={t.connSettings} onClick={() => onNav("connections")} />
-        <SettingsRow tint="teal" icon={Globe} label={t.countryRow} sub={ccSet ? flagOf(ccSet) + " " + ccSetName : t.countryNone2} onClick={() => onNav("country")} />
-        <SettingsRow tint="teal" icon={Users} label={t.friendsTitle} onClick={() => onNav("friends")} />
-        {!HIDE_INTAKE && <SettingsRow tint="teal" icon={Pill} label={t.intakeTitle} onClick={() => onNav("intake")} />}
-      </SettingsGroup>
-
-      <SettingsGroup title={t.setGroupData}>
-        <SettingsRow tint="coral" icon={Database} label={t.setDataRow} onClick={() => onNav("settingsData")} />
-      </SettingsGroup>
-
-      <SettingsGroup title={t.setGroupHelp}>
-        <SettingsRow icon={MessageCircle} label={t.settingsSupport} onClick={() => onNav("assistant")} />
-        <SettingsRow icon={HelpCircle} label={t.setHelpRow} onClick={() => onNav("settingsHelp")} />
-        <SettingsRow icon={Share2} label={t.setShareRow} sub={shareMsg} onClick={onShare} />
-        <SettingsRow icon={Info} label={t.setAboutRow} onClick={() => onNav("settingsAbout")} />
-      </SettingsGroup>
-
-      <SettingsGroup title={t.setGroupLegal}>
-        <SettingsRow tint="dim" icon={Shield} label={t.settingsPrivacy} onClick={() => onNav("privacy")} />
-        <SettingsRow tint="dim" icon={FileText} label={t.setTermsRow} onClick={() => onNav("terms")} />
-        <SettingsRow tint="dim" icon={Landmark} label={t.setImprintRow} onClick={() => onNav("impressum")} />
-      </SettingsGroup>
+      {shown.map((g) =>
+        g.rows.length ? (
+          <SettingsGroup key={g.title} title={g.title}>
+            {g.rows.map((r) => (
+              <SettingsRow key={r.label} tint={r.tint} icon={r.icon} label={r.label} sub={r.sub} onClick={r.onClick || (() => onNav(r.key))} />
+            ))}
+          </SettingsGroup>
+        ) : (
+          <div key="none" data-settings-none style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, padding: "18px 0" }}>{t.setSearchNone}</div>
+        )
+      )}
 
       <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>
     </div>
@@ -12352,6 +12568,7 @@ export default function AsmarFitApp() {
   const [intake, setIntake] = usePersisted("intake", { subs: [], log: [], card: true });
   const [intakeReturn, setIntakeReturn] = useState("settings"); // where "back" goes from the intake log
   const [rivals, setRivals] = usePersisted("rivals", []);
+  const [friendFeeds, setFriendFeeds] = usePersisted("friendFeeds", []); // training history friends shared with me
   const [favEx, setFavEx] = usePersisted("favEx", []);
   const [myName, setMyName] = usePersisted("myName", "");
   const [myId] = usePersisted("myId", newPantryId() + newPantryId());
@@ -12763,6 +12980,18 @@ export default function AsmarFitApp() {
     }
   };
   const shareMyDuel = () => doShare({ t: "duel", id: myId, ts: Date.now(), s: myDuelStats(), b: personalBests }, t.shareTypeDuel);
+  // my last 10 workouts as a compact list (the friend sees them under "Training of my friends")
+  const shareMyHistory = () =>
+    doShare(
+      {
+        t: "hist",
+        id: myId,
+        ts: Date.now(),
+        p: planName || "",
+        w: workoutHistory.slice(-10).map((wo) => ({ d: wo.dateISO, m: Math.round((wo.durationSec || 0) / 60), v: Math.round(wo.volumeKg || 0), s: (wo.sets || []).slice(0, 40).map((x) => [x.exerciseKey, x.weight, x.reps]), c: (wo.cardio || []).slice(0, 10).map((x) => [x.exerciseKey, x.minutes]) })),
+      },
+      t.shareTypeHist
+    );
   const importShareText = async (text) => {
     const code = extractShareCode(text);
     if (!code) return { ok: false };
@@ -12790,6 +13019,10 @@ export default function AsmarFitApp() {
       setPantry((l) => [...l, { id: newPantryId(), name: item.folder.name, emoji: item.folder.emoji, items: item.folder.items.map((i) => ({ id: newPantryId(), uses: 0, ...i })) }]);
     } else if (item.t === "ex") {
       setFavEx((l) => (l.includes(item.key) ? l : [...l, item.key]));
+    } else if (item.t === "hist") {
+      setFriendFeeds((l) => [...l.filter((f) => f.id !== item.id), { id: item.id, name: item.from || "?", ts: item.ts, plan: item.plan, workouts: item.workouts }].slice(-20));
+      setFriendsReturn(null);
+      setOverlay("friends");
     } else if (item.t === "duel") {
       setRivals((l) => [...l.filter((r) => r.id !== item.id), { id: item.id, name: item.from || "?", ts: item.ts, stats: item.stats, bests: item.bests }].slice(-20));
       setFriendsReturn(null);
@@ -12813,7 +13046,38 @@ export default function AsmarFitApp() {
     };
     read();
     window.addEventListener("hashchange", read);
-    return () => window.removeEventListener("hashchange", read);
+    // in the Android/iOS app the link arrives through the App plugin: at a cold start as the launch URL,
+    // while running as "appUrlOpen"; both are turned into the same #s=CODE and handled by read()
+    let sub = null;
+    let alive = true;
+    if (IS_NATIVE_APP) {
+      import("@capacitor/app")
+        .then(async ({ App }) => {
+          const fromUrl = (url) => {
+            const m = String(url || "").match(/#s=([A-Za-z0-9_-]+)/);
+            if (m) window.location.hash = "#s=" + m[1];
+          };
+          try {
+            const l = await App.getLaunchUrl();
+            if (l && l.url) fromUrl(l.url);
+          } catch {
+            /* no launch url */
+          }
+          try {
+            const h = await App.addListener("appUrlOpen", (e) => fromUrl(e && e.url));
+            if (alive) sub = h;
+            else h.remove();
+          } catch {
+            /* plugin missing in this build */
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      alive = false;
+      window.removeEventListener("hashchange", read);
+      if (sub) sub.remove();
+    };
   }, []);
 
   // Copy a meal (from yesterday, or from any past day being viewed) into today's meal.
@@ -13052,7 +13316,7 @@ export default function AsmarFitApp() {
         }
       : () => setOverlay(null);
   } else if (overlay === "friends") {
-    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myStats={myDuelStats()} rivals={rivals} onShareMine={shareMyDuel} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} />;
+    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myStats={myDuelStats()} rivals={rivals} onShareMine={shareMyDuel} onShareHistory={shareMyHistory} myHistoryCount={workoutHistory.length} feeds={friendFeeds} onRemoveFeed={(id) => setFriendFeeds((l) => l.filter((f) => f.id !== id))} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} />;
     topTitle = t.friendsTitle;
     showBack = () => setOverlay(friendsReturn);
   } else if (overlay === "fastfood") {
@@ -13240,6 +13504,11 @@ export default function AsmarFitApp() {
         t={t}
         profile={profile}
         reminders={notif}
+        lang={lang}
+        setLang={setLang}
+        appearance={appearance}
+        setAppearance={setAppearance}
+        friendsCount={rivals.length + friendFeeds.length}
         onNav={(k) => {
           if (k === "intake") setIntakeReturn("settings");
           if (k === "friends") setFriendsReturn("settings");

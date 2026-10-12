@@ -23,6 +23,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Share links (https://asmarfit-project.onrender.com/#s=CODE) open ASFIT itself instead of the browser.
+                 Verified through /.well-known/assetlinks.json on the web app; only the start page, not the legal pages. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="asmarfit-project.onrender.com" android:path="/" />
+            </intent-filter>
+
         </activity>
 
         <provider

@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.asmarfit.app",
+      "sha256_cert_fingerprints": [
+        "B2:EA:15:40:E4:44:8B:D7:4C:7A:91:A1:AD:0E:0A:96:44:2B:B1:B6:7A:92:D3:E3:4B:10:13:D7:0C:2E:E0:86"
+      ]
+    }
+  }
+]
