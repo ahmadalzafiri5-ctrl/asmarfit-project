@@ -1,0 +1,22 @@
+{"id":"nordsee","name":"Nordsee","emoji":"🐟","color":"#0B5FA5","type":"world","region":"EU","src":"estimate","pos":7,"items":[
+  ["backfisch","Backfisch-Baguette","Fried fish baguette","main",540,22,56,24,1],
+  ["matjes","Matjes-Baguette","Soused herring baguette","main",520,20,50,25,1],
+  ["lachs","Lachs-Baguette","Salmon baguette","main",480,24,48,20,1],
+  ["fischburger","Fischburger","Fish burger","main",450,18,46,20],
+  ["fishchips","Fish & Chips","Fish & chips","main",780,34,70,38,1],
+  ["seelachs","Seelachsfilet gebraten (mit Kartoffeln)","Pan-fried pollock fillet (with potatoes)","main",520,38,40,22,1],
+  ["lachsfilet","Lachsfilet gegrillt (mit Gemüse)","Grilled salmon fillet (with vegetables)","main",560,40,14,38,1],
+  ["garnelen","Garnelen-Pfanne","Shrimp pan","main",420,30,24,22,1],
+  ["shrimpsalad","Krabben-Salat","Shrimp salad","salad",260,20,10,15],
+  ["gemischt","Gemischter Salat (Beilage)","Mixed salad (side)","salad",90,2,8,5],
+  ["krabben","Nordseekrabben (100 g)","Brown shrimp (100 g)","starter",90,19,1,1],
+  ["suppe","Fischsuppe","Fish soup","starter",180,12,14,8],
+  ["pommes","Pommes","Fries","side",350,4,46,16],
+  ["kartoffelsalat","Kartoffelsalat","Potato salad","side",260,4,30,14],
+  ["remoulade","Remoulade","Remoulade","extra",140,0,2,15],
+  ["kuchen","Kuchen (1 Stück)","Cake (1 slice)","dessert",320,4,42,15],
+  ["apfelschorle","Apfelschorle (0,4 l)","Apple spritzer (0.4 l)","drink",100,0,24,0],
+  ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+  ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0],
+  ["water","Mineralwasser (0,5 l)","Mineral water (0.5 l)","drink",0,0,0,0]
+]}

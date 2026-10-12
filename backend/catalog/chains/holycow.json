@@ -1,0 +1,20 @@
+{"id":"holycow","name":"Holy Cow!","emoji":"🐮","color":"#111111","type":"burger","region":"EU","src":"estimate","pos":10,"items":[
+  ["bigcheese","Big Cheese (Rind)","Big Cheese (beef)","main",720,36,46,42,1],
+  ["bbqbacon","BBQ Bacon Burger","BBQ bacon burger","main",800,42,50,46,1],
+  ["classic","Classic Burger (Rind)","Classic burger (beef)","main",620,34,45,32,1],
+  ["chickenburger","Poulet-Burger","Chicken burger","main",580,34,50,24,1],
+  ["veggie","Veggie Burger","Veggie burger","main",560,20,60,26,1],
+  ["vegan","Vegan Burger","Vegan burger","main",540,22,56,24,1],
+  ["kids","Kinder-Burger","Kids burger","main",380,20,36,16],
+  ["doublepatty","Zweites Patty (Rind)","Second beef patty","extra",240,20,0,18],
+  ["fries","Pommes","Fries","side",400,5,52,19],
+  ["sweetfries","Süsskartoffel-Pommes","Sweet potato fries","side",380,4,50,18],
+  ["salad","Salat (Beilage)","Side salad","salad",110,3,8,7],
+  ["sauce","Hausgemachte Sauce","House sauce","extra",120,0,4,12],
+  ["brownie","Brownie","Brownie","dessert",350,5,42,18],
+  ["shake","Milchshake","Milkshake","dessert",450,11,62,17],
+  ["lemonade","Hausgemachte Limonade (0,4 l)","House lemonade (0.4 l)","drink",130,0,32,0],
+  ["cola","Coca-Cola (0,4 l)","Coca-Cola (0.4 l)","drink",170,0,42,0],
+  ["colazero","Coca-Cola Zero (0,4 l)","Coca-Cola Zero (0.4 l)","drink",2,0,0,0],
+  ["water","Mineralwasser (0,5 l)","Mineral water (0.5 l)","drink",0,0,0,0]
+]}
