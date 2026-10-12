@@ -4831,8 +4831,8 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const nextWork = tl.slice(loc.i + 1).find((x) => x.kind === "work");
   const photoOf = (k) => (media && media.items && media.items[k] && !badImg[k] ? media.items[k] : null);
   const photoItem = photoOf(seg.key);
-  const can3d = !!scene && scene.view !== "top" && webgl3d();
-  const avail = [can3d && "3d", scene && "figure", photoItem && "photo"].filter(Boolean);
+  // every exercise shows the animated figure; the photo is only the fallback for a move without an animation
+  const avail = [scene ? "figure" : photoItem ? "photo" : null].filter(Boolean);
   const tab = pickDemoTab(demoTab, avail);
   const nextPhoto = nextWork && nextWork.key !== seg.key ? photoOf(nextWork.key) : null; // loaded in the background so the next move shows at once
   const label = seg.kind === "ready" ? t.quickReady : seg.kind === "rest" ? t.quickRest : t.quickMove.replace("{n}", seg.n).replace("{m}", seg.of);
@@ -10311,8 +10311,8 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
               {(() => {
                 const scene = sceneFor(selected.key);
                 const item = media && media.items && media.items[selected.key];
-                const can3d = !!scene && scene.view !== "top" && webgl3d();
-                const avail = [can3d && "3d", scene && "figure", item && "photo"].filter(Boolean);
+                // the animated figure only; the photo is the fallback for an exercise without an animation
+                const avail = [scene ? "figure" : item ? "photo" : null].filter(Boolean);
                 const tab = pickDemoTab(demoTab, avail);
                 const tipLine = (
                   <div data-tip style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: COLORS.dim }}>
