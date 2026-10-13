@@ -57,3 +57,25 @@ READ_STEPS: Die App zeigt die Schritte des Tages und rechnet den Kalorienverbrau
 
 - `frontend/public/privacypolicy.html`, `impressum.html`, `terms.html`: Name, Adresse, E-Mail, Datum.
 - Support-E-Mail in beiden Stores (dieselbe wie im Impressum).
+
+## Apple App Review: Notizen zum Einfügen
+
+In App Store Connect unter *App-Überprüfungsinformationen → Notizen* (Englisch reicht, Apple prüft auf Englisch). Kein Demo-Konto nötig, Feld „Anmeldung erforderlich" bleibt aus.
+
+**Englisch (einfügen):**
+
+> ASFIT is a fitness and nutrition tracker. No account or login is needed: all data stays on the device. Test flow: open the app → onboarding (any values; the birthday must be 16+) → Home shows calories/macros, "Start workout" and quick actions. Nutrition tab: food search, barcode scan (camera), meal photo (AI estimate), recipes, fast-food planner. Training tab: exercise library with animated figures, plans, workout logging, friends & duel (codes/links shared by the users themselves, no server accounts). Progress tab: weight, photos, muscle ranks. Settings → Connections optionally reads steps, weight and workouts from Apple Health (read only; the app writes nothing). AI features (Coach via the Home quick action, meal photo, recipe import, weekly plan) call our own server, which uses Anthropic's API; every AI answer has a "Report answer" button and the coach refuses medical dosing topics. The server runs on a small hosting plan: the first AI request after a pause can take up to a minute; the app shows "The server is waking up" and retries automatically. Notifications are optional local reminders. No in-app purchases, no ads, no tracking, no third-party logins. Terms, privacy policy and imprint are inside the app (welcome step and Settings → Legal) and at https://asmarfit-project.onrender.com/privacypolicy.html.
+
+**Deutsch (zur Kontrolle, nicht einfügen):** ASFIT ist ein Fitness- und Ernährungs-Tracker ohne Konto; alle Daten bleiben auf dem Gerät. Ablauf: App öffnen → Onboarding (beliebige Werte, Geburtstag 16+) → Start mit Kalorien/Makros, „Training starten" und Schnellaktionen. Ernährung: Suche, Barcode (Kamera), Mahlzeiten-Foto (KI-Schätzung), Rezepte, Fast-Food-Planer. Training: Übungsbibliothek mit Figuren, Pläne, Protokoll, Freunde & Duell (Codes/Links, keine Server-Konten). Fortschritt: Gewicht, Fotos, Muskel-Ränge. Einstellungen → Verbindungen liest optional Schritte, Gewicht, Trainings aus Apple Health (nur lesen). KI-Funktionen laufen über unseren Server (Anthropic-API); jede Antwort hat „Antwort melden", der Coach lehnt Dosierungsfragen ab. Der Server kann nach einer Pause bis zu eine Minute brauchen; die App zeigt „Der Server wacht auf" und versucht es automatisch erneut. Keine Käufe, keine Werbung, kein Tracking, keine Fremd-Logins. Rechtstexte in der App und auf der Website.
+
+**Altersfreigabe (Fragebogen, Stand 2026):** alle Inhaltsfragen „Nein/Keine", nur *Medical/Treatment Information: Infrequent/Mild* (Ernährungs- und Trainingstipps mit Hinweis auf Fachpersonen) → Apple ergibt 12+. Die eigene Regel „ab 16" steht in den Nutzungsbedingungen und wird im Onboarding geprüft; das ist mit 12+ vereinbar. Keine „Unrestricted Web Access"-Angabe (die App öffnet nur Rechtstexte und YouTube-Suche extern). Kein Glücksspiel, keine Wettbewerbe mit Geld.
+
+## Apple-Prüfung: Checkliste vor dem Einreichen
+
+1. `frontend/legal.json` füllen, `node tools/fill-legal.cjs` ausführen, committen. `node ios-review-check.cjs` (in `asfit-shots`) muss „alles gefüllt" melden. Platzhalter sind der häufigste Ablehngrund (Guideline 2.1/2.3).
+2. Render-Backend für die Prüfwoche auf *Starter* stellen (sonst schläft der Server; die App fängt das ab, aber ein wacher Server macht den Coach sofort nutzbar).
+3. App Store Connect: *App-Datenschutz* genau nach dem Abschnitt oben; *Altersfreigabe* wie oben; *Review-Notizen* einfügen; Support-URL und Datenschutz-URL (`https://asmarfit-project.onrender.com/privacypolicy.html`); Screenshots 6,7″ und 6,5″ aus `C:\Users\StartKlar\Downloads\ASFIT-Store`.
+4. HealthKit in der App-ID aktiviert (developer.apple.com → Identifiers), Build enthält das Entitlement (der Lauf prüft das).
+5. TestFlight-Build selbst durchspielen: Onboarding bis zum Ende, Coach-Frage, Barcode, Apple Health verbinden, einen Plan teilen, Rechtstexte öffnen. Was dir dabei auffällt, fällt auch Apple auf.
+6. Export-Compliance: beantwortet der Upload automatisch mit „nein" (`ITSAppUsesNonExemptEncryption = false`).
+7. Bei einer Ablehnung: im *Resolution Center* antworten, Punkt beheben, neuen Build hochladen (Build-Nummer kommt automatisch vom Lauf). Nachfragen von Apple innerhalb von Tagen beantworten, sonst wird die Einreichung geschlossen.

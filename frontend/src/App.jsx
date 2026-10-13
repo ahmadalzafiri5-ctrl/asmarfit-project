@@ -263,6 +263,12 @@ const STR = {
     obWelcomeTitle: "Welcome to ASFIT",
     obWelcomeSub: "Track it. Lift it. Own it.",
     obStart: "Get started",
+    obLegalPre: "By tapping “{b}” you accept the",
+    obLegalTerms: "Terms of Use",
+    obLegalAnd: "and the",
+    obLegalPrivacy: "Privacy Policy",
+    obMedical: "ASFIT does not replace medical advice. Talk to a doctor before big changes to your diet or training, especially with a health condition.",
+    obTooYoung: "ASFIT is for people aged 16 and over.",
     obGenderTitle: "What's your gender?",
     obGenderSub: "We need this to calculate your daily calorie target accurately.",
     obGenderFemale: "Female",
@@ -1134,6 +1140,7 @@ const STR = {
     setProfileRow: "Edit profile",
     setGoalsRow: "My goals",
     setDisplayRow: "Appearance & language",
+    setKcalLow: "Very low goal: below 1200 kcal (women) or 1500 kcal (men) only with medical supervision.",
     setSearch: "Search settings…",
     setSearchHits: "Results",
     setSearchNone: "Nothing found",
@@ -1228,14 +1235,14 @@ const STR = {
     noResults: "No food found — try a different search.",
     searchLoading: "Searching …",
     searchTypeMore: "Type at least 2 characters.",
-    serverError: "Can't reach the server — is `npm run dev` running in the backend folder?",
+    serverError: "Can't reach the server. Check your internet connection and try again in a moment.",
     approxLabel: "Note",
     barcodeLoading: "Looking up product …",
     barcodeNotFound: "No product found for this barcode.",
     barcodeScanning: "Opening camera …",
     barcodeUnsupported: "This device has no camera for scanning.",
     barcodeModuleInstalling: "Preparing the scanner — try again in a moment.",
-    barcodeWebOnly: "Barcode scanning is only available in the Android app.",
+    barcodeWebOnly: "Barcode scanning is only available in the installed ASFIT app (Android or iPhone).",
     barcodeWebPermissionDenied: "Camera access denied. Please allow camera access for this site in your browser settings.",
     barcodeWebUnsupported: "Your browser can't scan barcodes. Try updating it, or use the search instead.",
     cancelScan: "Cancel",
@@ -1376,6 +1383,12 @@ const STR = {
     obWelcomeTitle: "Willkommen bei ASFIT",
     obWelcomeSub: "Dein Training. Deine Zahlen. Dein Fortschritt.",
     obStart: "Los geht's",
+    obLegalPre: "Mit „{b}“ akzeptierst du die",
+    obLegalTerms: "Nutzungsbedingungen",
+    obLegalAnd: "und die",
+    obLegalPrivacy: "Datenschutzerklärung",
+    obMedical: "ASFIT ersetzt keine ärztliche Beratung. Sprich vor grossen Änderungen bei Ernährung oder Training mit einer Ärztin oder einem Arzt, besonders bei Vorerkrankungen.",
+    obTooYoung: "ASFIT ist für Personen ab 16 Jahren.",
     obGenderTitle: "Was ist dein Geschlecht?",
     obGenderSub: "Wir benötigen dein Geschlecht, um dein tägliches Kalorienziel genau zu berechnen.",
     obGenderFemale: "Weiblich",
@@ -2247,6 +2260,7 @@ const STR = {
     setProfileRow: "Profil bearbeiten",
     setGoalsRow: "Meine Ziele",
     setDisplayRow: "Darstellung & Sprache",
+    setKcalLow: "Sehr niedriges Ziel: unter 1200 kcal (Frauen) bzw. 1500 kcal (Männer) nur mit ärztlicher Begleitung.",
     setSearch: "Einstellungen suchen …",
     setSearchHits: "Treffer",
     setSearchNone: "Nichts gefunden",
@@ -2341,14 +2355,14 @@ const STR = {
     noResults: "Kein Lebensmittel gefunden — andere Suche versuchen.",
     searchLoading: "Suche läuft …",
     searchTypeMore: "Mindestens 2 Zeichen eingeben.",
-    serverError: "Server nicht erreichbar — läuft npm run dev im backend-Ordner?",
+    serverError: "Server nicht erreichbar. Prüfe deine Internetverbindung und versuch es gleich nochmal.",
     approxLabel: "Hinweis",
     barcodeLoading: "Produkt wird gesucht …",
     barcodeNotFound: "Kein Produkt zu diesem Barcode gefunden.",
     barcodeScanning: "Kamera wird geöffnet …",
     barcodeUnsupported: "Dieses Gerät hat keine Kamera zum Scannen.",
     barcodeModuleInstalling: "Scanner wird vorbereitet — gleich nochmal versuchen.",
-    barcodeWebOnly: "Barcode-Scan ist nur in der Android-App verfügbar.",
+    barcodeWebOnly: "Barcode-Scan gibt es nur in der installierten ASFIT-App (Android oder iPhone).",
     barcodeWebPermissionDenied: "Kein Kamerazugriff. Erlaube der Seite den Kamerazugriff in deinen Browser-Einstellungen.",
     barcodeWebUnsupported: "Dein Browser kann keine Barcodes scannen. Aktualisiere ihn oder nutze stattdessen die Suche.",
     cancelScan: "Abbrechen",
@@ -3023,6 +3037,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const [height, setHeight] = useState("");
   const [target, setTarget] = useState("");
   const [birth, setBirth] = useState({ d: "1", m: "1", y: "2000" });
+  const [legal, setLegal] = useState(null); // "terms" | "privacy": page opened from the welcome step
   const [targetDate, setTargetDate] = useState(() => new Date(Date.now() + 84 * 86400000).toISOString().slice(0, 10));
   const [vision3Months, setVision3Months] = useState("");
   const [visionWhy, setVisionWhy] = useState("");
@@ -3042,7 +3057,8 @@ function Onboarding({ t, lang, setLang, onFinish }) {
 
   const LAST_STEP = 13;
   const statsValid = Number(weight) > 0 && Number(height) > 0 && Number(target) > 0;
-  const canContinue = !((step === 1 && !gender) || (step === 3 && !goal) || (step === 7 && (!name.trim() || !statsValid)));
+  const tooYoung = ageFromBirth(birth) < 16; // the terms say 16+, so the app does not go on with a younger birthday
+  const canContinue = !((step === 1 && !gender) || (step === 2 && tooYoung) || (step === 3 && !goal) || (step === 7 && (!name.trim() || !statsValid)));
 
   // Language picker comes before everything else, including "Welcome" — a
   // brand-new visitor hasn't chosen DE/EN yet, so both language names are
@@ -3099,6 +3115,12 @@ function Onboarding({ t, lang, setLang, onFinish }) {
             <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 26, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>{t.obWelcomeTitle}</h2>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14.5, color: COLORS.dim, margin: 0 }}>{t.obWelcomeSub}</p>
+            <p data-ob-legal style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, margin: "26px 0 0", lineHeight: 1.55 }}>
+              {t.obLegalPre.replace("{b}", t.obStart)}{" "}
+              <span data-ob-terms onClick={() => setLegal("terms")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalTerms}</span> {t.obLegalAnd}{" "}
+              <span data-ob-privacy onClick={() => setLegal("privacy")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalPrivacy}</span>.
+            </p>
+            <p data-ob-medical style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, margin: "10px 0 0", lineHeight: 1.55 }}>{t.obMedical}</p>
           </div>
         )}
 
@@ -3122,6 +3144,7 @@ function Onboarding({ t, lang, setLang, onFinish }) {
           <div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obBirthTitle}</h2>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obBirthSub}</p>
+            {tooYoung && <div data-ob-too-young style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.coral, margin: "-10px 0 16px", lineHeight: 1.5 }}>{t.obTooYoung}</div>}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1.7fr 1.2fr", gap: 10 }}>
               {[
                 { label: t.obDay, key: "d", options: Array.from({ length: 31 }, (_, i) => ({ v: i + 1, l: i + 1 })) },
@@ -3408,6 +3431,19 @@ function Onboarding({ t, lang, setLang, onFinish }) {
       {step === 12 && (
         <div onClick={() => setStep(step + 1)} style={{ textAlign: "center", marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
           {t.obStepsSkip}
+        </div>
+      )}
+      {legal && (
+        <div data-ob-legal-view={legal} style={{ position: "fixed", inset: 0, zIndex: 1200, background: COLORS.bg, display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid " + COLORS.border }}>
+            <div data-ob-legal-close onClick={() => setLegal(null)} style={{ cursor: "pointer", display: "flex" }}>
+              <X size={20} color={COLORS.text} />
+            </div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{legal === "terms" ? t.setTermsRow : t.settingsPrivacy}</div>
+          </div>
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <LegalPageScreen src={legal === "terms" ? "/terms.html" : "/privacypolicy.html"} />
+          </div>
         </div>
       )}
     </div>
@@ -7647,6 +7683,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false); // answer takes long: the free server is probably waking up
   const [error, setError] = useState(null);
   const endRef = useRef(null);
 
@@ -7662,13 +7699,24 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
     setInput("");
     setError(null);
     setBusy(true);
+    const slowTimer = setTimeout(() => setSlow(true), 8000);
     try {
-      const res = await fetch(API_BASE + "/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, lang, context, data: data || undefined, country: cc || undefined }),
-      });
-      if (res.status === 503) {
+      const ask = () =>
+        fetch(API_BASE + "/api/assistant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: next, lang, context, data: data || undefined, country: cc || undefined }),
+        });
+      let res = await ask().catch(() => null);
+      // a dropped connection or a gateway error usually means the server was still starting: wait and ask once more
+      if (!res || res.status === 502 || res.status === 504) {
+        setSlow(true);
+        await new Promise((r) => setTimeout(r, 6000));
+        res = await ask().catch(() => null);
+      }
+      if (!res) {
+        setError(t.serverError);
+      } else if (res.status === 503) {
         setError(t.assistantNotConfigured);
       } else if (!res.ok) {
         setError(t.assistantError);
@@ -7679,6 +7727,8 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
     } catch {
       setError(t.serverError);
     } finally {
+      clearTimeout(slowTimer);
+      setSlow(false);
       setBusy(false);
     }
   };
@@ -7719,7 +7769,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
           </div>
         )}
         {messages.map(bubble)}
-        {busy && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>{t.assistantThinking}</div>}
+        {busy && <div data-ai-busy={slow ? "waking" : "thinking"} style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>{slow ? t.searchWaking : t.assistantThinking}</div>}
         {error && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 10 }}>{error}</div>}
         <div ref={endRef} />
       </div>
@@ -11964,7 +12014,10 @@ function GoalsSettings({ t, lang, profile, stepsGoal, onSave }) {
         <Chip label={t.setKcalManual} active={manual} onClick={() => setManual(true)} />
       </div>
       {manual ? (
-        <input type="number" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+        <>
+          <input type="number" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+          {kcal > 0 && kcal < (profile.gender === "female" ? 1200 : 1500) && <div data-kcal-low style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.coral, marginTop: 6, lineHeight: 1.45 }}>{t.setKcalLow}</div>}
+        </>
       ) : (
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, color: COLORS.text }}>{auto} <span style={{ fontSize: 13, color: COLORS.dim, fontWeight: 500 }}>kcal</span></div>
       )}

@@ -81,3 +81,22 @@ Das Wichtigste vorweg: Apple-Apps lassen sich nur auf einem Mac bauen und hochla
 3. Du füllst die Platzhalter in Datenschutz, Impressum und Nutzungsbedingungen aus (Name, Adresse, E-Mail).
 4. Android: interner Test → geschlossener Test → Freigabe.
 5. iPhone: GitHub-Mac-Bau → TestFlight → Einreichen.
+
+## Apple-Prüfung: was dafür eingebaut ist
+
+Apple prüft jede App von Hand gegen die *App Store Review Guidelines*. Das sind die Punkte, an denen Fitness-Apps meistens scheitern, und was ASFIT dafür hat (Prüfung mit `node ios-review-check.cjs` und `node review-ui-test.cjs` in `asfit-shots`):
+
+| Richtlinie | Was Apple sehen will | In ASFIT |
+| --- | --- | --- |
+| 1.4.1 Gesundheit | keine riskanten Gesundheitsratschläge, Hinweis auf Fachpersonen | Arzt-Hinweis im Willkommensschritt und unter „Über", Fasten-Warnung, Kalorien-Untergrenze (1200/1500) plus Warnung bei manuell niedrigerem Ziel, Coach lehnt Dosierungen/Zyklen ab; Einnahme-Tagebuch ist im Store-Build nicht enthalten |
+| 1.2 KI-Inhalte | Melden-Funktion, Leitplanken | „Antwort melden" unter jeder KI-Antwort, Themen-Leitplanken im Server-Prompt |
+| 2.1 Vollständigkeit | funktioniert beim ersten Start, keine Fehlerseiten | ohne Konto nutzbar, Server-Aufwachen wird abgefangen (Hinweis + zweiter Versuch), verständlicher Offline-Text, Rechtstexte ohne Platzhalter (`legal.json`) |
+| 2.3 Metadaten | Screenshots aus der echten App, keine anderen Plattformen | Screenshots aus der App, keine „nur Android"-Texte mehr |
+| 2.4.1 / 4.0 iPad, Design | läuft auf allen Zielgeräten sauber | nur iPhone (`TARGETED_DEVICE_FAMILY = 1`), nur Hochformat |
+| 4.2 Mindestfunktion | kein blosser Web-Wrapper | Web-Code liegt in der App, dazu Kamera/Barcode, Apple Health, Mitteilungen, offline nutzbar |
+| 5.1.1 Datenschutz | Zustimmung, Datenschutzerklärung erreichbar, Zweck jeder Berechtigung | Zustimmungszeile mit Nutzungsbedingungen und Datenschutzerklärung in der App (Onboarding + Einstellungen), HealthKit-/Kamera-/Foto-Texte konkret, ab 16 Jahren (Prüfung im Onboarding) |
+| 5.1.2 Tracking | keine Weitergabe, kein Tracking | Privacy-Manifest `PrivacyInfo.xcprivacy` (kein Tracking, Datenarten Nutzerinhalte/Fotos/Gesundheit/Fitness nur für die App-Funktion, Required-Reason-APIs mit Grund), App-Datenschutz-Angaben in `store/formulare.md` |
+| HealthKit | nur die Daten, die die App braucht; Privacy-Policy | liest nur Schritte, Gewicht, Trainings; schreibt nichts; Erklärtexte in der Info.plist |
+| Export-Compliance | Verschlüsselungs-Frage | `ITSAppUsesNonExemptEncryption = false` (nur HTTPS) |
+
+Die Review-Notizen zum Einfügen und die Checkliste vor dem Einreichen stehen in `store/formulare.md`.
