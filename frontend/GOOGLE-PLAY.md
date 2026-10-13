@@ -14,7 +14,7 @@ Stand der App: Paketname `com.asmarfit.app` (kann nach der ersten Veröffentlich
    - *Datensicherheit:* Was die App sammelt (Mahlzeiten, Gewicht, Training liegen lokal auf dem Handy; Fotos und Texte gehen für die KI-Funktionen an den ASFIT-Server; keine Werbung, kein Verkauf von Daten).
    - *Gesundheitsdaten (Health Connect):* Die App liest nur Schritte, Gewicht und Training. Google verlangt dafür eine Begründung pro Berechtigung.
    - *Inhaltseinstufung* und *Zielgruppe* (18+ ist am einfachsten).
-   - *KI-Inhalte:* Apps mit KI-Antworten (Coach, Rezepte) brauchen eine Möglichkeit, unpassende Antworten **in der App zu melden**. Diesen „Melden"-Knopf gibt es noch nicht, er muss vor der Einreichung eingebaut werden.
+   - *KI-Inhalte:* Apps mit KI-Antworten brauchen eine Möglichkeit, unpassende Antworten **in der App zu melden**. Das ist der Knopf „Antwort melden" unter jeder KI-Antwort (fertig).
 7. **Reihenfolge der Tests:** erst *interner Test* (bis 100 Personen, sofort verfügbar, ohne Prüfung), dann *geschlossener Test* (die 14 Tage), dann *Produktion*. Die erste Prüfung durch Google dauert meist einige Tage.
 
 ## Was einmalig mit deiner jetzigen Android-App passiert
@@ -35,3 +35,31 @@ Danach laufen Updates ganz normal über den Play Store, solange die Versionsnumm
 1. Einen zweiten GitHub-Workflow `android-release.yml`, der ein signiertes `.aab` baut (du erzeugst den Upload-Schlüssel mit einem Skript, genau wie beim Debug-Schlüssel, ohne dass ein Passwort im Chat landet).
 2. Den „Antwort melden"-Knopf für Coach und Rezepte.
 3. Texte für den Store-Eintrag (DE/EN) und die Antworten für den Datensicherheits-Fragebogen.
+
+## Google-Prüfung: was dafür eingebaut ist
+
+Google prüft automatisch (Bundle, Berechtigungen, Ziel-API, 16-KB-Seiten) und von Hand (Richtlinien, Datensicherheit, Health Connect). Prüfung vor dem Hochladen: `node play-review-check.cjs` in `asfit-shots` (baut nichts, liest Manifest, Gradle, Bundle-Lauf und Dokumente; mit einer frischen Debug-APK prüft es zusätzlich die fertigen Berechtigungen und die 16-KB-Ausrichtung).
+
+| Anforderung | Was Google will | In ASFIT |
+| --- | --- | --- |
+| Ziel-API | neue Apps ab API 35 (Android 15), seit 2025 | `targetSdk 36`, `compileSdk 36`, Android Gradle Plugin 8.13 |
+| 16-KB-Speicherseiten | Pflicht für Android-15-Ziel seit Nov. 2025 | AGP ≥ 8.5 richtet die Bibliotheken aus; ML Kit Barcode 17.3.0 ist 16-KB-fähig; `zipalign -c -P 16` meldet alle .so als OK |
+| App Bundle, signiert | `.aab` mit Upload-Schlüssel, steigende versionCode | Lauf „Android-Store-Bundle bauen" (versionCode 1000 + Laufnummer, Store-Variante ohne Einnahme-Tagebuch) |
+| Berechtigungen | nur was die App nutzt | Kamera (Barcode, Foto), Mitteilungen, Internet; von den 47 Health-Connect-Rechten des Plugins bleiben nur READ_STEPS, READ_WEIGHT, READ_EXERCISE (Rest per `tools:node="remove"`); `SCHEDULE_EXACT_ALARM` entfernt; keine Standort-, Kontakt- oder Medien-Rechte (Fotos über den System-Auswahldialog) |
+| Health Connect | Erklärung vor dem Zugriff, Datenschutz-Link aus dem Berechtigungsdialog, Begründung pro Recht im Formular | Verbindungen-Seite erklärt vorher, was gelesen wird; das Plugin liefert `PermissionsRationaleActivity` (Android 13) und den `VIEW_PERMISSION_USAGE`-Alias (Android 14+), die die mitgelieferte `privacypolicy.html` zeigen; Datenschutzerklärung hat den Abschnitt „Gesundheitsdaten"; Begründungen stehen in `store/formulare.md` |
+| Nutzerdaten-Richtlinie | Zustimmung, Datenschutzerklärung in der App und im Eintrag | Zustimmungszeile im Willkommensschritt mit Nutzungsbedingungen und Datenschutz in der App, Link im Store-Eintrag |
+| KI-generierte Inhalte | Melden in der App, keine verbotenen Inhalte | „Antwort melden" unter jeder KI-Antwort (`/api/report`), Coach lehnt Dosierungen/Zyklen ab |
+| Gesundheits-Apps-Erklärung | Kategorie und Funktionen angeben | Fitness und Wellness: Ernährung, Training, Gewicht; keine Diagnose, keine Medizinprodukt-Funktion; Einnahme-Tagebuch nicht im Store-Build |
+| Zielgruppe und Inhalt | Altersgruppen, Familienrichtlinie | Zielgruppe „18 und älter" (keine Familien-Pflichten); App selbst ab 16 laut Nutzungsbedingungen mit Prüfung im Onboarding |
+| Irreführung / Platzhalter | fertige Rechtstexte, echte Screenshots | `legal.json` + `node tools/fill-legal.cjs`; Screenshots aus der App (`ASFIT-Store`) |
+| App Links | assetlinks.json mit dem Signaturschlüssel | Debug-Schlüssel drin; Play-App-Signaturschlüssel nachtragen (Schritt 2b oben) |
+| Werbe-ID, Finanzfunktionen, Nachrichten-App, staatliche App | Erklärungen in „App-Inhalte" | alle „Nein" |
+
+## Checkliste vor dem Hochladen
+
+1. `frontend/legal.json` füllen, `node tools/fill-legal.cjs`, committen (die mitgelieferte Datenschutzseite wird auch aus dem Health-Connect-Dialog heraus gezeigt).
+2. Upload-Schlüssel erzeugen, Secrets setzen, Lauf „Android-Store-Bundle bauen" starten, `.aab` herunterladen.
+3. Play Console → App-Inhalte: Datensicherheit, Gesundheits-Apps, Health Connect (Begründungen), Inhaltseinstufung, Zielgruppe 18+, Werbe-ID nein, KI-Inhalte ja mit Meldefunktion, Datenschutz-URL, App-Zugriff „alle Funktionen ohne Anmeldung" plus die Prüfnotiz aus `store/formulare.md`.
+4. Store-Eintrag: Texte aus `store/store-texte.md`, Symbol, Titelbild, Screenshots.
+5. Interner Test → geschlossener Test (12 Tester, 14 Tage) → Produktion. Erst nach dem ersten Upload den App-Signaturschlüssel-Fingerabdruck in `assetlinks.json` eintragen und deployen.
+6. Render-Backend für die Prüfzeit auf *Starter*, damit der Coach beim Prüfer sofort antwortet.

@@ -79,3 +79,19 @@ In App Store Connect unter *App-Überprüfungsinformationen → Notizen* (Englis
 5. TestFlight-Build selbst durchspielen: Onboarding bis zum Ende, Coach-Frage, Barcode, Apple Health verbinden, einen Plan teilen, Rechtstexte öffnen. Was dir dabei auffällt, fällt auch Apple auf.
 6. Export-Compliance: beantwortet der Upload automatisch mit „nein" (`ITSAppUsesNonExemptEncryption = false`).
 7. Bei einer Ablehnung: im *Resolution Center* antworten, Punkt beheben, neuen Build hochladen (Build-Nummer kommt automatisch vom Lauf). Nachfragen von Apple innerhalb von Tagen beantworten, sonst wird die Einreichung geschlossen.
+
+## Google Play: App-Inhalte und Prüfnotiz
+
+**App-Zugriff (App access):** „Alle Funktionen sind ohne Anmeldung verfügbar". Zusätzlich als Anweisung für die Prüfer (Englisch):
+
+> ASFIT needs no account. Onboarding: pick any values (birthday 16+). Home shows calories, "Start workout" and quick actions (Food, Weigh, Coach). Nutrition: search, barcode (camera), meal photo (AI), recipes, fast-food planner. Training: exercise library with animated figures, plans, logging, friends & duel via shared codes. Settings → Connections optionally reads steps, weight and workouts from Health Connect (read only). AI answers come from our server (Anthropic API); each has "Report answer". The first AI request after a pause can take up to a minute (server wakes up), the app shows a hint and retries. No purchases, no ads, no tracking.
+
+**Gesundheits-Apps (Health apps):** Ja, Gesundheitsfunktionen. Kategorie *Fitness und Wellness*: Ernährung/Kalorien, Training, Gewicht, Schritte, Wasser, Fasten-Timer. Keine Diagnose, keine Medizinprodukt-Funktionen, keine klinischen Daten, keine Studien, keine regulierte Gesundheitsleistung. Health Connect: nur lesen (Schritte, Gewicht, Trainingseinheiten).
+
+**Zielgruppe und Inhalt:** Zielgruppe „18 und älter"; nicht für Kinder gestaltet; keine Werbung. (Die App verlangt im Onboarding mindestens 16 Jahre; die Store-Zielgruppe 18+ hält die Familienrichtlinie aus dem Spiel.)
+
+**Werbe-ID:** Nein, die App verwendet keine Werbe-ID. **Finanzfunktionen:** Keine. **Nachrichten-App:** Nein. **Staatliche App:** Nein. **Datenschutzerklärung:** `https://asmarfit-project.onrender.com/privacypolicy.html`.
+
+**Berechtigungen, die Google abfragt:** Kamera (Barcode-Scan, Mahlzeiten-Foto), Mitteilungen (Erinnerungen, nur wenn der Nutzer sie einschaltet). Keine Standort-, Hintergrund-, SMS-, Anruf- oder Dateizugriffs-Rechte. Health-Connect-Rechte: READ_STEPS, READ_WEIGHT, READ_EXERCISE mit den Begründungen oben.
+
+**Testen vor der Freigabe:** Google verlangt für neue private Konten einen geschlossenen Test mit mindestens 12 Testern über 14 Tage; danach den Antrag auf Produktionszugang stellen und die Fragen zur App ehrlich beantworten (Zweck, Zielgruppe, was getestet wurde).

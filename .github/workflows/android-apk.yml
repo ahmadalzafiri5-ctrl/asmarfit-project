@@ -111,6 +111,13 @@ jobs:
       - name: Pruefung Alarm-Recht (kein SCHEDULE_EXACT_ALARM)
         run: "! grep -q SCHEDULE_EXACT_ALARM perms.txt"
 
+      # Google Play verlangt fuer Apps mit Ziel Android 15+ Bibliotheken, die auf 16-KB-Speicherseiten ausgerichtet sind
+      - name: Pruefung 16-KB-Speicherseiten (alle .so ausgerichtet)
+        run: |
+          ZIPALIGN=$(ls "$ANDROID_HOME"/build-tools/*/zipalign | sort -V | tail -1)
+          "$ZIPALIGN" -c -P 16 -v 4 frontend/android/app/build/outputs/apk/debug/app-debug.apk | grep -E ".so|Verification"
+          "$ZIPALIGN" -c -P 16 4 frontend/android/app/build/outputs/apk/debug/app-debug.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: ASFIT-android-apk
