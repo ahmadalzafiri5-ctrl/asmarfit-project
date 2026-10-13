@@ -173,6 +173,7 @@ export function addCore(S) {
     const bar = [L([128, -24], [172, -24], 4), L([172, -24], [172, FL], 3), C([128, -24], 3.5, "mach", { fill: "var(--c-dim)" })];
     const hang = (leg, torso = -3) => ({ sh: [124, 31], torso, hand: [128, -24], leg, ep: [-0.4, 1] });
     S.hang_legraise = { kf: [hang([4, 4]), hang([92, 92], -10)], eq: bar, held: "none", ms: 3400, cap: cap("Beine bis zur Waagrechten heben", "Langsam senken", "Raise the legs to horizontal", "Lower slowly"), vb: ZOUT };
+    S.hang_kneeraise = { kf: [hang([4, 4]), hang([108, 22], -12)], eq: bar, held: "none", ms: 3400, cap: cap("Knie zur Brust ziehen, Becken leicht einrollen", "Langsam senken", "Pull the knees to the chest, tilt the pelvis slightly", "Lower slowly"), vb: ZOUT };
     S.hang_toestobar = { kf: [hang([4, 4]), hang([150, 156], -16)], eq: bar, held: "none", ms: 3600, cap: cap("Füße zur Stange heben", "Kontrolliert senken", "Lift the feet to the bar", "Lower with control"), vb: ZOUT };
   }
   // L-sit between two supports

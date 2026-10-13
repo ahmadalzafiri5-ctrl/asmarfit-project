@@ -41,7 +41,7 @@ const MAP = {
   cable_curl: "curl_cable", spider_curl: "curl_spider", reverse_curl: "curl", zottman_curl: "curl_db", wrist_curl: "curl_wrist", overhead_ext: "extension_overhead", rope_pushdown: "pushdown",
   tricep_kickback: "kickback", bench_dip: "dip_bench", close_grip_bench: "bench_close", jm_press: "bench_close", farmers_walk: "carry_farmer",
   // core
-  plank: "plank", hanginglegraise: "hang_legraise", cablecrunch: "crunch_cable", russiantwist: "twist", crunch: "crunch", bicycle_crunch: "crunch_bicycle", lying_leg_raise: "legraise_lying",
+  plank: "plank", hanginglegraise: "hang_legraise", hanging_knee_raise: "hang_kneeraise", cablecrunch: "crunch_cable", russiantwist: "twist", crunch: "crunch", bicycle_crunch: "crunch_bicycle", lying_leg_raise: "legraise_lying",
   side_plank: "plank_side", ab_wheel: "abwheel", mountain_climber: "climber", dead_bug: "deadbug", bird_dog: "birddog", pallof_press: "pallof", woodchop: "woodchop", v_up: "vup", situp: "situp",
   decline_situp: "situp_decline", hollow_hold: "hollow", flutter_kicks: "flutter", toes_to_bar: "hang_toestobar", l_sit: "lsit", suitcase_carry: "carry_suitcase", cable_crunch_kneel: "crunch_cable",
   // glutes

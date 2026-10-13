@@ -2552,6 +2552,7 @@ EXERCISE_LIBRARY.push(
   EX("kb_swing", "Kettlebell Swing", "Kettlebell Swing", "glutes", "Hip snap, arms are just hooks", "Hüftschwung, Arme führen nur mit"),
   EX("good_morning_glute", "Banded Walk", "Seitschritte mit Band", "glutes", "Stay low, keep tension on the band", "Tief bleiben, Band gespannt halten"),
   // Core
+  EX("hanging_knee_raise", "Hanging Knee Raise", "Knieheben hängend", "core", "Pull the knees up and round the lower back slightly", "Knie hochziehen, unteren Rücken leicht runden"),
   EX("crunch", "Crunch", "Crunch", "core", "Curl the ribs to the pelvis", "Rippen zum Becken rollen"),
   EX("bicycle_crunch", "Bicycle Crunch", "Fahrrad-Crunch", "core", "Slow rotation, elbow to opposite knee", "Langsam drehen, Ellbogen zum Gegenknie"),
   EX("lying_leg_raise", "Lying Leg Raise", "Beinheben liegend", "core", "Lower back stays on the floor", "Unterer Rücken bleibt am Boden"),
@@ -10053,7 +10054,7 @@ const MUSCLE_OVERRIDES = {
   wrist_curl: ["forearms", ""], reverse_curl: ["forearms,biceps", ""], farmers_walk: ["forearms,traps", "abs,glutes"],
   // core
   russiantwist: ["obliques", "abs"], woodchop: ["obliques", "abs,shoulders"], side_plank: ["obliques", "abs,shoulders"], pallof_press: ["obliques", "abs,shoulders"], bicycle_crunch: ["abs,obliques", ""], suitcase_carry: ["obliques", "forearms,traps,abs"],
-  hanginglegraise: ["abs", "forearms,obliques"], toes_to_bar: ["abs", "forearms,lats"], lying_leg_raise: ["abs", "obliques"], v_up: ["abs", "obliques"], flutter_kicks: ["abs", "quads"], l_sit: ["abs", "triceps,quads"],
+  hanginglegraise: ["abs", "forearms,obliques"], hanging_knee_raise: ["abs", "forearms,obliques"], toes_to_bar: ["abs", "forearms,lats"], lying_leg_raise: ["abs", "obliques"], v_up: ["abs", "obliques"], flutter_kicks: ["abs", "quads"], l_sit: ["abs", "triceps,quads"],
   bird_dog: ["abs,lower_back", "glutes,shoulders"], dead_bug: ["abs", "obliques"], mountain_climber: ["abs", "quads,shoulders"], plank: ["abs", "shoulders,glutes"], hollow_hold: ["abs", "quads"], ab_wheel: ["abs", "shoulders,lats"],
   // glutes
   clamshell: ["glutes", ""], fire_hydrant: ["glutes", ""], donkey_kick: ["glutes", "hamstrings"], cable_kickback: ["glutes", "hamstrings"], good_morning_glute: ["glutes", "obliques"],
