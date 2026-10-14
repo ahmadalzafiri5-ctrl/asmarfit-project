@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo, useRef, Children, cloneElement, createCon
 import { Capacitor } from "@capacitor/core";
 import { searchBasics } from "./basics.js";
 import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal, customItem, checkCatalog, catalogCounts } from "./fastfood.js";
-import { ExerciseAnimation, webgl3d } from "./exerciseAnim.jsx";
-import { sceneFor } from "./exerciseScenes.js";
+import { gifFor } from "./gifList.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
@@ -121,20 +120,20 @@ const useGender = () => useContext(GenderCtx);
 
 const THEMES = {
   neutral: {
-    light: { bg: "#FFFFFF", surface: "#F6F7F8", raised: "#EEF1F3", border: "#E1E4E8", text: "#161A1D", dim: "#656D76", gold: "#008563", goldSoft: "rgba(0,133,99,0.14)", teal: "#2F80ED", coral: "#E2694F", coralSoft: "rgba(226,105,79,0.14)" },
-    dark: { bg: "#111416", surface: "#1A1E21", raised: "#242A2E", border: "#2F363B", text: "#F1F4F5", dim: "#9AA5AC", gold: "#1FD1A2", goldSoft: "rgba(31,209,162,0.16)", teal: "#5B9DF5", coral: "#F0806A", coralSoft: "rgba(240,128,106,0.18)" },
+    light: { bg: "#FFFFFF", surface: "#F6F7F8", raised: "#EEF1F3", border: "#E1E4E8", text: "#161A1D", dim: "#656D76", gold: "#008563", goldSoft: "rgba(0,133,99,0.14)", teal: "#2F80ED", coral: "#E2694F", coralSoft: "rgba(226,105,79,0.14)", gifFilter: "hue-rotate(165deg)" },
+    dark: { bg: "#111416", surface: "#1A1E21", raised: "#242A2E", border: "#2F363B", text: "#F1F4F5", dim: "#9AA5AC", gold: "#1FD1A2", goldSoft: "rgba(31,209,162,0.16)", teal: "#5B9DF5", coral: "#F0806A", coralSoft: "rgba(240,128,106,0.18)", gifFilter: "hue-rotate(165deg)" },
   },
   female: {
-    light: { bg: "#FFFFFF", surface: "#FDF4F8", raised: "#FBE8F0", border: "#F3D6E2", text: "#2B1A24", dim: "#7A616E", gold: "#C54877", goldSoft: "rgba(197,72,119,0.13)", teal: "#9B6FE0", coral: "#F08A5D", coralSoft: "rgba(240,138,93,0.16)" },
-    dark: { bg: "#171015", surface: "#22171E", raised: "#2D1F27", border: "#3D2A35", text: "#FAEFF4", dim: "#B79CAA", gold: "#F26AA0", goldSoft: "rgba(242,106,160,0.17)", teal: "#B08AF0", coral: "#F59B70", coralSoft: "rgba(245,155,112,0.18)" },
+    light: { bg: "#FFFFFF", surface: "#FDF4F8", raised: "#FBE8F0", border: "#F3D6E2", text: "#2B1A24", dim: "#7A616E", gold: "#C54877", goldSoft: "rgba(197,72,119,0.13)", teal: "#9B6FE0", coral: "#F08A5D", coralSoft: "rgba(240,138,93,0.16)", gifFilter: "hue-rotate(338deg)" },
+    dark: { bg: "#171015", surface: "#22171E", raised: "#2D1F27", border: "#3D2A35", text: "#FAEFF4", dim: "#B79CAA", gold: "#F26AA0", goldSoft: "rgba(242,106,160,0.17)", teal: "#B08AF0", coral: "#F59B70", coralSoft: "rgba(245,155,112,0.18)", gifFilter: "hue-rotate(338deg)" },
   },
   male: {
-    light: { bg: "#FFFFFF", surface: "#F2F5FB", raised: "#E8EEF9", border: "#D6E0F0", text: "#0F1729", dim: "#5C6982", gold: "#2563EB", goldSoft: "rgba(37,99,235,0.12)", teal: "#0E9F9A", coral: "#F0782E", coralSoft: "rgba(240,120,46,0.14)" },
-    dark: { bg: "#0D1220", surface: "#151C2E", raised: "#1E2740", border: "#2A3550", text: "#EBF1FF", dim: "#94A1BE", gold: "#5B8DF6", goldSoft: "rgba(91,141,246,0.18)", teal: "#2CC4BE", coral: "#F58F4C", coralSoft: "rgba(245,143,76,0.18)" },
+    light: { bg: "#FFFFFF", surface: "#F2F5FB", raised: "#E8EEF9", border: "#D6E0F0", text: "#0F1729", dim: "#5C6982", gold: "#2563EB", goldSoft: "rgba(37,99,235,0.12)", teal: "#0E9F9A", coral: "#F0782E", coralSoft: "rgba(240,120,46,0.14)", gifFilter: "hue-rotate(220deg)" },
+    dark: { bg: "#0D1220", surface: "#151C2E", raised: "#1E2740", border: "#2A3550", text: "#EBF1FF", dim: "#94A1BE", gold: "#5B8DF6", goldSoft: "rgba(91,141,246,0.18)", teal: "#2CC4BE", coral: "#F58F4C", coralSoft: "rgba(245,143,76,0.18)", gifFilter: "hue-rotate(220deg)" },
   },
   diverse: {
-    light: { bg: "#FFFFFF", surface: "#F8F6F1", raised: "#F0EBDF", border: "#E2DAC8", text: "#171512", dim: "#6C6659", gold: "#956C09", goldSoft: "rgba(149,108,9,0.14)", teal: "#2B2B2B", coral: "#A63D40", coralSoft: "rgba(166,61,64,0.16)" },
-    dark: { bg: "#0B0B0A", surface: "#161513", raised: "#201E1A", border: "#2E2B24", text: "#F5EFE0", dim: "#A79C87", gold: "#D4AF37", goldSoft: "rgba(212,175,55,0.18)", teal: "#B7AE9C", coral: "#E0726F", coralSoft: "rgba(224,114,111,0.18)" },
+    light: { bg: "#FFFFFF", surface: "#F8F6F1", raised: "#F0EBDF", border: "#E2DAC8", text: "#171512", dim: "#6C6659", gold: "#956C09", goldSoft: "rgba(149,108,9,0.14)", teal: "#2B2B2B", coral: "#A63D40", coralSoft: "rgba(166,61,64,0.16)", gifFilter: "hue-rotate(45deg)" },
+    dark: { bg: "#0B0B0A", surface: "#161513", raised: "#201E1A", border: "#2E2B24", text: "#F5EFE0", dim: "#A79C87", gold: "#D4AF37", goldSoft: "rgba(212,175,55,0.18)", teal: "#B7AE9C", coral: "#E0726F", coralSoft: "rgba(224,114,111,0.18)", gifFilter: "hue-rotate(45deg)" },
   },
 };
 
@@ -968,11 +967,11 @@ const STR = {
     aiReportPrivacy: "The report sends this answer and your note to the ASFIT server. No name, no account.",
     libTabFigure: "Animation",
     libTopView: "View from above",
-    libAnimHint: "The figure shows the movement. Red = the muscles that work. Tap to pause.",
+    libAnimHint: "The demo shows the movement. The highlighted muscles do the work.",
     libPause: "Pause",
     libPlay: "Play",
     libRep: "Rep",
-    libRedMeans: "Red = trains:",
+    libRedMeans: "Highlighted = trains:",
     libFull: "Full screen",
     libSlow: "Slow motion",
     libStartEnd: "Start and end position alternate. Tap to pause the animation.",
@@ -2088,11 +2087,11 @@ const STR = {
     aiReportPrivacy: "Die Meldung schickt diese Antwort und deine Notiz an den ASFIT-Server. Ohne Name, ohne Konto.",
     libTabFigure: "Animation",
     libTopView: "Ansicht von oben",
-    libAnimHint: "Die Figur zeigt die Bewegung. Rot = die Muskeln, die arbeiten. Tippen hält an.",
+    libAnimHint: "Die Demo zeigt die Bewegung. Die markierten Muskeln arbeiten.",
     libPause: "Pause",
     libPlay: "Abspielen",
     libRep: "Wdh.",
-    libRedMeans: "Rot = trainiert:",
+    libRedMeans: "Markiert = trainiert:",
     libFull: "Vollbild",
     libSlow: "Zeitlupe",
     libStartEnd: "Start und Ende im Wechsel. Tippen hält die Animation an.",
@@ -4685,7 +4684,6 @@ function QuickPhoto({ media, item, name, cue, onFail, muscles = null }) {
 }
 
 function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
-  const { gender } = useGender();
   const preset = presetByKey(presetKey) || QUICK_PRESETS[0];
   const tl = useMemo(() => buildTimeline(preset), [preset]);
   const [phase, setPhase] = useState("intro"); // intro | run | done
@@ -4711,7 +4709,6 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const [, setTick] = useState(0);
   const [result, setResult] = useState(null);
   const [media, setMedia] = useState(null); // real photos of the moves (start / end position), same source as the exercise library
-  const [demoTab, setDemoTab] = usePersisted("demoTab", "3d");
   const [badImg, setBadImg] = useState({});
   useEffect(() => {
     let alive = true;
@@ -4887,14 +4884,13 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const C = 2 * Math.PI * R;
   const color = seg.kind === "work" ? COLORS.gold : seg.kind === "rest" ? COLORS.teal : COLORS.coral;
   const exObj = EXERCISE_LIBRARY.find((e) => e.key === seg.key);
-  const scene = sceneFor(seg.key);
+  const gif = gifFor(seg.key);
   const mus = exObj ? exerciseMuscles(exObj) : { primary: [] };
   const nextWork = tl.slice(loc.i + 1).find((x) => x.kind === "work");
   const photoOf = (k) => (media && media.items && media.items[k] && !badImg[k] ? media.items[k] : null);
   const photoItem = photoOf(seg.key);
-  // every exercise shows the animated figure; the photo is only the fallback for a move without an animation
-  const avail = [scene ? "figure" : photoItem ? "photo" : null].filter(Boolean);
-  const tab = pickDemoTab(demoTab, avail);
+  // every exercise shows the animated demo GIF; the photo is only the fallback for a move without one
+  const tab = gif ? "gif" : photoItem ? "photo" : null;
   const nextPhoto = nextWork && nextWork.key !== seg.key ? photoOf(nextWork.key) : null; // loaded in the background so the next move shows at once
   const label = seg.kind === "ready" ? t.quickReady : seg.kind === "rest" ? t.quickRest : t.quickMove.replace("{n}", seg.n).replace("{m}", seg.of);
   const title = seg.kind === "rest" ? t.quickNext.replace("{name}", nameOfKey(seg.key)) : nameOfKey(seg.key);
@@ -4916,17 +4912,12 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
         {seg.kind === "work" && nextWork && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3 }}>{t.quickThen.replace("{name}", nameOfKey(nextWork.key))}</div>}
         {pausedAt && <div data-quick-paused style={{ fontFamily: "Sora, sans-serif", fontSize: 13, color: COLORS.coral, marginTop: 4 }}>{t.quickPause}</div>}
       </div>
-      {(scene || photoItem) && (
+      {(gif || photoItem) && (
         <Card style={{ margin: "14px 0", padding: 10 }}>
-          {avail.length > 1 && (
-            <div data-demo-tabs style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-              <DemoChips t={t} avail={avail} tab={tab} setTab={setDemoTab} />
-            </div>
-          )}
           {tab === "photo" && photoItem ? (
             <QuickPhoto key={seg.key} muscles={mus} media={media} item={photoItem} name={nameOfKey(seg.key)} cue={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} onFail={() => setBadImg((b) => ({ ...b, [seg.key]: true }))} />
-          ) : scene ? (
-            <ExerciseAnimation key={seg.key} mode3d={tab === "3d"} on3dFail={() => setDemoTab("figure")} corner={<PhotoBody muscles={mus} pos="tl" />} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOfKey(seg.key)} tip={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} steps={[]} bodyStyle={gender === "diverse" || !gender ? "neutral" : gender} />
+          ) : gif ? (
+            <ExerciseGif key={seg.key} src={gif} title={nameOfKey(seg.key)} corner={<PhotoBody muscles={mus} pos="tl" />} />
           ) : null}
         </Card>
       )}
@@ -4946,15 +4937,14 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
 }
 
 // small square on the Training tab (library, records, friends)
-// which demo is shown: the saved choice when this exercise has it, otherwise the first one that exists
-function pickDemoTab(saved, avail) {
-  return avail.includes(saved) ? saved : avail[0] || "figure";
-}
-
-// the switch between 3D, animation and photo
-function DemoChips({ t, avail, tab, setTab }) {
-  const label = { "3d": t.libTab3d, figure: t.libTabFigure, photo: t.libTabPhoto };
-  return avail.map((k) => <Chip key={k} label={label[k]} active={tab === k} onClick={() => setTab(k)} />);
+// animated exercise demo: the gold-tinted GIF on a light tile, with the little muscle body in the corner
+function ExerciseGif({ src, title, corner }) {
+  return (
+    <div data-exercise-gif style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#FFFFFF" }}>
+      <img src={src} alt={title} loading="lazy" draggable={false} style={{ display: "block", width: "100%", maxWidth: 320, margin: "0 auto", aspectRatio: "1 / 1", objectFit: "contain", filter: "var(--c-gifFilter, none)" }} />
+      {corner}
+    </div>
+  );
 }
 
 function TrainTile({ emoji, label, onClick }) {
@@ -10269,7 +10259,6 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
   const [media, setMedia] = useState(null); // pictures + steps for the "how to do it" card
   const gx = useGender();
   const gender = gx.gender;
-  const [demoTab, setDemoTab] = usePersisted("demoTab", "3d");
   useEffect(() => {
     let alive = true;
     loadExerciseMedia().then((m) => {
@@ -10445,35 +10434,30 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           return (
             <>
               {(() => {
-                const scene = sceneFor(selected.key);
+                const gif = gifFor(selected.key);
                 const item = media && media.items && media.items[selected.key];
-                // the animated figure only; the photo is the fallback for an exercise without an animation
-                const avail = [scene ? "figure" : item ? "photo" : null].filter(Boolean);
-                const tab = pickDemoTab(demoTab, avail);
+                // the animated demo GIF only; the photo is the fallback for an exercise without one
+                const tab = gif ? "gif" : item ? "photo" : null;
                 const tipLine = (
                   <div data-tip style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: COLORS.dim }}>
                     <div><span style={{ color: COLORS.gold, fontWeight: 700 }}>💡</span> {cueOf(selected)}</div>
-                    <div><span style={{ color: "#E3262E", fontWeight: 700 }}>●</span> {t.libRedMeans} {names(mus.primary)}</div>
+                    <div><span style={{ color: COLORS.gold, fontWeight: 700 }}>●</span> {t.libRedMeans} {names(mus.primary)}</div>
                   </div>
                 );
                 return (
                   <Card style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
                       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text }}>{t.libAnim}</div>
-                      {avail.length > 1 && (
-                        <div data-demo-tabs style={{ display: "flex", gap: 6 }}>
-                          <DemoChips t={t} avail={avail} tab={tab} setTab={setDemoTab} />
-                        </div>
-                      )}
                     </div>
                     {tab === "photo" && item ? (
                       <>
                         <ExerciseDemo bare t={t} lang={lang} media={media} item={item} muscles={mus} />
                         {tipLine}
                       </>
-                    ) : scene ? (
+                    ) : gif ? (
                       <>
-                        <ExerciseAnimation key={selected.key} mode3d={tab === "3d"} on3dFail={() => setDemoTab("figure")} corner={<PhotoBody muscles={mus} pos="tl" />} scene={scene} primary={mus.primary} lang={lang} labelPause={t.libPause} labelPlay={t.libPlay} slow={t.libSlow} labelRep={t.libRep} labelFull={t.libFull} labelClose={t.libVideoClose} labelTop={t.libTopView} title={nameOf(selected)} tip={cueOf(selected)} muscleText={t.libRedMeans + " " + names(mus.primary)} steps={item ? (lang === "de" ? item.de : item.en) || [] : []} bodyStyle={gender === "diverse" ? "neutral" : gender} />
+                        <ExerciseGif key={selected.key} src={gif} title={nameOf(selected)} corner={<PhotoBody muscles={mus} pos="tl" />} />
+                        {tipLine}
                         <div style={{ ...small, fontSize: 11.5, marginTop: 6 }}>{t.libAnimHint}</div>
                       </>
                     ) : null}
