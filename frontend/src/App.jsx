@@ -968,6 +968,7 @@ const STR = {
     libTabFigure: "Animation",
     libTopView: "View from above",
     libAnimHint: "The demo shows the movement. The highlighted muscles do the work.",
+    libBackToList: "Back to list",
     libPause: "Pause",
     libPlay: "Play",
     libRep: "Rep",
@@ -2088,6 +2089,7 @@ const STR = {
     libTabFigure: "Animation",
     libTopView: "Ansicht von oben",
     libAnimHint: "Die Demo zeigt die Bewegung. Die markierten Muskeln arbeiten.",
+    libBackToList: "Zurück zur Liste",
     libPause: "Pause",
     libPlay: "Abspielen",
     libRep: "Wdh.",
@@ -10344,6 +10346,9 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
     };
     return (
       <div style={{ padding: "0 20px 24px" }}>
+        <div data-lib-back onClick={() => setSelected(null)} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer", marginBottom: 12 }}>
+          <ChevronLeft size={14} /> {t.libBackToList}
+        </div>
         <Card style={{ marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
