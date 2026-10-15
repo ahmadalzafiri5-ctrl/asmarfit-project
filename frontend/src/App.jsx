@@ -309,6 +309,8 @@ const STR = {
     obStatsSub: "Used to calculate your daily targets.",
     obStatsRange: "Please check the values: weight and target 30–300 kg, height 100–250 cm.",
     obRestore: "Already used ASFIT? Restore backup",
+    libDemoLoading: "Loading demo…",
+    libDemoFailed: "Demo could not be loaded. Check your connection and reopen the exercise.",
     obNameLabel: "Your name",
     obNamePlaceholder: "",
     obWeight: "Current weight (kg)",
@@ -1423,6 +1425,8 @@ const STR = {
     obStatsSub: "Damit berechnen wir deine Tagesziele.",
     obStatsRange: "Bitte prüfe die Werte: Gewicht und Ziel 30–300 kg, Größe 100–250 cm.",
     obRestore: "Schon mal ASFIT genutzt? Backup wiederherstellen",
+    libDemoLoading: "Demo wird geladen…",
+    libDemoFailed: "Demo konnte nicht geladen werden. Prüfe deine Verbindung und öffne die Übung erneut.",
     obNameLabel: "Dein Name",
     obNamePlaceholder: "",
     obWeight: "Aktuelles Gewicht (kg)",
@@ -4903,7 +4907,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const C = 2 * Math.PI * R;
   const color = seg.kind === "work" ? COLORS.gold : seg.kind === "rest" ? COLORS.teal : COLORS.coral;
   const exObj = EXERCISE_LIBRARY.find((e) => e.key === seg.key);
-  const gif = gifFor(seg.key);
+  const gif = gifSrc(seg.key);
   const mus = exObj ? exerciseMuscles(exObj) : { primary: [] };
   const nextWork = tl.slice(loc.i + 1).find((x) => x.kind === "work");
   const photoOf = (k) => (media && media.items && media.items[k] && !badImg[k] ? media.items[k] : null);
@@ -4936,7 +4940,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
           {tab === "photo" && photoItem ? (
             <QuickPhoto key={seg.key} muscles={mus} media={media} item={photoItem} name={nameOfKey(seg.key)} cue={exObj ? (lang === "de" ? exObj.cueDe : exObj.cue) : ""} onFail={() => setBadImg((b) => ({ ...b, [seg.key]: true }))} />
           ) : gif ? (
-            <ExerciseGif key={seg.key} src={gif} title={nameOfKey(seg.key)} corner={<PhotoBody muscles={mus} pos="tl" />} />
+            <ExerciseGif key={seg.key} src={gif} t={t} title={nameOfKey(seg.key)} corner={<PhotoBody muscles={mus} pos="tl" />} />
           ) : null}
         </Card>
       )}
@@ -4957,11 +4961,40 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
 
 // small square on the Training tab (library, records, friends)
 // animated exercise demo: the gold-tinted GIF on a light tile, with the little muscle body in the corner
-function ExerciseGif({ src, title, corner }) {
+function ExerciseGif({ src, title, corner, t }) {
+  // In der nativen App kommen die Demos vom Server (nicht gebündelt) — darum ein
+  // sichtbarer Ladezustand und ein freundlicher Fehlertext statt leerer Fläche.
+  const [state, setState] = useState("loading"); // loading | ready | error
+  const imgRef = useRef(null);
+  // Bei gecachten Bildern kann "load" vor dem React-Handler feuern - dann steht complete schon.
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) setState("ready");
+  }, []);
   return (
-    <div data-exercise-gif style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#FFFFFF" }}>
-      <img src={src} alt={title} loading="lazy" draggable={false} style={{ display: "block", width: "100%", maxWidth: 320, margin: "0 auto", aspectRatio: "1 / 1", objectFit: "contain", filter: "var(--c-gifFilter, none)" }} />
-      {corner}
+    <div data-exercise-gif data-gif-state={state} style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#FFFFFF" }}>
+      {state !== "error" && (
+        <img
+          ref={imgRef}
+          src={src}
+          alt={title}
+          draggable={false}
+          onLoad={() => setState("ready")}
+          onError={() => setState("error")}
+          style={{ display: "block", width: "100%", maxWidth: 320, margin: "0 auto", aspectRatio: "1 / 1", objectFit: "contain", filter: "var(--c-gifFilter, none)", opacity: state === "ready" ? 1 : 0 }}
+        />
+      )}
+      {state === "loading" && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "#9aa0a6" }}>
+          {t ? t.libDemoLoading : "…"}
+        </div>
+      )}
+      {state === "error" && (
+        <div style={{ aspectRatio: "1 / 1", maxWidth: 320, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "#9aa0a6" }}>
+          {t ? t.libDemoFailed : ""}
+        </div>
+      )}
+      {state !== "error" && corner}
     </div>
   );
 }
@@ -6936,6 +6969,13 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
 // PC browser has no access to Google's ML Kit scanner module, so it shows a
 // hint instead of a scan button rather than faking a result.
 const IS_NATIVE_APP = Capacitor.isNativePlatform();
+// Die Übungs-Demos (~71 MB WebP) werden NICHT in die App gebündelt: in der nativen App
+// kommen sie vom Server und landen im WebView-Cache; im Web liegen sie wie bisher unter /gifs.
+const GIF_BASE = IS_NATIVE_APP ? "https://asmarfit-project.onrender.com" : "";
+const gifSrc = (key) => {
+  const p = gifFor(key);
+  return p ? GIF_BASE + p : null;
+};
 const lsJson = (k) => {
   try {
     return JSON.parse(localStorage.getItem("asfit." + k));
@@ -10456,7 +10496,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           return (
             <>
               {(() => {
-                const gif = gifFor(selected.key);
+                const gif = gifSrc(selected.key);
                 const item = media && media.items && media.items[selected.key];
                 // the animated demo GIF only; the photo is the fallback for an exercise without one
                 const tab = gif ? "gif" : item ? "photo" : null;
@@ -10478,7 +10518,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                       </>
                     ) : gif ? (
                       <>
-                        <ExerciseGif key={selected.key} src={gif} title={nameOf(selected)} corner={<PhotoBody muscles={mus} pos="tl" />} />
+                        <ExerciseGif key={selected.key} src={gif} t={t} title={nameOf(selected)} corner={<PhotoBody muscles={mus} pos="tl" />} />
                         {tipLine}
                         <div style={{ ...small, fontSize: 11.5, marginTop: 6 }}>{t.libAnimHint}</div>
                       </>

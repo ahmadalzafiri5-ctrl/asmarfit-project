@@ -57,6 +57,8 @@ jobs:
         run: |
           npm ci
           npm run build
+          # Uebungs-Demos (~71 MB) nicht in die App buendeln - die native App laedt sie vom Server (GIF_BASE in App.jsx)
+          rm -rf dist/gifs
           npx cap sync android
 
       - name: Feste Signatur einsetzen (wenn das Secret vorhanden ist)
