@@ -4,6 +4,7 @@ import { searchBasics } from "./basics.js";
 import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal, customItem, checkCatalog, catalogCounts } from "./fastfood.js";
 import { gifFor } from "./gifList.js";
 import { computeStreaks, dayHasFood } from "./streaks.js";
+import { checkinDue, biasFor, applyDifficulty, deloadDue, deloadSuggestion, strengthWorkoutCount } from "./checkin.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
@@ -6454,11 +6455,17 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
   );
 }
 
-function WorkoutSummary({ t, lang, summary, onDone }) {
+function WorkoutSummary({ t, lang, summary, onDone, onDifficulty = () => {} }) {
   const prExercises = (summary?.newBests || []).map(({ exerciseKey, weight, minutes }) => {
     const ex = EXERCISE_LIBRARY.find((e) => e.key === exerciseKey);
     return { key: exerciseKey, name: ex ? (lang === "de" ? ex.nameDe : ex.name) : exerciseKey, value: minutes ? minutes + " min" : weight + "kg" };
   });
+  // Schwierigkeits-Check-in nach dem 1. und 2. Workout: Antwort verschiebt die Vorschläge.
+  const [checkinAnswer, setCheckinAnswer] = useState(null);
+  const answer = (a) => {
+    setCheckinAnswer(a);
+    onDifficulty(a);
+  };
   return (
     <div style={{ padding: "10px 20px 24px", textAlign: "center" }}>
       <div style={{ width: 72, height: 72, borderRadius: "50%", background: COLORS.goldSoft, margin: "10px auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -6503,6 +6510,36 @@ function WorkoutSummary({ t, lang, summary, onDone }) {
               <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{ex.value}</span>
             </div>
           ))}
+        </Card>
+      )}
+
+      {summary?.firstGain && (
+        <Card style={{ textAlign: "left", marginBottom: 20, border: "1px solid " + COLORS.gold }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold, marginBottom: 3 }}>{t.firstGainTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, lineHeight: 1.45 }}>{t.firstGainMsg}</div>
+        </Card>
+      )}
+
+      {summary?.checkin && (
+        <Card data-checkin style={{ textAlign: "left", marginBottom: 20 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.checkinTitle}</div>
+          {!checkinAnswer ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              {[
+                { key: "easy", label: t.checkinEasy },
+                { key: "right", label: t.checkinRight },
+                { key: "hard", label: t.checkinHard },
+              ].map((o) => (
+                <button key={o.key} data-checkin-answer={o.key} onClick={() => answer(o.key)} style={{ flex: 1, background: COLORS.raised, border: "1px solid " + COLORS.border, color: COLORS.text, borderRadius: 10, padding: "10px 4px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div data-checkin-thanks style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, lineHeight: 1.45 }}>
+              {checkinAnswer === "easy" ? t.checkinThanksEasy : checkinAnswer === "hard" ? t.checkinThanksHard : t.checkinThanksRight}
+            </div>
+          )}
         </Card>
       )}
 
@@ -12618,6 +12655,8 @@ export default function AsmarFitApp() {
   historyRef.current = workoutHistory;
   const [personalBests, setPersonalBests] = usePersisted("personalBests", {});
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
+  // Antwort des Schwierigkeits-Check-ins (nach 1./2. Workout): "harder" | "easier" | null
+  const [difficultyBias, setDifficultyBias] = usePersisted("difficultyBias", null);
   const [cardioBests, setCardioBests] = usePersisted("cardioBests", {});
   // A workout in progress is persisted immediately (start time + entries so
   // far), so it keeps counting real elapsed time and survives the app being
