@@ -307,6 +307,8 @@ const STR = {
     obExperienceNever: "I've never tried this before.",
     obStatsTitle: "A few numbers",
     obStatsSub: "Used to calculate your daily targets.",
+    obStatsRange: "Please check the values: weight and target 30–300 kg, height 100–250 cm.",
+    obRestore: "Already used ASFIT? Restore backup",
     obNameLabel: "Your name",
     obNamePlaceholder: "",
     obWeight: "Current weight (kg)",
@@ -1419,6 +1421,8 @@ const STR = {
     obExperienceNever: "Ich habe es noch nie versucht.",
     obStatsTitle: "Ein paar Zahlen",
     obStatsSub: "Damit berechnen wir deine Tagesziele.",
+    obStatsRange: "Bitte prüfe die Werte: Gewicht und Ziel 30–300 kg, Größe 100–250 cm.",
+    obRestore: "Schon mal ASFIT genutzt? Backup wiederherstellen",
     obNameLabel: "Dein Name",
     obNamePlaceholder: "",
     obWeight: "Aktuelles Gewicht (kg)",
@@ -3026,6 +3030,26 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const [vision3Months, setVision3Months] = useState("");
   const [visionWhy, setVisionWhy] = useState("");
   const [stepsGoal, setStepsGoal] = useState(10000);
+  // Backup-Wiederherstellung direkt beim Erststart (z.B. nach Handywechsel),
+  // damit niemand erst das ganze Onboarding durchlaufen muss.
+  const restoreRef = useRef(null);
+  const [restoreMsg, setRestoreMsg] = useState(null);
+  const onRestoreFile = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (parsed.app !== "asfit" || typeof parsed.data !== "object") throw new Error("bad");
+      Object.entries(parsed.data).forEach(([k, v]) => {
+        if (k.startsWith("asfit.") && typeof v === "string") localStorage.setItem(k, v);
+      });
+      setRestoreMsg(t.backupImported);
+      setTimeout(() => window.location.reload(), 700);
+    } catch {
+      setRestoreMsg(t.backupBad);
+    }
+  };
 
   const toggleMoreGoal = (key) => {
     setMoreGoals((g) => (g.includes(key) ? g.filter((x) => x !== key) : [...g, key]));
@@ -3040,7 +3064,10 @@ function Onboarding({ t, lang, setLang, onFinish }) {
   const showsRate = ["cut", "gain", "bulk"].includes(goal) && Number(target) !== Number(weight);
 
   const LAST_STEP = 13;
-  const statsValid = Number(weight) > 0 && Number(height) > 0 && Number(target) > 0;
+  // Plausible Bereiche statt nur ">0": 500 kg oder 999 cm würden sonst absurde Tagesziele erzeugen.
+  const inRange = (v, lo, hi) => Number(v) >= lo && Number(v) <= hi;
+  const statsValid = inRange(weight, 30, 300) && inRange(height, 100, 250) && inRange(target, 30, 300);
+  const statsOutOfRange = [weight, height, target].some((v) => v !== "" && Number(v) > 0) && !statsValid && [weight, height, target].every((v) => v !== "");
   const tooYoung = ageFromBirth(birth) < 16; // the terms say 16+, so the app does not go on with a younger birthday
   const canContinue = !((step === 1 && !gender) || (step === 2 && tooYoung) || (step === 3 && !goal) || (step === 7 && (!name.trim() || !statsValid)));
 
@@ -3105,6 +3132,11 @@ function Onboarding({ t, lang, setLang, onFinish }) {
               <span data-ob-privacy onClick={() => setLegal("privacy")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalPrivacy}</span>.
             </p>
             <p data-ob-medical style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, margin: "10px 0 0", lineHeight: 1.55 }}>{t.obMedical}</p>
+            <div data-ob-restore onClick={() => restoreRef.current && restoreRef.current.click()} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, margin: "22px 0 0", cursor: "pointer" }}>
+              {t.obRestore}
+            </div>
+            <input ref={restoreRef} type="file" accept="application/json,.json" onChange={onRestoreFile} style={{ display: "none" }} />
+            {restoreMsg && <div data-ob-restore-msg style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.gold, marginTop: 8 }}>{restoreMsg}</div>}
           </div>
         )}
 
@@ -3251,6 +3283,9 @@ function Onboarding({ t, lang, setLang, onFinish }) {
                 <TextField value={f.val} onChange={f.set} type="number" />
               </div>
             ))}
+            {statsOutOfRange && (
+              <div data-ob-stats-range style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginTop: 2 }}>{t.obStatsRange}</div>
+            )}
           </div>
         )}
 
@@ -13061,6 +13096,11 @@ export default function AsmarFitApp() {
     const read = async () => {
       const m = window.location.hash.match(/^#s=([A-Za-z0-9_-]+)/);
       if (!m) return;
+      // Noch kein Profil? Code parken, damit er Onboarding (und Reloads dabei) überlebt
+      // und der Import-Dialog direkt nach dem Onboarding erscheint.
+      try {
+        if (localStorage.getItem("asfit.onboarded") !== "true") localStorage.setItem("asfit.pendingShareCode", m[1]);
+      } catch { /* Speicher blockiert */ }
       try {
         const item = sanitizeShare(await decodeShare(m[1]));
         if (item) setIncomingShare(item);
@@ -13104,6 +13144,24 @@ export default function AsmarFitApp() {
       if (sub) sub.remove();
     };
   }, []);
+
+  // Ein vor dem Onboarding geparkter Share-Code wird eingelöst, sobald das Profil steht —
+  // so geht ein geteilter Link für Erstnutzer nicht verloren (auch nicht über Reloads).
+  useEffect(() => {
+    if (!onboarded) return;
+    let code = null;
+    try {
+      code = localStorage.getItem("asfit.pendingShareCode");
+      if (code) localStorage.removeItem("asfit.pendingShareCode");
+    } catch { /* Speicher blockiert */ }
+    if (!code) return;
+    decodeShare(code)
+      .then((raw) => {
+        const item = sanitizeShare(raw);
+        if (item) setIncomingShare(item);
+      })
+      .catch(() => { /* ungültiger Code */ });
+  }, [onboarded]);
 
   // Copy a meal (from yesterday, or from any past day being viewed) into today's meal.
   const copyItems = (slot, items) => setMeals((m) => ({ ...m, [slot]: [...m[slot], ...items.map((it) => ({ ...it }))] }));
