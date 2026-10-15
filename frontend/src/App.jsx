@@ -3,6 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { searchBasics } from "./basics.js";
 import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal, customItem, checkCatalog, catalogCounts } from "./fastfood.js";
 import { gifFor } from "./gifList.js";
+import { computeStreaks, dayHasFood } from "./streaks.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
@@ -718,8 +719,9 @@ const STR = {
     streakThisMonth: "This month",
     streakNone: "Log a meal today to start your streak",
     streakWeak: "Sprout is worn out – log something today and he gets strong again",
-    streakLostTitle: "Your streak is gone",
-    streakLostMsg: "{n} days in a row, then a day was missed. Sprout is worn out. No drama: log something today and he'll bounce back.",
+    streakLostTitle: "Streak paused — let's go again",
+    streakLostMsg: "{n} days in a row — that counts, and nobody takes it away. One missed day a week is covered automatically; this time it was a bit more. No big deal: log something today and you're back in.",
+    streakFreezeInfo: "A rest day was bridged — your streak keeps going.",
     streakLostCta: "Start again today",
     streakLostLater: "Later",
     streakKeep: "Log something today to keep your streak alive",
@@ -1834,8 +1836,9 @@ const STR = {
     streakThisMonth: "Diesen Monat",
     streakNone: "Trage heute eine Mahlzeit ein, um deine Serie zu starten",
     streakWeak: "Sprout ist erschöpft – trag heute etwas ein, dann wird er wieder stark",
-    streakLostTitle: "Deine Serie ist gerissen",
-    streakLostMsg: "{n} Tage am Stück, dann ist ein Tag ausgefallen. Sprout ist erschöpft. Kein Drama: Trag heute etwas ein, dann baut er sich wieder auf.",
+    streakLostTitle: "Serie pausiert — weiter geht's",
+    streakLostMsg: "{n} Tage am Stück — das zählt, und das nimmt dir niemand. Ein verpasster Tag pro Woche ist automatisch abgedeckt; diesmal war es etwas mehr. Halb so wild: Trag heute etwas ein und du bist wieder dabei.",
+    streakFreezeInfo: "Ein Ruhetag wurde überbrückt — deine Serie läuft weiter.",
     streakLostCta: "Heute neu starten",
     streakLostLater: "Später",
     streakKeep: "Trage heute etwas ein, damit deine Serie weiterläuft",
@@ -7086,36 +7089,7 @@ function buildHistory(meals, waterMl, steps) {
   return { ...daily, [todayStamp()]: { ...(daily[todayStamp()] || {}), meals, water: waterMl, steps } };
 }
 
-const dayHasFood = (day) => Boolean(day && day.meals && Object.values(day.meals).some((a) => Array.isArray(a) && a.length > 0));
-
-// current streak (today may still be open), best streak, first tracked day
-function computeStreaks(history) {
-  const keys = Object.keys(history).filter((k) => dayHasFood(history[k])).sort();
-  if (!keys.length) return { current: 0, best: 0, first: null, trackedToday: false };
-  const today = new Date();
-  today.setHours(12, 0, 0, 0);
-  const trackedToday = dayHasFood(history[dateKey(today)]);
-  const cursor = new Date(today);
-  if (!trackedToday) cursor.setDate(cursor.getDate() - 1);
-  let current = 0;
-  while (dayHasFood(history[dateKey(cursor)])) {
-    current++;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  let best = 0;
-  let run = 0;
-  const walk = new Date(keys[0] + "T12:00:00");
-  while (walk <= today) {
-    if (dayHasFood(history[dateKey(walk)])) {
-      run++;
-      best = Math.max(best, run);
-    } else {
-      run = 0;
-    }
-    walk.setDate(walk.getDate() + 1);
-  }
-  return { current, best, first: keys[0], trackedToday };
-}
+// Serien-Logik (inkl. Streak-Freeze: ein Fehltag pro Woche bricht die Serie nicht) in streaks.js
 
 function StreakCard({ t, streak, history, onOpen }) {
   const week = [];
@@ -7139,7 +7113,7 @@ function StreakCard({ t, streak, history, onOpen }) {
             {streak.current > 0 ? streak.current + " " + t.streakDaysLabel : t.historyTitle}
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 2 }}>
-            {streak.current === 0 ? (streak.first ? t.streakWeak : t.streakNone) : !streak.trackedToday ? t.streakKeep : t.historyCardSub}
+            {streak.current === 0 ? (streak.first ? t.streakWeak : t.streakNone) : !streak.trackedToday ? t.streakKeep : streak.frozenUsed ? t.streakFreezeInfo : t.historyCardSub}
           </div>
         </div>
         <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
