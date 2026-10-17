@@ -7776,6 +7776,12 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
     if (messages.length > 0 || busy) endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, busy]);
 
+  // Der Gratis-Server schläft nach Inaktivität ein (Kaltstart 30-60 s). Beim Öffnen des
+  // Coaches wird er geweckt, damit er steht, bis die Frage fertig getippt ist.
+  useEffect(() => {
+    fetch(API_BASE + "/health").catch(() => {});
+  }, []);
+
   const send = async (override) => {
     const text = (typeof override === "string" ? override : input).trim();
     if (!text || busy) return;
@@ -7790,7 +7796,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
         fetch(API_BASE + "/api/assistant", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: next, lang, context, data: data || undefined, country: cc || undefined }),
+          body: JSON.stringify({ messages: next, lang, context, data: data || undefined, country: cc || undefined, stream: true }),
         });
       let res = await ask().catch(() => null);
       // a dropped connection or a gateway error usually means the server was still starting: wait and ask once more
@@ -7805,7 +7811,23 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
         setError(t.assistantNotConfigured);
       } else if (!res.ok) {
         setError(t.assistantError);
+      } else if ((res.headers.get("content-type") || "").includes("text/plain") && res.body) {
+        // Streaming: die Antwort erscheint Wort für Wort, sobald der erste Chunk da ist.
+        clearTimeout(slowTimer);
+        setSlow(false);
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let acc = "";
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          acc += dec.decode(value, { stream: true });
+          const partial = acc;
+          setMessages([...next, { role: "assistant", content: partial }]);
+        }
+        setMessages([...next, { role: "assistant", content: acc.trim() || "…" }]);
       } else {
+        // Älterer Server ohne Streaming: komplette JSON-Antwort wie bisher.
         const data = await res.json();
         setMessages([...next, { role: "assistant", content: data.reply }]);
       }

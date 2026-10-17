@@ -435,11 +435,15 @@ app.post("/api/assistant", async (req, res) => {
     }
   }
 
+  // Neuere App-Versionen schicken stream:true und bekommen die Antwort als Text-Stream:
+  // die ersten Wörter stehen nach ~1 s da statt erst, wenn alles fertig ist.
+  const wantStream = req.body?.stream === true;
   try {
     const r = await fetch(ANTHROPIC_API_BASE + "/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
+        stream: wantStream,
         model: ASSISTANT_MODEL,
         max_tokens: 900,
         system:
@@ -466,6 +470,40 @@ app.post("/api/assistant", async (req, res) => {
     if (!r.ok) {
       console.error("Anthropic API returned", r.status);
       return res.status(502).json({ error: "upstream_error" });
+    }
+    if (wantStream) {
+      // Upstream-SSE lesen und nur die Text-Deltas als schlichten Text-Stream weiterreichen.
+      res.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-cache", "x-accel-buffering": "no" });
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      let wrote = false;
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            try {
+              const ev = JSON.parse(line.slice(5));
+              const delta = ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta" ? ev.delta.text : "";
+              if (delta) {
+                res.write(delta);
+                wrote = true;
+              }
+            } catch {
+              /* keep-alive oder unvollständige Zeile */
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Assistant stream dropped:", err.message);
+      }
+      if (!wrote) res.write("…");
+      return res.end();
     }
     const data = await r.json();
     const reply = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join(" ").trim();
