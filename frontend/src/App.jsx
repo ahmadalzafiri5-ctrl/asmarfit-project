@@ -7,6 +7,7 @@ import { computeStreaks, dayHasFood } from "./streaks.js";
 import { checkinDue, biasFor, applyDifficulty, deloadDue, deloadSuggestion, strengthWorkoutCount } from "./checkin.js";
 import { varietyDue, varietyAlternatives } from "./variety.js";
 import { renderShareCard, shareCardBlob } from "./shareCard.js";
+import { CHALLENGE_GOAL, isoWeekKey, myChallengeProgress, challengeDone } from "./challenge.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
@@ -1022,6 +1023,12 @@ const STR = {
     shareTypePantry: "Pantry folder",
     shareTypeDuel: "Week duel",
     shareTypeHist: "Training history",
+    shareTypeChal: "Weekly challenge",
+    chalTitle: "Weekly challenge",
+    chalGoal: "Together this week: {tr} workouts + {d} tracked days",
+    chalShare: "Share my challenge status",
+    chalIntro: "Send your status and import your friend’s code — then you both see where you stand.",
+    chalStale: "Status from an earlier week",
     shareFrom: "{n} shares with you",
     sharePlanReplace: "This replaces your current training plan.",
     shareImport: "Import",
@@ -2155,6 +2162,12 @@ const STR = {
     shareTypePantry: "Speisekammer-Ordner",
     shareTypeDuel: "Wochen-Duell",
     shareTypeHist: "Trainingsverlauf",
+    shareTypeChal: "Wochen-Challenge",
+    chalTitle: "Wochen-Challenge",
+    chalGoal: "Gemeinsam diese Woche: {tr} Workouts + {d} getrackte Tage",
+    chalShare: "Meinen Challenge-Stand teilen",
+    chalIntro: "Schick deinen Stand und importiere den Code deines Freundes — dann seht ihr beide, wo ihr steht.",
+    chalStale: "Stand aus einer früheren Woche",
     shareFrom: "{n} teilt mit dir",
     sharePlanReplace: "Ersetzt deinen aktuellen Trainingsplan.",
     shareImport: "Importieren",
@@ -11259,6 +11272,12 @@ function sanitizeShare(o) {
       if (!r.name || !ingredients.length) return null;
       return { t: "recipe", from, r: { name: shStr(r.name, 80), category: ["breakfast", "lunch", "dinner", "snacks"].includes(r.category) ? r.category : "lunch", kcal: Math.round(shNum(r.kcal, 20000)), protein: Math.round(shNum(r.protein, 2000)), carbs: Math.round(shNum(r.carbs, 5000)), fat: Math.round(shNum(r.fat, 2000)), ingredients } };
     }
+    case "chal": {
+      const p = o.p || {};
+      const wk = shStr(o.wk, 10);
+      if (!/^\d{4}-W\d{2}$/.test(wk)) return null;
+      return { t: "chal", from, id: shStr(o.id, 24) || shStr(o.n, 30), ts: Number(o.ts) || Date.now(), wk, p: { tr: Math.round(shNum(p.tr, 99)), days: Math.round(shNum(p.days, 7)) } };
+    }
     case "pantry": {
       const f = o.f || {};
       const items = (Array.isArray(f.items) ? f.items : []).slice(0, 60).map((i) => ({ name: shStr(i && i.n, 80), per100: { kcal: shNum(i && i.p && i.p.kcal, 2000), protein: shNum(i && i.p && i.p.protein, 200), carbs: shNum(i && i.p && i.p.carbs, 200), fat: shNum(i && i.p && i.p.fat, 200) }, unit: i && i.u === "ml" ? "ml" : "g", grams: Math.max(1, shNum(i && i.g, 5000)) })).filter((i) => i.name);
@@ -11332,7 +11351,7 @@ function ShareImportModal({ t, lang, item, onImport, onClose }) {
     { key: "dinner", label: t.dinner },
     { key: "snacks", label: t.snacks },
   ];
-  const typeLabel = { plan: t.shareTypePlan, meal: t.shareTypeMeal, day: t.shareTypeDay, recipe: t.shareTypeRecipe, pantry: t.shareTypePantry, duel: t.shareTypeDuel, ex: t.shareTypeEx, hist: t.shareTypeHist }[item.t];
+  const typeLabel = { plan: t.shareTypePlan, meal: t.shareTypeMeal, day: t.shareTypeDay, recipe: t.shareTypeRecipe, pantry: t.shareTypePantry, duel: t.shareTypeDuel, ex: t.shareTypeEx, hist: t.shareTypeHist, chal: t.shareTypeChal }[item.t];
   let lines = [];
   if (item.t === "plan") lines = [item.name, ...item.days.map((d) => d.name + " · " + d.exercises.length + " " + t.exercises)];
   else if (item.t === "meal") lines = [item.title || t.shareTypeMeal, item.items.length + " " + t.pantryItemMany + " · " + sumKcal(item.items) + " kcal"];
@@ -11342,6 +11361,7 @@ function ShareImportModal({ t, lang, item, onImport, onClose }) {
   } else if (item.t === "recipe") lines = [item.r.name, item.r.kcal + " kcal " + t.perServing];
   else if (item.t === "pantry") lines = [item.folder.emoji + " " + item.folder.name, item.folder.items.length + " " + t.pantryItemMany];
   else if (item.t === "duel") lines = [item.from || "?", item.stats.tr + "× " + t.duelTrainings + " · " + item.stats.vol + " kg"];
+  else if (item.t === "chal") lines = [item.from || "?", item.p.tr + "× " + t.duelTrainings + " · " + item.p.days + " " + t.duelTracked + " (" + item.wk + ")"];
   else if (item.t === "hist") lines = [(item.from || "?") + (item.plan ? " · " + item.plan : ""), item.workouts.length + "× " + t.duelTrainings + " · " + item.workouts.reduce((a, w) => a + w.volumeKg, 0) + " kg"];
   else if (item.t === "ex") {
     const e = EXERCISE_LIBRARY.find((x) => x.key === item.key);
@@ -11419,7 +11439,7 @@ function duelScore(mine, theirs) {
   return { me, them };
 }
 
-function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMine, onShareHistory, onImportText, onRemove, feeds = [], onRemoveFeed, myHistoryCount = 0 }) {
+function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMine, onShareHistory, onImportText, onRemove, feeds = [], onRemoveFeed, myHistoryCount = 0, challenge = null, myChal = { tr: 0, days: 0 }, onShareChallenge = () => {}, onRemoveChallenge = () => {} }) {
   const [text, setText] = useState("");
   const [msg, setMsg] = useState(null);
   const ageText = (ts) => {
@@ -11459,6 +11479,42 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
         <button data-share-history onClick={onShareHistory} disabled={!myHistoryCount} style={{ width: "100%", marginTop: 8, background: COLORS.raised, color: myHistoryCount ? COLORS.gold : COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: myHistoryCount ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
           <Share2 size={14} /> {t.friendsShareHistory}{myHistoryCount ? " (" + Math.min(10, myHistoryCount) + ")" : ""}
         </button>
+      </Card>
+
+      <Card data-challenge style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>🏁 {t.chalTitle}</div>
+        <div style={{ ...small, marginTop: 2, marginBottom: 12 }}>{t.chalGoal.replace("{tr}", CHALLENGE_GOAL.tr).replace("{d}", CHALLENGE_GOAL.days)}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          {[
+            { name: t.duelYou, p: myChal, stale: false, done: challengeDone(myChal) },
+            challenge
+              ? { name: challenge.friendName, p: challenge.theirP, stale: challenge.wk !== isoWeekKey(), done: challengeDone(challenge.theirP) }
+              : null,
+          ].map((side, i) =>
+            side ? (
+              <div key={i} style={{ background: COLORS.raised, borderRadius: 12, padding: "10px 12px", opacity: side.stale ? 0.6 : 1 }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>
+                  {side.done ? "✅ " : ""}{side.name}
+                </div>
+                <div style={{ ...small, fontSize: 12 }}>
+                  {Math.min(side.p.tr, CHALLENGE_GOAL.tr)}/{CHALLENGE_GOAL.tr} {t.duelTrainings}
+                </div>
+                <div style={{ ...small, fontSize: 12 }}>
+                  {Math.min(side.p.days, CHALLENGE_GOAL.days)}/{CHALLENGE_GOAL.days} {t.duelTracked}
+                </div>
+                {side.stale && <div style={{ ...small, fontSize: 10.5, marginTop: 4, color: COLORS.coral }}>{t.chalStale}</div>}
+              </div>
+            ) : (
+              <div key={i} style={{ background: COLORS.raised, borderRadius: 12, padding: "10px 12px", ...small, fontSize: 12, lineHeight: 1.4 }}>{t.chalIntro}</div>
+            )
+          )}
+        </div>
+        <button data-share-challenge onClick={onShareChallenge} style={{ width: "100%", background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+          <Share2 size={14} /> {t.chalShare}
+        </button>
+        {challenge && (
+          <div onClick={onRemoveChallenge} style={{ ...small, fontSize: 11.5, marginTop: 8, cursor: "pointer", textAlign: "center" }}>{t.friendsRemove}</div>
+        )}
       </Card>
 
       <Card style={{ marginBottom: 18 }}>
@@ -12873,6 +12929,8 @@ export default function AsmarFitApp() {
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState(null);
   // Antwort des Schwierigkeits-Check-ins (nach 1./2. Workout): "harder" | "easier" | null
   const [difficultyBias, setDifficultyBias] = usePersisted("difficultyBias", null);
+  // Wochen-Challenge mit einem Freund: letzter importierter Stand des Freundes
+  const [challenge, setChallenge] = usePersisted("challenge", null);
   const [cardioBests, setCardioBests] = usePersisted("cardioBests", {});
   // A workout in progress is persisted immediately (start time + entries so
   // far), so it keeps counting real elapsed time and survives the app being
@@ -13324,6 +13382,8 @@ export default function AsmarFitApp() {
     }
   };
   const shareMyDuel = () => doShare({ t: "duel", id: myId, ts: Date.now(), s: myDuelStats(), b: personalBests }, t.shareTypeDuel);
+  // Wochen-Challenge: eigener Stand (laufende Kalenderwoche) als Code
+  const shareMyChallenge = () => doShare({ t: "chal", id: myId, ts: Date.now(), wk: isoWeekKey(), p: myChallengeProgress(workoutHistory, historyMap) }, t.shareTypeChal);
   // my last 10 workouts as a compact list (the friend sees them under "Training of my friends")
   const shareMyHistory = () =>
     doShare(
@@ -13382,6 +13442,11 @@ export default function AsmarFitApp() {
       setOverlay("friends");
     } else if (item.t === "duel") {
       setRivals((l) => [...l.filter((r) => r.id !== item.id), { id: item.id, name: item.from || "?", ts: item.ts, stats: item.stats, bests: item.bests }].slice(-20));
+      setFriendsReturn(null);
+      setOverlay("friends");
+    } else if (item.t === "chal") {
+      // Wochen-Challenge: Stand des Freundes übernehmen (ersetzt den alten Stand)
+      setChallenge({ friendId: item.id, friendName: item.from || "?", wk: item.wk, theirP: item.p, theirTs: item.ts });
       setFriendsReturn(null);
       setOverlay("friends");
     }
@@ -13697,7 +13762,7 @@ export default function AsmarFitApp() {
         }
       : () => setOverlay(null);
   } else if (overlay === "friends") {
-    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myStats={myDuelStats()} rivals={rivals} onShareMine={shareMyDuel} onShareHistory={shareMyHistory} myHistoryCount={workoutHistory.length} feeds={friendFeeds} onRemoveFeed={(id) => setFriendFeeds((l) => l.filter((f) => f.id !== id))} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} />;
+    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myStats={myDuelStats()} rivals={rivals} onShareMine={shareMyDuel} onShareHistory={shareMyHistory} myHistoryCount={workoutHistory.length} feeds={friendFeeds} onRemoveFeed={(id) => setFriendFeeds((l) => l.filter((f) => f.id !== id))} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} challenge={challenge} myChal={myChallengeProgress(workoutHistory, historyMap)} onShareChallenge={shareMyChallenge} onRemoveChallenge={() => setChallenge(null)} />;
     topTitle = t.friendsTitle;
     showBack = () => setOverlay(friendsReturn);
   } else if (overlay === "fastfood") {
