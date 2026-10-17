@@ -6,6 +6,7 @@ import { gifFor } from "./gifList.js";
 import { computeStreaks, dayHasFood } from "./streaks.js";
 import { checkinDue, biasFor, applyDifficulty, deloadDue, deloadSuggestion, strengthWorkoutCount } from "./checkin.js";
 import { varietyDue, varietyAlternatives } from "./variety.js";
+import { renderShareCard, shareCardBlob } from "./shareCard.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
@@ -477,6 +478,8 @@ const STR = {
     checkinThanksHard: "Good to know — we'll take a step of weight out. Clean reps beat heavy ones.",
     firstGainTitle: "First strength gain! 💪",
     firstGainMsg: "You already lifted more than last time. This is exactly how progress looks — keep showing up.",
+    shareAsImage: "Share as image",
+    wrShareTracked: "Tracked days",
     varietyHint: "You've been doing this one for weeks — fancy a change? Try:",
     suggestBody: "one more rep than your weakest set",
     suggestUse: "use",
@@ -1605,6 +1608,8 @@ const STR = {
     checkinThanksHard: "Gut zu wissen — wir nehmen eine Gewichtsstufe raus. Sauber schlägt schwer.",
     firstGainTitle: "Erster Kraftzuwachs! 💪",
     firstGainMsg: "Du hast schon mehr bewegt als beim letzten Mal. Genau so sieht Fortschritt aus — bleib dran.",
+    shareAsImage: "Als Bild teilen",
+    wrShareTracked: "Getrackte Tage",
     varietyHint: "Die machst du seit Wochen — Lust auf Abwechslung? Probier:",
     suggestBody: "eine Wiederholung mehr als dein schwächster Satz",
     suggestUse: "übernehmen",
@@ -3593,10 +3598,36 @@ function WeeklyReviewCard({ t, review, mode = "home", onApply, onDone }) {
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim, marginTop: 1 }}>{l}</div>
     </div>
   );
+  const shareImage = async () => {
+    // Share-Karte ohne Gewichtsdaten: nur Konsequenz-Werte, die man gern zeigt
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--c-gold").trim() || "#E4A64C";
+    const blob = await renderShareCard(
+      "week",
+      {
+        title: t.wrTitle,
+        date: new Date().toLocaleDateString(isDE(t) ? "de-DE" : "en-GB", { day: "numeric", month: "long", year: "numeric" }),
+        lines: [
+          { label: t.wrShareTracked, value: review.tracked + "/7" },
+          { label: t.wrWorkouts, value: review.workouts + "×" },
+          { label: t.wrAvgKcal, value: review.avgKcal },
+          { label: t.wrAvgProtein, value: review.avgProtein + " g" },
+        ],
+      },
+      accent
+    );
+    if (blob) await shareCardBlob(blob, "ASFIT · " + t.wrTitle, "asfit-woche.png");
+  };
   return (
     <div data-weekly-review>
       <Card style={{ marginBottom: 12 }}>
-        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold, marginBottom: 10 }}>📊 {t.wrTitle}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold }}>📊 {t.wrTitle}</div>
+          {s.type !== "needData" && (
+            <span data-wr-share onClick={shareImage} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
+              <Share2 size={13} /> {t.shareAsImage}
+            </span>
+          )}
+        </div>
         {s.type !== "needData" && (
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             {stat(review.avgKcal, t.wrAvgKcal)}
@@ -4536,7 +4567,35 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
       )}
 
       {hasAnyItem && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, marginBottom: 10 }}>
+          <span
+            data-share-day-image
+            onClick={async () => {
+              // Bild-Karte des Tages: nur Gegessenes (kcal + Makros), keine Ziele, kein Gewicht
+              const all = Object.values(viewMeals).flat();
+              const sum = (k) => Math.round(all.reduce((s, it) => s + (it[k] || 0), 0));
+              const accent = getComputedStyle(document.documentElement).getPropertyValue("--c-gold").trim() || "#E4A64C";
+              const blob = await renderShareCard(
+                "day",
+                {
+                  title: t.shareTypeDay,
+                  date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { weekday: "long", day: "numeric", month: "long" }),
+                  kcal: sum("kcal"),
+                  kcalLabel: "kcal",
+                  macros: [
+                    { label: t.protein, value: sum("protein") + " g" },
+                    { label: t.carbs, value: sum("carbs") + " g" },
+                    { label: t.fat, value: sum("fat") + " g" },
+                  ],
+                },
+                accent
+              );
+              if (blob) await shareCardBlob(blob, "ASFIT · " + t.shareTypeDay, "asfit-tag.png");
+            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}
+          >
+            <Share2 size={14} /> {t.shareAsImage}
+          </span>
           <span onClick={() => onShare({ t: "day", m: Object.fromEntries(Object.entries(viewMeals).map(([k, arr]) => [k, arr.map(shFoodOut)])) }, t.shareTypeDay)} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
             <Share2 size={14} /> {t.shareDayLink}
           </span>
@@ -6590,6 +6649,33 @@ function WorkoutSummary({ t, lang, summary, onDone, onDifficulty = () => {} }) {
         </Card>
       )}
 
+      <button
+        data-share-image
+        onClick={async () => {
+          // Share-Karte ohne sensible Details (kein Körpergewicht): Dauer, Volumen, Rekorde
+          const accent = getComputedStyle(document.documentElement).getPropertyValue("--c-gold").trim() || "#E4A64C";
+          const blob = await renderShareCard(
+            "workout",
+            {
+              title: t.workoutDone,
+              date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { weekday: "long", day: "numeric", month: "long" }),
+              duration: formatDuration(summary?.durationSec),
+              durationLabel: t.duration,
+              volume: Math.round(summary?.volumeKg || 0) + " kg",
+              volumeLabel: t.volume,
+              kcal: summary?.burnedKcal > 0 ? "≈ " + summary.burnedKcal : null,
+              kcalLabel: t.kcalBurnedLabel,
+              records: prExercises.map((e) => ({ name: e.name, value: e.value })),
+              recordsLabel: t.newRecords,
+            },
+            accent
+          );
+          if (blob) await shareCardBlob(blob, "ASFIT · " + t.workoutDone, "asfit-workout.png");
+        }}
+        style={{ width: "100%", background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer", marginBottom: 10 }}
+      >
+        {t.shareAsImage}
+      </button>
       <button onClick={onDone} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
         {t.done}
       </button>
