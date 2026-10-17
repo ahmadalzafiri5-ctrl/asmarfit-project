@@ -1016,6 +1016,7 @@ const STR = {
     libBoard: "Leaderboard",
     shareTypePlan: "Training plan",
     shareTypeMeal: "Meal",
+    sharePortions: "Servings",
     shareTypeDay: "Nutrition day",
     shareTypeRecipe: "Recipe",
     shareTypePantry: "Pantry folder",
@@ -2148,6 +2149,7 @@ const STR = {
     libBoard: "Rangliste",
     shareTypePlan: "Trainingsplan",
     shareTypeMeal: "Mahlzeit",
+    sharePortions: "Portionen",
     shareTypeDay: "Ernährungstag",
     shareTypeRecipe: "Rezept",
     shareTypePantry: "Speisekammer-Ordner",
@@ -11321,6 +11323,8 @@ const sumKcal = (items) => items.reduce((s, i) => s + (i.kcal || 0), 0);
 // Asks what to do with something somebody shared.
 function ShareImportModal({ t, lang, item, onImport, onClose }) {
   const [slot, setSlot] = useState(item.slot || mealKeyForNow());
+  // Rezept-Import: Portionen direkt beim Import anpassen (skaliert Nährwerte + Mengen)
+  const [portions, setPortions] = useState(1);
   const needsSlot = item.t === "meal" || item.t === "day";
   const slots = [
     { key: "breakfast", label: t.breakfast },
@@ -11362,7 +11366,17 @@ function ShareImportModal({ t, lang, item, onImport, onClose }) {
             </div>
           </>
         )}
-        <button onClick={() => onImport(item, slot)} style={{ width: "100%", marginTop: 18, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
+        {item.t === "recipe" && (
+          <>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "14px 0 8px" }}>{t.sharePortions}</div>
+            <div data-portions style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[0.5, 1, 1.5, 2, 3].map((p) => (
+                <Chip key={p} label={String(p).replace(".", ",") + "×"} active={portions === p} onClick={() => setPortions(p)} />
+              ))}
+            </div>
+          </>
+        )}
+        <button onClick={() => onImport(item, slot, portions)} style={{ width: "100%", marginTop: 18, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
           {item.t === "ex" ? t.libAddFav : t.shareImport}
         </button>
         <button onClick={onClose} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.dim, border: "none", padding: "10px 18px", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
@@ -11462,6 +11476,25 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
             .slice()
             .sort((a, b) => (b.ts || 0) - (a.ts || 0))
             .map((f) => {
+              // Rezept-/Mahlzeit-Einträge im Feed: eine schlichte chronologische Zeile
+              if (f.kind === "recipe" || f.kind === "meal") {
+                return (
+                  <div key={f.id} data-friend-feed={f.id}>
+                    <Card style={{ marginBottom: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>
+                            {f.kind === "recipe" ? "📖 " : "🍽️ "}{f.label}
+                          </div>
+                          <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>{(f.kind === "recipe" ? t.shareTypeRecipe : t.shareTypeMeal) + " · " + t.shareFrom.replace("{n}", f.name)}</div>
+                        </div>
+                        <div style={{ ...small, fontSize: 11.5, flexShrink: 0 }}>{ageText(f.ts)}</div>
+                      </div>
+                      <div onClick={() => onRemoveFeed(f.id)} style={{ ...small, fontSize: 11.5, marginTop: 8, cursor: "pointer", textAlign: "right" }}>{t.friendsRemove}</div>
+                    </Card>
+                  </div>
+                );
+              }
               const exName = (k) => {
                 const e = EXERCISE_LIBRARY.find((x) => x.key === k);
                 return e ? (lang === "de" ? e.nameDe : e.name) : k;
@@ -13315,17 +13348,30 @@ export default function AsmarFitApp() {
       return { ok: false };
     }
   };
-  const applyShare = (item, slot) => {
+  // Skaliert die führende Mengenzahl einer Zutaten-Zeile ("200 g Quark" -> "300 g Quark");
+  // Zeilen ohne führende Zahl bleiben unverändert.
+  const scaleIngredient = (s, f) =>
+    f === 1 ? s : String(s).replace(/^(\d+(?:[.,]\d+)?)/, (m) => {
+      const v = parseFloat(m.replace(",", ".")) * f;
+      const r = Math.round(v * 10) / 10;
+      return String(Number.isInteger(r) ? r : r.toFixed(1)).replace(".", ",");
+    });
+  const applyShare = (item, slot, portions = 1) => {
     if (item.t === "plan") {
       setPlanName(item.name);
       setPlanDays(item.days);
     } else if (item.t === "meal") {
       item.items.forEach((f) => addFoodTo(slot, f));
+      // Freunde-Feed: geteilte Mahlzeit chronologisch festhalten
+      if (item.from) setFriendFeeds((l) => [...l, { id: "m" + Date.now(), kind: "meal", name: item.from, ts: Date.now(), label: item.title || t.shareTypeMeal }].slice(-20));
     } else if (item.t === "day") {
       Object.entries(item.slots).forEach(([k, arr]) => arr.forEach((f) => addFoodTo(k, f)));
     } else if (item.t === "recipe") {
       const r = item.r;
-      saveRecipe({ key: "c" + Date.now(), name: r.name, nameDe: r.name, category: r.category, kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat, ingredients: r.ingredients, ingredientsDe: r.ingredients, image: "", custom: true });
+      const f = Number(portions) > 0 ? Number(portions) : 1;
+      const ing = r.ingredients.map((s) => scaleIngredient(s, f));
+      saveRecipe({ key: "c" + Date.now(), name: r.name, nameDe: r.name, category: r.category, kcal: Math.round(r.kcal * f), protein: Math.round(r.protein * f), carbs: Math.round(r.carbs * f), fat: Math.round(r.fat * f), ingredients: ing, ingredientsDe: ing, image: "", custom: true });
+      if (item.from) setFriendFeeds((l) => [...l, { id: "r" + Date.now(), kind: "recipe", name: item.from, ts: Date.now(), label: r.name }].slice(-20));
     } else if (item.t === "pantry") {
       setPantry((l) => [...l, { id: newPantryId(), name: item.folder.name, emoji: item.folder.emoji, items: item.folder.items.map((i) => ({ id: newPantryId(), uses: 0, ...i })) }]);
     } else if (item.t === "ex") {
