@@ -5,6 +5,7 @@ import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal, customItem,
 import { gifFor } from "./gifList.js";
 import { computeStreaks, dayHasFood } from "./streaks.js";
 import { checkinDue, biasFor, applyDifficulty, deloadDue, deloadSuggestion, strengthWorkoutCount } from "./checkin.js";
+import { varietyDue, varietyAlternatives } from "./variety.js";
 import { visibleFor } from "./genderContent.js";
 import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
@@ -476,6 +477,7 @@ const STR = {
     checkinThanksHard: "Good to know — we'll take a step of weight out. Clean reps beat heavy ones.",
     firstGainTitle: "First strength gain! 💪",
     firstGainMsg: "You already lifted more than last time. This is exactly how progress looks — keep showing up.",
+    varietyHint: "You've been doing this one for weeks — fancy a change? Try:",
     suggestBody: "one more rep than your weakest set",
     suggestUse: "use",
     toolMealplan: "Meal plan",
@@ -1603,6 +1605,7 @@ const STR = {
     checkinThanksHard: "Gut zu wissen — wir nehmen eine Gewichtsstufe raus. Sauber schlägt schwer.",
     firstGainTitle: "Erster Kraftzuwachs! 💪",
     firstGainMsg: "Du hast schon mehr bewegt als beim letzten Mal. Genau so sieht Fortschritt aus — bleib dran.",
+    varietyHint: "Die machst du seit Wochen — Lust auf Abwechslung? Probier:",
     suggestBody: "eine Wiederholung mehr als dein schwächster Satz",
     suggestUse: "übernehmen",
     toolMealplan: "Wochenplan",
@@ -5790,6 +5793,8 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
     onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, sets: en.sets.filter((_, j) => j !== si) })).filter((en) => en.cardio || en.sets.length > 0));
   const updateMinutes = (ei, value) => onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, minutes: value })));
   const removeEntry = (ei) => onChangeEntries(entries.filter((_, i) => i !== ei));
+  // Abwechslungs-Vorschlag angenommen: Übung in diesem Workout gegen die Alternative tauschen
+  const swapExercise = (ei, altKey) => onChangeEntries(entries.map((en, i) => (i !== ei ? en : { ...en, key: altKey, sets: [] })));
 
   const setLog = [];
   const cardioLog = [];
@@ -5942,6 +5947,24 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 1 }}>{sug.weight === 0 ? t.suggestBody : t["suggest_" + sug.kind]}</div>
                   </div>
                   <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.gold, whiteSpace: "nowrap" }}>+ {t.suggestUse}</span>
+                </div>
+              );
+            })()}
+            {!en.cardio && (en.sets || []).length === 0 && varietyDue(workoutHistory, en.key) && (() => {
+              // Dezenter Abwechslungs-Hinweis, wenn dieselbe Übung seit ~6 Wochen läuft.
+              const alts = varietyAlternatives(EXERCISE_LIBRARY, en.key, entries.map((e) => e.key));
+              if (!alts.length) return null;
+              return (
+                <div data-variety style={{ margin: "-2px 0 12px", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>
+                  {t.varietyHint}{" "}
+                  {alts.map((a, i) => (
+                    <span key={a.key}>
+                      {i > 0 && " · "}
+                      <span data-variety-alt={a.key} onClick={() => swapExercise(ei, a.key)} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>
+                        {lang === "de" ? a.nameDe : a.name}
+                      </span>
+                    </span>
+                  ))}
                 </div>
               );
             })()}
