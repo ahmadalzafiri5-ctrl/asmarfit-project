@@ -466,6 +466,16 @@ const STR = {
     suggest_up: "all sets done last time: add weight",
     suggest_reps: "same weight, one more rep",
     suggest_hold: "keep the weight, build up the reps",
+    suggest_deload: "no progress for 3 sessions — a lighter week (~−10%) sets you up to come back stronger",
+    checkinTitle: "Quick check: how did that workout feel?",
+    checkinEasy: "Too easy",
+    checkinRight: "Just right",
+    checkinHard: "Too hard",
+    checkinThanksEasy: "Got it — your suggestions will start a step heavier from now on.",
+    checkinThanksRight: "Perfect — we'll keep building from this level.",
+    checkinThanksHard: "Good to know — we'll take a step of weight out. Clean reps beat heavy ones.",
+    firstGainTitle: "First strength gain! 💪",
+    firstGainMsg: "You already lifted more than last time. This is exactly how progress looks — keep showing up.",
     suggestBody: "one more rep than your weakest set",
     suggestUse: "use",
     toolMealplan: "Meal plan",
@@ -1583,6 +1593,16 @@ const STR = {
     suggest_up: "letztes Mal alles geschafft: Gewicht erhöhen",
     suggest_reps: "gleiches Gewicht, eine Wiederholung mehr",
     suggest_hold: "Gewicht halten, Wiederholungen aufbauen",
+    suggest_deload: "3 Sessions ohne Fortschritt — eine leichtere Woche (~−10 %) und du kommst stärker zurück",
+    checkinTitle: "Kurzer Check: Wie war dieses Workout?",
+    checkinEasy: "Zu leicht",
+    checkinRight: "Genau richtig",
+    checkinHard: "Zu schwer",
+    checkinThanksEasy: "Alles klar — deine Vorschläge starten ab jetzt eine Stufe schwerer.",
+    checkinThanksRight: "Perfekt — wir bauen auf diesem Niveau weiter auf.",
+    checkinThanksHard: "Gut zu wissen — wir nehmen eine Gewichtsstufe raus. Sauber schlägt schwer.",
+    firstGainTitle: "Erster Kraftzuwachs! 💪",
+    firstGainMsg: "Du hast schon mehr bewegt als beim letzten Mal. Genau so sieht Fortschritt aus — bleib dran.",
     suggestBody: "eine Wiederholung mehr als dein schwächster Satz",
     suggestUse: "übernehmen",
     toolMealplan: "Wochenplan",
@@ -5662,7 +5682,7 @@ function WorkoutLongPrompt({ t, aw, onEnd }) {
 // Epley estimate of the one-rep max from a set (only meaningful up to ~12 reps).
 const estimate1RM = (w, r) => (w > 0 && r > 0 && r <= 12 ? Math.round((r === 1 ? w : w * (1 + r / 30)) * 2) / 2 : 0);
 
-function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onTogglePause, entries, onChangeEntries, onFinish, onDiscard, workoutHistory = [] }) {
+function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onTogglePause, entries, onChangeEntries, onFinish, onDiscard, workoutHistory = [], difficultyBias = null }) {
   const gx = useGender();
   const [picking, setPicking] = useState(false);
   const [pickGroup, setPickGroup] = useState("all");
@@ -5908,7 +5928,11 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
               </div>
             )}
             {!en.cardio && (() => {
-              const sug = suggestNext(lastSets(en.key), ex && ex.muscle);
+              // Stagniert die Übung seit 3 Sessions, kommt ein Deload-Vorschlag (~-10%);
+              // sonst der normale Vorschlag, verschoben um den Check-in-Bias.
+              const sug = deloadDue(workoutHistory, en.key)
+                ? deloadSuggestion(workoutHistory, en.key)
+                : applyDifficulty(suggestNext(lastSets(en.key), ex && ex.muscle), difficultyBias, ex && ex.muscle);
               if (!sug) return null;
               return (
                 <div data-suggest onClick={() => useSuggestion(ei, sug)} style={{ display: "flex", alignItems: "center", gap: 8, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 12, padding: "8px 12px", margin: "-2px 0 12px", cursor: "pointer" }}>
@@ -12977,7 +13001,17 @@ export default function AsmarFitApp() {
     const burnedKcal = burnKcal(MET_STRENGTH, w, strengthMinutes) + cardioKcal;
     setWorkoutHistory((h) => [...h, { id: Date.now(), dateISO: new Date().toISOString(), durationSec: summary.durationSec, volumeKg: summary.volumeKg, sets: summary.setLog, cardio: summary.cardio || [], burnedKcal }]);
     if (showSummary) {
-      setLastWorkoutSummary({ durationSec: summary.durationSec, volumeKg: summary.volumeKg, newBests, burnedKcal, motivation: stagnated ? t.motivations[Math.floor(Math.random() * t.motivations.length)] : null });
+      setLastWorkoutSummary({
+        durationSec: summary.durationSec,
+        volumeKg: summary.volumeKg,
+        newBests,
+        burnedKcal,
+        motivation: stagnated ? t.motivations[Math.floor(Math.random() * t.motivations.length)] : null,
+        // Schwierigkeits-Check-in nach dem 1. und 2. Kraft-Workout
+        checkin: checkinDue(workoutHistory, summary.setLog),
+        // Erster Kraftzuwachs: im 2. Kraft-Workout zum ersten Mal gesteigert
+        firstGain: strengthWorkoutCount(workoutHistory) === 1 && hadPrior && newBests.length > 0,
+      });
       setOverlay("workoutSummary");
     } else if (stagnated) {
       setCelebrate({ kind: "motivation", lines: [], message: t.motivations[Math.floor(Math.random() * t.motivations.length)] });
@@ -13383,6 +13417,7 @@ export default function AsmarFitApp() {
       <WorkoutSession
         t={t}
         lang={lang}
+        difficultyBias={difficultyBias}
         startedAt={activeWorkout?.startedAt || Date.now()}
         pausedAt={activeWorkout?.pausedAt || null}
         pausedMs={activeWorkout?.pausedMs || 0}
@@ -13409,7 +13444,7 @@ export default function AsmarFitApp() {
     topTitle = t.workoutTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "workoutSummary") {
-    content = <WorkoutSummary t={t} lang={lang} summary={lastWorkoutSummary} onDone={() => setOverlay(null)} />;
+    content = <WorkoutSummary t={t} lang={lang} summary={lastWorkoutSummary} onDone={() => setOverlay(null)} onDifficulty={(a) => setDifficultyBias(biasFor(a))} />;
     topTitle = t.workoutDone;
     showBack = () => setOverlay(null);
   } else if (overlay === "foodSearch") {
