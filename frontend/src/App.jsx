@@ -1056,6 +1056,8 @@ const STR = {
     duelTracked: "Tracked days",
     duelStreak: "Streak (days)",
     duelSteps: "Steps per day",
+    duelProtein: "Protein goal days",
+    duelWater: "Water goal days",
     nutriLinkPlaceholder: "Paste a link or text",
     nutriLinkHint: "Instagram, TikTok, a recipe site or the copied caption. The app gets the nutrition values.",
     importGoShort: "Get",
@@ -2186,6 +2188,8 @@ const STR = {
     duelTracked: "Getrackte Tage",
     duelStreak: "Serie (Tage)",
     duelSteps: "Schritte pro Tag",
+    duelProtein: "Protein-Ziel-Tage",
+    duelWater: "Wasser-Ziel-Tage",
     nutriLinkPlaceholder: "Link oder Text einfügen",
     nutriLinkHint: "Instagram, TikTok, Rezeptseite oder die kopierte Beschreibung. Die App holt die Nährwerte.",
     importGoShort: "Holen",
@@ -11289,7 +11293,23 @@ function sanitizeShare(o) {
       Object.entries(o.b && typeof o.b === "object" ? o.b : {}).slice(0, 80).forEach(([k, v]) => {
         if (/^[A-Za-z0-9_]{1,40}$/.test(k) && Number(v) > 0) bests[k] = Math.min(2000, Number(v));
       });
-      return { t: "duel", from, id: shStr(o.id, 24) || shStr(o.n, 30), ts: Number(o.ts) || Date.now(), stats: { tr: Math.round(shNum(s.tr, 100)), vol: Math.round(shNum(s.vol, 1000000)), min: Math.round(shNum(s.min, 20000)), str: Math.round(shNum(s.str, 5000)), days: Math.round(shNum(s.days, 7)), steps: Math.round(shNum(s.steps, 200000)) }, bests };
+      return {
+        t: "duel",
+        from,
+        id: shStr(o.id, 24) || shStr(o.n, 30),
+        ts: Number(o.ts) || Date.now(),
+        stats: {
+          tr: Math.round(shNum(s.tr, 100)),
+          vol: Math.round(shNum(s.vol, 1000000)),
+          min: Math.round(shNum(s.min, 20000)),
+          str: Math.round(shNum(s.str, 5000)),
+          days: Math.round(shNum(s.days, 7)),
+          steps: Math.round(shNum(s.steps, 200000)),
+          // Ernährungs-Kategorien nur übernehmen, wenn der Code sie mitbringt (ältere App-Versionen kennen sie nicht)
+          ...(s.pd !== undefined ? { pd: Math.round(shNum(s.pd, 7)), wd: Math.round(shNum(s.wd, 7)) } : {}),
+        },
+        bests,
+      };
     }
     default:
       return null;
@@ -11360,12 +11380,19 @@ const DUEL_CATS = [
   { k: "days", label: "duelTracked", unit: "/7" },
   { k: "str", label: "duelStreak", unit: "" },
   { k: "steps", label: "duelSteps", unit: "" },
+  // Ernährungs-Duell: Konsequenz-Werte, optional (nur wenn beide Seiten sie haben)
+  { k: "pd", label: "duelProtein", unit: "/7", opt: true },
+  { k: "wd", label: "duelWater", unit: "/7", opt: true },
 ];
+
+// optionale Kategorien zählen nur, wenn beide Stände sie kennen (faire Duelle mit älteren App-Versionen)
+const duelCatActive = (c, mine, theirs) => !c.opt || (mine[c.k] !== undefined && theirs[c.k] !== undefined);
 
 function duelScore(mine, theirs) {
   let me = 0;
   let them = 0;
   DUEL_CATS.forEach((c) => {
+    if (!duelCatActive(c, mine, theirs)) return;
     const a = mine[c.k] || 0;
     const b = theirs[c.k] || 0;
     if (a > b) me += 1;
@@ -11506,6 +11533,7 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
                 {leading} · {t.friendsAsOf.replace("{d}", ageText(r.ts))}
               </div>
               {DUEL_CATS.map((c) => {
+                if (!duelCatActive(c, myStats, r.stats)) return null;
                 const a = myStats[c.k] || 0;
                 const b = r.stats[c.k] || 0;
                 const max = Math.max(a, b, 1);
@@ -13229,6 +13257,9 @@ export default function AsmarFitApp() {
     const ws = workoutHistory.filter((w) => new Date(w.dateISO).getTime() >= weekAgo);
     const keys = Array.from({ length: 7 }, (_, i) => dateKey(new Date(now - i * 86400000)));
     const steps = keys.reduce((s, k) => s + ((historyMap[k] && historyMap[k].steps) || 0), 0);
+    // Ernährungs-Duell: verglichen wird Konsequenz (Ziel-Tage), nie "wer isst weniger"
+    const proteinTarget = Number(profile.macroTargets && profile.macroTargets.protein) || 0;
+    const waterGoalMl = profile.waterGoalMl || Math.round(((profile.weight || 70) * 35) / 250) * 250;
     return {
       tr: ws.length,
       vol: Math.round(ws.reduce((s, w) => s + (w.volumeKg || 0), 0)),
@@ -13236,6 +13267,8 @@ export default function AsmarFitApp() {
       str: streak.current,
       days: keys.filter((k) => dayHasFood(historyMap[k])).length,
       steps: Math.round(steps / 7),
+      pd: proteinTarget ? keys.filter((k) => historyMap[k] && historyMap[k].meals && sumMeals(historyMap[k].meals, "protein") >= proteinTarget * 0.9).length : 0,
+      wd: keys.filter((k) => ((historyMap[k] && historyMap[k].water) || 0) >= waterGoalMl).length,
     };
   };
   const doShare = async (obj, title) => {
