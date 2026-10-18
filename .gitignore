@@ -7,3 +7,7 @@ dist/
 
 asfit-backup-*.json
 dist-store/
+
+# Lokale Claude-Skill-Dateien gehoeren nicht ins Repo
+.claude/skills/
+skills-lock.json
