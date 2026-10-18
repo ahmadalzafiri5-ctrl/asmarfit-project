@@ -1048,6 +1048,33 @@ const STR = {
     friendsHow3: "Paste their code below. Done — you both see the duel.",
     friendsPendingTitle: "Duel sent",
     friendsPendingBody: "Waiting for your friend's reply code — paste it below and your duel appears here.",
+    premiumTitle: "ASFIT Premium",
+    premiumSub: "Unlock all AI features",
+    premiumFeatTitle: "What you get",
+    premiumFeat1: "AI photo scan without limits",
+    premiumFeat2: "Personal AI coach",
+    premiumFeat3: "AI recipes & weekly meal plan",
+    premiumFeat4: "Potential forecast",
+    premiumFree: "Tracking, exercises, friends & duel stay free forever.",
+    premiumMonthly: "Monthly",
+    premiumYearly: "Yearly",
+    premiumPerMonth: "/ month",
+    premiumPerYear: "/ year",
+    premiumYearlyAs: "= CHF 4.15 / month",
+    premiumSave: "Save 40%",
+    premiumTrialNote: "7 days free, then CHF 49.90 / year. Cancel anytime.",
+    premiumStart: "Start subscription",
+    premiumStartTrial: "Try 7 days for free",
+    premiumActive: "Your subscription",
+    premiumTrialBadge: "Free trial",
+    premiumRenews: "Renews on {d}",
+    premiumEnds: "Cancelled — active until {d}",
+    premiumChangeTo: "Switch to {p}",
+    premiumCancel: "Cancel subscription",
+    premiumCancelNote: "You keep Premium until the end of the period you already paid.",
+    premiumResume: "Undo cancellation",
+    premiumStoreHint: "On your phone the subscription runs through Google Play or the App Store — you can change or cancel it there at any time.",
+    premiumManageStore: "Manage in store",
     friendsName: "Your name (how friends see you)",
     friendsShareMine: "Send duel",
     friendsShareHistory: "Share my training history",
@@ -2196,6 +2223,33 @@ const STR = {
     friendsHow3: "Füge seinen Code unten ein. Fertig — ihr seht beide das Duell.",
     friendsPendingTitle: "Duell gesendet",
     friendsPendingBody: "Warte auf den Antwort-Code deines Freundes — füge ihn unten ein, dann erscheint euer Duell hier.",
+    premiumTitle: "ASFIT Premium",
+    premiumSub: "Alle KI-Funktionen freischalten",
+    premiumFeatTitle: "Das bekommst du",
+    premiumFeat1: "KI-Foto-Scan ohne Limit",
+    premiumFeat2: "Persönlicher KI-Coach",
+    premiumFeat3: "KI-Rezepte & Wochenplan",
+    premiumFeat4: "Potenzial-Prognose",
+    premiumFree: "Tracking, Übungen, Freunde & Duell bleiben für immer gratis.",
+    premiumMonthly: "Monatlich",
+    premiumYearly: "Jährlich",
+    premiumPerMonth: "/ Monat",
+    premiumPerYear: "/ Jahr",
+    premiumYearlyAs: "= CHF 4.15 / Monat",
+    premiumSave: "40 % sparen",
+    premiumTrialNote: "7 Tage gratis, danach CHF 49.90 / Jahr. Jederzeit kündbar.",
+    premiumStart: "Abo starten",
+    premiumStartTrial: "7 Tage gratis testen",
+    premiumActive: "Dein Abo",
+    premiumTrialBadge: "Gratis-Testphase",
+    premiumRenews: "Verlängert sich am {d}",
+    premiumEnds: "Gekündigt — läuft noch bis {d}",
+    premiumChangeTo: "Wechseln zu {p}",
+    premiumCancel: "Abo kündigen",
+    premiumCancelNote: "Premium bleibt bis zum Ende des bereits bezahlten Zeitraums aktiv.",
+    premiumResume: "Kündigung zurücknehmen",
+    premiumStoreHint: "Auf dem Handy läuft das Abo über Google Play bzw. den App Store — dort kannst du es jederzeit ändern oder kündigen.",
+    premiumManageStore: "Im Store verwalten",
     friendsName: "Dein Name (so sehen dich Freunde)",
     friendsShareMine: "Duell senden",
     friendsShareHistory: "Meinen Trainingsverlauf teilen",
@@ -12294,7 +12348,147 @@ function SettingsLabel({ children }) {
   return <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, margin: "16px 0 8px" }}>{children}</div>;
 }
 
-function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang = "de", setLang, appearance = "dark", setAppearance, friendsCount = 0 }) {
+// ----- ASFIT Premium: 6.90/Mt. oder 49.90/Jahr (7 Tage gratis), aendern + kuendigen -----
+// Der Kauf-Status liegt lokal (asfit.premium); die echte Abbuchung kommt spaeter ueber
+// Google Play Billing / StoreKit — bis dahin schaltet der Button direkt frei.
+const PREMIUM_PLANS = {
+  monthly: { chf: "6.90", days: 30 },
+  yearly: { chf: "49.90", days: 365 },
+};
+
+function PremiumScreen({ t, lang, premium, onChange }) {
+  const [sel, setSel] = useState("yearly");
+  const fmtD = (ts) => new Date(ts).toLocaleDateString(lang === "de" ? "de-CH" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  const planLabel = (p) => (p === "yearly" ? t.premiumYearly : t.premiumMonthly);
+  const start = (plan) => {
+    const trial = !premium && plan === "yearly"; // 7 Tage gratis nur beim ersten Jahresabo
+    const now = Date.now();
+    onChange({ plan, since: now, renews: now + (trial ? 7 : PREMIUM_PLANS[plan].days) * 86400000, cancelled: false, trial });
+  };
+  const features = (
+    <Card style={{ marginBottom: 14 }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.premiumFeatTitle}</div>
+      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4].map((f, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 3 ? 9 : 0 }}>
+          <Check size={15} color={COLORS.gold} style={{ flexShrink: 0 }} />
+          <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{f}</span>
+        </div>
+      ))}
+      <div style={{ ...small, fontSize: 11.5, marginTop: 12, lineHeight: 1.45 }}>{t.premiumFree}</div>
+    </Card>
+  );
+
+  if (premium) {
+    const other = premium.plan === "yearly" ? "monthly" : "yearly";
+    return (
+      <div style={{ padding: "0 20px 28px" }}>
+        <Card data-premium-active style={{ marginBottom: 14, background: "linear-gradient(160deg, " + COLORS.goldSoft + ", " + COLORS.surface + " 70%)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <Star size={18} color={COLORS.gold} />
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{t.premiumActive}</div>
+            {premium.trial && !premium.cancelled && (
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 700, color: COLORS.gold, background: COLORS.goldSoft, padding: "3px 9px", borderRadius: 999 }}>{t.premiumTrialBadge}</span>
+            )}
+          </div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>
+            {planLabel(premium.plan)} · CHF {PREMIUM_PLANS[premium.plan].chf} {premium.plan === "yearly" ? t.premiumPerYear : t.premiumPerMonth}
+          </div>
+          <div style={{ ...small, marginTop: 4, color: premium.cancelled ? COLORS.coral : COLORS.dim }}>
+            {(premium.cancelled ? t.premiumEnds : t.premiumRenews).replace("{d}", fmtD(premium.renews))}
+          </div>
+        </Card>
+
+        {features}
+
+        <Card style={{ marginBottom: 14 }}>
+          {/* Abo aendern: Wechsel auf den jeweils anderen Plan */}
+          <button
+            data-premium-change
+            onClick={() => onChange({ plan: other, since: Date.now(), renews: Date.now() + PREMIUM_PLANS[other].days * 86400000, cancelled: false, trial: false })}
+            style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+          >
+            {t.premiumChangeTo.replace("{p}", planLabel(other) + " (CHF " + PREMIUM_PLANS[other].chf + (other === "yearly" ? t.premiumPerYear : t.premiumPerMonth) + ")")}
+          </button>
+          {premium.cancelled ? (
+            <button data-premium-resume onClick={() => onChange({ ...premium, cancelled: false })} style={{ width: "100%", marginTop: 10, background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+              {t.premiumResume}
+            </button>
+          ) : (
+            <>
+              <button data-premium-cancel onClick={() => onChange({ ...premium, cancelled: true })} style={{ width: "100%", marginTop: 10, background: COLORS.raised, color: COLORS.coral, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+                {t.premiumCancel}
+              </button>
+              <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.premiumCancelNote}</div>
+            </>
+          )}
+        </Card>
+
+        {IS_NATIVE_APP && (
+          <Card>
+            <div style={{ ...small, lineHeight: 1.5, marginBottom: 10 }}>{t.premiumStoreHint}</div>
+            <button
+              data-premium-store
+              onClick={() => window.open(Capacitor.getPlatform() === "ios" ? "https://apps.apple.com/account/subscriptions" : "https://play.google.com/store/account/subscriptions", "_blank")}
+              style={{ width: "100%", background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}
+            >
+              {t.premiumManageStore}
+            </button>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <div style={{ textAlign: "center", margin: "6px 0 18px" }}>
+        <div style={{ width: 54, height: 54, borderRadius: 18, background: COLORS.goldSoft, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+          <Star size={26} color={COLORS.gold} />
+        </div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 19, fontWeight: 700, color: COLORS.text, marginTop: 10 }}>{t.premiumTitle}</div>
+        <div style={{ ...small, marginTop: 3 }}>{t.premiumSub}</div>
+      </div>
+
+      {features}
+
+      {/* Die zwei Plaene: Jahr (vorausgewaehlt, mit Testphase) und Monat */}
+      {[
+        { key: "yearly", price: PREMIUM_PLANS.yearly.chf, per: t.premiumPerYear, sub: t.premiumYearlyAs, badge: t.premiumSave },
+        { key: "monthly", price: PREMIUM_PLANS.monthly.chf, per: t.premiumPerMonth, sub: null, badge: null },
+      ].map((p) => (
+        <div
+          key={p.key}
+          data-premium-plan={p.key}
+          onClick={() => setSel(p.key)}
+          style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, padding: "15px 16px", borderRadius: 16, marginBottom: 10, cursor: "pointer", background: COLORS.surface, border: `2px solid ${sel === p.key ? COLORS.gold : COLORS.border}` }}
+        >
+          <div style={{ width: 19, height: 19, borderRadius: "50%", flexShrink: 0, border: `2px solid ${sel === p.key ? COLORS.gold : COLORS.border}`, background: sel === p.key ? COLORS.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {sel === p.key && <Check size={12} color={COLORS.bg} strokeWidth={3} />}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{p.key === "yearly" ? t.premiumYearly : t.premiumMonthly}</div>
+            {p.sub && <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>{p.sub}</div>}
+          </div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 800, color: COLORS.text, whiteSpace: "nowrap" }}>
+            CHF {p.price}
+            <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.dim }}> {p.per}</span>
+          </div>
+          {p.badge && (
+            <span style={{ position: "absolute", top: -9, right: 12, fontFamily: "Sora, sans-serif", fontSize: 10, fontWeight: 700, color: COLORS.bg, background: COLORS.gold, padding: "3px 9px", borderRadius: 999 }}>{p.badge}</span>
+          )}
+        </div>
+      ))}
+
+      <button data-premium-start onClick={() => start(sel)} style={{ width: "100%", marginTop: 8, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+        {sel === "yearly" ? t.premiumStartTrial : t.premiumStart}
+      </button>
+      {sel === "yearly" && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.premiumTrialNote}</div>}
+    </div>
+  );
+}
+
+function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang = "de", setLang, appearance = "dark", setAppearance, friendsCount = 0, premium = null }) {
   const { code: ccSet, name: ccSetName } = useCountry();
   const remOn = NOTIF_KINDS.filter((k) => reminders[k] && reminders[k].on).length;
   const [q, setQ] = useState("");
@@ -12310,6 +12504,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
     {
       title: t.setGroupMine,
       rows: [
+        { icon: Star, label: t.premiumTitle, sub: premium ? (premium.plan === "yearly" ? t.premiumYearly : t.premiumMonthly) + " · CHF " + PREMIUM_PLANS[premium.plan].chf : t.premiumSub, key: "premium" },
         { icon: Target, label: t.setGoalsRow, sub: profile.kcalGoal + " kcal", key: "settingsGoals" },
         { icon: Bell, label: t.reminders, sub: remOn + " / " + NOTIF_KINDS.length, key: "settingsReminders" },
         { icon: Palette, label: t.setDisplayRow, sub: lookLabel + " · " + (lang === "de" ? "Deutsch" : "English"), key: "settingsDisplay" },
@@ -13147,6 +13342,8 @@ export default function AsmarFitApp() {
   const [rivals, setRivals] = usePersisted("rivals", []);
   // Nach "Duell senden": Platzhalter in meiner Liste, bis der Antwort-Code des Freundes kommt
   const [duelSent, setDuelSent] = usePersisted("duelSent", null);
+  // ASFIT Premium (6.90/Mt. oder 49.90/Jahr): Status lokal; Abbuchung spaeter via Store-Billing
+  const [premium, setPremium] = usePersisted("premium", null);
   const [friendFeeds, setFriendFeeds] = usePersisted("friendFeeds", []); // training history friends shared with me
   const [favEx, setFavEx] = usePersisted("favEx", []);
   const [myName, setMyName] = usePersisted("myName", "");
@@ -14174,6 +14371,7 @@ export default function AsmarFitApp() {
         appearance={appearance}
         setAppearance={setAppearance}
         friendsCount={rivals.length + friendFeeds.length}
+        premium={premium}
         onNav={(k) => {
           if (k === "intake") setIntakeReturn("settings");
           if (k === "friends") setFriendsReturn("settings");
@@ -14186,6 +14384,10 @@ export default function AsmarFitApp() {
     );
     topTitle = t.settingsTitle;
     showBack = () => setOverlay(null);
+  } else if (overlay === "premium") {
+    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} />;
+    topTitle = t.premiumTitle;
+    showBack = () => setOverlay("settings");
   } else if (overlay === "settingsProfile") {
     content = <ProfileSettings t={t} profile={profile} onSave={saveProfileBasics} />;
     topTitle = t.setProfileRow;
