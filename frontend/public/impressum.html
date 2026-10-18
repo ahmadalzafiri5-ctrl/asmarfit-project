@@ -4,75 +4,83 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ASFIT – Impressum / Legal Notice</title>
-    <style>
-      body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; max-width: 720px; color: #161a1d; line-height: 1.6; }
-      h1 { font-size: 22px; } h2 { font-size: 16px; margin-top: 24px; }
-      .lang-switch { position: sticky; top: 0; background: #fff; padding: 10px 0; }
-      .lang-switch a { margin-right: 14px; font-weight: 600; text-decoration: none; color: #00BF8F; }
-      hr { border: none; border-top: 1px solid #e1e4e8; margin: 32px 0; }
-      .placeholder { background: #fff4d6; padding: 1px 4px; border-radius: 3px; }
-      .note { background: #f6f7f8; border: 1px solid #e1e4e8; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #68707a; }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/legal.css" />
+    <script src="/legal.js"></script>
   </head>
   <body>
-    <div class="lang-switch"><a href="/" target="_top">← ASFIT</a><a href="#de">Deutsch</a><a href="#en">English</a></div>
+    <div class="wrap">
+      <div class="topbar">
+        <a href="/" target="_top">← ASFIT</a>
+        <span class="spacer"></span>
+        <a href="#de" class="accent">Deutsch</a>
+        <a href="#en">English</a>
+      </div>
 
-    <div id="de">
-      <h1>Impressum</h1>
-      <p class="note">Hinweis für dich, bevor du das veröffentlichst: Diese Seite muss mit deinen echten Angaben ausgefüllt werden. Ohne echten Namen und Adresse ist ein Impressum nicht gültig — das kann ich nicht für dich ausfüllen.</p>
+      <div class="hero">
+        <img src="/icon-192.png" alt="ASFIT" />
+        <p class="apptitle">ASFIT</p>
+        <h1>Impressum<br />Legal Notice</h1>
+      </div>
 
-      <h2>Angaben gemäß gesetzlicher Anbieterkennzeichnung</h2>
-      <p>
-        <span class="placeholder">Martin Urs AS Web&amp;App development</span><br />
-        <span class="placeholder">Steinackerstrasse 35</span><br />
-        <span class="placeholder">8302 Kloten</span><br />
-        <span class="placeholder">Schweiz</span>
-      </p>
+      <div class="card" id="de">
+        <h1>Impressum</h1>
 
-      <h2>Kontakt</h2>
-      <p>
-        E-Mail: <span class="placeholder">as@development-info.org</span><br />
-      </p>
+        <h2>Angaben gemäß gesetzlicher Anbieterkennzeichnung</h2>
+        <div class="addr">
+          Martin Urs AS Web&amp;App development<br />
+          Steinackerstrasse 35<br />
+          8302 Kloten<br />
+          Schweiz
+        </div>
 
-      <h2>Verantwortlich für den Inhalt</h2>
-      <p><span class="placeholder">Martin Urs</span></p>
+        <h2>Kontakt</h2>
+        <p>E-Mail: <a href="mailto:as@development-info.org">as@development-info.org</a></p>
 
-      <h2>Haftungsausschluss</h2>
-      <p>ASFIT ist eine App zur Unterstützung bei Ernährung und Training. Sie ersetzt keine ärztliche, ernährungswissenschaftliche oder medizinische Beratung. Kalorien-, Makro- und Schätzwerte (auch von der KI-Funktion) sind Näherungswerte ohne Gewähr. Bei gesundheitlichen Fragen, Essstörungen, Verletzungen oder der Einnahme von Medikamenten wende dich an eine Fachperson.</p>
-      <p>Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links (z. B. USDA FoodData Central, Open Food Facts). Für deren Inhalte sind ausschließlich deren Betreiber verantwortlich.</p>
+        <h2>Verantwortlich für den Inhalt</h2>
+        <p>Martin Urs</p>
 
-      <h2>Streitbeilegung</h2>
-      <p>Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
-    </div>
+        <h2>Haftungsausschluss</h2>
+        <p>ASFIT ist eine App zur Unterstützung bei Ernährung und Training. Sie ersetzt keine ärztliche, ernährungswissenschaftliche oder medizinische Beratung. Kalorien-, Makro- und Schätzwerte (auch von der KI-Funktion) sind Näherungswerte ohne Gewähr. Bei gesundheitlichen Fragen, Essstörungen, Verletzungen oder der Einnahme von Medikamenten wende dich an eine Fachperson.</p>
+        <p>Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links (z. B. USDA FoodData Central, Open Food Facts). Für deren Inhalte sind ausschließlich deren Betreiber verantwortlich.</p>
 
-    <hr />
+        <h2>Streitbeilegung</h2>
+        <p>Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+      </div>
 
-    <div id="en">
-      <h1>Legal Notice (Impressum)</h1>
-      <p class="note">Note to you before publishing this: this page needs to be filled in with your real details. Without a real name and address, a legal notice isn't valid — I can't fill this in for you.</p>
+      <div class="card" id="en">
+        <h1>Legal Notice (Impressum)</h1>
 
-      <h2>Provider identification</h2>
-      <p>
-        <span class="placeholder">Martin Urs AS Web&amp;App development</span><br />
-        <span class="placeholder">Steinackerstrasse 35</span><br />
-        <span class="placeholder">8302 Kloten</span><br />
-        <span class="placeholder">Switzerland</span>
-      </p>
+        <h2>Provider identification</h2>
+        <div class="addr">
+          Martin Urs AS Web&amp;App development<br />
+          Steinackerstrasse 35<br />
+          8302 Kloten<br />
+          Switzerland
+        </div>
 
-      <h2>Contact</h2>
-      <p>
-        Email: <span class="placeholder">as@development-info.org</span><br />
-      </p>
+        <h2>Contact</h2>
+        <p>Email: <a href="mailto:as@development-info.org">as@development-info.org</a></p>
 
-      <h2>Responsible for content</h2>
-      <p><span class="placeholder">Martin Urs</span></p>
+        <h2>Responsible for content</h2>
+        <p>Martin Urs</p>
 
-      <h2>Disclaimer</h2>
-      <p>ASFIT is an app that supports nutrition and training tracking. It does not replace medical, dietary or professional advice. Calorie, macro and other estimates (including from the AI features) are approximations provided without guarantee. For health questions, eating disorders, injuries or medication, consult a qualified professional.</p>
-      <p>Despite careful review, we assume no liability for the content of external links (e.g. USDA FoodData Central, Open Food Facts). Their operators are solely responsible for their own content.</p>
+        <h2>Disclaimer</h2>
+        <p>ASFIT is an app that supports nutrition and training tracking. It does not replace medical, dietary or professional advice. Calorie, macro and other estimates (including from the AI features) are approximations provided without guarantee. For health questions, eating disorders, injuries or medication, consult a qualified professional.</p>
+        <p>Despite careful review, we assume no liability for the content of external links (e.g. USDA FoodData Central, Open Food Facts). Their operators are solely responsible for their own content.</p>
 
-      <h2>Dispute resolution</h2>
-      <p>We are not obligated and not willing to participate in dispute resolution proceedings before a consumer arbitration board.</p>
+        <h2>Dispute resolution</h2>
+        <p>We are not obligated and not willing to participate in dispute resolution proceedings before a consumer arbitration board.</p>
+      </div>
+
+      <div class="footer">
+        <a href="/impressum.html">Impressum · Legal Notice</a>
+        <a href="/privacypolicy.html">Datenschutz · Privacy</a>
+        <a href="/terms.html">Nutzungsbedingungen · Terms</a>
+        <span class="copy">© 2026 Martin Urs AS Web&amp;App development · Kloten, Schweiz</span>
+      </div>
     </div>
   </body>
 </html>

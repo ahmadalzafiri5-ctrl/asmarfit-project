@@ -1,0 +1,134 @@
+/* Gemeinsames Design der Rechtsseiten (Impressum, Datenschutz, Nutzungsbedingungen).
+   Farbwerte kommen als --c-* Variablen; legal.js überschreibt sie mit dem in der App
+   gewählten Theme (gleiche localStorage-Keys, gleiche Origin). */
+:root {
+  --c-bg: #ffffff;
+  --c-surface: #f6f7f8;
+  --c-raised: #eef1f3;
+  --c-border: #e1e4e8;
+  --c-text: #161a1d;
+  --c-dim: #656d76;
+  --c-gold: #008563;
+  --c-goldSoft: rgba(0, 133, 99, 0.14);
+  --c-coral: #e2694f;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #111416;
+    --c-surface: #1a1e21;
+    --c-raised: #242a2e;
+    --c-border: #2f363b;
+    --c-text: #f1f4f5;
+    --c-dim: #9aa5ac;
+    --c-gold: #1fd1a2;
+    --c-goldSoft: rgba(31, 209, 162, 0.16);
+    --c-coral: #f0806a;
+  }
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 14.5px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 48px; }
+
+/* Kopfzeile: zurück zur App + Sprach-Pillen */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 0 10px;
+  background: color-mix(in srgb, var(--c-bg) 86%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--c-border);
+}
+.topbar a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px;
+  font-family: Sora, Inter, sans-serif; font-size: 12.5px; font-weight: 600;
+  text-decoration: none; color: var(--c-text);
+  background: var(--c-surface); border: 1px solid var(--c-border);
+}
+.topbar a.accent { color: var(--c-gold); background: var(--c-goldSoft); border-color: transparent; }
+.topbar .spacer { flex: 1; }
+
+/* Hero */
+.hero { padding: 34px 0 6px; text-align: center; }
+.hero img { width: 64px; height: 64px; border-radius: 18px; }
+.hero .apptitle {
+  margin: 14px 0 0;
+  font-family: Sora, Inter, sans-serif; font-weight: 700; font-size: 13px;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--c-dim);
+}
+h1 {
+  margin: 6px 0 4px;
+  font-family: Sora, Inter, sans-serif; font-weight: 700; font-size: 26px; line-height: 1.25;
+}
+.hero .updated {
+  display: inline-block; margin-top: 10px; padding: 5px 13px;
+  border-radius: 999px; background: var(--c-surface); border: 1px solid var(--c-border);
+  font-size: 12px; color: var(--c-dim);
+}
+
+/* Inhalts-Karte je Sprache */
+.card {
+  margin-top: 26px; padding: 26px 26px 30px;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 22px;
+}
+.card > h1 { font-size: 21px; margin-top: 0; }
+.card .updated { font-size: 12.5px; color: var(--c-dim); margin: 2px 0 0; }
+h2 {
+  margin: 28px 0 8px; padding-left: 12px;
+  border-left: 3px solid var(--c-gold);
+  font-family: Sora, Inter, sans-serif; font-weight: 600; font-size: 15px; line-height: 1.35;
+}
+p { margin: 8px 0; }
+a { color: var(--c-gold); text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+
+/* Adressblock (Impressum/Verantwortlicher) */
+.addr {
+  margin: 10px 0; padding: 14px 18px;
+  background: var(--c-raised); border-radius: 14px;
+  font-family: Sora, Inter, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.8;
+}
+
+/* Tabelle (Datenschutz) */
+.tablewrap { overflow-x: auto; margin: 12px -6px; padding: 0 6px; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 560px; font-size: 12.5px; }
+th {
+  text-align: left; padding: 9px 10px;
+  background: var(--c-goldSoft); color: var(--c-gold);
+  font-family: Sora, Inter, sans-serif; font-weight: 600; font-size: 11.5px;
+  letter-spacing: 0.4px; text-transform: uppercase;
+}
+th:first-child { border-radius: 10px 0 0 10px; }
+th:last-child { border-radius: 0 10px 10px 0; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--c-border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+
+/* Fusszeile mit den anderen Rechtsseiten */
+.footer {
+  margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--c-border);
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  font-size: 12.5px; color: var(--c-dim);
+}
+.footer a {
+  padding: 7px 14px; border-radius: 999px;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  color: var(--c-text); font-family: Sora, Inter, sans-serif; font-size: 12px;
+}
+.copy { width: 100%; text-align: center; margin-top: 10px; }
+
+@media (max-width: 480px) {
+  .card { padding: 20px 16px 24px; border-radius: 18px; }
+  h1 { font-size: 22px; }
+}
