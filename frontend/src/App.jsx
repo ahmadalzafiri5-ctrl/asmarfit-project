@@ -1041,9 +1041,15 @@ const STR = {
     shareRecipeBtn: "Share recipe",
     friendsTitle: "Friends & duel",
     friendsCardSub: "Share plans and compare the week with friends",
-    friendsIntro: "Send a friend your week code. When they import it and send you theirs, you both see who did better in the last 7 days. You can also share your last workouts and your plan; your friend sees them here. No account needed, just a link or code.",
+    friendsIntro: "Compare your week with a friend — no account needed, just a code.",
+    friendsHowTitle: "How it works",
+    friendsHow1: "Tap \"Send duel\" and send the code to your friend (e.g. WhatsApp).",
+    friendsHow2: "Your friend pastes the code in their app — and sends their own code back.",
+    friendsHow3: "Paste their code below. Done — you both see the duel.",
+    friendsPendingTitle: "Duel sent",
+    friendsPendingBody: "Waiting for your friend's reply code — paste it below and your duel appears here.",
     friendsName: "Your name (how friends see you)",
-    friendsShareMine: "Share my week code",
+    friendsShareMine: "Send duel",
     friendsShareHistory: "Share my training history",
     friendsFeeds: "Training of my friends",
     friendsPaste: "Paste a friend's link or code",
@@ -2183,9 +2189,15 @@ const STR = {
     shareRecipeBtn: "Rezept teilen",
     friendsTitle: "Freunde & Duell",
     friendsCardSub: "Teile Pläne und vergleiche die Woche mit Freunden",
-    friendsIntro: "Schick einem Freund deinen Wochen-Code. Importiert er ihn und schickt dir seinen, seht ihr beide, wer in den letzten 7 Tagen besser war. Auch deine letzten Trainings und deinen Plan kannst du teilen; dein Freund sieht sie hier. Läuft ohne Konto, nur über Link oder Code.",
+    friendsIntro: "Vergleiche deine Woche mit einem Freund — ohne Konto, nur mit einem Code.",
+    friendsHowTitle: "So funktioniert's",
+    friendsHow1: "Tippe auf „Duell senden“ und schick den Code deinem Freund (z. B. per WhatsApp).",
+    friendsHow2: "Dein Freund fügt den Code in seiner App ein — und schickt dir seinen Code zurück.",
+    friendsHow3: "Füge seinen Code unten ein. Fertig — ihr seht beide das Duell.",
+    friendsPendingTitle: "Duell gesendet",
+    friendsPendingBody: "Warte auf den Antwort-Code deines Freundes — füge ihn unten ein, dann erscheint euer Duell hier.",
     friendsName: "Dein Name (so sehen dich Freunde)",
-    friendsShareMine: "Meinen Wochen-Code teilen",
+    friendsShareMine: "Duell senden",
     friendsShareHistory: "Meinen Trainingsverlauf teilen",
     friendsFeeds: "Training meiner Freunde",
     friendsPaste: "Link oder Code von einem Freund einfügen",
@@ -5101,7 +5113,22 @@ function ExerciseGif({ src, title, corner, t }) {
     if (el && el.complete && el.naturalWidth > 0) setState("ready");
   }, []);
   return (
-    <div data-exercise-gif data-gif-state={state} style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "var(--c-raised)" }}>
+    <div
+      data-exercise-gif
+      data-gif-state={state}
+      style={{
+        position: "relative",
+        borderRadius: 14,
+        overflow: "hidden",
+        border: "1px solid var(--c-border)",
+        // Gestalteter Demo-Hintergrund in Theme-Farben: sanfter Akzent-Schein oben,
+        // "Boden"-Schatten unter der Figur, Grundverlauf von raised nach surface.
+        background:
+          "radial-gradient(110% 80% at 50% 18%, var(--c-goldSoft) 0%, rgba(0,0,0,0) 62%)," +
+          "radial-gradient(70% 18% at 50% 88%, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0) 100%)," +
+          "linear-gradient(180deg, var(--c-raised) 0%, var(--c-surface) 100%)",
+      }}
+    >
       {state !== "error" && (
         <img
           ref={imgRef}
@@ -11440,6 +11467,8 @@ function sanitizeShare(o) {
           ...(s.pd !== undefined ? { pd: Math.round(shNum(s.pd, 7)), wd: Math.round(shNum(s.wd, 7)) } : {}),
         },
         bests,
+        // Mini-Profilbild des Freundes (optional, streng geprüft: nur kleines JPEG-Data-URL)
+        avatar: typeof o.a === "string" && o.a.length <= 12000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(o.a) ? o.a : null,
       };
     }
     default:
@@ -11549,7 +11578,17 @@ function duelScore(mine, theirs) {
   return { me, them };
 }
 
-function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMine, onShareHistory, onImportText, onRemove, feeds = [], onRemoveFeed, myHistoryCount = 0, challenge = null, myChal = { tr: 0, days: 0 }, onShareChallenge = () => {}, onRemoveChallenge = () => {} }) {
+// Runder Avatar mit Initiale als Ersatz, für die "Du vs Freund"-Darstellung
+function AvatarCircle({ url, name, size = 40, ring = COLORS.border }) {
+  if (url) return <img src={url} alt="" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `2px solid ${ring}` }} />;
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, background: COLORS.raised, border: `2px solid ${ring}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Sora, sans-serif", fontSize: size * 0.42, fontWeight: 700, color: COLORS.dim }}>
+      {(String(name || "?").trim()[0] || "?").toUpperCase()}
+    </div>
+  );
+}
+
+function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, rivals, duelSent = null, onDismissPending = () => {}, onShareMine, onShareHistory, onImportText, onRemove, feeds = [], onRemoveFeed, myHistoryCount = 0, challenge = null, myChal = { tr: 0, days: 0 }, onShareChallenge = () => {}, onRemoveChallenge = () => {} }) {
   const [text, setText] = useState("");
   const [msg, setMsg] = useState(null);
   const ageText = (ts) => {
@@ -11569,8 +11608,14 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
       <div style={{ ...small, lineHeight: 1.5, marginBottom: 14 }}>{t.friendsIntro}</div>
 
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ ...small, marginBottom: 6 }}>{t.friendsName}</div>
-        <input value={myName} onChange={(e) => setMyName(e.target.value.slice(0, 30))} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 12 }} />
+        {/* Du-Zeile mit Profilbild, damit man sich selbst sieht wie der Freund einen sieht */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <AvatarCircle url={myAvatar} name={myName || t.duelYou} size={52} ring={COLORS.gold} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ ...small, fontSize: 11.5, marginBottom: 4 }}>{t.friendsName}</div>
+            <input value={myName} onChange={(e) => setMyName(e.target.value.slice(0, 30))} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+          </div>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
           {[
             [myStats.tr, t.duelTrainings],
@@ -11590,6 +11635,36 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
           <Share2 size={14} /> {t.friendsShareHistory}{myHistoryCount ? " (" + Math.min(10, myHistoryCount) + ")" : ""}
         </button>
       </Card>
+
+      {/* Kurz erklärt in 3 Schritten — nur solange noch kein Duell läuft, damit jeder draus kommt */}
+      {rivals.length === 0 && (
+        <Card data-friends-how style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.friendsHowTitle}</div>
+          {[t.friendsHow1, t.friendsHow2, t.friendsHow3].map((s, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: i < 2 ? 10 : 0 }}>
+              <div style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, background: COLORS.goldSoft, color: COLORS.gold, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700 }}>{i + 1}</div>
+              <div style={{ ...small, lineHeight: 1.45, paddingTop: 2 }}>{s}</div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Mein gesendetes Duell: erscheint sofort bei mir, nicht erst beim Freund */}
+      {duelSent && (
+        <Card data-duel-pending style={{ marginBottom: 14, border: `1.5px dashed ${COLORS.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <AvatarCircle url={myAvatar} name={myName || t.duelYou} size={38} ring={COLORS.gold} />
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.dim }}>vs</span>
+            <AvatarCircle url={null} name="?" size={38} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>⏳ {t.friendsPendingTitle}</div>
+              <div style={{ ...small, fontSize: 11.5 }}>{t.friendsAsOf.replace("{d}", ageText(duelSent.ts))}</div>
+            </div>
+          </div>
+          <div style={{ ...small, lineHeight: 1.45 }}>{t.friendsPendingBody}</div>
+          <div onClick={onDismissPending} style={{ ...small, fontSize: 11.5, marginTop: 8, cursor: "pointer", textAlign: "right" }}>{t.friendsRemove}</div>
+        </Card>
+      )}
 
       <Card data-challenge style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>🏁 {t.chalTitle}</div>
@@ -11720,10 +11795,15 @@ function FriendsScreen({ t, lang, myName, setMyName, myStats, rivals, onShareMin
           return (
             <Card key={r.id} style={{ marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
-                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>
-                  {t.duelYou} vs {r.name}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <AvatarCircle url={myAvatar} name={myName || t.duelYou} size={36} ring={COLORS.gold} />
+                  <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.dim, flexShrink: 0 }}>vs</span>
+                  <AvatarCircle url={r.avatar || null} name={r.name} size={36} ring={COLORS.coral} />
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {r.name}
+                  </div>
                 </div>
-                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 800, color: sc.me >= sc.them ? COLORS.gold : COLORS.coral }}>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 800, color: sc.me >= sc.them ? COLORS.gold : COLORS.coral, flexShrink: 0 }}>
                   {sc.me} : {sc.them}
                 </div>
               </div>
@@ -13065,6 +13145,8 @@ export default function AsmarFitApp() {
   const [intake, setIntake] = usePersisted("intake", { subs: [], log: [], card: true });
   const [intakeReturn, setIntakeReturn] = useState("settings"); // where "back" goes from the intake log
   const [rivals, setRivals] = usePersisted("rivals", []);
+  // Nach "Duell senden": Platzhalter in meiner Liste, bis der Antwort-Code des Freundes kommt
+  const [duelSent, setDuelSent] = usePersisted("duelSent", null);
   const [friendFeeds, setFriendFeeds] = usePersisted("friendFeeds", []); // training history friends shared with me
   const [favEx, setFavEx] = usePersisted("favEx", []);
   const [myName, setMyName] = usePersisted("myName", "");
@@ -13491,7 +13573,33 @@ export default function AsmarFitApp() {
       flashShare(link.slice(0, 60) + "…");
     }
   };
-  const shareMyDuel = () => doShare({ t: "duel", id: myId, ts: Date.now(), s: myDuelStats(), b: personalBests }, t.shareTypeDuel);
+  // Mini-Profilbild (64px JPEG) für den Duell-Code, damit beide Seiten das Gesicht sehen;
+  // bewusst winzig, damit Link/Code teilbar bleiben.
+  const tinyAvatar = () =>
+    new Promise((resolve) => {
+      if (!profile.avatarUrl) return resolve(undefined);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = cv.height = 64;
+          const s = Math.max(64 / img.naturalWidth, 64 / img.naturalHeight);
+          cv.getContext("2d").drawImage(img, (64 - img.naturalWidth * s) / 2, (64 - img.naturalHeight * s) / 2, img.naturalWidth * s, img.naturalHeight * s);
+          const d = cv.toDataURL("image/jpeg", 0.7);
+          resolve(d.length <= 9000 ? d : undefined);
+        } catch {
+          resolve(undefined);
+        }
+      };
+      img.onerror = () => resolve(undefined);
+      img.src = profile.avatarUrl;
+    });
+  const shareMyDuel = async () => {
+    // Das Duell taucht sofort auch bei mir auf ("gesendet, warte auf Antwort"),
+    // nicht erst beim Freund.
+    setDuelSent({ ts: Date.now() });
+    doShare({ t: "duel", id: myId, ts: Date.now(), s: myDuelStats(), b: personalBests, a: await tinyAvatar() }, t.shareTypeDuel);
+  };
   // Wochen-Challenge: eigener Stand (laufende Kalenderwoche) als Code
   const shareMyChallenge = () => doShare({ t: "chal", id: myId, ts: Date.now(), wk: isoWeekKey(), p: myChallengeProgress(workoutHistory, historyMap) }, t.shareTypeChal);
   // my last 10 workouts as a compact list (the friend sees them under "Training of my friends")
@@ -13551,7 +13659,8 @@ export default function AsmarFitApp() {
       setFriendsReturn(null);
       setOverlay("friends");
     } else if (item.t === "duel") {
-      setRivals((l) => [...l.filter((r) => r.id !== item.id), { id: item.id, name: item.from || "?", ts: item.ts, stats: item.stats, bests: item.bests }].slice(-20));
+      setRivals((l) => [...l.filter((r) => r.id !== item.id), { id: item.id, name: item.from || "?", ts: item.ts, stats: item.stats, bests: item.bests, avatar: item.avatar || null }].slice(-20));
+      setDuelSent(null); // Antwort ist da — Platzhalter "Duell gesendet" verschwindet
       setFriendsReturn(null);
       setOverlay("friends");
     } else if (item.t === "chal") {
@@ -13872,7 +13981,7 @@ export default function AsmarFitApp() {
         }
       : () => setOverlay(null);
   } else if (overlay === "friends") {
-    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myStats={myDuelStats()} rivals={rivals} onShareMine={shareMyDuel} onShareHistory={shareMyHistory} myHistoryCount={workoutHistory.length} feeds={friendFeeds} onRemoveFeed={(id) => setFriendFeeds((l) => l.filter((f) => f.id !== id))} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} challenge={challenge} myChal={myChallengeProgress(workoutHistory, historyMap)} onShareChallenge={shareMyChallenge} onRemoveChallenge={() => setChallenge(null)} />;
+    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myAvatar={profile.avatarUrl || null} myStats={myDuelStats()} rivals={rivals} duelSent={duelSent} onDismissPending={() => setDuelSent(null)} onShareMine={shareMyDuel} onShareHistory={shareMyHistory} myHistoryCount={workoutHistory.length} feeds={friendFeeds} onRemoveFeed={(id) => setFriendFeeds((l) => l.filter((f) => f.id !== id))} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} challenge={challenge} myChal={myChallengeProgress(workoutHistory, historyMap)} onShareChallenge={shareMyChallenge} onRemoveChallenge={() => setChallenge(null)} />;
     topTitle = t.friendsTitle;
     showBack = () => setOverlay(friendsReturn);
   } else if (overlay === "fastfood") {
