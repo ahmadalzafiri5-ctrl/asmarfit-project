@@ -3064,7 +3064,7 @@ function AiScanIllustration({ t, kcal, carbs, fat, protein }) {
   );
 }
 
-function Onboarding({ t, lang, setLang, onFinish }) {
+function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry = () => {} }) {
   // Shown once, before anything else — a returning-to-onboarding user (via
   // "replay onboarding" in Settings) has already picked a language, so this
   // doesn't need its own persisted flag; it just gates step 0.
@@ -3151,6 +3151,22 @@ function Onboarding({ t, lang, setLang, onFinish }) {
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{l.label}</div>
           </div>
         ))}
+        {/* Land gleich beim Start wählbar (für Lebensmittel-Datenbank & Vorschläge); vorbelegt mit dem erkannten Land */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6, textAlign: "center" }}>Land · Country</div>
+          <select
+            data-ob-country
+            value={country || ""}
+            onChange={(e) => onPickCountry(e.target.value || null)}
+            style={{ width: "100%", boxSizing: "border-box", padding: "14px 12px", borderRadius: 14, border: `1.5px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, textAlign: "center", textAlignLast: "center", appearance: "none", cursor: "pointer" }}
+          >
+            {allCountries((navigator.language || "en").startsWith("de") ? "de" : "en").map((c) => (
+              <option key={c.code} value={c.code}>
+                {flagOf(c.code)} {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     );
   }
@@ -5077,7 +5093,7 @@ function ExerciseGif({ src, title, corner, t }) {
     if (el && el.complete && el.naturalWidth > 0) setState("ready");
   }, []);
   return (
-    <div data-exercise-gif data-gif-state={state} style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#FFFFFF" }}>
+    <div data-exercise-gif data-gif-state={state} style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "var(--c-raised)" }}>
       {state !== "error" && (
         <img
           ref={imgRef}
@@ -14189,7 +14205,7 @@ export default function AsmarFitApp() {
 
         {!onboarded ? (
           <div style={isPhone ? { flex: 1, minHeight: 0 } : { height: 720 }}>
-            <Onboarding t={t} lang={lang} setLang={setLang} onFinish={finishOnboarding} />
+            <Onboarding t={t} lang={lang} setLang={setLang} onFinish={finishOnboarding} country={country} onPickCountry={(cc) => setCountryPref(cc)} />
           </div>
         ) : (
           <>
