@@ -8,8 +8,9 @@ Kurzfassung: Google Play geht von deinem Windows-PC aus. Für Apple braucht es e
 | --- | --- | --- |
 | Paketname `com.asmarfit.app` | fertig, darf nie mehr geändert werden | – |
 | App-Symbol 512×512, App-Name „ASFIT" | fertig (`public/icon-512.png`) | – |
-| Datenschutzerklärung als Web-Adresse | `https://asmarfit-project.onrender.com/privacypolicy.html`, Platzhalter für Name, Adresse, E-Mail, Datum sind noch leer | du füllst die Platzhalter aus, ich trage sie ein |
-| Impressum und Nutzungsbedingungen | Platzhalter wie oben | du |
+| Datenschutzerklärung als Web-Adresse | fertig ausgefüllt und live: `https://asmarfit-project.onrender.com/privacypolicy.html` | – |
+| Impressum und Nutzungsbedingungen | fertig ausgefüllt und live (Martin Urs AS Web&App development, Kloten) | – |
+| ASFIT Premium (Abo-Screen) | **Achtung: Kauf-Knopf schaltet noch ohne Zahlung frei.** Vor dem Einreichen entweder Google Play Billing / StoreKit anbinden oder den Premium-Screen vorerst ausblenden — Apple lehnt Schein-Kaufflüsse ab | Claude, auf Zuruf |
 | Store-Texte (Kurzbeschreibung, lange Beschreibung, Stichwörter) DE/EN | fertig: `frontend/store/store-texte.md` | – |
 | Bildschirmfotos vom Handy (je Store eigene Größen) | fertig: `C:\Users\StartKlar\Downloads\ASFIT-Store\` → `de`/`en` mit `apple-6.7` (1290×2796), `apple-6.5` (1242×2688), `google-phone` (1080×2160), `google-feature-1024x500.png`. Neu erzeugen: `node store-shots.cjs de` und `node store-frames.cjs de` in `asfit-shots` | – |
 | „Antwort melden"-Knopf für KI-Antworten | fertig (unter jeder KI-Antwort; Meldungen stehen im Server-Protokoll bei Render, Leseroute mit `REPORT_ADMIN_KEY`) | – |
