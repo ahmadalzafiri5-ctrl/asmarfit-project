@@ -1,6 +1,6 @@
 # ASFIT bei Google Play veröffentlichen
 
-Stand der App: Paketname `com.asmarfit.app` (kann nach der ersten Veröffentlichung nie mehr geändert werden), `targetSdk 36`, Versionsnummer zählt der GitHub-Bau selbst hoch.
+Stand der App: Paketname `com.asfit.app` (kann nach der ersten Veröffentlichung nie mehr geändert werden), `targetSdk 36`, Versionsnummer zählt der GitHub-Bau selbst hoch.
 
 ## Was Google verlangt (in dieser Reihenfolge)
 

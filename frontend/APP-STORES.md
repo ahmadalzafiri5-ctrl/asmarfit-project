@@ -6,7 +6,7 @@ Kurzfassung: Google Play geht von deinem Windows-PC aus. Für Apple braucht es e
 
 | Punkt | Stand | Wer macht es |
 | --- | --- | --- |
-| Paketname `com.asmarfit.app` | fertig, darf nie mehr geändert werden | – |
+| Paketname `com.asfit.app` | fertig, darf nie mehr geändert werden | – |
 | App-Symbol 512×512, App-Name „ASFIT" | fertig (`public/icon-512.png`) | – |
 | Datenschutzerklärung als Web-Adresse | fertig ausgefüllt und live: `https://asmarfit-project.onrender.com/privacypolicy.html` | – |
 | Impressum und Nutzungsbedingungen | fertig ausgefüllt und live (Martin Urs AS Web&App development, Kloten) | – |
@@ -46,11 +46,11 @@ Das Wichtigste vorweg: Apple-Apps lassen sich nur auf einem Mac bauen und hochla
 1. **Apple Developer Program:** <https://developer.apple.com/programs/>, 99 US-Dollar **pro Jahr**, Apple-ID mit Zwei-Faktor, Ausweisprüfung, 1 bis 2 Tage Wartezeit. Machst du selbst.
 2. **iPhone-Projekt anlegen:** Ich füge `@capacitor/ios` hinzu und lege den `ios`-Ordner an. Das geht auf dem GitHub-Mac, nicht auf deinem PC.
 3. **Zertifikate und Profile (Klickliste, sobald das Konto freigeschaltet ist):**
-   1. <https://developer.apple.com/account> → Identifiers → „+" → App IDs → Bundle ID `com.asmarfit.app` (Explicit), Capabilities: **HealthKit** anhaken → Register.
+   1. <https://developer.apple.com/account> → Identifiers → „+" → App IDs → Bundle ID `com.asfit.app` (Explicit), Capabilities: **HealthKit** anhaken → Register.
    2. Certificates → „+" → **Apple Distribution**. Dafür brauchst du eine Zertifikatsanforderung (.certSigningRequest). Ohne Mac geht das mit OpenSSL in PowerShell; ich gebe dir den Befehl, wenn es so weit ist. Das fertige Zertifikat (.cer) plus dein privater Schlüssel ergeben eine `.p12`-Datei mit Passwort.
-   3. Profiles → „+" → **App Store Connect** → App ID `com.asmarfit.app` → dein Zertifikat → Name z. B. „ASFIT App Store" → Download (`.mobileprovision`).
+   3. Profiles → „+" → **App Store Connect** → App ID `com.asfit.app` → dein Zertifikat → Name z. B. „ASFIT App Store" → Download (`.mobileprovision`).
    4. <https://appstoreconnect.apple.com> → Users and Access → **Integrations → App Store Connect API** → Team Keys → „+" → Name „GitHub", Zugriff „App Manager" → Download der `.p8`-Datei (nur einmal möglich). Notiere Key ID und Issuer ID.
-   5. App Store Connect → Apps → „+" → Name ASFIT, Bundle ID `com.asmarfit.app`, SKU `asfit`.
+   5. App Store Connect → Apps → „+" → Name ASFIT, Bundle ID `com.asfit.app`, SKU `asfit`.
    6. GitHub → Settings → Secrets and variables → Actions → New repository secret, je einmal: `APPLE_TEAM_ID` (10 Zeichen, steht oben rechts im Developer-Konto), `APPLE_CERT_P12_BASE64` (Inhalt der .p12 als Text, Skript folgt), `APPLE_CERT_PASSWORD`, `APPLE_PROFILE_BASE64` (.mobileprovision als Text), `APPSTORE_API_KEY_ID`, `APPSTORE_API_ISSUER_ID`, `APPSTORE_API_KEY_P8_BASE64` (.p8 als Text). Für die „als Text"-Werte gibt es ein Skript wie beim Android-Schlüssel; die Werte sehe ich nie.
 4. **GitHub-Lauf „iPhone-App bauen" (fertig eingerichtet):** Beim ersten Mal legt er den Ordner `frontend/ios` an (CocoaPods, Berechtigungstexte für Kamera, Fotos und Apple Health, HealthKit-Entitlement, iOS 15.5) und schreibt ihn ins Repository. Jeder Lauf baut unsigniert zur Probe; sind die Secrets da, baut er zusätzlich das signierte Archiv und lädt es zu App Store Connect hoch (erscheint dann unter TestFlight).
 5. **TestFlight:** Nach dem Hochladen installierst du die App über die TestFlight-App auf deinem iPhone. Das ersetzt die heutige Variante „Web-App auf dem Home-Bildschirm".

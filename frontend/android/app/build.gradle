@@ -8,10 +8,10 @@ def asfitUploadKeystore = System.getenv("ASFIT_UPLOAD_KEYSTORE")
 def asfitUploadSigned = asfitUploadKeystore != null && !asfitUploadKeystore.isEmpty() && new File(asfitUploadKeystore).exists()
 
 android {
-    namespace = "com.asmarfit.app"
+    namespace = "com.asfit.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.asmarfit.app"
+        applicationId "com.asfit.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode asfitVersionCode

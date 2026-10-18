@@ -7,7 +7,7 @@
 #   APPLE_TEAM_ID                   die 10-stellige Team-ID
 #   APPLE_CERT_P12_BASE64           Verteilungszertifikat (.p12) als Text
 #   APPLE_CERT_PASSWORD             Passwort der .p12-Datei
-#   APPLE_PROFILE_BASE64            Provisioning-Profil (App Store, Bundle com.asmarfit.app) als Text
+#   APPLE_PROFILE_BASE64            Provisioning-Profil (App Store, Bundle com.asfit.app) als Text
 #   APPSTORE_API_KEY_ID             App-Store-Connect-API-Schluessel: Key ID
 #   APPSTORE_API_ISSUER_ID          App-Store-Connect-API-Schluessel: Issuer ID
 #   APPSTORE_API_KEY_P8_BASE64      die .p8-Datei als Text
@@ -87,7 +87,7 @@ jobs:
           </plist>
           EOF
           # die Entitlements-Datei an das App-Ziel haengen (vor jeder Bundle-ID-Zeile des App-Ziels)
-          sed -i '' 's#PRODUCT_BUNDLE_IDENTIFIER = com.asmarfit.app;#CODE_SIGN_ENTITLEMENTS = App/App.entitlements; PRODUCT_BUNDLE_IDENTIFIER = com.asmarfit.app;#g' ios/App/App.xcodeproj/project.pbxproj
+          sed -i '' 's#PRODUCT_BUNDLE_IDENTIFIER = com.asfit.app;#CODE_SIGN_ENTITLEMENTS = App/App.entitlements; PRODUCT_BUNDLE_IDENTIFIER = com.asfit.app;#g' ios/App/App.xcodeproj/project.pbxproj
           grep -c "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj
           echo "created=1" >> "$GITHUB_OUTPUT"
 
@@ -179,7 +179,7 @@ jobs:
             <key>destination</key><string>upload</string>
             <key>teamID</key><string>$APPLE_TEAM_ID</string>
             <key>signingStyle</key><string>manual</string>
-            <key>provisioningProfiles</key><dict><key>com.asmarfit.app</key><string>$PROFILE_NAME</string></dict>
+            <key>provisioningProfiles</key><dict><key>com.asfit.app</key><string>$PROFILE_NAME</string></dict>
           </dict></plist>
           EOF
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \

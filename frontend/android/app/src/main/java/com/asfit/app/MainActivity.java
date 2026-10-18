@@ -1,4 +1,4 @@
-package com.asmarfit.app;
+package com.asfit.app;
 
 import com.getcapacitor.BridgeActivity;
 
