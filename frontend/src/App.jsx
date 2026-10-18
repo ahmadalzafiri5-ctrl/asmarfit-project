@@ -1096,6 +1096,36 @@ const STR = {
     premiumResume: "Undo cancellation",
     premiumStoreHint: "On your phone the subscription runs through Google Play or the App Store — you can change or cancel it there at any time.",
     premiumManageStore: "Manage in store",
+    authTitle: "Sign in",
+    authRegister: "Create account",
+    authSub: "Your account keeps Premium across devices. Your fitness data stays on your phone.",
+    authGoogle: "Continue with Google",
+    authApple: "Continue with Apple",
+    authOr: "or with email",
+    authEmail: "Email",
+    authPassword: "Password (at least 8 characters)",
+    authName: "Your name",
+    authLoginBtn: "Sign in",
+    authRegisterBtn: "Create account",
+    authSwitchToLogin: "Already have an account? Sign in",
+    authSwitchToRegister: "New here? Create account",
+    authSkip: "Continue without account",
+    authBusy: "One moment …",
+    authErrTaken: "This email is already registered — sign in instead.",
+    authErrWrong: "Email or password is incorrect.",
+    authErrWeak: "The password needs at least 8 characters.",
+    authErrEmail: "Please enter a valid email address.",
+    authErrServer: "Can't reach the server — try again in a moment.",
+    authErrMany: "Too many attempts — please wait a little.",
+    authAccount: "Account",
+    authLoggedInAs: "Signed in as",
+    authLogout: "Sign out",
+    authDelete: "Delete account",
+    authDeleteSure: "Really delete your account? Premium is lost with it.",
+    authNotSignedIn: "Not signed in",
+    billingPay: "Continue to payment (Visa, Apple Pay, Google Pay)",
+    billingManage: "Manage payment method & card",
+    billingNeedLogin: "Sign in first — Premium is linked to your account.",
     friendsName: "Your name (how friends see you)",
     friendsShareMine: "Send duel",
     friendsShareHistory: "Share my training history",
@@ -2271,6 +2301,36 @@ const STR = {
     premiumResume: "Kündigung zurücknehmen",
     premiumStoreHint: "Auf dem Handy läuft das Abo über Google Play bzw. den App Store — dort kannst du es jederzeit ändern oder kündigen.",
     premiumManageStore: "Im Store verwalten",
+    authTitle: "Anmelden",
+    authRegister: "Konto erstellen",
+    authSub: "Dein Konto sichert Premium über alle Geräte. Deine Fitness-Daten bleiben auf dem Handy.",
+    authGoogle: "Weiter mit Google",
+    authApple: "Weiter mit Apple",
+    authOr: "oder mit E-Mail",
+    authEmail: "E-Mail",
+    authPassword: "Passwort (mind. 8 Zeichen)",
+    authName: "Dein Name",
+    authLoginBtn: "Anmelden",
+    authRegisterBtn: "Konto erstellen",
+    authSwitchToLogin: "Schon ein Konto? Anmelden",
+    authSwitchToRegister: "Neu hier? Konto erstellen",
+    authSkip: "Ohne Konto fortfahren",
+    authBusy: "Einen Moment …",
+    authErrTaken: "Diese E-Mail ist schon registriert — melde dich an.",
+    authErrWrong: "E-Mail oder Passwort stimmt nicht.",
+    authErrWeak: "Das Passwort braucht mindestens 8 Zeichen.",
+    authErrEmail: "Bitte eine gültige E-Mail-Adresse eingeben.",
+    authErrServer: "Server nicht erreichbar — versuch es gleich nochmal.",
+    authErrMany: "Zu viele Versuche — warte kurz.",
+    authAccount: "Konto",
+    authLoggedInAs: "Angemeldet als",
+    authLogout: "Abmelden",
+    authDelete: "Konto löschen",
+    authDeleteSure: "Konto wirklich löschen? Premium geht damit verloren.",
+    authNotSignedIn: "Nicht angemeldet",
+    billingPay: "Weiter zur Zahlung (Visa, Apple Pay, Google Pay)",
+    billingManage: "Zahlungsmittel & Karte verwalten",
+    billingNeedLogin: "Melde dich zuerst an — Premium hängt an deinem Konto.",
     friendsName: "Dein Name (so sehen dich Freunde)",
     friendsShareMine: "Duell senden",
     friendsShareHistory: "Meinen Trainingsverlauf teilen",
@@ -3157,7 +3217,148 @@ function AiScanIllustration({ t, kcal, carbs, fat, protein }) {
   );
 }
 
-function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry = () => {} }) {
+// ----- Konto: Anmelden / Registrieren (Google, Apple, E-Mail) -----
+// Erscheint beim ersten Start nach der Sprachwahl. Das Konto hält Premium über
+// Geräte hinweg; die Fitness-Daten bleiben lokal. "Ohne Konto fortfahren" bleibt
+// möglich (auch Pflicht fürs Apple-Review).
+const AUTH_ERR = { email_taken: "authErrTaken", wrong_login: "authErrWrong", weak_password: "authErrWeak", bad_email: "authErrEmail", too_many: "authErrMany" };
+
+function AuthScreen({ t, compact = false, onDone, onSkip = null }) {
+  const [mode, setMode] = useState("register");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [cfg, setCfg] = useState({ enabled: true, google: false, apple: false, googleClientId: null });
+  const googleDiv = useRef(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(API_BASE + "/api/auth/config")
+      .then((r) => r.json())
+      .then((c) => alive && setCfg(c))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const finish = async (res) => {
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.token) {
+      onDone({ token: data.token, user: data.user });
+      return;
+    }
+    setErr((AUTH_ERR[data.error] && t[AUTH_ERR[data.error]]) || t.authErrServer);
+  };
+
+  // "Weiter mit Google" (Web): Google Identity Services liefert ein ID-Token, das
+  // der Server prüft. Der Knopf erscheint erst, wenn GOOGLE_CLIENT_ID gesetzt ist.
+  useEffect(() => {
+    if (!cfg.google || !cfg.googleClientId || !googleDiv.current) return;
+    const init = () => {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: cfg.googleClientId,
+          callback: async (resp) => {
+            setBusy(true);
+            setErr(null);
+            try {
+              await finish(await fetch(API_BASE + "/api/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken: resp.credential }) }));
+            } catch {
+              setErr(t.authErrServer);
+            }
+            setBusy(false);
+          },
+        });
+        window.google.accounts.id.renderButton(googleDiv.current, { theme: "outline", size: "large", shape: "pill", width: 300, text: "continue_with" });
+      } catch {
+        /* GIS nicht verfügbar (offline) */
+      }
+    };
+    if (window.google && window.google.accounts) init();
+    else {
+      const s = document.createElement("script");
+      s.src = "https://accounts.google.com/gsi/client";
+      s.async = true;
+      s.onload = init;
+      document.head.appendChild(s);
+    }
+  }, [cfg.google, cfg.googleClientId]);
+
+  const submit = async () => {
+    setErr(null);
+    if (!/^\S+@\S+\.\S{2,}$/.test(email.trim())) return setErr(t.authErrEmail);
+    if (mode === "register" && password.length < 8) return setErr(t.authErrWeak);
+    setBusy(true);
+    try {
+      await finish(
+        await fetch(API_BASE + "/api/auth/" + (mode === "register" ? "register" : "login"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim(), password, name: name.trim() }),
+        })
+      );
+    } catch {
+      setErr(t.authErrServer);
+    }
+    setBusy(false);
+  };
+
+  const input = { ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10, fontFamily: "Inter, sans-serif" };
+  return (
+    <div data-auth style={{ display: "flex", flexDirection: "column", height: compact ? "auto" : "100%", padding: compact ? "0 20px 28px" : "0 24px 28px", justifyContent: compact ? "flex-start" : "center" }}>
+      {!compact && (
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <img src="/icon-192.png" alt="ASFIT" style={{ width: 72, height: 72, borderRadius: 20, display: "block", margin: "0 auto 18px" }} />
+          <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 21, fontWeight: 700, color: COLORS.text, margin: 0 }}>{mode === "register" ? t.authRegister : t.authTitle}</h2>
+          <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "8px 0 0", lineHeight: 1.5 }}>{t.authSub}</p>
+        </div>
+      )}
+
+      {cfg.google && <div ref={googleDiv} data-auth-google style={{ display: "flex", justifyContent: "center", marginBottom: 10 }} />}
+      {/* Apple-Login wird mit dem iPhone-Build aktiviert (braucht das Apple-Developer-Konto) */}
+      {(cfg.google || cfg.apple) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 12px" }}>
+          <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+          <span style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.authOr}</span>
+          <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+        </div>
+      )}
+
+      {mode === "register" && <input data-auth-name value={name} onChange={(e) => setName(e.target.value.slice(0, 60))} placeholder={t.authName} autoComplete="name" style={input} />}
+      <input data-auth-email type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t.authEmail} autoComplete="email" inputMode="email" style={input} />
+      <input data-auth-password type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t.authPassword} autoComplete={mode === "register" ? "new-password" : "current-password"} style={input} />
+      {err && <div data-auth-error style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 10 }}>{err}</div>}
+      <button
+        data-auth-submit
+        onClick={submit}
+        disabled={busy}
+        style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: busy ? 0.6 : 1 }}
+      >
+        {busy ? t.authBusy : mode === "register" ? t.authRegisterBtn : t.authLoginBtn}
+      </button>
+      <div
+        data-auth-switch
+        onClick={() => {
+          setMode(mode === "register" ? "login" : "register");
+          setErr(null);
+        }}
+        style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, textAlign: "center", marginTop: 14, cursor: "pointer" }}
+      >
+        {mode === "register" ? t.authSwitchToLogin : t.authSwitchToRegister}
+      </div>
+      {onSkip && (
+        <div data-auth-skip onClick={onSkip} style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, textAlign: "center", marginTop: 18, cursor: "pointer" }}>
+          {t.authSkip}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry = () => {}, authDone = true, onAuthed = () => {}, onAuthSkip = () => {} }) {
   // Shown once, before anything else — a returning-to-onboarding user (via
   // "replay onboarding" in Settings) has already picked a language, so this
   // doesn't need its own persisted flag; it just gates step 0.
@@ -3249,6 +3450,11 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
         </div>
       </div>
     );
+  }
+
+  // Nach der Sprachwahl: Anmelden/Registrieren (überspringbar), dann erst das Onboarding
+  if (!authDone) {
+    return <AuthScreen t={t} onDone={onAuthed} onSkip={onAuthSkip} />;
   }
 
   return (
@@ -12362,7 +12568,7 @@ const PREMIUM_PLANS = {
   yearly: { chf: "49.90", days: 365 },
 };
 
-function PremiumScreen({ t, lang, premium, onChange }) {
+function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = false, onCheckout = () => {}, onPortal = () => {}, onGoLogin = () => {} }) {
   const [sel, setSel] = useState("yearly");
   const fmtD = (ts) => new Date(ts).toLocaleDateString(lang === "de" ? "de-CH" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
@@ -12407,6 +12613,15 @@ function PremiumScreen({ t, lang, premium, onChange }) {
 
         {features}
 
+        {billing ? (
+          <Card style={{ marginBottom: 14 }}>
+            {/* Stripe-Abo: Karte speichern/ändern, Abo wechseln oder kündigen — alles im Kundenportal */}
+            <button data-premium-portal onClick={onPortal} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              {t.billingManage}
+            </button>
+            <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.premiumCancelNote}</div>
+          </Card>
+        ) : (
         <Card style={{ marginBottom: 14 }}>
           {/* Abo aendern: Wechsel auf den jeweils anderen Plan */}
           <button
@@ -12429,6 +12644,7 @@ function PremiumScreen({ t, lang, premium, onChange }) {
             </>
           )}
         </Card>
+        )}
 
         {IS_NATIVE_APP && (
           <Card>
@@ -12486,15 +12702,50 @@ function PremiumScreen({ t, lang, premium, onChange }) {
         </div>
       ))}
 
-      <button data-premium-start onClick={() => start(sel)} style={{ width: "100%", marginTop: 8, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-        {sel === "yearly" ? t.premiumStartTrial : t.premiumStart}
+      <button
+        data-premium-start
+        onClick={() => (billing ? (authed ? onCheckout(sel) : onGoLogin()) : start(sel))}
+        style={{ width: "100%", marginTop: 8, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+      >
+        {billing ? t.billingPay : sel === "yearly" ? t.premiumStartTrial : t.premiumStart}
       </button>
+      {billing && !authed && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{t.billingNeedLogin}</div>}
       {sel === "yearly" && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.premiumTrialNote}</div>}
     </div>
   );
 }
 
-function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang = "de", setLang, appearance = "dark", setAppearance, friendsCount = 0, premium = null }) {
+// Konto-Seite in den Einstellungen: angemeldet -> E-Mail, Abmelden, Konto löschen;
+// nicht angemeldet -> dasselbe Formular wie beim Start.
+function AccountScreen({ t, auth, onAuthed, onLogout, onDelete }) {
+  const [confirm, setConfirm] = useState(false);
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  if (!auth) return <AuthScreen t={t} compact onDone={onAuthed} />;
+  return (
+    <div style={{ padding: "0 20px 28px" }}>
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ ...small, marginBottom: 4 }}>{t.authLoggedInAs}</div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, wordBreak: "break-all" }}>{auth.user ? auth.user.email : ""}</div>
+        {auth.user && auth.user.name ? <div style={{ ...small, marginTop: 4 }}>{auth.user.name}</div> : null}
+      </Card>
+      <button data-account-logout onClick={onLogout} style={{ width: "100%", background: COLORS.raised, color: COLORS.text, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+        {t.authLogout}
+      </button>
+      <div
+        data-account-delete
+        onClick={() => {
+          if (confirm) onDelete();
+          else setConfirm(true);
+        }}
+        style={{ ...small, color: COLORS.coral, textAlign: "center", marginTop: 16, cursor: "pointer", fontWeight: confirm ? 700 : 400 }}
+      >
+        {confirm ? t.authDeleteSure : t.authDelete}
+      </div>
+    </div>
+  );
+}
+
+function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang = "de", setLang, appearance = "dark", setAppearance, friendsCount = 0, premium = null, account = null }) {
   const { code: ccSet, name: ccSetName } = useCountry();
   const remOn = NOTIF_KINDS.filter((k) => reminders[k] && reminders[k].on).length;
   const [q, setQ] = useState("");
@@ -12510,6 +12761,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
     {
       title: t.setGroupMine,
       rows: [
+        { icon: User, label: t.authAccount, sub: account && account.user ? account.user.email : t.authNotSignedIn, key: "account" },
         { icon: Star, label: t.premiumTitle, sub: premium ? (premium.plan === "yearly" ? t.premiumYearly : t.premiumMonthly) + " · CHF " + PREMIUM_PLANS[premium.plan].chf : t.premiumSub, key: "premium" },
         { icon: Target, label: t.setGoalsRow, sub: profile.kcalGoal + " kcal", key: "settingsGoals" },
         { icon: Bell, label: t.reminders, sub: remOn + " / " + NOTIF_KINDS.length, key: "settingsReminders" },
@@ -13363,6 +13615,50 @@ export default function AsmarFitApp() {
   const [duelSent, setDuelSent] = usePersisted("duelSent", null);
   // ASFIT Premium (6.90/Mt. oder 49.90/Jahr): Status lokal; Abbuchung spaeter via Store-Billing
   const [premium, setPremium] = usePersisted("premium", null);
+  // Konto (E-Mail/Google/Apple): {token, user}; "authSkipped" = bewusst ohne Konto
+  const [auth, setAuth] = usePersisted("auth", null);
+  const [authSkipped, setAuthSkipped] = usePersisted("authSkipped", false);
+  const [billingOn, setBillingOn] = useState(false); // Stripe auf dem Server eingerichtet?
+  const authHeaders = () => (auth && auth.token ? { Authorization: "Bearer " + auth.token } : {});
+  // Beim Start: Konto prüfen und Premium-Status vom Server übernehmen
+  useEffect(() => {
+    if (!auth || !auth.token) return;
+    fetch(API_BASE + "/api/auth/me", { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((d) => {
+        setAuth((a) => (a ? { ...a, user: d.user } : a));
+        if (d.user.premium) setPremium({ plan: d.user.premium.plan, since: Date.now(), renews: d.user.premium.renews, cancelled: d.user.premium.cancelled, trial: false, src: "server" });
+        else setPremium((p) => (p && p.src === "server" ? null : p));
+      })
+      .catch((status) => {
+        if (status === 401) setAuth(null); // Token abgelaufen/Konto weg
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    fetch(API_BASE + "/api/billing/config")
+      .then((r) => r.json())
+      .then((d) => setBillingOn(Boolean(d.enabled) && !IS_NATIVE_APP))
+      .catch(() => {});
+  }, []);
+  const openCheckout = async (plan) => {
+    try {
+      const r = await fetch(API_BASE + "/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ plan }) });
+      const d = await r.json();
+      if (d.url) window.location.href = d.url;
+    } catch {
+      /* Server nicht erreichbar */
+    }
+  };
+  const openPortal = async () => {
+    try {
+      const r = await fetch(API_BASE + "/api/billing/portal", { method: "POST", headers: authHeaders() });
+      const d = await r.json();
+      if (d.url) window.location.href = d.url;
+    } catch {
+      /* Server nicht erreichbar */
+    }
+  };
   const [friendFeeds, setFriendFeeds] = usePersisted("friendFeeds", []); // training history friends shared with me
   const [favEx, setFavEx] = usePersisted("favEx", []);
   const [myName, setMyName] = usePersisted("myName", "");
@@ -14392,6 +14688,7 @@ export default function AsmarFitApp() {
         setAppearance={setAppearance}
         friendsCount={rivals.length + friendFeeds.length}
         premium={premium}
+        account={auth}
         onNav={(k) => {
           if (k === "intake") setIntakeReturn("settings");
           if (k === "friends") setFriendsReturn("settings");
@@ -14405,8 +14702,33 @@ export default function AsmarFitApp() {
     topTitle = t.settingsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "premium") {
-    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} />;
+    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} />;
     topTitle = t.premiumTitle;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "account") {
+    content = (
+      <AccountScreen
+        t={t}
+        auth={auth}
+        onAuthed={(a) => setAuth(a)}
+        onLogout={() => {
+          setAuth(null);
+          setPremium((p) => (p && p.src === "server" ? null : p));
+        }}
+        onDelete={async () => {
+          try {
+            await fetch(API_BASE + "/api/auth/account", { method: "DELETE", headers: authHeaders() });
+          } catch {
+            /* offline: Konto bleibt serverseitig, lokal wird abgemeldet */
+          }
+          setAuth(null);
+          setAuthSkipped(false);
+          setPremium((p) => (p && p.src === "server" ? null : p));
+          setOverlay("settings");
+        }}
+      />
+    );
+    topTitle = t.authAccount;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsProfile") {
     content = <ProfileSettings t={t} profile={profile} onSave={saveProfileBasics} />;
@@ -14630,7 +14952,17 @@ export default function AsmarFitApp() {
 
         {!onboarded ? (
           <div style={isPhone ? { flex: 1, minHeight: 0 } : { height: 720 }}>
-            <Onboarding t={t} lang={lang} setLang={setLang} onFinish={finishOnboarding} country={country} onPickCountry={(cc) => setCountryPref(cc)} />
+            <Onboarding
+              t={t}
+              lang={lang}
+              setLang={setLang}
+              onFinish={finishOnboarding}
+              country={country}
+              onPickCountry={(cc) => setCountryPref(cc)}
+              authDone={Boolean(auth) || authSkipped}
+              onAuthed={(a) => setAuth(a)}
+              onAuthSkip={() => setAuthSkipped(true)}
+            />
           </div>
         ) : (
           <>

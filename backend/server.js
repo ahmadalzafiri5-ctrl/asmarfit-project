@@ -6,6 +6,8 @@ import { searchBasics, correctQuery, fold, tokensOf } from "./basics.js";
 import { fetchSourceText } from "./recipeImport.js";
 import { loadCatalog } from "./catalog.js";
 import { isCountryCode, countryNameFor, offCountryTag } from "./countries.js";
+import { mountAuth, initAuthDb, authEnabled } from "./auth.js";
+import { mountBilling, billingWebhook } from "./billing.js";
 
 // the country the user shops in (ISO code sent by the app) as an English name for AI prompts; null when missing or invalid
 function shopCountry(cc) {
@@ -23,7 +25,14 @@ const app = express();
 // for everyone. Render is exactly one hop away, so trust exactly one proxy.
 app.set("trust proxy", 1);
 app.use(cors());
+// Stripe-Webhook braucht den rohen Body (Signaturprüfung) — darum VOR express.json()
+app.post("/api/billing/webhook", express.raw({ type: "application/json" }), billingWebhook());
 app.use(express.json({ limit: "8mb" })); // photo scan sends a downscaled JPEG as base64
+
+// Konten (E-Mail/Google/Apple) und Stripe-Abos; ohne DATABASE_URL/Keys bleiben die Routen aus
+mountAuth(app);
+mountBilling(app);
+if (authEnabled()) initAuthDb().then(() => console.log("Auth-Datenbank bereit")).catch((e) => console.error("Auth-DB:", e.message));
 
 const PORT = process.env.PORT || 3001;
 const USDA_API_KEY = process.env.USDA_API_KEY;

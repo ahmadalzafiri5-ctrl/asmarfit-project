@@ -9,9 +9,13 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "node-cache": "^5.1.2"
+    "express": "^4.19.2",
+    "jose": "^6.2.12",
+    "node-cache": "^5.1.2",
+    "pg": "^8.23.1",
+    "stripe": "^23.0.0"
   }
 }
