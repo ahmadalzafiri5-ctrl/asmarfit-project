@@ -129,7 +129,7 @@ export function intakeDueOffsets(sub, log, nowMs, horizon) {
 
 // today: { meals: {breakfast, lunch, dinner, snacks} (counts), waterMl, waterGoalMl, workoutToday, weighedToday, foodToday, streak, intake: [{ name, offsets }] }
 export function planNotifications({ now, cfg, lang, today, windowDays = 5, max = 60 }) {
-  const L = TX[lang === "en" ? "en" : "de"];
+  const L = TX[lang === "de" ? "de" : "en"];
   const c = normalizeNotif(cfg);
   const out = [];
   const start = startOfDay(now);
@@ -168,7 +168,8 @@ export function planNotifications({ now, cfg, lang, today, windowDays = 5, max =
 // What is open right now (for the "today" card in the app; also works where no background notification is possible)
 export function dueNow({ now, cfg, lang, today }) {
   const c = normalizeNotif(cfg);
-  const de = lang !== "en";
+  // Nur bei Deutsch die deutschen Texte; alle weiteren Sprachen fallen auf Englisch zurück
+  const de = lang === "de";
   const d = new Date(now);
   const min = d.getHours() * 60 + d.getMinutes();
   const wd = d.getDay();

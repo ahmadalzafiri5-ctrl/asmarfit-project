@@ -21,6 +21,10 @@ import { installA11y } from "./a11y.js";
 import { MUSCLE_IDS, RANK_GROUPS, viewFor } from "./anatomy.js";
 import { rankPoints, tierFor, heatFor, TIERS } from "./muscleRank.js";
 import { allCountries, searchCountries, countryName, flagOf, guessCountry, ffRegionFor } from "./countries.js";
+import LANG_FR from "./lang-fr.js";
+import LANG_IT from "./lang-it.js";
+import LANG_ES from "./lang-es.js";
+import LANG_TR from "./lang-tr.js";
 import { alarmCfg, fastAlarmPlan, fastAlarmsDue, markFired, icsForFast, FAST_NOTIF_END, FAST_NOTIF_SOON } from "./fastAlarm.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
@@ -167,6 +171,23 @@ try {
   applyTheme(null);
 }
 
+
+// Alle wählbaren App-Sprachen. Deutsch und Englisch sind vollständig (STR unten);
+// die weiteren Sprachen liegen in eigenen Dateien und fallen bei fehlenden
+// Schlüsseln automatisch auf Englisch zurück (siehe t-useMemo).
+const EXTRA_LANGS = { fr: LANG_FR, it: LANG_IT, es: LANG_ES, tr: LANG_TR };
+const LANG_LIST = [
+  { code: "de", label: "Deutsch" },
+  { code: "en", label: "English" },
+  { code: "fr", label: "Français" },
+  { code: "it", label: "Italiano" },
+  { code: "es", label: "Español" },
+  { code: "tr", label: "Türkçe" },
+];
+const detectLang = () => {
+  const c = (typeof navigator !== "undefined" && navigator.language ? navigator.language : "de").slice(0, 2).toLowerCase();
+  return LANG_LIST.some((l) => l.code === c) ? c : "en";
+};
 
 const STR = {
   en: {
@@ -3157,27 +3178,6 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
   const [vision3Months, setVision3Months] = useState("");
   const [visionWhy, setVisionWhy] = useState("");
   const [stepsGoal, setStepsGoal] = useState(10000);
-  // Backup-Wiederherstellung direkt beim Erststart (z.B. nach Handywechsel),
-  // damit niemand erst das ganze Onboarding durchlaufen muss.
-  const restoreRef = useRef(null);
-  const [restoreMsg, setRestoreMsg] = useState(null);
-  const onRestoreFile = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      const parsed = JSON.parse(await file.text());
-      if (parsed.app !== "asfit" || typeof parsed.data !== "object") throw new Error("bad");
-      Object.entries(parsed.data).forEach(([k, v]) => {
-        if (k.startsWith("asfit.") && typeof v === "string") localStorage.setItem(k, v);
-      });
-      setRestoreMsg(t.backupImported);
-      setTimeout(() => window.location.reload(), 700);
-    } catch {
-      setRestoreMsg(t.backupBad);
-    }
-  };
-
   const toggleMoreGoal = (key) => {
     setMoreGoals((g) => (g.includes(key) ? g.filter((x) => x !== key) : [...g, key]));
   };
@@ -3206,7 +3206,9 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
       <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px", justifyContent: "center" }}>
         <div style={{ textAlign: "center", marginBottom: 30 }}>
           <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
-          <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>{(navigator.language || "en").startsWith("de") ? "Sprache & Land wählen" : "Choose language & country"}</h2>
+          <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>
+            {({ de: "Sprache & Land wählen", fr: "Choisir la langue et le pays", it: "Scegli lingua e paese", es: "Elige idioma y país", tr: "Dil ve ülke seç" }[lang] || "Choose language & country")}
+          </h2>
         </div>
         {/* Sprache und Land als Auswahl-Menüs (vorbelegt mit dem Erkannten), bestätigt per "Weiter" */}
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6, textAlign: "center" }}>Sprache · Language</div>
@@ -3216,8 +3218,11 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
           onChange={(e) => setLang(e.target.value)}
           style={{ width: "100%", boxSizing: "border-box", padding: "14px 12px", borderRadius: 14, border: `1.5px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, textAlign: "center", textAlignLast: "center", appearance: "none", cursor: "pointer" }}
         >
-          <option value="de">Deutsch</option>
-          <option value="en">English</option>
+          {LANG_LIST.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.label}
+            </option>
+          ))}
         </select>
         {/* Land gleich beim Start wählbar (für Lebensmittel-Datenbank & Vorschläge); vorbelegt mit dem erkannten Land */}
         <div style={{ marginTop: 16 }}>
@@ -3228,7 +3233,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
             onChange={(e) => onPickCountry(e.target.value || null)}
             style={{ width: "100%", boxSizing: "border-box", padding: "14px 12px", borderRadius: 14, border: `1.5px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, textAlign: "center", textAlignLast: "center", appearance: "none", cursor: "pointer" }}
           >
-            {allCountries(lang === "de" ? "de" : "en").map((c) => (
+            {allCountries(lang).map((c) => (
               <option key={c.code} value={c.code}>
                 {flagOf(c.code)} {c.name}
               </option>
@@ -3240,7 +3245,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
           onClick={() => setLangChosen(true)}
           style={{ marginTop: 22, padding: 16, borderRadius: 16, cursor: "pointer", textAlign: "center", background: COLORS.gold, color: COLORS.bg, fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700 }}
         >
-          {lang === "de" ? "Weiter" : "Continue"}
+          {({ de: "Weiter", fr: "Continuer", it: "Avanti", es: "Continuar", tr: "Devam" }[lang] || "Continue")}
         </div>
       </div>
     );
@@ -3249,13 +3254,19 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px" }}>
       <div style={{ display: "flex", justifyContent: "flex-end", padding: "16px 0 0" }}>
-        <div onClick={() => setLang(lang === "en" ? "de" : "en")} style={{ display: "flex", background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 999, padding: 3, cursor: "pointer" }}>
-          {["de", "en"].map((l) => (
-            <div key={l} style={{ padding: "5px 10px", borderRadius: 999, fontSize: 11.5, fontWeight: 600, fontFamily: "Sora, sans-serif", color: lang === l ? COLORS.bg : COLORS.dim, background: lang === l ? COLORS.gold : "transparent" }}>
-              {l.toUpperCase()}
-            </div>
+        {/* Sprachwechsel auch mitten im Onboarding: kleines Auswahl-Menü statt DE/EN-Pille */}
+        <select
+          data-ob-lang-switch
+          value={lang}
+          onChange={(e) => setLang(e.target.value)}
+          style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 999, padding: "6px 12px", fontSize: 11.5, fontWeight: 600, fontFamily: "Sora, sans-serif", color: COLORS.text, appearance: "none", cursor: "pointer" }}
+        >
+          {LANG_LIST.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.code.toUpperCase()}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       {step > 0 && (
@@ -3277,11 +3288,6 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
               <span data-ob-terms onClick={() => setLegal("terms")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalTerms}</span> {t.obLegalAnd}{" "}
               <span data-ob-privacy onClick={() => setLegal("privacy")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalPrivacy}</span>.
             </p>
-            <div data-ob-restore onClick={() => restoreRef.current && restoreRef.current.click()} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, margin: "22px 0 0", cursor: "pointer" }}>
-              {t.obRestore}
-            </div>
-            <input ref={restoreRef} type="file" accept="application/json,.json" onChange={onRestoreFile} style={{ display: "none" }} />
-            {restoreMsg && <div data-ob-restore-msg style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.gold, marginTop: 8 }}>{restoreMsg}</div>}
           </div>
         )}
 
@@ -12585,7 +12591,19 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
       {!needle && (
         <div data-settings-quick style={{ display: "flex", gap: 8, marginBottom: 22 }}>
           {seg([{ v: "light", l: "☀️ " + t.setLight }, { v: "dark", l: "🌙 " + t.setDark }, { v: "system", l: t.setSystem }], appearance, setAppearance, "look")}
-          {seg([{ v: "de", l: "DE" }, { v: "en", l: "EN" }], lang, setLang, "lang")}
+          <select
+            data-settings-lang
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            aria-label={t.language}
+            style={{ flex: 1, background: COLORS.raised, border: "none", borderRadius: 12, padding: "7px 10px", fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.text, textAlign: "center", textAlignLast: "center", appearance: "none", cursor: "pointer" }}
+          >
+            {LANG_LIST.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 
@@ -12806,9 +12824,10 @@ function DisplaySettings({ t, lang, setLang, display }) {
       </div>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 8 }}>{t.introHint}</div>
       <SettingsLabel>{t.language}</SettingsLabel>
-      <div style={{ display: "flex", gap: 8 }}>
-        <Chip label="Deutsch" active={lang === "de"} onClick={() => setLang("de")} />
-        <Chip label="English" active={lang === "en"} onClick={() => setLang("en")} />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {LANG_LIST.map((l) => (
+          <Chip key={l.code} label={l.label} active={lang === l.code} onClick={() => setLang(l.code)} />
+        ))}
       </div>
     </div>
   );
@@ -13221,7 +13240,7 @@ export default function AsmarFitApp() {
   const isPhone = useIsPhone();
   const [onboarded, setOnboarded] = usePersisted("onboarded", false);
   const [tab, setTab] = useState("home");
-  const [lang, setLang] = usePersisted("lang", "de");
+  const [lang, setLang] = usePersisted("lang", detectLang());
   const [overlay, setOverlay] = useState(null);
   const [libraryReturnTo, setLibraryReturnTo] = useState("main");
   const [activeMealKey, setActiveMealKey] = useState("snacks");
@@ -13543,7 +13562,8 @@ export default function AsmarFitApp() {
     return () => clearInterval(id);
   }, [onboarded]);
 
-  const t = useMemo(() => STR[lang], [lang]);
+  // Übersetzung der aktiven Sprache; alles, was dort (noch) fehlt, kommt auf Englisch
+  const t = useMemo(() => (lang === "en" ? STR.en : { ...STR.en, ...(STR[lang] || EXTRA_LANGS[lang] || {}) }), [lang]);
 
   // accessibility: tappable elements become buttons (keyboard, screen reader), icon buttons get names; the page language follows the app language
   const a11y = useRef(null);
