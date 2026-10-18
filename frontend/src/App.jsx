@@ -271,7 +271,6 @@ const STR = {
     obLegalTerms: "Terms of Use",
     obLegalAnd: "and the",
     obLegalPrivacy: "Privacy Policy",
-    obMedical: "ASFIT does not replace medical advice. Talk to a doctor before big changes to your diet or training, especially with a health condition.",
     obTooYoung: "ASFIT is for people aged 16 and over.",
     obGenderTitle: "What's your gender?",
     obGenderSub: "We need this to calculate your daily calorie target accurately.",
@@ -1152,6 +1151,10 @@ const STR = {
     progressAddFirst: "Add your first photo",
     progressAddAnother: "Add another photo",
     progressPhotoError: "This photo couldn't be loaded. Try a different one.",
+    photoEditTitle: "Adjust photo",
+    photoEditHint: "Drag to move · slider to zoom",
+    photoEditApply: "Apply",
+    photoEditCancel: "Cancel",
     progressTapAgainDelete: "Tap again to delete",
     setGroupAccount: "Account",
     setGroupApp: "App",
@@ -1410,7 +1413,6 @@ const STR = {
     obLegalTerms: "Nutzungsbedingungen",
     obLegalAnd: "und die",
     obLegalPrivacy: "Datenschutzerklärung",
-    obMedical: "ASFIT ersetzt keine ärztliche Beratung. Sprich vor grossen Änderungen bei Ernährung oder Training mit einer Ärztin oder einem Arzt, besonders bei Vorerkrankungen.",
     obTooYoung: "ASFIT ist für Personen ab 16 Jahren.",
     obGenderTitle: "Was ist dein Geschlecht?",
     obGenderSub: "Wir benötigen dein Geschlecht, um dein tägliches Kalorienziel genau zu berechnen.",
@@ -2291,6 +2293,10 @@ const STR = {
     progressAddFirst: "Erstes Foto hinzufügen",
     progressAddAnother: "Weiteres Foto hinzufügen",
     progressPhotoError: "Dieses Foto konnte nicht geladen werden. Probiere ein anderes.",
+    photoEditTitle: "Foto anpassen",
+    photoEditHint: "Ziehen zum Verschieben · Regler zum Zoomen",
+    photoEditApply: "Übernehmen",
+    photoEditCancel: "Abbrechen",
     progressTapAgainDelete: "Nochmal tippen zum Löschen",
     setGroupAccount: "Konto",
     setGroupApp: "App",
@@ -3134,23 +3140,19 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
       <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px", justifyContent: "center" }}>
         <div style={{ textAlign: "center", marginBottom: 30 }}>
           <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
-          <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>Sprache wählen · Choose your language</h2>
+          <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>{(navigator.language || "en").startsWith("de") ? "Sprache & Land wählen" : "Choose language & country"}</h2>
         </div>
-        {[
-          { key: "de", label: "Deutsch" },
-          { key: "en", label: "English" },
-        ].map((l) => (
-          <div
-            key={l.key}
-            onClick={() => {
-              setLang(l.key);
-              setLangChosen(true);
-            }}
-            style={{ padding: 18, borderRadius: 16, marginBottom: 12, cursor: "pointer", textAlign: "center", background: COLORS.surface, border: `1.5px solid ${COLORS.border}` }}
-          >
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{l.label}</div>
-          </div>
-        ))}
+        {/* Sprache und Land als Auswahl-Menüs (vorbelegt mit dem Erkannten), bestätigt per "Weiter" */}
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6, textAlign: "center" }}>Sprache · Language</div>
+        <select
+          data-ob-lang
+          value={lang}
+          onChange={(e) => setLang(e.target.value)}
+          style={{ width: "100%", boxSizing: "border-box", padding: "14px 12px", borderRadius: 14, border: `1.5px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, textAlign: "center", textAlignLast: "center", appearance: "none", cursor: "pointer" }}
+        >
+          <option value="de">Deutsch</option>
+          <option value="en">English</option>
+        </select>
         {/* Land gleich beim Start wählbar (für Lebensmittel-Datenbank & Vorschläge); vorbelegt mit dem erkannten Land */}
         <div style={{ marginTop: 16 }}>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6, textAlign: "center" }}>Land · Country</div>
@@ -3160,12 +3162,19 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
             onChange={(e) => onPickCountry(e.target.value || null)}
             style={{ width: "100%", boxSizing: "border-box", padding: "14px 12px", borderRadius: 14, border: `1.5px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, textAlign: "center", textAlignLast: "center", appearance: "none", cursor: "pointer" }}
           >
-            {allCountries((navigator.language || "en").startsWith("de") ? "de" : "en").map((c) => (
+            {allCountries(lang === "de" ? "de" : "en").map((c) => (
               <option key={c.code} value={c.code}>
                 {flagOf(c.code)} {c.name}
               </option>
             ))}
           </select>
+        </div>
+        <div
+          data-ob-lang-continue
+          onClick={() => setLangChosen(true)}
+          style={{ marginTop: 22, padding: 16, borderRadius: 16, cursor: "pointer", textAlign: "center", background: COLORS.gold, color: COLORS.bg, fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700 }}
+        >
+          {lang === "de" ? "Weiter" : "Continue"}
         </div>
       </div>
     );
@@ -3202,7 +3211,6 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
               <span data-ob-terms onClick={() => setLegal("terms")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalTerms}</span> {t.obLegalAnd}{" "}
               <span data-ob-privacy onClick={() => setLegal("privacy")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalPrivacy}</span>.
             </p>
-            <p data-ob-medical style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, margin: "10px 0 0", lineHeight: 1.55 }}>{t.obMedical}</p>
             <div data-ob-restore onClick={() => restoreRef.current && restoreRef.current.click()} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, margin: "22px 0 0", cursor: "pointer" }}>
               {t.obRestore}
             </div>
@@ -5296,6 +5304,109 @@ function LineChart({ points, color, height = 140, unit = "" }) {
   );
 }
 
+// Zuschneide-Editor fürs Fortschrittsfoto: Bild im 3:4-Rahmen verschieben (ziehen)
+// und zoomen (Regler), gespeichert wird genau der sichtbare Ausschnitt.
+function PhotoCropModal({ t, src, onCancel, onSave }) {
+  const FW = 240, FH = 320; // Rahmen in px (3:4, wie Vergleichsansicht und Thumbnails)
+  const [zoom, setZoom] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [img, setImg] = useState(null);
+  const drag = useRef(null);
+  useEffect(() => {
+    const i = new Image();
+    i.onload = () => setImg(i);
+    i.src = src;
+  }, [src]);
+  const base = img ? Math.max(FW / img.naturalWidth, FH / img.naturalHeight) : 1; // "cover"
+  const scale = base * zoom;
+  const clampPos = (p, z) => {
+    if (!img) return p;
+    const s = base * z;
+    const maxX = Math.max(0, (img.naturalWidth * s - FW) / 2);
+    const maxY = Math.max(0, (img.naturalHeight * s - FH) / 2);
+    return { x: Math.min(maxX, Math.max(-maxX, p.x)), y: Math.min(maxY, Math.max(-maxY, p.y)) };
+  };
+  const onDown = (e) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { sx: e.clientX, sy: e.clientY, ox: pos.x, oy: pos.y };
+  };
+  const onMove = (e) => {
+    if (!drag.current) return;
+    setPos(clampPos({ x: drag.current.ox + (e.clientX - drag.current.sx), y: drag.current.oy + (e.clientY - drag.current.sy) }, zoom));
+  };
+  const onUp = () => {
+    drag.current = null;
+  };
+  const apply = () => {
+    if (!img) return;
+    const OUT_W = 600, OUT_H = 800;
+    const sw = FW / scale, sh = FH / scale;
+    const sx = img.naturalWidth / 2 - pos.x / scale - sw / 2;
+    const sy = img.naturalHeight / 2 - pos.y / scale - sh / 2;
+    const cv = document.createElement("canvas");
+    cv.width = OUT_W;
+    cv.height = OUT_H;
+    cv.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H);
+    onSave(cv.toDataURL("image/jpeg", 0.85));
+  };
+  return (
+    <div data-photo-crop style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 18, width: "100%", maxWidth: 320 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 4, textAlign: "center" }}>{t.photoEditTitle}</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginBottom: 12, textAlign: "center" }}>{t.photoEditHint}</div>
+        <div
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerCancel={onUp}
+          style={{ position: "relative", width: FW, height: FH, margin: "0 auto", borderRadius: 14, overflow: "hidden", background: COLORS.raised, cursor: "grab", touchAction: "none" }}
+        >
+          {img && (
+            <img
+              src={src}
+              alt=""
+              draggable={false}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                width: img.naturalWidth * scale,
+                height: img.naturalHeight * scale,
+                maxWidth: "none",
+                transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`,
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+        </div>
+        <input
+          data-photo-crop-zoom
+          type="range"
+          min={100}
+          max={300}
+          value={zoom * 100}
+          onChange={(e) => {
+            const z = Number(e.target.value) / 100;
+            setZoom(z);
+            setPos((p) => clampPos(p, z));
+          }}
+          style={{ width: "100%", marginTop: 14, accentColor: COLORS.gold }}
+        />
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <button data-photo-crop-cancel onClick={onCancel} style={{ flex: 1, background: COLORS.raised, border: `1px solid ${COLORS.border}`, color: COLORS.text, borderRadius: 12, padding: "12px 10px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            {t.photoEditCancel}
+          </button>
+          <button data-photo-crop-apply onClick={apply} style={{ flex: 1, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 10px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            {t.photoEditApply}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDeleteWeight, photos, onAddPhoto, onDeletePhoto, measures = [], onAddMeasure = () => {}, onDeleteMeasure = () => {}, weekly = null, onApplyWeekly = () => {} }) {
   const [range, setRange] = useState(3);
   const [slider, setSlider] = useState(50);
@@ -5308,26 +5419,25 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
   const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
 
   const [photoError, setPhotoError] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  useEffect(() => {
-    if (confirmDeleteId === null) return undefined;
-    const id = setTimeout(() => setConfirmDeleteId(null), 3000);
-    return () => clearTimeout(id);
-  }, [confirmDeleteId]);
+  const [cropSrc, setCropSrc] = useState(null);
   const pickPhoto = async (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
     if (!file) return;
     setPhotoError(null);
     try {
-      const dataUrl = await downscaleImage(file, 640);
-      onAddPhoto({ id: Date.now(), dateISO: new Date().toISOString(), dataUrl });
-      // A photo you just added should always show up as "after" — otherwise
-      // an earlier tap on an older thumbnail keeps overriding new uploads.
-      setCompareId(null);
+      // Erst in den Zuschneide-Editor (Grösse/Ausschnitt anpassen), gespeichert wird dort.
+      setCropSrc(await downscaleImage(file, 1280));
     } catch {
       setPhotoError(t.progressPhotoError);
     }
+  };
+  const saveCropped = (dataUrl) => {
+    onAddPhoto({ id: Date.now(), dateISO: new Date().toISOString(), dataUrl });
+    // A photo you just added should always show up as "after" — otherwise
+    // an earlier tap on an older thumbnail keeps overriding new uploads.
+    setCompareId(null);
+    setCropSrc(null);
   };
   const [weightInput, setWeightInput] = useState("");
   const [exKey, setExKey] = useState(null);
@@ -5490,17 +5600,9 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
                 const isAfterSel = (after ? after.id : sorted[sorted.length - 1].id) === p.id;
                 return (
                 <div key={p.id} style={{ position: "relative", flexShrink: 0, marginTop: 22 }}>
-                  {confirmDeleteId === p.id && (
-                    <div style={{ position: "absolute", top: -24, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", fontFamily: "Sora, sans-serif", fontSize: 9.5, fontWeight: 700, color: "#fff", background: COLORS.coral, padding: "3px 7px", borderRadius: 7 }}>
-                      {t.progressTapAgainDelete}
-                    </div>
-                  )}
                   <img
                     src={p.dataUrl}
-                    onClick={() => {
-                      setCompareId(p.id);
-                      setConfirmDeleteId(null);
-                    }}
+                    onClick={() => setCompareId(p.id)}
                     style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: isAfterSel ? `2px solid ${COLORS.gold}` : isBefore ? "2px solid #8E97A3" : `2px solid ${COLORS.border}` }}
                   />
                   <div style={{ display: "flex", gap: 3, justifyContent: "center", marginTop: 4 }}>
@@ -5508,32 +5610,23 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
                     {isAfterSel && <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.gold }} />}
                   </div>
                   <div
-                    onClick={() => {
-                      if (confirmDeleteId === p.id) {
-                        setConfirmDeleteId(null);
-                        onDeletePhoto(p.id);
-                      } else {
-                        setConfirmDeleteId(p.id);
-                      }
-                    }}
+                    onClick={() => onDeletePhoto(p.id)}
                     title={t.progressDeletePhoto}
                     style={{
                       position: "absolute",
                       top: -6,
                       right: -6,
-                      width: confirmDeleteId === p.id ? 24 : 20,
-                      height: confirmDeleteId === p.id ? 24 : 20,
+                      width: 20,
+                      height: 20,
                       borderRadius: "50%",
                       background: COLORS.coral,
-                      border: confirmDeleteId === p.id ? "2px solid #fff" : "none",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       cursor: "pointer",
-                      boxShadow: confirmDeleteId === p.id ? "0 0 0 2px " + COLORS.coral : "none",
                     }}
                   >
-                    <X size={confirmDeleteId === p.id ? 14 : 12} color="#fff" />
+                    <X size={12} color="#fff" />
                   </div>
                 </div>
                 );
@@ -5543,6 +5636,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
         )}
 
         {photoError && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginTop: 12 }}>{photoError}</div>}
+        {cropSrc && <PhotoCropModal t={t} src={cropSrc} onCancel={() => setCropSrc(null)} onSave={saveCropped} />}
 
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, margin: "16px 0 8px" }}>
           {sorted.length === 0 ? t.progressAddFirst : t.progressAddAnother}
