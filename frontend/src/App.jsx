@@ -383,6 +383,23 @@ const STR = {
     bestLabel: "Best",
     addSet: "Add set",
     trainRepeatLast: "Repeat last workout",
+    foodFrequent: "Frequently eaten",
+    intakeSitesTitle: "Injection sites",
+    intakeSitesSub: "Last 90 days · ★ = suggested next site",
+    intakeCycleTitle: "Cycle planner",
+    intakeCycleStart: "Start date",
+    intakeCycleWeeks: "Length (weeks)",
+    intakeCycleWeek: "Week {a} of {b}",
+    intakeCycleEnds: "ends {d}",
+    intakeCycleDone: "Cycle finished",
+    bloodTitle: "Blood work",
+    bloodName: "Marker (e.g. testosterone)",
+    bloodValue: "Value",
+    bloodUnit: "Unit",
+    bloodAdd: "Add entry",
+    bloodEmpty: "No blood values yet. Log lab results here to see them over time.",
+    premiumLockHint: "ASFIT Premium feature",
+    premiumUnlock: "Unlock",
     exReplace: "Replace exercise",
     emptyWorkout: "Add your first exercise to begin.",
     discardWorkout: "Discard workout",
@@ -1590,6 +1607,23 @@ const STR = {
     bestLabel: "Bestwert",
     addSet: "Satz hinzufügen",
     trainRepeatLast: "Letztes Training wiederholen",
+    foodFrequent: "Häufig gegessen",
+    intakeSitesTitle: "Injektionsstellen",
+    intakeSitesSub: "Letzte 90 Tage · ★ = nächster Vorschlag",
+    intakeCycleTitle: "Zyklus-Planer",
+    intakeCycleStart: "Beginn",
+    intakeCycleWeeks: "Dauer (Wochen)",
+    intakeCycleWeek: "Woche {a} von {b}",
+    intakeCycleEnds: "endet am {d}",
+    intakeCycleDone: "Zyklus abgeschlossen",
+    bloodTitle: "Blutwerte",
+    bloodName: "Wert (z. B. Testosteron)",
+    bloodValue: "Wert",
+    bloodUnit: "Einheit",
+    bloodAdd: "Eintragen",
+    bloodEmpty: "Noch keine Blutwerte. Trag Laborergebnisse ein, um sie im Verlauf zu sehen.",
+    premiumLockHint: "ASFIT-Premium-Funktion",
+    premiumUnlock: "Freischalten",
     exReplace: "Übung ersetzen",
     emptyWorkout: "Füge deine erste Übung hinzu.",
     discardWorkout: "Training verwerfen",
@@ -7225,11 +7259,41 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                   ))}
                 </div>
               )}
+              {/* Eigene Mahlzeiten ganz oben: 1 Tipp = geloggt */}
+              {myMeals.length > 0 && (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                    <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.myMealsTitle}</span>
+                    <span onClick={onOpenMyMeals} style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.pantryManage} →</span>
+                  </div>
+                  <Card data-mymeals-top style={{ padding: 4, marginBottom: 16 }}>
+                    {myMeals.slice(0, 5).map((m, i, arr) => (
+                      <div
+                        key={m.id}
+                        onClick={() => {
+                          onAdd({ name: m.name, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
+                          setToast(m.name);
+                          setTimeout(() => setToast(null), 1400);
+                        }}
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 12px", borderBottom: i < arr.length - 1 ? "1px solid " + COLORS.border : "none", cursor: "pointer" }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{m.name}</div>
+                          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>{m.kcal} kcal · P {m.protein} g</div>
+                        </div>
+                        <div style={{ width: 30, height: 30, borderRadius: 9, background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Plus size={15} color={COLORS.gold} />
+                        </div>
+                      </div>
+                    ))}
+                  </Card>
+                </>
+              )}
               {recentFoods.length > 0 && (
                 <>
-                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 8 }}>{t.recentTitle}</div>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 8 }}>{t.foodFrequent}</div>
                   <Card style={{ padding: 4, marginBottom: 16 }}>
-                    {recentFoods.slice(0, 6).map((f, i, arr) => (
+                    {[...recentFoods].sort((a, b) => (b.uses || 1) - (a.uses || 1)).slice(0, 6).map((f, i, arr) => (
                       <div
                         key={f.name + i}
                         onClick={() => {
@@ -12126,7 +12190,21 @@ function IntakeCatalog({ t, lang, onPick, onCustom, onClose }) {
   );
 }
 
-function IntakeScreen({ t, lang, data, setData }) {
+// Kleiner wiederverwendbarer Hinweis für gesperrte Premium-Funktionen
+function PremiumLock({ t, label, onUpsell }) {
+  return (
+    <div data-premium-lock onClick={onUpsell} style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.goldSoft, border: "1px dashed " + COLORS.gold, borderRadius: 12, padding: "10px 12px", cursor: "pointer" }}>
+      <Star size={15} color={COLORS.gold} style={{ flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text }}>{label}</div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.premiumLockHint}</div>
+      </div>
+      <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.gold, whiteSpace: "nowrap" }}>{t.premiumUnlock} →</span>
+    </div>
+  );
+}
+
+function IntakeScreen({ t, lang, data, setData, premium = false, onUpsell = () => {} }) {
   const subs = data.subs || [];
   const log = data.log || [];
   const [logging, setLogging] = useState(null); // substance id while the "taken now" form is open
@@ -12134,12 +12212,15 @@ function IntakeScreen({ t, lang, data, setData }) {
   const [editing, setEditing] = useState(null); // "new" | substance id
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [fromList, setFromList] = useState(false);
-  const emptySub = { name: "", route: "inject", dose: "", unit: "mg", schedType: "interval", days: 7, weekdays: [1] };
+  const emptySub = { name: "", route: "inject", dose: "", unit: "mg", schedType: "interval", days: 7, weekdays: [1], cycleStart: "", cycleWeeks: "" };
   const [sf, setSf] = useState(emptySub);
   const [edit, setEdit] = useState(false);
   const [sure, setSure] = useState(null);
   const [filter, setFilter] = useState("all");
   const [toast, setToast] = useState(null);
+  // Blutwerte (Premium): eigene Laborwerte als einfache Verlaufsliste
+  const [bf, setBf] = useState({ name: "", value: "", unit: "nmol/l", date: new Date().toLocaleDateString("sv") });
+  const blood = data.blood || [];
   const locale = lang === "de" ? "de-DE" : "en-US";
   const flash = (m) => {
     setToast(m);
@@ -12203,7 +12284,7 @@ function IntakeScreen({ t, lang, data, setData }) {
   const startEdit = (s) => {
     const sc = s.sched || { type: "needed" };
     setFromList(false);
-    setSf({ name: s.name, route: s.route, dose: String(s.dose || ""), unit: s.unit, schedType: sc.type, days: sc.days || 7, weekdays: sc.weekdays || [1] });
+    setSf({ name: s.name, route: s.route, dose: String(s.dose || ""), unit: s.unit, schedType: sc.type, days: sc.days || 7, weekdays: sc.weekdays || [1], cycleStart: (s.cycle && s.cycle.start) || "", cycleWeeks: s.cycle ? String(s.cycle.weeks) : "" });
     setEditing(s.id);
   };
   const saveSub = () => {
@@ -12211,7 +12292,10 @@ function IntakeScreen({ t, lang, data, setData }) {
     const dose = num(sf.dose);
     if (!name || !(dose > 0)) return;
     const sched = sf.schedType === "interval" ? { type: "interval", days: Math.max(1, Math.min(60, Math.round(Number(sf.days) || 1))) } : sf.schedType === "weekdays" ? { type: "weekdays", weekdays: sf.weekdays.length ? sf.weekdays : [1] } : { type: "needed" };
-    const base = { name: name.slice(0, 40), route: sf.route, dose, unit: sf.unit, sched };
+    // Zyklus (Premium): nur ändern, wenn Premium aktiv ist — sonst bleibt der alte Wert stehen
+    const oldCycle = editing !== "new" ? (subs.find((x) => x.id === editing) || {}).cycle || null : null;
+    const cycle = premium ? (sf.cycleStart && Number(sf.cycleWeeks) > 0 ? { start: sf.cycleStart, weeks: Math.min(52, Math.round(Number(sf.cycleWeeks))) } : null) : oldCycle;
+    const base = { name: name.slice(0, 40), route: sf.route, dose, unit: sf.unit, sched, cycle };
     setData((d) => ({ ...d, subs: editing === "new" ? [...d.subs, { id: newPantryId(), ...base }] : d.subs.map((x) => (x.id === editing ? { ...x, ...base } : x)) }));
     setEditing(null);
   };
@@ -12261,6 +12345,28 @@ function IntakeScreen({ t, lang, data, setData }) {
             <div style={{ ...small, fontSize: 12, marginTop: 8 }}>
               {t.intakeLast}: {last ? fmtWhen(last.ts) + " · " + last.dose + " " + last.unit + (last.site ? " · " + lbl(INTAKE_SITES, last.site) : "") : t.intakeNever}
             </div>
+            {/* Zyklus-Fortschritt: Woche x von y mit Balken und Enddatum */}
+            {s.cycle && (() => {
+              const startMs = new Date(s.cycle.start).getTime();
+              if (!isFinite(startMs)) return null;
+              const week = Math.floor((Date.now() - startMs) / (7 * 86400000)) + 1;
+              const endMs = startMs + s.cycle.weeks * 7 * 86400000;
+              const done = week > s.cycle.weeks;
+              const pct = Math.max(0, Math.min(100, ((Date.now() - startMs) / (endMs - startMs)) * 100));
+              return (
+                <div data-cycle-progress style={{ marginTop: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", ...small, fontSize: 11.5, marginBottom: 4 }}>
+                    <span style={{ color: done ? COLORS.gold : COLORS.text, fontWeight: 600 }}>
+                      {done ? t.intakeCycleDone : t.intakeCycleWeek.replace("{a}", Math.max(1, week)).replace("{b}", s.cycle.weeks)}
+                    </span>
+                    <span>{t.intakeCycleEnds.replace("{d}", new Date(endMs).toLocaleDateString(locale, { day: "numeric", month: "short" }))}</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 4, background: COLORS.raised, overflow: "hidden" }}>
+                    <div style={{ width: pct + "%", height: "100%", background: COLORS.gold }} />
+                  </div>
+                </div>
+              );
+            })()}
 
             {logging === s.id ? (
               <div style={{ marginTop: 12, padding: 12, background: COLORS.raised, borderRadius: 12 }}>
@@ -12323,6 +12429,39 @@ function IntakeScreen({ t, lang, data, setData }) {
         );
       })}
 
+      {/* Visuelle Historie der Injektionsstellen: Nutzung der letzten 90 Tage, ★ = Vorschlag */}
+      {subs.some((s) => s.route === "inject") && log.some((e) => e.site) && (() => {
+        const injectSub = subs.find((s) => s.route === "inject");
+        const suggested = injectSub ? nextSite(injectSub, log) : null;
+        const since = Date.now() - 90 * 86400000;
+        return (
+          <Card data-intake-sites style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeSitesTitle}</div>
+            <div style={{ ...small, fontSize: 11.5, margin: "2px 0 12px" }}>{t.intakeSitesSub}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {INTAKE_SITES.map((x) => {
+                const mine = log.filter((e) => e.site === x.k && e.ts >= since);
+                const lastTs = mine.length ? Math.max(...mine.map((e) => e.ts)) : null;
+                const isSug = suggested === x.k;
+                return (
+                  <div key={x.k} style={{ borderRadius: 12, padding: "9px 11px", background: isSug ? COLORS.goldSoft : COLORS.raised, border: "1px solid " + (isSug ? COLORS.gold : COLORS.border) }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.text }}>
+                        {isSug ? "★ " : ""}{x[lang === "de" ? "de" : "en"]}
+                      </span>
+                      <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: mine.length ? COLORS.gold : COLORS.dim }}>{mine.length}×</span>
+                    </div>
+                    <div style={{ ...small, fontSize: 10.5, marginTop: 2 }}>
+                      {lastTs ? new Date(lastTs).toLocaleDateString(locale, { day: "numeric", month: "short" }) : "—"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        );
+      })()}
+
       {editing !== null ? (
         <Card style={{ marginBottom: 14 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{editing === "new" ? t.intakeNew : t.intakeChange}</div>
@@ -12360,6 +12499,18 @@ function IntakeScreen({ t, lang, data, setData }) {
               {[1, 2, 3, 4, 5, 6, 0].map((d) => (
                 <Chip key={d} label={wdNames[d]} active={sf.weekdays.includes(d)} onClick={() => setSf({ ...sf, weekdays: sf.weekdays.includes(d) ? sf.weekdays.filter((x) => x !== d) : [...sf.weekdays, d] })} />
               ))}
+            </div>
+          )}
+          {/* Zyklus-Planer (Premium): Beginn + Dauer, der Fortschritt erscheint auf der Karte */}
+          <div style={{ ...small, margin: "10px 0 6px" }}>{t.intakeCycleTitle}</div>
+          {premium ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+              <input data-cycle-start type="date" value={sf.cycleStart} onChange={(e) => setSf({ ...sf, cycleStart: e.target.value })} style={{ ...numInputStyle, width: 150 }} />
+              <input data-cycle-weeks type="number" inputMode="numeric" min="1" max="52" value={sf.cycleWeeks} onChange={(e) => setSf({ ...sf, cycleWeeks: e.target.value })} placeholder={t.intakeCycleWeeks} style={{ ...numInputStyle, width: 140 }} />
+            </div>
+          ) : (
+            <div style={{ marginBottom: 12 }}>
+              <PremiumLock t={t} label={t.intakeCycleTitle} onUpsell={onUpsell} />
             </div>
           )}
           <div style={{ display: "flex", gap: 8 }}>
@@ -12411,6 +12562,55 @@ function IntakeScreen({ t, lang, data, setData }) {
               ))
             )}
           </Card>
+
+          {/* Blutwerte (Premium): Marker, Wert, Einheit, Datum — chronologisch je Marker */}
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, margin: "20px 0 10px" }}>{t.bloodTitle}</div>
+          {!premium ? (
+            <PremiumLock t={t} label={t.bloodTitle} onUpsell={onUpsell} />
+          ) : (
+            <>
+              <Card style={{ marginBottom: 10 }}>
+                <input data-blood-name value={bf.name} onChange={(e) => setBf({ ...bf, name: e.target.value.slice(0, 40) })} placeholder={t.bloodName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
+                <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                  <input data-blood-value type="number" inputMode="decimal" value={bf.value} onChange={(e) => setBf({ ...bf, value: e.target.value })} placeholder={t.bloodValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                  <input data-blood-unit value={bf.unit} onChange={(e) => setBf({ ...bf, unit: e.target.value.slice(0, 12) })} placeholder={t.bloodUnit} style={{ ...numInputStyle, width: 90 }} />
+                  <input data-blood-date type="date" value={bf.date} onChange={(e) => setBf({ ...bf, date: e.target.value })} style={{ ...numInputStyle, width: 140 }} />
+                </div>
+                <button
+                  data-blood-add
+                  disabled={!bf.name.trim() || !(num(bf.value) > 0)}
+                  onClick={() => {
+                    const entry = { id: newPantryId(), dateISO: bf.date || new Date().toLocaleDateString("sv"), name: bf.name.trim(), value: num(bf.value), unit: bf.unit.trim() };
+                    setData((d) => ({ ...d, blood: [...(d.blood || []), entry] }));
+                    setBf({ ...bf, name: "", value: "" });
+                    flash(t.intakeLogged);
+                  }}
+                  style={{ width: "100%", background: bf.name.trim() && num(bf.value) > 0 ? COLORS.gold : COLORS.raised, color: bf.name.trim() && num(bf.value) > 0 ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}
+                >
+                  + {t.bloodAdd}
+                </button>
+              </Card>
+              <Card style={{ padding: 4 }}>
+                {blood.length === 0 ? (
+                  <div style={{ ...small, padding: 12, lineHeight: 1.5 }}>{t.bloodEmpty}</div>
+                ) : (
+                  [...blood].sort((a, b) => b.dateISO.localeCompare(a.dateISO)).slice(0, 40).map((b, i, arr) => (
+                    <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: i < arr.length - 1 ? "1px solid " + COLORS.border : "none" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>
+                          {b.name} · <b>{b.value}</b> {b.unit}
+                        </div>
+                        <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>{new Date(b.dateISO).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })}</div>
+                      </div>
+                      <div onClick={() => setData((d) => ({ ...d, blood: (d.blood || []).filter((x) => x.id !== b.id) }))} aria-label={t.delete} style={{ cursor: "pointer", padding: 6 }}>
+                        <Trash2 size={15} color={COLORS.dim} />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </Card>
+            </>
+          )}
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 18 }}>
             <span style={{ ...small, flex: 1 }}>{t.intakeCardOn}</span>
@@ -13508,6 +13708,8 @@ export default function AsmarFitApp() {
   const [duelSent, setDuelSent] = usePersisted("duelSent", null);
   // ASFIT Premium (6.90/Mt. oder 49.90/Jahr): Status lokal; Abbuchung spaeter via Store-Billing
   const [premium, setPremium] = usePersisted("premium", null);
+  // Premium aktiv? (lokal gekauft oder vom Server bestätigt, Laufzeit nicht abgelaufen)
+  const premiumActive = Boolean(premium && premium.renews > Date.now());
   // Konto (E-Mail/Google/Apple): {token, user}; "authSkipped" = bewusst ohne Konto
   const [auth, setAuth] = usePersisted("auth", null);
   const [authSkipped, setAuthSkipped] = usePersisted("authSkipped", false);
@@ -13907,7 +14109,11 @@ export default function AsmarFitApp() {
   const addFoodTo = (key, food) => {
     setMeals((m) => ({ ...m, [key]: [...m[key], food] }));
     // remember the exact portion for one-tap re-logging ("recently used")
-    setRecentFoods((l) => [food, ...l.filter((x) => x.name !== food.name)].slice(0, 12));
+    // "Häufig gegessen": zusätzlich zur Aktualität zählt ein uses-Zähler je Lebensmittel
+    setRecentFoods((l) => {
+      const prev = l.find((x) => x.name === food.name);
+      return [{ ...food, uses: ((prev && prev.uses) || 0) + 1 }, ...l.filter((x) => x.name !== food.name)].slice(0, 20);
+    });
   };
   const addFoodItem = (food) => addFoodTo(activeMealKey, food);
 
@@ -14409,7 +14615,7 @@ export default function AsmarFitApp() {
     topTitle = t.ffTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "intake") {
-    content = <IntakeScreen t={t} lang={lang} data={intake} setData={setIntake} />;
+    content = <IntakeScreen t={t} lang={lang} data={intake} setData={setIntake} premium={premiumActive} onUpsell={() => setOverlay("premium")} />;
     topTitle = t.intakeTitle;
     showBack = () => setOverlay(intakeReturn);
   } else if (overlay === "pantry") {

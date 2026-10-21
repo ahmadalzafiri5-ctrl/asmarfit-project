@@ -2,6 +2,23 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  intakeSitesTitle: "Enjeksiyon bölgeleri",
+  intakeSitesSub: "Son 90 gün · ★ = önerilen sonraki bölge",
+  intakeCycleTitle: "Döngü planlayıcı",
+  intakeCycleStart: "Başlangıç",
+  intakeCycleWeeks: "Süre (hafta)",
+  intakeCycleWeek: "Hafta {a} / {b}",
+  intakeCycleEnds: "{d} tarihinde biter",
+  intakeCycleDone: "Döngü tamamlandı",
+  bloodTitle: "Kan değerleri",
+  bloodName: "Değer (örn. testosteron)",
+  bloodValue: "Değer",
+  bloodUnit: "Birim",
+  bloodAdd: "Ekle",
+  bloodEmpty: "Henüz kan değeri yok. Laboratuvar sonuçlarını girerek zaman içinde takip et.",
+  premiumLockHint: "ASFIT Premium özelliği",
+  premiumUnlock: "Aç",
+  foodFrequent: "Sık yenenler",
   trainRepeatLast: "Son antrenmanı tekrarla",
   exReplace: "Egzersizi değiştir",
   tabs: { home: "Ana sayfa", nutrition: "Beslenme", training: "Antrenman", progress: "İlerleme", notes: "Notlar" },

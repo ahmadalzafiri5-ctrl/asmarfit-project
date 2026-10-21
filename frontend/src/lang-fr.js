@@ -2,6 +2,23 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  intakeSitesTitle: "Sites d’injection",
+  intakeSitesSub: "90 derniers jours · ★ = prochain site suggéré",
+  intakeCycleTitle: "Planificateur de cycle",
+  intakeCycleStart: "Début",
+  intakeCycleWeeks: "Durée (semaines)",
+  intakeCycleWeek: "Semaine {a} sur {b}",
+  intakeCycleEnds: "se termine le {d}",
+  intakeCycleDone: "Cycle terminé",
+  bloodTitle: "Analyses sanguines",
+  bloodName: "Marqueur (p. ex. testostérone)",
+  bloodValue: "Valeur",
+  bloodUnit: "Unité",
+  bloodAdd: "Ajouter",
+  bloodEmpty: "Pas encore de valeurs sanguines. Note tes résultats de labo pour les suivre.",
+  premiumLockHint: "Fonction ASFIT Premium",
+  premiumUnlock: "Débloquer",
+  foodFrequent: "Mangé souvent",
   trainRepeatLast: "Répéter le dernier entraînement",
   exReplace: "Remplacer l’exercice",
   tabs: { home: "Accueil", nutrition: "Nutrition", training: "Entraînement", progress: "Progrès", notes: "Notes" },
