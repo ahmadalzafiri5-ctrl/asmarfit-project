@@ -8,7 +8,7 @@ Zeichenlimits: Google Play Titel 30, Kurzbeschreibung 80, Beschreibung 4000. App
 
 **Untertitel / Kurzbeschreibung (Apple 30 / Google 80):**
 - Apple (30): Kalorien, Training, Coach
-- Google (80): Kalorien zählen, Training mit Animationen, KI-Coach. Alles in einer App, ohne Konto.
+- Google (80): Kalorien zählen, Training loggen wie im Studio, KI-Coach. Alles in einer App.
 
 **Werbetext (Apple, 170):**
 Alles, was andere Apps einzeln anbieten, in einer: Kalorien per Foto oder Barcode, Übungen mit Muskelkarte, Kurz-Workouts mit Stimme, Fasten-Alarm und ein Coach, der deine Zahlen kennt.
@@ -35,13 +35,18 @@ COACH UND FORTSCHRITT
 - Gewichtsverlauf, Körpermaße, Fotovergleich, Wochen-Check-in mit Vorschlägen.
 - Potenzial-Vorschau: ehrliche Prognose für dein Ziel.
 
+ASFIT PREMIUM (Abo, 3 Tage gratis testen)
+- KI-Foto-Scan, persönlicher KI-Coach, KI-Rezepte und Wochenplan.
+- Potenzial-Prognose, Cheat-Day-Planer mit Kalorien-Ausgleich, Phasen-Manager (Cut/Bulk), Recovery Score, Weekly Auto-Review.
+- CHF 6.90/Monat oder CHF 49.90/Jahr, jederzeit kündbar. Tracking, Übungen und Freunde-Duell bleiben für immer gratis.
+
 DEINE DATEN
-- Kein Konto, keine Anmeldung. Deine Einträge bleiben auf deinem Handy.
+- Kostenloses Konto (E-Mail oder Google), damit Premium auf allen Geräten funktioniert. Deine Tagebuch-Einträge bleiben auf deinem Handy.
 - Export als CSV, Backup-Erinnerung.
 - Health Connect (Android) und Apple Health: nur Schritte, Gewicht und Trainings werden gelesen.
 - KI-Antworten lassen sich mit einem Tipp melden.
 
-Deutsch und Englisch. Jahreszeiten-Look, der sich automatisch anpasst.
+Sechs Sprachen: Deutsch, Englisch, Französisch, Italienisch, Spanisch, Türkisch. Jahreszeiten-Look, der sich automatisch anpasst.
 
 ASFIT ersetzt keinen Arzt. Bei Beschwerden, Erkrankungen oder Medikamenten gehört die Beratung zu einer Fachperson.
 
@@ -53,7 +58,7 @@ Erste Version von ASFIT.
 
 **Kategorie:** Gesundheit und Fitness. **Altersfreigabe:** 18+ (Potenzial-Vorschau mit Foto nur ab 18).
 
-**Support-Adresse:** [E-Mail eintragen]. **Datenschutz:** https://asmarfit-project.onrender.com/privacypolicy.html
+**Support-Adresse:** as@development-info.org. **Datenschutz:** https://asmarfit-project.onrender.com/privacypolicy.html
 
 ## English
 
@@ -61,7 +66,7 @@ Erste Version von ASFIT.
 
 **Subtitle / short description (Apple 30 / Google 80):**
 - Apple (30): Calories, training, coach
-- Google (80): Count calories, train with animations, ask the AI coach. One app, no account.
+- Google (80): Count calories, log workouts like in the gym, ask the AI coach. One app.
 
 **Promotional text (Apple, 170):**
 Everything other apps sell separately, in one: calories by photo or barcode, exercises with a muscle map, short workouts with a real voice, a fasting alarm and a coach that knows your numbers.
@@ -88,13 +93,18 @@ COACH AND PROGRESS
 - Weight history, body measurements, photo comparison, weekly check-in with suggestions.
 - Potential preview: an honest forecast for your goal.
 
+ASFIT PREMIUM (subscription, 3-day free trial)
+- AI photo scan, personal AI coach, AI recipes and weekly plan.
+- Potential forecast, cheat-day planner with calorie balancing, phase manager (cut/bulk), recovery score, weekly auto-review.
+- CHF 6.90/month or CHF 49.90/year, cancel anytime. Tracking, exercises and the friends duel stay free forever.
+
 YOUR DATA
-- No account, no sign-up. Your entries stay on your phone.
+- A free account (e-mail or Google) keeps Premium working across devices. Your diary entries stay on your phone.
 - CSV export, backup reminder.
 - Health Connect (Android) and Apple Health: only steps, weight and workouts are read.
 - AI answers can be reported with one tap.
 
-German and English. A seasonal look that changes by itself.
+Six languages: German, English, French, Italian, Spanish, Turkish. A seasonal look that changes by itself.
 
 ASFIT is not a doctor. For symptoms, illnesses or medication, see a professional.
 
@@ -106,4 +116,4 @@ First release of ASFIT.
 
 **Category:** Health & Fitness. **Age rating:** 18+ (the potential preview with photo is for adults only).
 
-**Support:** [enter e-mail]. **Privacy policy:** https://asmarfit-project.onrender.com/privacypolicy.html
+**Support:** as@development-info.org. **Privacy policy:** https://asmarfit-project.onrender.com/privacypolicy.html
