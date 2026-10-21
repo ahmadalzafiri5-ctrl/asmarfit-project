@@ -400,6 +400,14 @@ const STR = {
     bloodEmpty: "No blood values yet. Log lab results here to see them over time.",
     premiumLockHint: "ASFIT Premium feature",
     premiumUnlock: "Unlock",
+    proteinLeft: "{n} g protein left to hit your goal",
+    premiumPopular: "Most popular choice",
+    aiLimitTitle: "Weekly free limit reached",
+    aiLimitBody: "You've used your free AI requests for this week ({a} of {b}). With ASFIT Premium there's no limit.",
+    aiLimitCta: "Discover Premium",
+    aiLimitLater: "Maybe later",
+    aiFreeLeft: "{n} free this week",
+    weekSummaryTitle: "This week",
     exReplace: "Replace exercise",
     emptyWorkout: "Add your first exercise to begin.",
     discardWorkout: "Discard workout",
@@ -1095,6 +1103,8 @@ const STR = {
     premiumFeat2: "Personal AI coach",
     premiumFeat3: "AI recipes & weekly meal plan",
     premiumFeat4: "Potential forecast",
+    premiumFeat5: "Cycle planner & blood work in the intake log",
+    premiumFeat6: "CSV export & advanced insights",
     premiumFree: "Tracking, exercises, friends & duel stay free forever.",
     premiumMonthly: "Monthly",
     premiumYearly: "Yearly",
@@ -1102,9 +1112,9 @@ const STR = {
     premiumPerYear: "/ year",
     premiumYearlyAs: "= CHF 4.15 / month",
     premiumSave: "Save 40%",
-    premiumTrialNote: "7 days free, then CHF 49.90 / year. Cancel anytime.",
+    premiumTrialNote: "3 days free, then CHF 49.90 / year. Cancel anytime.",
     premiumStart: "Start subscription",
-    premiumStartTrial: "Try 7 days for free",
+    premiumStartTrial: "Try 3 days for free",
     premiumActive: "Your subscription",
     premiumTrialBadge: "Free trial",
     premiumRenews: "Renews on {d}",
@@ -1624,6 +1634,14 @@ const STR = {
     bloodEmpty: "Noch keine Blutwerte. Trag Laborergebnisse ein, um sie im Verlauf zu sehen.",
     premiumLockHint: "ASFIT-Premium-Funktion",
     premiumUnlock: "Freischalten",
+    proteinLeft: "Noch {n} g Protein bis zum Ziel",
+    premiumPopular: "Beliebteste Wahl",
+    aiLimitTitle: "Wochen-Limit erreicht",
+    aiLimitBody: "Deine kostenlosen KI-Anfragen dieser Woche sind aufgebraucht ({a} von {b}). Mit ASFIT Premium gibt es kein Limit.",
+    aiLimitCta: "Premium entdecken",
+    aiLimitLater: "Später vielleicht",
+    aiFreeLeft: "{n} gratis diese Woche",
+    weekSummaryTitle: "Diese Woche",
     exReplace: "Übung ersetzen",
     emptyWorkout: "Füge deine erste Übung hinzu.",
     discardWorkout: "Training verwerfen",
@@ -2319,6 +2337,8 @@ const STR = {
     premiumFeat2: "Persönlicher KI-Coach",
     premiumFeat3: "KI-Rezepte & Wochenplan",
     premiumFeat4: "Potenzial-Prognose",
+    premiumFeat5: "Zyklus-Planer & Blutwerte im Einnahme-Tagebuch",
+    premiumFeat6: "CSV-Export & erweiterte Auswertungen",
     premiumFree: "Tracking, Übungen, Freunde & Duell bleiben für immer gratis.",
     premiumMonthly: "Monatlich",
     premiumYearly: "Jährlich",
@@ -2326,9 +2346,9 @@ const STR = {
     premiumPerYear: "/ Jahr",
     premiumYearlyAs: "= CHF 4.15 / Monat",
     premiumSave: "40 % sparen",
-    premiumTrialNote: "7 Tage gratis, danach CHF 49.90 / Jahr. Jederzeit kündbar.",
+    premiumTrialNote: "3 Tage gratis, danach CHF 49.90 / Jahr. Jederzeit kündbar.",
     premiumStart: "Abo starten",
-    premiumStartTrial: "7 Tage gratis testen",
+    premiumStartTrial: "3 Tage gratis testen",
     premiumActive: "Dein Abo",
     premiumTrialBadge: "Gratis-Testphase",
     premiumRenews: "Verlängert sich am {d}",
@@ -4518,7 +4538,36 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
             </div>
           ))}
         </div>
+        {/* Protein prominent: der eine Makro-Wert, der fuers Ziel am meisten zaehlt */}
+        {profile.macroTargets.protein > 0 && proteinEaten < profile.macroTargets.protein && (
+          <div data-protein-left style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "color-mix(in srgb, var(--c-teal) 12%, transparent)", border: "1px solid " + COLORS.teal, borderRadius: 12, padding: "9px 12px", fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.teal }}>
+            💪 {t.proteinLeft.replace("{n}", Math.round(profile.macroTargets.protein - proteinEaten))}
+          </div>
+        )}
       </Card>
+
+      {/* Mini-Wochenbilanz: Trainingsfrequenz + Gewichtsveraenderung der letzten 7 Tage */}
+      {(() => {
+        const weekAgo = Date.now() - 7 * 86400000;
+        const weekWorkouts = workoutHistory.filter((w) => new Date(w.dateISO).getTime() >= weekAgo).length;
+        const ww = weightLog.filter((w) => new Date(w.dateISO).getTime() >= weekAgo);
+        const weekDelta = ww.length >= 2 ? Math.round((ww[ww.length - 1].kg - ww[0].kg) * 10) / 10 : null;
+        if (!weekWorkouts && weekDelta === null) return null;
+        return (
+          <Card data-week-summary style={{ marginBottom: 12, padding: "12px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.dim, textTransform: "uppercase", letterSpacing: 0.6 }}>{t.weekSummaryTitle}</span>
+              <span style={{ flex: 1 }} />
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>🏋️ {weekWorkouts}× {t.duelTrainings}</span>
+              {weekDelta !== null && (
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.teal }}>
+                  ⚖️ {weekDelta > 0 ? "+" : ""}{String(weekDelta).replace(".", ",")} kg
+                </span>
+              )}
+            </div>
+          </Card>
+        );
+      })()}
 
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
       {todayCfg && todayInfo && <TodayOpen t={t} lang={lang} cfg={todayCfg} info={todayInfo} hideIntake={intakeDue.length > 0} onGo={onTodayGo} onSettings={onTodaySettings} />}
@@ -8384,17 +8433,22 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
   );
 }
 
-function AssistantScreen({ t, lang, data, aiOn, setAiOn, name }) {
+function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, onUpsell = () => {} }) {
+  // Der persönliche Modus (Coach kennt deine Daten) ist Premium; der allgemeine Coach bleibt gratis
+  const personal = premium && aiOn;
   return (
     <div style={{ padding: "0 20px 16px" }}>
       <div data-ai-data style={{ display: "flex", alignItems: "center", gap: 12, background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "11px 14px", marginBottom: 14 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>{t.assistantDataTitle}</div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2, lineHeight: 1.45 }}>{aiOn ? t.assistantDataOn : t.assistantDataOff}</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>
+            {t.assistantDataTitle}
+            {!premium && <span style={{ marginLeft: 6, fontFamily: "Sora, sans-serif", fontSize: 10, fontWeight: 700, color: COLORS.gold, background: COLORS.goldSoft, borderRadius: 999, padding: "2px 7px" }}>PREMIUM</span>}
+          </div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2, lineHeight: 1.45 }}>{personal ? t.assistantDataOn : t.assistantDataOff}</div>
         </div>
-        <Switch checked={aiOn} onChange={setAiOn} />
+        <Switch checked={personal} onChange={(v) => (premium ? setAiOn(v) : onUpsell())} />
       </div>
-      <AssistantChat t={t} lang={lang} hello={(aiOn ? t.assistantHelloData : t.assistantHello).replace("{name}", name || "")} data={aiOn ? data : null} chips={aiOn ? t.assistantChips : t.assistantChipsPlain} />
+      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).replace("{name}", name || "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} />
     </div>
   );
 }
@@ -10015,7 +10069,7 @@ function CheatScreen({ t, cheats, onAdd, onDelete }) {
   );
 }
 
-function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecipe, onDeleteRecipe, initialImport = null, onShare }) {
+function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecipe, onDeleteRecipe, initialImport = null, onShare, onAiGate = () => true }) {
   const { code: cc } = useCountry();
   const [cat, setCat] = useState("all");
   const [selected, setSelected] = useState(null);
@@ -10059,6 +10113,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
   const generate = async () => {
     const wish = aiPrompt.trim();
     if (!wish || aiBusy) return;
+    if (!onAiGate()) return; // Gratis-Kontingent verbraucht -> Upsell-Dialog statt Anfrage
     setAiBusy(true);
     setAiError(null);
     try {
@@ -11343,7 +11398,7 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
 
 /* ---------------- Settings ---------------- */
 
-function BackupCard({ t, lang = "de" }) {
+function BackupCard({ t, lang = "de", premium = false, onUpsell = () => {} }) {
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
   const collect = () => {
@@ -11450,11 +11505,16 @@ function BackupCard({ t, lang = "de" }) {
       <button onClick={() => fileRef.current && fileRef.current.click()} style={{ ...btn, width: "100%", flex: "none" }}>{t.backupImport}</button>
       <input ref={fileRef} type="file" accept="application/json,.json" onChange={onImport} style={{ display: "none" }} />
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "14px 0 8px" }}>{t.csvTitle}</div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button data-csv="food" onClick={() => csv("food")} style={btn}>{t.csvFood}</button>
-        <button data-csv="body" onClick={() => csv("body")} style={btn}>{t.csvBody}</button>
-        <button data-csv="workouts" onClick={() => csv("workouts")} style={btn}>{t.csvWorkouts}</button>
-      </div>
+      {/* CSV-Export ist Premium; das normale Backup (JSON) bleibt für alle kostenlos */}
+      {premium ? (
+        <div style={{ display: "flex", gap: 8 }}>
+          <button data-csv="food" onClick={() => csv("food")} style={btn}>{t.csvFood}</button>
+          <button data-csv="body" onClick={() => csv("body")} style={btn}>{t.csvBody}</button>
+          <button data-csv="workouts" onClick={() => csv("workouts")} style={btn}>{t.csvWorkouts}</button>
+        </div>
+      ) : (
+        <PremiumLock t={t} label={t.csvTitle} onUpsell={onUpsell} />
+      )}
       {msg && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.gold, marginTop: 8 }}>{msg}</div>}
     </div>
   );
@@ -12653,7 +12713,7 @@ function SettingsLabel({ children }) {
   return <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, margin: "16px 0 8px" }}>{children}</div>;
 }
 
-// ----- ASFIT Premium: 6.90/Mt. oder 49.90/Jahr (7 Tage gratis), aendern + kuendigen -----
+// ----- ASFIT Premium: 6.90/Mt. oder 49.90/Jahr (3 Tage gratis), aendern + kuendigen -----
 // Der Kauf-Status liegt lokal (asfit.premium); die echte Abbuchung kommt spaeter ueber
 // Google Play Billing / StoreKit — bis dahin schaltet der Button direkt frei.
 const PREMIUM_PLANS = {
@@ -12667,15 +12727,15 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
   const planLabel = (p) => (p === "yearly" ? t.premiumYearly : t.premiumMonthly);
   const start = (plan) => {
-    const trial = !premium && plan === "yearly"; // 7 Tage gratis nur beim ersten Jahresabo
+    const trial = !premium && plan === "yearly"; // 3 Tage gratis nur beim ersten Jahresabo
     const now = Date.now();
-    onChange({ plan, since: now, renews: now + (trial ? 7 : PREMIUM_PLANS[plan].days) * 86400000, cancelled: false, trial });
+    onChange({ plan, since: now, renews: now + (trial ? 3 : PREMIUM_PLANS[plan].days) * 86400000, cancelled: false, trial });
   };
   const features = (
     <Card style={{ marginBottom: 14 }}>
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.premiumFeatTitle}</div>
-      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4].map((f, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 3 ? 9 : 0 }}>
+      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4, t.premiumFeat5, t.premiumFeat6].map((f, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 5 ? 9 : 0 }}>
           <Check size={15} color={COLORS.gold} style={{ flexShrink: 0 }} />
           <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{f}</span>
         </div>
@@ -12769,14 +12829,15 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
 
       {/* Die zwei Plaene: Jahr (vorausgewaehlt, mit Testphase) und Monat */}
       {[
-        { key: "yearly", price: PREMIUM_PLANS.yearly.chf, per: t.premiumPerYear, sub: t.premiumYearlyAs, badge: t.premiumSave },
+        { key: "yearly", price: PREMIUM_PLANS.yearly.chf, per: t.premiumPerYear, sub: t.premiumYearlyAs + " · " + t.premiumPopular, badge: t.premiumSave },
         { key: "monthly", price: PREMIUM_PLANS.monthly.chf, per: t.premiumPerMonth, sub: null, badge: null },
       ].map((p) => (
         <div
           key={p.key}
           data-premium-plan={p.key}
           onClick={() => setSel(p.key)}
-          style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, padding: "15px 16px", borderRadius: 16, marginBottom: 10, cursor: "pointer", background: COLORS.surface, border: `2px solid ${sel === p.key ? COLORS.gold : COLORS.border}` }}
+          // Das Jahresabo ist die Hauptwahl und tritt optisch deutlich hervor
+          style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, padding: p.key === "yearly" ? "19px 16px" : "13px 16px", borderRadius: 16, marginBottom: 10, cursor: "pointer", background: p.key === "yearly" ? COLORS.goldSoft : COLORS.surface, border: `2px solid ${sel === p.key ? COLORS.gold : COLORS.border}`, boxShadow: p.key === "yearly" && sel === "yearly" ? "0 6px 18px rgba(0,0,0,0.12)" : "none" }}
         >
           <div style={{ width: 19, height: 19, borderRadius: "50%", flexShrink: 0, border: `2px solid ${sel === p.key ? COLORS.gold : COLORS.border}`, background: sel === p.key ? COLORS.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {sel === p.key && <Check size={12} color={COLORS.bg} strokeWidth={3} />}
@@ -13477,7 +13538,7 @@ function RemindersSettings({ t, lang, notif, setNotif, native }) {
   );
 }
 
-function DataSettings({ t, lang, onReplayOnboarding }) {
+function DataSettings({ t, lang, onReplayOnboarding, premium = false, onUpsell = () => {} }) {
   const [confirmingDanger, setConfirmingDanger] = useState(false);
   useEffect(() => {
     if (!confirmingDanger) return undefined;
@@ -13488,7 +13549,7 @@ function DataSettings({ t, lang, onReplayOnboarding }) {
     <div style={{ padding: "0 20px 28px" }}>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "0 2px 14px", lineHeight: 1.5 }}>{t.setDataIntro}</div>
       <Card style={{ marginBottom: 18 }}>
-        <BackupCard t={t} lang={lang} />
+        <BackupCard t={t} lang={lang} premium={premium} onUpsell={onUpsell} />
       </Card>
       <SettingsGroup>
         <SettingsRow icon={RotateCcw} tint="dim" label={t.replayOnboarding} onClick={onReplayOnboarding} />
@@ -13710,6 +13771,27 @@ export default function AsmarFitApp() {
   const [premium, setPremium] = usePersisted("premium", null);
   // Premium aktiv? (lokal gekauft oder vom Server bestätigt, Laufzeit nicht abgelaufen)
   const premiumActive = Boolean(premium && premium.renews > Date.now());
+  // Gratis-Kontingente für KI-Funktionen (pro Kalenderwoche); Premium = unbegrenzt.
+  // aiGate(kind) zählt einen Verbrauch und öffnet bei Erschöpfung den Upsell-Dialog.
+  const AI_LIMITS = { photo: 3, recipe: 3 };
+  const [aiQuota, setAiQuota] = usePersisted("aiQuota", {});
+  const [aiLimitHit, setAiLimitHit] = useState(null);
+  const aiUsed = (kind) => (aiQuota.wk === isoWeekKey() ? aiQuota[kind] || 0 : 0);
+  const aiLeft = (kind) => Math.max(0, (AI_LIMITS[kind] || 0) - aiUsed(kind));
+  const aiGate = (kind) => {
+    if (premiumActive) return true;
+    if (!(kind in AI_LIMITS)) {
+      // Premium-exklusive Funktion (z. B. Wochenplan)
+      setAiLimitHit({ kind, used: 0, limit: 0 });
+      return false;
+    }
+    if (aiUsed(kind) >= AI_LIMITS[kind]) {
+      setAiLimitHit({ kind, used: aiUsed(kind), limit: AI_LIMITS[kind] });
+      return false;
+    }
+    setAiQuota((q) => (q.wk === isoWeekKey() ? { ...q, [kind]: (q[kind] || 0) + 1 } : { wk: isoWeekKey(), [kind]: 1 }));
+    return true;
+  };
   // Konto (E-Mail/Google/Apple): {token, user}; "authSkipped" = bewusst ohne Konto
   const [auth, setAuth] = usePersisted("auth", null);
   const [authSkipped, setAuthSkipped] = usePersisted("authSkipped", false);
@@ -14564,7 +14646,7 @@ export default function AsmarFitApp() {
         recentFoods={recentFoods}
         onAdd={addFoodItem}
         onOpenBarcode={() => setOverlay("barcode")}
-        onOpenPhoto={() => setOverlay("photo")}
+        onOpenPhoto={() => aiGate("photo") && setOverlay("photo")}
         onOpenCountry={() => {
           setCountryReturn("foodSearch");
           setOverlay("country");
@@ -14653,7 +14735,7 @@ export default function AsmarFitApp() {
     topTitle = t.photoTitle;
     showBack = () => setOverlay("foodSearch");
   } else if (overlay === "recipes") {
-    content = <RecipesScreen key={recipeImport || "recipes"} t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} customRecipes={customRecipes} onSaveRecipe={saveRecipe} onDeleteRecipe={deleteRecipe} initialImport={recipeImport} onShare={doShare} />;
+    content = <RecipesScreen key={recipeImport || "recipes"} t={t} lang={lang} onAdd={addFoodItem} onDone={() => setOverlay(null)} customRecipes={customRecipes} onSaveRecipe={saveRecipe} onDeleteRecipe={deleteRecipe} initialImport={recipeImport} onShare={doShare} onAiGate={() => aiGate("recipe")} />;
     topTitle = t.recipesTitle;
     showBack = () => {
       setRecipeImport(null);
@@ -14719,7 +14801,7 @@ export default function AsmarFitApp() {
     topTitle = t.fastTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "assistant") {
-    content = <AssistantScreen t={t} lang={lang} data={aiData} aiOn={aiOn} setAiOn={setAiOn} name={profile.name} />;
+    content = <AssistantScreen t={t} lang={lang} data={aiData} aiOn={aiOn} setAiOn={setAiOn} name={profile.name} premium={premiumActive} onUpsell={() => setAiLimitHit({ kind: "coach", used: 0, limit: 0 })} />;
     topTitle = t.assistantTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "planBuilder") {
@@ -14848,7 +14930,7 @@ export default function AsmarFitApp() {
     topTitle = t.reminders;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsData") {
-    content = <DataSettings t={t} lang={lang} onReplayOnboarding={() => { setOverlay(null); setOnboarded(false); }} />;
+    content = <DataSettings t={t} lang={lang} onReplayOnboarding={() => { setOverlay(null); setOnboarded(false); }} premium={premiumActive} onUpsell={() => setOverlay("premium")} />;
     topTitle = t.setDataRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsHelp") {
@@ -14950,7 +15032,7 @@ export default function AsmarFitApp() {
           onOpenPantry={() => openPantry(null)}
           onOpenFastFood={() => setOverlay("fastfood")}
           onOpenFasting={() => setOverlay("fasting")}
-          onOpenMealPlan={() => setOverlay("mealplan")}
+          onOpenMealPlan={() => (premiumActive ? setOverlay("mealplan") : aiGate("mealplan"))}
           onOpenIntake={() => {
             setIntakeReturn(null);
             setOverlay("intake");
@@ -15068,6 +15150,31 @@ export default function AsmarFitApp() {
         ) : (
           <>
             <TopBar title={topTitle} lang={lang} setLang={setLang} onBack={showBack} onSettings={!showBack ? () => setOverlay("settings") : null} />
+            {/* Upsell-Dialog: Wochen-Limit erreicht oder Premium-exklusive Funktion angetippt */}
+            {aiLimitHit && (
+              <div data-ai-limit style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+                <div style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 20, padding: 22, width: "100%", maxWidth: 330, textAlign: "center" }}>
+                  <div style={{ fontSize: 30, marginBottom: 8 }}>✨</div>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{aiLimitHit.limit > 0 ? t.aiLimitTitle : t.premiumLockHint}</div>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "8px 0 16px", lineHeight: 1.5 }}>
+                    {aiLimitHit.limit > 0 ? t.aiLimitBody.replace("{a}", aiLimitHit.used).replace("{b}", aiLimitHit.limit) : t.premiumSub}
+                  </div>
+                  <button
+                    data-ai-limit-cta
+                    onClick={() => {
+                      setAiLimitHit(null);
+                      setOverlay("premium");
+                    }}
+                    style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}
+                  >
+                    {t.aiLimitCta}
+                  </button>
+                  <div data-ai-limit-later onClick={() => setAiLimitHit(null)} style={{ marginTop: 12, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, cursor: "pointer" }}>
+                    {t.aiLimitLater}
+                  </div>
+                </div>
+              </div>
+            )}
             {activeWorkout && overlay !== "workout" && <WorkoutBanner t={t} aw={activeWorkout} onOpen={() => startOrResumeWorkout()} />}
             {activeWorkout && <WorkoutLongPrompt t={t} aw={activeWorkout} onEnd={() => startOrResumeWorkout()} />}
             <div ref={scrollRef} style={isPhone ? { flex: 1, minHeight: 0, overflowY: "auto" } : { height: 700, overflowY: "auto" }}>{content}</div>

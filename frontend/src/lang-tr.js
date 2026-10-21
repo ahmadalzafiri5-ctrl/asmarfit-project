@@ -2,6 +2,16 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  premiumFeat5: "Alım günlüğünde döngü planlayıcı & kan değerleri",
+  premiumFeat6: "CSV dışa aktarma & gelişmiş analizler",
+  premiumPopular: "En popüler seçim",
+  aiLimitTitle: "Haftalık ücretsiz sınıra ulaşıldı",
+  aiLimitBody: "Bu haftaki ücretsiz yapay zekâ isteklerini kullandın ({a}/{b}). ASFIT Premium ile sınır yok.",
+  aiLimitCta: "Premium’u keşfet",
+  aiLimitLater: "Belki sonra",
+  aiFreeLeft: "Bu hafta {n} ücretsiz",
+  proteinLeft: "Hedefe {n} g protein kaldı",
+  weekSummaryTitle: "Bu hafta",
   intakeSitesTitle: "Enjeksiyon bölgeleri",
   intakeSitesSub: "Son 90 gün · ★ = önerilen sonraki bölge",
   intakeCycleTitle: "Döngü planlayıcı",
@@ -915,9 +925,9 @@ export default {
   premiumPerYear: "/ yıl",
   premiumYearlyAs: "= CHF 4.15 / ay",
   premiumSave: "%40 tasarruf",
-  premiumTrialNote: "7 gün ücretsiz, sonra CHF 49.90 / yıl. İstediğin zaman iptal.",
+  premiumTrialNote: "3 gün ücretsiz, sonra CHF 49.90 / yıl. İstediğin zaman iptal.",
   premiumStart: "Aboneliği başlat",
-  premiumStartTrial: "7 gün ücretsiz dene",
+  premiumStartTrial: "3 gün ücretsiz dene",
   premiumActive: "Aboneliğin",
   premiumTrialBadge: "Ücretsiz deneme",
   premiumRenews: "{d} tarihinde yenilenir",

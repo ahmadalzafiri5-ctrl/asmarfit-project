@@ -94,7 +94,7 @@ export function mountBilling(app) {
         mode: "subscription",
         customer,
         line_items: [{ price: PRICE[plan], quantity: 1 }],
-        subscription_data: plan === "yearly" ? { trial_period_days: 7 } : undefined,
+        subscription_data: plan === "yearly" ? { trial_period_days: 3 } : undefined,
         allow_promotion_codes: true,
         success_url: FRONTEND_URL + "/#billing=success",
         cancel_url: FRONTEND_URL + "/#billing=cancel",

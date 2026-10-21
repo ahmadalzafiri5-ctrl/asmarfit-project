@@ -2,6 +2,16 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  premiumFeat5: "Planificador de ciclo y analíticas en el diario de tomas",
+  premiumFeat6: "Exportación CSV y análisis avanzados",
+  premiumPopular: "La opción más popular",
+  aiLimitTitle: "Límite semanal gratis alcanzado",
+  aiLimitBody: "Has usado tus solicitudes de IA gratis de esta semana ({a} de {b}). Con ASFIT Premium no hay límite.",
+  aiLimitCta: "Descubrir Premium",
+  aiLimitLater: "Quizá más tarde",
+  aiFreeLeft: "{n} gratis esta semana",
+  proteinLeft: "Te faltan {n} g de proteína para tu objetivo",
+  weekSummaryTitle: "Esta semana",
   intakeSitesTitle: "Sitios de inyección",
   intakeSitesSub: "Últimos 90 días · ★ = próximo sitio sugerido",
   intakeCycleTitle: "Planificador de ciclo",
@@ -915,9 +925,9 @@ export default {
   premiumPerYear: "/ año",
   premiumYearlyAs: "= CHF 4.15 / mes",
   premiumSave: "Ahorra un 40 %",
-  premiumTrialNote: "7 días gratis, luego CHF 49.90 / año. Cancela cuando quieras.",
+  premiumTrialNote: "3 días gratis, luego CHF 49.90 / año. Cancela cuando quieras.",
   premiumStart: "Iniciar suscripción",
-  premiumStartTrial: "Probar 7 días gratis",
+  premiumStartTrial: "Probar 3 días gratis",
   premiumActive: "Tu suscripción",
   premiumTrialBadge: "Prueba gratis",
   premiumRenews: "Se renueva el {d}",
