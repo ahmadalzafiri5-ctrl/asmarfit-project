@@ -1107,6 +1107,14 @@ const STR = {
     premiumFeat6: "CSV export & advanced insights",
     premiumFeat7: "Cheat-day planner with calorie balancing",
     premiumFeat8: "Phase manager (cut/bulk) & Recovery Score",
+    premiumFeat9: "Weekly Auto-Review with next-week recommendations",
+    wrAutoTitle: "Weekly Auto-Review",
+    warTitle: "Your plan for next week",
+    warTrack: "Only {n}/7 days tracked — log at least 6 days so the analysis stays accurate.",
+    warTrain: "{n} workouts this week — aim for 3 next week, short ones count too.",
+    warTrainGood: "{n} workouts — strong week, keep the rhythm.",
+    warProtein: "Protein target hit on only {n}/7 days — plan one protein source per meal.",
+    warSteps: "Ø {n} steps — a 15-minute walk per day gets you past 8,000.",
     phaseTitle: "Phase manager",
     phaseWeeksLabel: "Duration (weeks)",
     phaseStart: "Start phase",
@@ -2376,6 +2384,14 @@ const STR = {
     premiumFeat6: "CSV-Export & erweiterte Auswertungen",
     premiumFeat7: "Cheat-Day-Planer mit Kalorien-Ausgleich",
     premiumFeat8: "Phasen-Manager (Cut/Bulk) & Recovery Score",
+    premiumFeat9: "Weekly Auto-Review mit Empfehlungen für die nächste Woche",
+    wrAutoTitle: "Weekly Auto-Review",
+    warTitle: "Dein Plan für nächste Woche",
+    warTrack: "Nur {n}/7 Tage getrackt — trage mindestens 6 Tage ein, damit die Analyse stimmt.",
+    warTrain: "{n} Trainings diese Woche — nimm dir 3 vor, auch kurze zählen.",
+    warTrainGood: "{n} Trainings — starke Woche, halte den Rhythmus.",
+    warProtein: "Proteinziel nur an {n}/7 Tagen erreicht — plane eine Proteinquelle pro Mahlzeit.",
+    warSteps: "Ø {n} Schritte — ein 15-Minuten-Spaziergang pro Tag bringt dich über 8'000.",
     phaseTitle: "Phasen-Manager",
     phaseWeeksLabel: "Dauer (Wochen)",
     phaseStart: "Phase starten",
@@ -3924,7 +3940,18 @@ function WaterCard({ t, waterMl, goalMl, lastMl, onAdd, onUndo, onSaveGoal }) {
 }
 
 // ---------------- Weekly check-in ----------------
-function WeeklyReviewCard({ t, review, mode = "home", onApply, onDone }) {
+// Weekly Auto-Review (Premium): konkrete Empfehlungen für die nächste Woche aus den Zahlen der letzten 7 Tage
+function weeklyRecs(t, review) {
+  const recs = [];
+  if (review.tracked < 6) recs.push(t.warTrack.replace("{n}", review.tracked));
+  if (review.workouts < 3) recs.push(t.warTrain.replace("{n}", review.workouts));
+  else recs.push(t.warTrainGood.replace("{n}", review.workouts));
+  if (review.tracked >= 4 && review.proteinDays < 5) recs.push(t.warProtein.replace("{n}", review.proteinDays));
+  if (review.avgSteps > 0 && review.avgSteps < 8000) recs.push(t.warSteps.replace("{n}", review.avgSteps.toLocaleString()));
+  return recs.slice(0, 3);
+}
+
+function WeeklyReviewCard({ t, review, mode = "home", onApply, onDone, premium = false, onUpsell = () => {} }) {
   const s = review.suggestion;
   const w = review.slopePerWeek;
   const f1 = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",");
@@ -3976,6 +4003,32 @@ function WeeklyReviewCard({ t, review, mode = "home", onApply, onDone }) {
           </div>
         )}
         <div data-wr-text style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text, lineHeight: 1.5 }}>{text}</div>
+        {/* Weekly Auto-Review (Premium): persönliche Empfehlungen für die nächste Woche */}
+        {s.type !== "needData" &&
+          (premium ? (
+            (() => {
+              const recs = weeklyRecs(t, review);
+              if (!recs.length) return null;
+              return (
+                <div data-wr-auto style={{ marginTop: 12, background: COLORS.raised, borderRadius: 12, padding: "11px 12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }}>
+                    <Star size={12} color={COLORS.gold} />
+                    <span style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: COLORS.dim }}>{t.warTitle}</span>
+                  </div>
+                  {recs.map((r, i) => (
+                    <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: i < recs.length - 1 ? 6 : 0 }}>
+                      <span style={{ color: COLORS.gold, fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 12.5 }}>•</span>
+                      <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.text, lineHeight: 1.45 }}>{r}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()
+          ) : (
+            <div style={{ marginTop: 12 }}>
+              <PremiumLock t={t} label={t.wrAutoTitle} onUpsell={onUpsell} />
+            </div>
+          ))}
         {s.delta !== 0 && onApply && (
           <button data-wr-apply onClick={() => onApply(s.delta)} style={{ width: "100%", marginTop: 12, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             {t.wrApply.replace("{n}", sign(s.delta))}
@@ -4682,7 +4735,7 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
       {todayCfg && todayInfo && <TodayOpen t={t} lang={lang} cfg={todayCfg} info={todayInfo} hideIntake={intakeDue.length > 0} onGo={onTodayGo} onSettings={onTodaySettings} />}
       <FastHomeCard t={t} onOpen={onOpenFasting} />
-      {weeklyCard && <WeeklyReviewCard t={t} review={weeklyCard} mode="home" onApply={onReviewApply} onDone={onReviewDone} />}
+      {weeklyCard && <WeeklyReviewCard t={t} review={weeklyCard} mode="home" onApply={onReviewApply} onDone={onReviewDone} premium={premium} onUpsell={onUpsell} />}
       {intakeDue.length > 0 && (
         <Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer", border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeCardTitle}</div>
@@ -5824,7 +5877,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
 
   return (
     <div style={{ padding: "0 20px 24px" }}>
-      {weekly && <WeeklyReviewCard t={t} review={weekly} mode="progress" onApply={onApplyWeekly} />}
+      {weekly && <WeeklyReviewCard t={t} review={weekly} mode="progress" onApply={onApplyWeekly} premium={premium} onUpsell={onUpsell} />}
       <PhaseCard t={t} premium={premium} onUpsell={onUpsell} phase={phase} onSave={onSavePhase} weightLog={weightLog} />
       <MuscleRankCard t={t} workoutHistory={workoutHistory} />
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
@@ -13032,8 +13085,8 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
   const features = (
     <Card style={{ marginBottom: 14 }}>
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.premiumFeatTitle}</div>
-      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4, t.premiumFeat7, t.premiumFeat8, t.premiumFeat5, t.premiumFeat6].map((f, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 7 ? 9 : 0 }}>
+      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4, t.premiumFeat7, t.premiumFeat8, t.premiumFeat9, t.premiumFeat5, t.premiumFeat6].map((f, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 8 ? 9 : 0 }}>
           <Check size={15} color={COLORS.gold} style={{ flexShrink: 0 }} />
           <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{f}</span>
         </div>

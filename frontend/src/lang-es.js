@@ -2,6 +2,14 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  premiumFeat9: "Weekly Auto-Review con recomendaciones para la próxima semana",
+  wrAutoTitle: "Weekly Auto-Review",
+  warTitle: "Tu plan para la próxima semana",
+  warTrack: "Solo {n}/7 días registrados — registra al menos 6 días para un análisis fiable.",
+  warTrain: "{n} entrenamientos esta semana — proponte 3 la próxima, aunque sean cortos.",
+  warTrainGood: "{n} entrenamientos — gran semana, mantén el ritmo.",
+  warProtein: "Objetivo de proteína cumplido solo {n}/7 días — planifica una fuente de proteína por comida.",
+  warSteps: "Ø {n} pasos — un paseo de 15 minutos al día te lleva por encima de 8.000.",
   premiumFeat7: "Planificador de cheat day con equilibrio de calorías",
   premiumFeat8: "Gestor de fases (definición/volumen) & Recovery Score",
   phaseTitle: "Gestor de fases",

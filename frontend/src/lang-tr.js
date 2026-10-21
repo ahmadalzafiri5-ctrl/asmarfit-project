@@ -2,6 +2,14 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  premiumFeat9: "Gelecek hafta önerileriyle Weekly Auto-Review",
+  wrAutoTitle: "Weekly Auto-Review",
+  warTitle: "Gelecek hafta planın",
+  warTrack: "Sadece {n}/7 gün kaydedildi — analizin doğru olması için en az 6 gün kaydet.",
+  warTrain: "Bu hafta {n} antrenman — gelecek hafta 3 hedefle, kısa olanlar da sayılır.",
+  warTrainGood: "{n} antrenman — güçlü bir hafta, ritmi koru.",
+  warProtein: "Protein hedefi sadece {n}/7 gün tutturuldu — her öğüne bir protein kaynağı planla.",
+  warSteps: "Ø {n} adım — günde 15 dakikalık yürüyüş seni 8.000'in üzerine çıkarır.",
   premiumFeat7: "Kalori dengelemeli cheat day planlayıcı",
   premiumFeat8: "Faz yöneticisi (definasyon/kütle) & Recovery Score",
   phaseTitle: "Faz yöneticisi",
