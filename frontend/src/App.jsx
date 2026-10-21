@@ -1105,6 +1105,34 @@ const STR = {
     premiumFeat4: "Potential forecast",
     premiumFeat5: "Cycle planner & blood work in the intake log",
     premiumFeat6: "CSV export & advanced insights",
+    premiumFeat7: "Cheat-day planner with calorie balancing",
+    premiumFeat8: "Phase manager (cut/bulk) & Recovery Score",
+    phaseTitle: "Phase manager",
+    phaseWeeksLabel: "Duration (weeks)",
+    phaseStart: "Start phase",
+    phaseWeek: "Week {a} of {b}",
+    phaseNow: "now",
+    phasePlan: "plan",
+    phaseHintGood: "On track — keep going!",
+    phaseHintFaster: "Faster than planned — check that the pace is healthy (max. ~0.7 kg per week).",
+    phaseHintSlower: "Progress is slower than planned: adjust ~150 kcal per day or add more steps.",
+    phaseDone: "Phase complete 🎉 Start your next phase.",
+    phaseEnd: "End phase",
+    phaseNoWeight: "Log your weight regularly to see progress.",
+    recTitle: "Recovery Score",
+    recSleepQ: "How long did you sleep last night?",
+    recH: "h",
+    recTrainHard: "Fully recovered — today is a great day for a hard workout.",
+    recTrainMod: "Train moderately: focus on technique and medium weights.",
+    recRest: "Recovery first: take a rest day or do light movement.",
+    cheatPlanTitle: "Cheat-day balancing",
+    cheatExtra: "Extra calories on your cheat day",
+    cheatComp: "Balance: −{a} kcal on each of the 3 days before and after",
+    cheatTipsTitle: "How to balance it",
+    cheatTip1: "Keep protein high ({p} g even on the cheat day)",
+    cheatTip2: "About {s} extra steps burn roughly half of it",
+    cheatTip3: "Train on your cheat day — the extra carbs fill your muscles' stores",
+    cheatNoDay: "Plan a cheat day above to see your balancing plan.",
     premiumFree: "Tracking, exercises, friends & duel stay free forever.",
     premiumMonthly: "Monthly",
     premiumYearly: "Yearly",
@@ -2346,6 +2374,34 @@ const STR = {
     premiumFeat4: "Potenzial-Prognose",
     premiumFeat5: "Zyklus-Planer & Blutwerte im Einnahme-Tagebuch",
     premiumFeat6: "CSV-Export & erweiterte Auswertungen",
+    premiumFeat7: "Cheat-Day-Planer mit Kalorien-Ausgleich",
+    premiumFeat8: "Phasen-Manager (Cut/Bulk) & Recovery Score",
+    phaseTitle: "Phasen-Manager",
+    phaseWeeksLabel: "Dauer (Wochen)",
+    phaseStart: "Phase starten",
+    phaseWeek: "Woche {a} von {b}",
+    phaseNow: "aktuell",
+    phasePlan: "Plan",
+    phaseHintGood: "Auf Kurs — weiter so!",
+    phaseHintFaster: "Schneller als geplant — prüfe, ob das Tempo gesund ist (max. ~0,7 kg pro Woche).",
+    phaseHintSlower: "Fortschritt langsamer als geplant: passe ~150 kcal pro Tag an oder erhöhe deine Schritte.",
+    phaseDone: "Phase abgeschlossen 🎉 Starte deine nächste Phase.",
+    phaseEnd: "Phase beenden",
+    phaseNoWeight: "Trage dein Gewicht regelmässig ein, um den Fortschritt zu sehen.",
+    recTitle: "Recovery Score",
+    recSleepQ: "Wie lange hast du letzte Nacht geschlafen?",
+    recH: "Std.",
+    recTrainHard: "Voll erholt — heute ist ein starker Trainingstag.",
+    recTrainMod: "Moderat trainieren: Technik und mittlere Gewichte.",
+    recRest: "Erholung zuerst: Ruhetag oder lockere Bewegung.",
+    cheatPlanTitle: "Cheat-Day ausgleichen",
+    cheatExtra: "Extra-Kalorien am Cheat-Day",
+    cheatComp: "Ausgleich: je −{a} kcal an den 3 Tagen davor und danach",
+    cheatTipsTitle: "So gleichst du aus",
+    cheatTip1: "Protein hoch halten ({p} g auch am Cheat-Day)",
+    cheatTip2: "Rund {s} Extra-Schritte verbrennen etwa die Hälfte",
+    cheatTip3: "Trainiere am Cheat-Day — die Extra-Kohlenhydrate füllen deine Speicher",
+    cheatNoDay: "Plane oben einen Cheat-Day, um deinen Ausgleichsplan zu sehen.",
     premiumFree: "Tracking, Übungen, Freunde & Duell bleiben für immer gratis.",
     premiumMonthly: "Monatlich",
     premiumYearly: "Jährlich",
@@ -4510,7 +4566,7 @@ function TodayOpen({ t, lang, cfg, info, hideIntake, onGo, onSettings }) {
   );
 }
 
-function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, weeklyCard = null, onReviewDone = () => {}, onReviewApply = () => {}, onOpenFasting = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings }) {
+function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, weeklyCard = null, onReviewDone = () => {}, onReviewApply = () => {}, onOpenFasting = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings, premium = false, onUpsell = () => {} }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
@@ -4622,6 +4678,7 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
         );
       })()}
 
+      <RecoveryCard t={t} premium={premium} onUpsell={onUpsell} workoutHistory={workoutHistory} weightLog={weightLog} />
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
       {todayCfg && todayInfo && <TodayOpen t={t} lang={lang} cfg={todayCfg} info={todayInfo} hideIntake={intakeDue.length > 0} onGo={onTodayGo} onSettings={onTodaySettings} />}
       <FastHomeCard t={t} onOpen={onOpenFasting} />
@@ -5702,7 +5759,7 @@ function PhotoCropModal({ t, src, onCancel, onSave }) {
   );
 }
 
-function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDeleteWeight, photos, onAddPhoto, onDeletePhoto, measures = [], onAddMeasure = () => {}, onDeleteMeasure = () => {}, weekly = null, onApplyWeekly = () => {} }) {
+function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDeleteWeight, photos, onAddPhoto, onDeletePhoto, measures = [], onAddMeasure = () => {}, onDeleteMeasure = () => {}, weekly = null, onApplyWeekly = () => {}, premium = false, onUpsell = () => {}, phase = null, onSavePhase = () => {} }) {
   const [range, setRange] = useState(3);
   const [slider, setSlider] = useState(50);
   const [compareId, setCompareId] = useState(null);
@@ -5768,6 +5825,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
   return (
     <div style={{ padding: "0 20px 24px" }}>
       {weekly && <WeeklyReviewCard t={t} review={weekly} mode="progress" onApply={onApplyWeekly} />}
+      <PhaseCard t={t} premium={premium} onUpsell={onUpsell} phase={phase} onSave={onSavePhase} weightLog={weightLog} />
       <MuscleRankCard t={t} workoutHistory={workoutHistory} />
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         {t.ranges.map((r, i) => (
@@ -10057,7 +10115,7 @@ function MyMealsScreen({ t, myMeals, onSave, onDelete, onAddTo, initialSlot = "s
   );
 }
 
-function CheatScreen({ t, cheats, onAdd, onDelete }) {
+function CheatScreen({ t, cheats, onAdd, onDelete, onUpdate = () => {}, premium = false, onUpsell = () => {}, weightKg = 0, proteinTarget = 0 }) {
   const [type, setType] = useState("meal");
   const [date, setDate] = useState("");
   const [note, setNote] = useState("");
@@ -10117,6 +10175,49 @@ function CheatScreen({ t, cheats, onAdd, onDelete }) {
           {upcoming.map((r) => row(r, false))}
           {past.map((r) => row(r, true))}
         </Card>
+      )}
+
+      {/* Premium: intelligenter Kalorien-Ausgleich für den nächsten geplanten Cheat-Day */}
+      {!premium ? (
+        <div style={{ marginTop: 16 }}>
+          <PremiumLock t={t} label={t.cheatPlanTitle} onUpsell={onUpsell} />
+        </div>
+      ) : (
+        (() => {
+          const nextDay = upcoming.find((r) => r.type === "day");
+          if (!nextDay)
+            return <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 16, lineHeight: 1.45 }}>{t.cheatNoDay}</div>;
+          const extra = nextDay.extra || 800;
+          const comp = Math.round(extra / 6 / 10) * 10; // auf 6 Tage rund um den Cheat verteilt
+          const compSteps = weightKg > 0 ? Math.round(extra / 2 / (0.00057 * weightKg) / 500) * 500 : 10000;
+          return (
+            <Card data-cheat-plan style={{ marginTop: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <Star size={15} color={COLORS.gold} />
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.cheatPlanTitle}</span>
+              </div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>
+                🍕 {new Date(nextDay.date + "T00:00").toLocaleDateString()}
+              </div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 7 }}>{t.cheatExtra}</div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                {[500, 800, 1200].map((v) => (
+                  <Chip key={v} label={"+" + v} active={extra === v} onClick={() => onUpdate(nextDay.id, { extra: v })} />
+                ))}
+              </div>
+              <div style={{ background: COLORS.goldSoft, borderRadius: 12, padding: "10px 12px", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 12 }}>
+                {t.cheatComp.replace("{a}", comp)}
+              </div>
+              <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.dim, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 7 }}>{t.cheatTipsTitle}</div>
+              {[t.cheatTip1.replace("{p}", proteinTarget > 0 ? Math.round(proteinTarget) : 150), t.cheatTip2.replace("{s}", compSteps.toLocaleString()), t.cheatTip3].map((tip, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: i < 2 ? 6 : 0 }}>
+                  <span style={{ color: COLORS.gold, fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 12.5 }}>•</span>
+                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.text, lineHeight: 1.45 }}>{tip}</span>
+                </div>
+              ))}
+            </Card>
+          );
+        })()
       )}
     </div>
   );
@@ -12317,6 +12418,150 @@ function PremiumLock({ t, label, onUpsell }) {
   );
 }
 
+// ----- Phasen-Manager (Premium): Cut/Bulk/Erhaltung mit Ziel, Dauer und Plan-Abgleich -----
+function PhaseCard({ t, premium = false, onUpsell = () => {}, phase, onSave, weightLog = [] }) {
+  const [type, setType] = useState("cut");
+  const [weeks, setWeeks] = useState("8");
+  const [target, setTarget] = useState("");
+  const latest = weightLog.length ? weightLog[weightLog.length - 1].kg : null;
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  if (!premium)
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <PremiumLock t={t} label={t.phaseTitle} onUpsell={onUpsell} />
+      </div>
+    );
+  const labels = { cut: t.obGoalCut, bulk: t.obGoalBulk, maint: t.obGoalMaintain };
+  if (!phase) {
+    const valid = Number(weeks) >= 2 && Number(weeks) <= 52 && (type === "maint" || Number(target) > 30) && latest != null;
+    return (
+      <Card data-phase-setup style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <Star size={15} color={COLORS.gold} />
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.phaseTitle}</span>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          {["cut", "bulk", "maint"].map((k) => (
+            <Chip key={k} label={labels[k]} active={type === k} onClick={() => setType(k)} />
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ ...small, marginBottom: 5 }}>{t.phaseWeeksLabel}</div>
+            <input data-phase-weeks type="number" inputMode="numeric" value={weeks} onChange={(e) => setWeeks(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+          </div>
+          {type !== "maint" && (
+            <div style={{ flex: 1 }}>
+              <div style={{ ...small, marginBottom: 5 }}>{t.setTargetWeight}</div>
+              <input data-phase-target type="number" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+            </div>
+          )}
+        </div>
+        {latest == null && <div style={{ ...small, marginTop: 8 }}>{t.phaseNoWeight}</div>}
+        <button
+          data-phase-start
+          disabled={!valid}
+          onClick={() => onSave({ type, start: Date.now(), weeks: Number(weeks), startKg: latest, targetKg: type === "maint" ? latest : Number(target) })}
+          style={{ width: "100%", marginTop: 12, opacity: valid ? 1 : 0.5, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: valid ? "pointer" : "default" }}
+        >
+          {t.phaseStart}
+        </button>
+      </Card>
+    );
+  }
+  const totalDays = phase.weeks * 7;
+  const elapsedD = Math.max(0, (Date.now() - phase.start) / 86400000);
+  const prog = Math.min(1, elapsedD / totalDays);
+  const week = Math.min(phase.weeks, Math.floor(elapsedD / 7) + 1);
+  const planKg = Math.round((phase.startKg + (phase.targetKg - phase.startKg) * prog) * 10) / 10;
+  const delta = latest != null ? Math.round((latest - planKg) * 10) / 10 : null;
+  // Richtung stimmt? (Cut: unter Plan ist ok, Bulk: über Plan ist ok, Erhaltung: ±1 kg)
+  const dirGood = delta != null && (phase.type === "cut" ? delta <= 0 : phase.type === "bulk" ? delta >= 0 : Math.abs(delta) <= 1);
+  const hint =
+    delta == null ? t.phaseNoWeight : prog >= 1 ? t.phaseDone : Math.abs(delta) <= 0.4 || (phase.type !== "maint" && dirGood && Math.abs(delta) <= 1.5) ? t.phaseHintGood : dirGood ? t.phaseHintFaster : t.phaseHintSlower;
+  return (
+    <Card data-phase style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Star size={15} color={COLORS.gold} />
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.phaseTitle}</span>
+        <span style={{ flex: 1 }} />
+        <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.gold, background: COLORS.goldSoft, padding: "3px 10px", borderRadius: 999 }}>{labels[phase.type]}</span>
+      </div>
+      <div style={{ ...small, margin: "10px 0 6px" }}>{t.phaseWeek.replace("{a}", week).replace("{b}", phase.weeks)}</div>
+      <div style={{ height: 6, borderRadius: 3, background: COLORS.raised, overflow: "hidden" }}>
+        <div style={{ width: Math.round(prog * 100) + "%", height: "100%", background: COLORS.gold }} />
+      </div>
+      <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>
+          {latest != null ? latest + " kg" : "–"} <span style={{ ...small, fontWeight: 400 }}>{t.phaseNow}</span>
+        </div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.teal }}>
+          {planKg} kg <span style={{ ...small, fontWeight: 400 }}>{t.phasePlan}</span>
+        </div>
+      </div>
+      <div style={{ ...small, marginTop: 8, lineHeight: 1.45 }}>{hint}</div>
+      <div data-phase-end onClick={() => onSave(null)} style={{ ...small, color: COLORS.coral, marginTop: 10, cursor: "pointer", fontWeight: 600 }}>
+        {t.phaseEnd}
+      </div>
+    </Card>
+  );
+}
+
+// ----- Recovery Score (Premium): Tagesform aus Schlaf, Trainingslast und Gewichtstrend -----
+function RecoveryCard({ t, premium = false, onUpsell = () => {}, workoutHistory = [], weightLog = [] }) {
+  const [rec, setRec] = usePersisted("recovery", {});
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  if (!premium)
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <PremiumLock t={t} label={t.recTitle} onUpsell={onUpsell} />
+      </div>
+    );
+  const day = todayStamp();
+  const sleep = rec.day === day ? rec.sleep : null;
+  const now = Date.now();
+  const last = workoutHistory.length ? workoutHistory[workoutHistory.length - 1] : null;
+  const daysSince = last ? Math.floor((now - new Date(last.dateISO).getTime()) / 86400000) : 7;
+  const recent = workoutHistory.filter((w) => now - new Date(w.dateISO).getTime() <= 28 * 86400000);
+  const avgVol = recent.length ? recent.reduce((s, w) => s + (w.volumeKg || 0), 0) / recent.length : 0;
+  const lastVol = last ? last.volumeKg || 0 : 0;
+  let score = 60;
+  if (sleep != null) score += Math.max(-20, Math.min(20, (sleep - 7) * 8));
+  if (daysSince <= 1) score -= avgVol > 0 && lastVol > avgVol * 1.3 ? 18 : 10; // gestern/heute hart trainiert
+  else if (daysSince >= 3) score += 8; // gut erholt
+  const ww = weightLog.filter((w) => now - new Date(w.dateISO).getTime() <= 4 * 86400000);
+  if (ww.length >= 2 && ww[0].kg > 0 && (ww[0].kg - ww[ww.length - 1].kg) / ww[0].kg > 0.008) score -= 10; // schneller Gewichtsverlust
+  score = Math.max(5, Math.min(100, Math.round(score / 5) * 5));
+  const color = score >= 70 ? COLORS.teal : score >= 40 ? COLORS.gold : COLORS.coral;
+  const hint = score >= 70 ? t.recTrainHard : score >= 40 ? t.recTrainMod : t.recRest;
+  return (
+    <Card data-recovery style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <Ring pct={score} size={64} stroke={7} color={color}>
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 17, fontWeight: 800, color: COLORS.text }}>{score}</span>
+        </Ring>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.recTitle}</span>
+            <Star size={13} color={COLORS.gold} />
+          </div>
+          <div style={{ ...small, marginTop: 3, lineHeight: 1.4 }}>{hint}</div>
+        </div>
+      </div>
+      {sleep == null && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ ...small, marginBottom: 7 }}>{t.recSleepQ}</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {[5, 6, 7, 8, 9].map((h) => (
+              <Chip key={h} label={h + " " + t.recH} active={false} onClick={() => setRec({ day, sleep: h })} />
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function IntakeScreen({ t, lang, data, setData, premium = false, onUpsell = () => {} }) {
   const subs = data.subs || [];
   const log = data.log || [];
@@ -12787,8 +13032,8 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
   const features = (
     <Card style={{ marginBottom: 14 }}>
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.premiumFeatTitle}</div>
-      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4, t.premiumFeat5, t.premiumFeat6].map((f, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 5 ? 9 : 0 }}>
+      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4, t.premiumFeat7, t.premiumFeat8, t.premiumFeat5, t.premiumFeat6].map((f, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 7 ? 9 : 0 }}>
           <Check size={15} color={COLORS.gold} style={{ flexShrink: 0 }} />
           <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{f}</span>
         </div>
@@ -13923,6 +14168,8 @@ export default function AsmarFitApp() {
   const backupDue = onboarded && Date.now() - (Number(localStorage.getItem("asfit.lastBackup")) || firstSeen) > 7 * 86400000;
   const [customRecipes, setCustomRecipes] = usePersisted("customRecipes", []);
   const [cheats, setCheats] = usePersisted("cheats", []);
+  // Phasen-Manager (Premium): aktuelle Cut/Bulk/Erhaltungs-Phase
+  const [phase, setPhase] = usePersisted("phase", null);
   const [celebrate, setCelebrate] = useState(null);
   const [waterMl, setWaterMl] = usePersistedDaily("water", 0);
   const [waterLog, setWaterLog] = usePersistedDaily("waterLog", []);
@@ -14826,7 +15073,19 @@ export default function AsmarFitApp() {
     topTitle = t.myMealsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "cheats") {
-    content = <CheatScreen t={t} cheats={cheats} onAdd={(c) => setCheats((l) => [...l, c])} onDelete={(id) => setCheats((l) => l.filter((x) => x.id !== id))} />;
+    content = (
+      <CheatScreen
+        t={t}
+        cheats={cheats}
+        onAdd={(c) => setCheats((l) => [...l, c])}
+        onDelete={(id) => setCheats((l) => l.filter((x) => x.id !== id))}
+        onUpdate={(id, patch) => setCheats((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)))}
+        premium={premiumActive}
+        onUpsell={() => setOverlay("premium")}
+        weightKg={profile.weight}
+        proteinTarget={(profile.macroTargets && profile.macroTargets.protein) || 0}
+      />
+    );
     topTitle = t.cheatTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "history") {
@@ -15026,6 +15285,8 @@ export default function AsmarFitApp() {
           meals={meals}
           weightLog={weightLog}
           workoutHistory={workoutHistory}
+          premium={premiumActive}
+          onUpsell={() => setOverlay("premium")}
           notes={notes}
           waterMl={waterMl}
           onAddWater={(ml) => {
@@ -15179,6 +15440,10 @@ export default function AsmarFitApp() {
           photos={progressPhotos}
           onAddPhoto={(p) => setProgressPhotos((ph) => [...ph, p])}
           onDeletePhoto={(id) => setProgressPhotos((ph) => ph.filter((p) => p.id !== id))}
+          premium={premiumActive}
+          onUpsell={() => setOverlay("premium")}
+          phase={phase}
+          onSavePhase={setPhase}
         />
       ),
       notes: <NotesScreen t={t} lang={lang} notes={notes} filter={notesFilter} setFilter={setNotesFilter} onAddNote={() => setOverlay("noteComposer")} />,
