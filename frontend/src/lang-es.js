@@ -2,6 +2,9 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  authSlogan: "Tu entrenamiento. Tu nutrición. Una sola app.",
+  authTrialBadge: "Prueba Premium gratis durante 3 días",
+  authBack: "Atrás",
   premiumFeat5: "Planificador de ciclo y analíticas en el diario de tomas",
   premiumFeat6: "Exportación CSV y análisis avanzados",
   premiumPopular: "La opción más popular",

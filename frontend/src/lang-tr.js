@@ -2,6 +2,9 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  authSlogan: "Antrenmanın. Beslenmen. Tek uygulama.",
+  authTrialBadge: "Premium'u 3 gün ücretsiz dene",
+  authBack: "Geri",
   premiumFeat5: "Alım günlüğünde döngü planlayıcı & kan değerleri",
   premiumFeat6: "CSV dışa aktarma & gelişmiş analizler",
   premiumPopular: "En popüler seçim",

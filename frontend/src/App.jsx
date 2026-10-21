@@ -1139,6 +1139,9 @@ const STR = {
     authSwitchToLogin: "Already have an account? Sign in",
     authSwitchToRegister: "New here? Create account",
     authSkip: "Continue without account",
+    authSlogan: "Your training. Your nutrition. One app.",
+    authTrialBadge: "Try Premium free for 3 days",
+    authBack: "Back",
     authBusy: "One moment …",
     authErrTaken: "This email is already registered — sign in instead.",
     authErrWrong: "Email or password is incorrect.",
@@ -2373,6 +2376,9 @@ const STR = {
     authSwitchToLogin: "Schon ein Konto? Anmelden",
     authSwitchToRegister: "Neu hier? Konto erstellen",
     authSkip: "Ohne Konto fortfahren",
+    authSlogan: "Dein Training. Deine Ernährung. Eine App.",
+    authTrialBadge: "3 Tage Premium gratis testen",
+    authBack: "Zurück",
     authBusy: "Einen Moment …",
     authErrTaken: "Diese E-Mail ist schon registriert — melde dich an.",
     authErrWrong: "E-Mail oder Passwort stimmt nicht.",
@@ -3282,7 +3288,9 @@ function AiScanIllustration({ t, kcal, carbs, fat, protein }) {
 const AUTH_ERR = { email_taken: "authErrTaken", wrong_login: "authErrWrong", weak_password: "authErrWeak", bad_email: "authErrEmail", too_many: "authErrMany" };
 
 function AuthScreen({ t, compact = false, onDone, onSkip = null }) {
-  const [mode, setMode] = useState("register");
+  // Einstieg wie bei grossen Fitness-Apps: erst ein Welcome-Screen (Logo, Slogan,
+  // "Konto erstellen" / "Anmelden", Trial-Hinweis), dann das jeweilige Formular.
+  const [mode, setMode] = useState(compact ? "register" : "welcome");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -3365,6 +3373,43 @@ function AuthScreen({ t, compact = false, onDone, onSkip = null }) {
   };
 
   const input = { ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10, fontFamily: "Inter, sans-serif" };
+
+  // Welcome: Logo + Slogan, "Konto erstellen" / "Anmelden", prominenter Trial-Hinweis
+  if (mode === "welcome") {
+    return (
+      <div data-auth-welcome style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 32px", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <img src="/icon-192.png" alt="ASFIT" style={{ width: 92, height: 92, borderRadius: 26, display: "block", margin: "0 auto 20px", boxShadow: "0 12px 32px rgba(0,0,0,0.35)" }} />
+          <h1 style={{ fontFamily: "Sora, sans-serif", fontSize: 30, fontWeight: 800, color: COLORS.text, margin: 0, letterSpacing: 1 }}>ASFIT</h1>
+          <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, margin: "10px 0 0", lineHeight: 1.5 }}>{t.authSlogan}</p>
+        </div>
+        <div data-auth-trial style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 999, padding: "10px 16px", margin: "0 auto 24px", maxWidth: 320 }}>
+          <Star size={14} color={COLORS.gold} />
+          <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.gold }}>{t.authTrialBadge}</span>
+        </div>
+        <button
+          data-auth-go-register
+          onClick={() => setMode("register")}
+          style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 16, padding: "16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15.5, cursor: "pointer" }}
+        >
+          {t.authRegister}
+        </button>
+        <button
+          data-auth-go-login
+          onClick={() => setMode("login")}
+          style={{ width: "100%", background: "transparent", color: COLORS.text, border: "1.5px solid " + COLORS.border, borderRadius: 16, padding: "15px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", marginTop: 12 }}
+        >
+          {t.authTitle}
+        </button>
+        {cfg.enabled === false && onSkip && (
+          <div data-auth-skip onClick={onSkip} style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, textAlign: "center", marginTop: 20, cursor: "pointer" }}>
+            {t.authSkip}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div data-auth style={{ display: "flex", flexDirection: "column", height: compact ? "auto" : "100%", padding: compact ? "0 20px 28px" : "0 24px 28px", justifyContent: compact ? "flex-start" : "center" }}>
       {!compact && (
@@ -3407,9 +3452,9 @@ function AuthScreen({ t, compact = false, onDone, onSkip = null }) {
       >
         {mode === "register" ? t.authSwitchToLogin : t.authSwitchToRegister}
       </div>
-      {onSkip && (
-        <div data-auth-skip onClick={onSkip} style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, textAlign: "center", marginTop: 18, cursor: "pointer" }}>
-          {t.authSkip}
+      {!compact && (
+        <div data-auth-back onClick={() => { setMode("welcome"); setErr(null); }} style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, textAlign: "center", marginTop: 18, cursor: "pointer" }}>
+          ← {t.authBack}
         </div>
       )}
     </div>
@@ -13102,7 +13147,7 @@ function ProfileSettings({ t, profile, onSave }) {
   );
 }
 
-function GoalsSettings({ t, lang, profile, stepsGoal, onSave }) {
+function GoalsSettings({ t, lang, profile, stepsGoal, onSave, premium = false, onUpsell = () => {} }) {
   const [goal, setGoal] = useState(profile.goal || "maintain");
   const [target, setTarget] = useState(String(profile.target || profile.weight || ""));
   const [targetDate, setTargetDate] = useState(profile.targetDate || new Date(Date.now() + 84 * 86400000).toISOString().slice(0, 10));
@@ -13135,7 +13180,13 @@ function GoalsSettings({ t, lang, profile, stepsGoal, onSave }) {
   return (
     <div style={{ padding: "0 20px 28px" }}>
       <SettingsLabel>{t.potSettingsLabel}</SettingsLabel>
-      <PotentialPreview t={t} lang={lang} goalText={profile.vision3Months || ""} ownGoalField profile={{ gender: profile.gender, age: profile.age || ageFromBirth(profile.birth || { d: 1, m: 1, y: 2000 }), height: profile.height, weight: profile.weight, target: Number(target), goal }} />
+      {premium ? (
+        <PotentialPreview t={t} lang={lang} goalText={profile.vision3Months || ""} ownGoalField profile={{ gender: profile.gender, age: profile.age || ageFromBirth(profile.birth || { d: 1, m: 1, y: 2000 }), height: profile.height, weight: profile.weight, target: Number(target), goal }} />
+      ) : (
+        <div style={{ marginBottom: 4 }}>
+          <PremiumLock t={t} label={t.premiumFeat4} onUpsell={onUpsell} />
+        </div>
+      )}
       <SettingsLabel>{t.setGoalType}</SettingsLabel>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {goals.map((g) => (
@@ -13771,9 +13822,9 @@ export default function AsmarFitApp() {
   const [premium, setPremium] = usePersisted("premium", null);
   // Premium aktiv? (lokal gekauft oder vom Server bestätigt, Laufzeit nicht abgelaufen)
   const premiumActive = Boolean(premium && premium.renews > Date.now());
-  // Gratis-Kontingente für KI-Funktionen (pro Kalenderwoche); Premium = unbegrenzt.
-  // aiGate(kind) zählt einen Verbrauch und öffnet bei Erschöpfung den Upsell-Dialog.
-  const AI_LIMITS = { photo: 3, recipe: 3 };
+  // KI-Funktionen (Foto-Scan, KI-Rezepte, Wochenplan, Coach, Prognose) sind
+  // Premium-exklusiv: aiGate() öffnet ohne aktives Abo immer den Upsell-Dialog.
+  const AI_LIMITS = {};
   const [aiQuota, setAiQuota] = usePersisted("aiQuota", {});
   const [aiLimitHit, setAiLimitHit] = useState(null);
   const aiUsed = (kind) => (aiQuota.wk === isoWeekKey() ? aiQuota[kind] || 0 : 0);
@@ -13792,9 +13843,10 @@ export default function AsmarFitApp() {
     setAiQuota((q) => (q.wk === isoWeekKey() ? { ...q, [kind]: (q[kind] || 0) + 1 } : { wk: isoWeekKey(), [kind]: 1 }));
     return true;
   };
-  // Konto (E-Mail/Google/Apple): {token, user}; "authSkipped" = bewusst ohne Konto
+  // Konto (E-Mail/Google/Apple): {token, user}. Ein Konto ist Pflicht — "authFallback"
+  // greift nur, wenn der Server gar kein Konto-System anbietet (Self-Hosting/offline).
   const [auth, setAuth] = usePersisted("auth", null);
-  const [authSkipped, setAuthSkipped] = usePersisted("authSkipped", false);
+  const [authSkipped, setAuthSkipped] = usePersisted("authFallback", false);
   const [billingOn, setBillingOn] = useState(false); // Stripe auf dem Server eingerichtet?
   const authHeaders = () => (auth && auth.token ? { Authorization: "Bearer " + auth.token } : {});
   // Beim Start: Konto prüfen und Premium-Status vom Server übernehmen
@@ -14080,6 +14132,8 @@ export default function AsmarFitApp() {
     setWeightLog([{ dateISO: new Date().toISOString(), kg: data.weight }]);
     if (data.stepsGoal) setStepsGoal(data.stepsGoal);
     setOnboarded(true);
+    // Nach Registrierung + Onboarding einmal die Premium-Paywall zeigen (3 Tage gratis)
+    if (!premiumActive) setOverlay("premium");
   };
 
   const quickLogExercise = ({ setLog, cardio }) => finishWorkout({ durationSec: 0, volumeKg: setLog.reduce((sum, l) => sum + l.weight * l.reps, 0), setLog, cardio }, false);
@@ -14918,7 +14972,7 @@ export default function AsmarFitApp() {
     topTitle = t.setProfileRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsGoals") {
-    content = <GoalsSettings t={t} lang={lang} profile={profile} stepsGoal={stepsGoal} onSave={saveGoals} />;
+    content = <GoalsSettings t={t} lang={lang} profile={profile} stepsGoal={stepsGoal} onSave={saveGoals} premium={premiumActive} onUpsell={() => setOverlay("premium")} />;
     topTitle = t.setGoalsRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsDisplay") {
@@ -14965,7 +15019,7 @@ export default function AsmarFitApp() {
           }}
           lastWaterMl={waterLog.length ? waterLog[waterLog.length - 1] : 250}
           onSaveWaterGoal={(ml) => setProfile((p) => ({ ...p, waterGoalMl: ml }))}
-          onOpenAssistant={() => setOverlay("assistant")}
+          onOpenAssistant={() => aiGate("coach") && setOverlay("assistant")}
           onOpenGoals={() => setOverlay("settingsGoals")}
           weeklyCard={weekly.suggestion.type !== "needData" && reviewDue(reviewState.lastISO) ? weekly : null}
           onReviewDone={reviewDone}
@@ -14984,7 +15038,7 @@ export default function AsmarFitApp() {
               else setTab("training");
             } else if (k === "train") setTab("training");
             else if (k === "weigh") setTab("progress");
-            else setOverlay("assistant");
+            else if (aiGate("coach")) setOverlay("assistant");
           }}
           steps={steps}
           stepsSource={stepsSource}
@@ -15145,6 +15199,18 @@ export default function AsmarFitApp() {
               authDone={Boolean(auth) || authSkipped}
               onAuthed={(a) => setAuth(a)}
               onAuthSkip={() => setAuthSkipped(true)}
+            />
+          </div>
+        ) : !auth && !authSkipped ? (
+          // Konto-Pflicht: Wer eingerichtet, aber nicht (mehr) angemeldet ist, landet beim Login
+          <div style={isPhone ? { flex: 1, minHeight: 0 } : { height: 720 }}>
+            <AuthScreen
+              t={t}
+              onDone={(a) => {
+                setAuth(a);
+                if (!premiumActive) setOverlay("premium");
+              }}
+              onSkip={() => setAuthSkipped(true)}
             />
           </div>
         ) : (
