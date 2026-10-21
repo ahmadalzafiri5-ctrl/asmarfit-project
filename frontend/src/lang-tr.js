@@ -2,6 +2,8 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  trainRepeatLast: "Son antrenmanı tekrarla",
+  exReplace: "Egzersizi değiştir",
   tabs: { home: "Ana sayfa", nutrition: "Beslenme", training: "Antrenman", progress: "İlerleme", notes: "Notlar" },
   greetingPrefix: "Günaydın",
   greetingDay: "Merhaba",

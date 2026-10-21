@@ -2,6 +2,8 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  trainRepeatLast: "Ripeti l’ultimo allenamento",
+  exReplace: "Sostituisci esercizio",
   tabs: { home: "Home", nutrition: "Nutrizione", training: "Allenamento", progress: "Progressi", notes: "Note" },
   greetingPrefix: "Buongiorno",
   greetingDay: "Ciao",

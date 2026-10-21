@@ -382,6 +382,8 @@ const STR = {
     noExercisesYet: "No exercises logged yet — start a workout.",
     bestLabel: "Best",
     addSet: "Add set",
+    trainRepeatLast: "Repeat last workout",
+    exReplace: "Replace exercise",
     emptyWorkout: "Add your first exercise to begin.",
     discardWorkout: "Discard workout",
     workoutRunning: "Workout in progress",
@@ -1587,6 +1589,8 @@ const STR = {
     noExercisesYet: "Noch keine Übungen — starte ein Workout.",
     bestLabel: "Bestwert",
     addSet: "Satz hinzufügen",
+    trainRepeatLast: "Letztes Training wiederholen",
+    exReplace: "Übung ersetzen",
     emptyWorkout: "Füge deine erste Übung hinzu.",
     discardWorkout: "Training verwerfen",
     workoutRunning: "Workout läuft",
@@ -5308,6 +5312,27 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
           <button data-train-start onClick={startFromCard} style={{ width: "100%", marginTop: 16, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15.5, cursor: "pointer" }}>
             {activeWorkout ? t.resumeWorkout : t.startWorkout}
           </button>
+          {/* Schnellster Einstieg: letztes Training 1:1 übernehmen, Sätze vorbefüllt */}
+          {!activeWorkout && workoutHistory.length > 0 && (
+            <button
+              data-train-repeat
+              onClick={() => {
+                const lw = workoutHistory[workoutHistory.length - 1];
+                const out = [];
+                const seen = new Set();
+                (lw.sets || []).forEach((s) => {
+                  if (seen.has(s.exerciseKey)) return;
+                  seen.add(s.exerciseKey);
+                  out.push({ key: s.exerciseKey, sets: lw.sets.filter((x) => x.exerciseKey === s.exerciseKey).slice(0, 6).map((x) => ({ weight: x.weight > 0 ? String(x.weight) : "", reps: String(x.reps) })) });
+                });
+                (lw.cardio || []).forEach((c) => out.push({ key: c.exerciseKey, cardio: true, minutes: "" }));
+                if (out.length) onStartWorkout(out);
+              }}
+              style={{ width: "100%", marginTop: 10, background: COLORS.surface, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            >
+              <RotateCcw size={15} /> {t.trainRepeatLast}
+            </button>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
             {!hasPlanDays ? (
               <span data-tpl-hint onClick={onOpenPlanBuilder} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
@@ -6010,6 +6035,7 @@ const estimate1RM = (w, r) => (w > 0 && r > 0 && r <= 12 ? Math.round((r === 1 ?
 function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onTogglePause, entries, onChangeEntries, onFinish, onDiscard, workoutHistory = [], difficultyBias = null }) {
   const gx = useGender();
   const [picking, setPicking] = useState(false);
+  const [replaceIdx, setReplaceIdx] = useState(null); // welcher Eintrag gerade ersetzt wird (Picker im Ersetzen-Modus)
   const [pickGroup, setPickGroup] = useState("all");
   const [query, setQuery] = useState("");
   const nameOf = (ex) => (lang === "de" ? ex.nameDe : ex.name);
@@ -6077,11 +6103,19 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
     return null;
   };
 
+  // Übung hinzufügen ODER (wenn replaceIdx gesetzt) eine bestehende ersetzen.
+  // Kraftübungen starten direkt mit den Sätzen vom letzten Mal — ein Haken pro
+  // Satz genügt dann zum Loggen (wie bei Strong/Hevy), nichts mehr abtippen.
+  const prefilledSets = (key) => {
+    const last = lastSets(key);
+    return last ? last.slice(0, 6).map((s) => ({ weight: s.weight > 0 ? String(s.weight) : "", reps: String(s.reps) })) : [];
+  };
   const addExercise = (key) => {
     const isCardio = (EXERCISE_LIBRARY.find((x) => x.key === key) || {}).muscle === "cardio";
-    // Strength exercises start with no set yet — kg/Wdh only appear once you
-    // tap "+ Satz hinzufügen" for the first set, instead of a pre-filled row.
-    onChangeEntries([...entries, isCardio ? { key, cardio: true, minutes: "" } : { key, sets: [] }]);
+    const fresh = isCardio ? { key, cardio: true, minutes: "" } : { key, sets: prefilledSets(key) };
+    if (replaceIdx != null) onChangeEntries(entries.map((en, i) => (i === replaceIdx ? fresh : en)));
+    else onChangeEntries([...entries, fresh]);
+    setReplaceIdx(null);
     setPicking(false);
     setQuery("");
   };
@@ -6167,7 +6201,13 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
             </div>
           ))}
         </Card>
-        <button onClick={() => setPicking(false)} style={{ width: "100%", background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.dim, borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+        <button
+          onClick={() => {
+            setPicking(false);
+            setReplaceIdx(null);
+          }}
+          style={{ width: "100%", background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.dim, borderRadius: 14, padding: "13px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+        >
           {t.back}
         </button>
       </div>
@@ -6238,6 +6278,18 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
                 {ex && <BodyThumb ex={ex} small />}
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{ex ? nameOf(ex) : en.key}</span>
               </div>
+              {/* Übung schnell gegen eine andere tauschen (öffnet den Picker im Ersetzen-Modus) */}
+              <span
+                data-swap-exercise
+                title={t.exReplace}
+                onClick={() => {
+                  setReplaceIdx(ei);
+                  setPicking(true);
+                }}
+                style={{ padding: "4px 10px", borderRadius: 999, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, background: COLORS.raised, color: COLORS.dim, border: "1px solid " + COLORS.border, flexShrink: 0 }}
+              >
+                ⇄
+              </span>
               {ei > 0 && !en.cardio && !entries[ei - 1].cardio && (
                 <span onClick={() => toggleSuperset(ei)} style={{ padding: "4px 10px", borderRadius: 999, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, background: en.ss ? COLORS.gold : COLORS.raised, color: en.ss ? COLORS.bg : COLORS.dim, border: "1px solid " + (en.ss ? COLORS.gold : COLORS.border) }}>
                   {t.superset}
