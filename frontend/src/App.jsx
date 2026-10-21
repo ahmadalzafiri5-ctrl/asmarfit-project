@@ -3391,13 +3391,32 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
   const kgPerWeek = Math.abs(Number(target) - Number(weight)) / (daysToGoal / 7);
   const showsRate = ["cut", "gain", "bulk"].includes(goal) && Number(target) !== Number(weight);
 
+  // Gekürztes Onboarding: nur noch 5 Screens (Willkommen, Geschlecht, Ziel, Zahlen, Fertig).
+  // Die Schritt-Nummern bleiben die alten Kennungen; FLOW bestimmt die Reihenfolge.
+  const FLOW = [0, 1, 3, 7, 13];
+  const flowIdx = FLOW.indexOf(step);
   const LAST_STEP = 13;
+  // "Überspringen": sinnvolle Standardwerte setzen und weiter — niemand bleibt hängen
+  const skipStep = () => {
+    if (step === 1 && !gender) {
+      setGender("diverse");
+      applyTheme("diverse");
+    }
+    if (step === 3 && !goal) setGoal("maintain");
+    if (step === 7) {
+      if (!(Number(weight) > 0)) setWeight("80");
+      if (!(Number(height) > 0)) setHeight("175");
+      if (!(Number(target) > 0)) setTarget(weight && Number(weight) > 0 ? weight : "80");
+      if (tooYoung) setBirth((b) => ({ ...b, y: String(new Date().getFullYear() - 25) }));
+    }
+    setStep(FLOW[flowIdx + 1]);
+  };
   // Plausible Bereiche statt nur ">0": 500 kg oder 999 cm würden sonst absurde Tagesziele erzeugen.
   const inRange = (v, lo, hi) => Number(v) >= lo && Number(v) <= hi;
   const statsValid = inRange(weight, 30, 300) && inRange(height, 100, 250) && inRange(target, 30, 300);
   const statsOutOfRange = [weight, height, target].some((v) => v !== "" && Number(v) > 0) && !statsValid && [weight, height, target].every((v) => v !== "");
   const tooYoung = ageFromBirth(birth) < 16; // the terms say 16+, so the app does not go on with a younger birthday
-  const canContinue = !((step === 1 && !gender) || (step === 2 && tooYoung) || (step === 3 && !goal) || (step === 7 && (!name.trim() || !statsValid)));
+  const canContinue = !((step === 1 && !gender) || (step === 3 && !goal) || (step === 7 && (!statsValid || tooYoung)));
 
   // Language picker comes before everything else, including "Welcome" — a
   // brand-new visitor hasn't chosen DE/EN yet, so both language names are
@@ -3477,13 +3496,13 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
 
       {step > 0 && (
         <div style={{ display: "flex", gap: 6, margin: "22px 0 4px" }}>
-          {Array.from({ length: LAST_STEP }, (_, i) => i + 1).map((i) => (
-            <div key={i} style={{ height: 3, borderRadius: 2, flex: 1, background: i <= step ? COLORS.gold : COLORS.border }} />
+          {FLOW.slice(1).map((s, i) => (
+            <div key={s} style={{ height: 3, borderRadius: 2, flex: 1, background: i < flowIdx ? COLORS.gold : COLORS.border }} />
           ))}
         </div>
       )}
 
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", justifyContent: step === 9 ? "flex-start" : "center", overflowY: "auto", paddingTop: step === 9 ? 18 : 0 }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "center", overflowY: "auto" }}>
         {step === 0 && (
           <div style={{ textAlign: "center" }}>
             <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
@@ -3513,32 +3532,6 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
           </div>
         )}
 
-        {step === 2 && (
-          <div>
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obBirthTitle}</h2>
-            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obBirthSub}</p>
-            {tooYoung && <div data-ob-too-young style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.coral, margin: "-10px 0 16px", lineHeight: 1.5 }}>{t.obTooYoung}</div>}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.7fr 1.2fr", gap: 10 }}>
-              {[
-                { label: t.obDay, key: "d", options: Array.from({ length: 31 }, (_, i) => ({ v: i + 1, l: i + 1 })) },
-                { label: t.obMonth, key: "m", options: t.months.map((l, i) => ({ v: i + 1, l })) },
-                { label: t.obYear, key: "y", options: Array.from({ length: 90 }, (_, i) => new Date().getFullYear() - 10 - i).map((v) => ({ v, l: v })) },
-              ].map((f) => (
-                <div key={f.key}>
-                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>{f.label}</div>
-                  <select value={birth[f.key]} onChange={(e) => setBirth((bth) => ({ ...bth, [f.key]: e.target.value }))} style={{ ...numInputStyle, padding: "12px 8px" }}>
-                    {f.options.map((o) => (
-                      <option key={o.v} value={o.v}>
-                        {o.l}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {step === 3 && (
           <div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obGoalTitle}</h2>
@@ -3563,65 +3556,6 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
           </div>
         )}
 
-        {step === 4 && (
-          <div>
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 22px" }}>{t.obReasonTitle}</h2>
-            {[
-              { key: "confidence", title: t.obReasonConfidence },
-              { key: "health", title: t.obReasonHealth },
-              { key: "fitness", title: t.obReasonFitness },
-              { key: "event", title: t.obReasonEvent },
-              { key: "burn", title: t.obReasonBurn },
-              { key: "other", title: t.obReasonOther },
-            ].map(({ key, title }) => (
-              <div key={key} onClick={() => setReason(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: reason === key ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${reason === key ? COLORS.gold : COLORS.border}` }}>
-                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {step === 5 && (
-          <div>
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 22px" }}>{t.obMoreTitle}</h2>
-            {[
-              { key: "eating", title: t.obMoreEating },
-              { key: "cook", title: t.obMoreCook },
-              { key: "immune", title: t.obMoreImmune },
-              { key: "sleep", title: t.obMoreSleep },
-              { key: "feel", title: t.obMoreFeel },
-              { key: "other", title: t.obMoreOther },
-            ].map(({ key, title }) => (
-              <div
-                key={key}
-                onClick={() => toggleMoreGoal(key)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: moreGoals.includes(key) ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}` }}
-              >
-                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
-                <div style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${moreGoals.includes(key) ? COLORS.gold : COLORS.border}`, background: moreGoals.includes(key) ? COLORS.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {moreGoals.includes(key) && <Check size={12} color={COLORS.bg} />}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {step === 6 && (
-          <div>
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 22px" }}>{t.obExperienceTitle}</h2>
-            {[
-              { key: "notReached", title: t.obExperienceNotReached },
-              { key: "failed", title: t.obExperienceFailed },
-              { key: "couldntKeep", title: t.obExperienceCouldntKeep },
-              { key: "never", title: t.obExperienceNever },
-            ].map(({ key, title }) => (
-              <div key={key} onClick={() => setExperience(key)} style={{ padding: 15, borderRadius: 16, marginBottom: 12, cursor: "pointer", background: experience === key ? COLORS.goldSoft : COLORS.surface, border: `1.5px solid ${experience === key ? COLORS.gold : COLORS.border}` }}>
-                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {step === 7 && (
           <div>
             <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obStatsTitle}</h2>
@@ -3640,88 +3574,21 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
                 <TextField value={f.val} onChange={f.set} type="number" />
               </div>
             ))}
+            {/* Geburtsjahr reicht für die Kalorienrechnung — der volle Geburtstag ist nicht nötig */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.obYear}</div>
+              <select data-ob-year value={birth.y} onChange={(e) => setBirth((bth) => ({ ...bth, y: e.target.value }))} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", padding: "12px 10px" }}>
+                {Array.from({ length: 90 }, (_, i) => new Date().getFullYear() - 10 - i).map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {tooYoung && <div data-ob-too-young style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.coral, margin: "0 0 10px", lineHeight: 1.5 }}>{t.obTooYoung}</div>}
             {statsOutOfRange && (
               <div data-ob-stats-range style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginTop: 2 }}>{t.obStatsRange}</div>
             )}
-          </div>
-        )}
-
-        {step === 8 && (
-          <div>
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obTargetDateTitle}</h2>
-            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obTargetDateSub}</p>
-            <input type="date" value={targetDate} min={new Date().toISOString().slice(0, 10)} onChange={(e) => e.target.value && setTargetDate(e.target.value)} style={{ ...numInputStyle, padding: "14px 14px", fontSize: 15, colorScheme: "dark" }} />
-            {showsRate && (
-              <div style={{ marginTop: 18, fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: kgPerWeek > 1 ? COLORS.coral : COLORS.gold }}>
-                {kgPerWeek.toFixed(2)} kg {t.obPerWeek}
-              </div>
-            )}
-            {showsRate && kgPerWeek > 1 && <div style={{ marginTop: 6, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.obAmbitious}</div>}
-          </div>
-        )}
-
-        {step === 9 && (
-          <div>
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obVisionTitle}</h2>
-            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px" }}>{t.obVisionSub}</p>
-
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.obVision3Months}</div>
-            <textarea
-              value={vision3Months}
-              onChange={(e) => setVision3Months(e.target.value)}
-              placeholder={t.obVision3MonthsPlaceholder}
-              rows={3}
-              style={{ width: "100%", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 14, color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none", resize: "none", marginBottom: 18 }}
-            />
-
-            <PotentialPreview t={t} lang={lang} goalText={vision3Months} profile={{ gender, age: ageFromBirth(birth), height: Number(height), weight: Number(weight), target: Number(target), goal }} />
-
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{t.obVisionWhy}</div>
-            <textarea
-              value={visionWhy}
-              onChange={(e) => setVisionWhy(e.target.value)}
-              placeholder={t.obVisionWhyPlaceholder}
-              rows={3}
-              style={{ width: "100%", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 14, color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none", resize: "none" }}
-            />
-          </div>
-        )}
-
-        {step === 10 && (
-          <div style={{ textAlign: "center" }}>
-            <AiScanIllustration t={t} kcal={718} carbs={59} fat={34} protein={44} />
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 21, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>{t.obAiScanTitle}</h2>
-            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: 0 }}>{t.obAiScanSub}</p>
-          </div>
-        )}
-
-        {step === 11 && (
-          <div style={{ textAlign: "center" }}>
-            <AiScanIllustration t={t} kcal={433} carbs={40} fat={22} protein={25} />
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 21, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>{t.obAiScan2Title}</h2>
-            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: 0 }}>{t.obAiScan2Sub}</p>
-          </div>
-        )}
-
-        {step === 12 && (
-          <div style={{ textAlign: "center" }}>
-            <Footprints size={40} color={COLORS.gold} style={{ marginBottom: 18 }} />
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{t.obStepsTitle}</h2>
-            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 26px" }}>{t.obStepsSub}</p>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-              <Stepper value={stepsGoal} onChange={(v) => setStepsGoal(Math.max(2000, Math.min(30000, v)))} step={500} />
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-              {[6000, 8000, 10000, 12000].map((v) => (
-                <div
-                  key={v}
-                  onClick={() => setStepsGoal(v)}
-                  style={{ padding: "8px 14px", borderRadius: 999, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, background: stepsGoal === v ? COLORS.goldSoft : COLORS.raised, color: stepsGoal === v ? COLORS.gold : COLORS.dim, border: `1px solid ${stepsGoal === v ? COLORS.gold : COLORS.border}` }}
-                >
-                  {v.toLocaleString("de-DE")}
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
@@ -3736,30 +3603,13 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
               {kcalGoal}
               <span style={{ fontSize: 15, color: COLORS.dim, fontWeight: 500 }}> kcal</span>
             </div>
-            {(vision3Months.trim() || visionWhy.trim()) && (
-              <div style={{ textAlign: "left", background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 16, marginTop: 24 }}>
-                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.obYourVision}</div>
-                {vision3Months.trim() && (
-                  <div style={{ marginBottom: visionWhy.trim() ? 12 : 0 }}>
-                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginBottom: 3 }}>{t.obVision3Months}</div>
-                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{vision3Months}</div>
-                  </div>
-                )}
-                {visionWhy.trim() && (
-                  <div>
-                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginBottom: 3 }}>{t.obVisionWhy}</div>
-                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{visionWhy}</div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
       </div>
 
       <div style={{ display: "flex", gap: 10 }}>
         {step > 0 && (
-          <button onClick={() => setStep(step - 1)} style={{ flex: "0 0 auto", background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.dim, borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+          <button onClick={() => setStep(FLOW[flowIdx - 1])} style={{ flex: "0 0 auto", background: "transparent", border: `1px solid ${COLORS.border}`, color: COLORS.dim, borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
             {t.back}
           </button>
         )}
@@ -3786,7 +3636,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
                   visionWhy: visionWhy.trim(),
                   stepsGoal,
                 })
-              : setStep(step + 1)
+              : setStep(FLOW[flowIdx + 1])
           }
           style={{
             flex: 1,
@@ -3804,8 +3654,9 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
           {step === 0 ? t.obStart : step === LAST_STEP ? t.obFinish : t.next}
         </button>
       </div>
-      {step === 12 && (
-        <div onClick={() => setStep(step + 1)} style={{ textAlign: "center", marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
+      {/* "Später einrichten": jeder Zwischenschritt ist überspringbar (Standardwerte) */}
+      {[1, 3, 7].includes(step) && (
+        <div data-ob-skip onClick={skipStep} style={{ textAlign: "center", marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
           {t.obStepsSkip}
         </div>
       )}
@@ -5382,18 +5233,8 @@ function ExerciseGif({ src, title, corner, t }) {
     <div
       data-exercise-gif
       data-gif-state={state}
-      style={{
-        position: "relative",
-        borderRadius: 14,
-        overflow: "hidden",
-        border: "1px solid var(--c-border)",
-        // Gestalteter Demo-Hintergrund in Theme-Farben: sanfter Akzent-Schein oben,
-        // "Boden"-Schatten unter der Figur, Grundverlauf von raised nach surface.
-        background:
-          "radial-gradient(110% 80% at 50% 18%, var(--c-goldSoft) 0%, rgba(0,0,0,0) 62%)," +
-          "radial-gradient(70% 18% at 50% 88%, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0) 100%)," +
-          "linear-gradient(180deg, var(--c-raised) 0%, var(--c-surface) 100%)",
-      }}
+      // Kein eigener Kachel-Hintergrund: die transparente Figur liegt direkt auf der Karte
+      style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}
     >
       {state !== "error" && (
         <img
@@ -13897,6 +13738,8 @@ export default function AsmarFitApp() {
   }, []);
 
   const finishOnboarding = (data) => {
+    // Name ist im kurzen Onboarding optional: Konto-Name oder neutraler Gruß als Ersatz
+    if (!data.name) data.name = (auth && auth.user && auth.user.name) || "Champion";
     setProfile(data);
     setWeightLog([{ dateISO: new Date().toISOString(), kg: data.weight }]);
     if (data.stepsGoal) setStepsGoal(data.stepsGoal);
