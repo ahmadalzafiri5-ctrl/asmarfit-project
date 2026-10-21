@@ -2,6 +2,10 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  premiumToday: "Bugün CHF 0.00 ödersin",
+  premiumFromDay4: "4. günden itibaren: {p}",
+  premiumCancelAnytime: "İstediğin zaman iptal edebilirsin",
+  billingPayHint: "Visa, Mastercard, Apple Pay veya Google Pay ile güvenle öde",
   authSlogan: "Antrenmanın. Beslenmen. Tek uygulama.",
   authTrialBadge: "Premium'u 3 gün ücretsiz dene",
   authBack: "Geri",

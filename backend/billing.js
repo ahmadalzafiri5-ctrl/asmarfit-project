@@ -7,7 +7,7 @@
 // Nötige Umgebungsvariablen (erst dann sind die Routen aktiv):
 //   STRIPE_SECRET_KEY        sk_live_... oder sk_test_...
 //   STRIPE_PRICE_MONTHLY     price_... (CHF 6.90 / Monat)
-//   STRIPE_PRICE_YEARLY      price_... (CHF 49.90 / Jahr, 7 Tage Testphase)
+//   STRIPE_PRICE_YEARLY      price_... (CHF 49.90 / Jahr)
 //   STRIPE_WEBHOOK_SECRET    whsec_... (Webhook-Endpunkt /api/billing/webhook)
 //   FRONTEND_URL             z.B. https://asmarfit-project.onrender.com
 import Stripe from "stripe";
@@ -85,16 +85,20 @@ export function mountBilling(app) {
   if (!billingEnabled()) return;
 
   // Abo abschliessen: Stripe-Checkout (Karte, Apple Pay, Google Pay; Karte wird
-  // für die Verlängerung automatisch gespeichert). Jahresabo: 7 Tage gratis.
+  // für die Verlängerung automatisch gespeichert). Erstes Abo: 3 Tage gratis.
   app.post("/api/billing/checkout", requireAuth, async (req, res) => {
     try {
       const plan = req.body && req.body.plan === "monthly" ? "monthly" : "yearly";
       const customer = await getOrCreateCustomer(req.userId);
+      // 3 Tage gratis (CHF 0.00 heute) bei beiden Plänen — aber nur beim allerersten
+      // Abo dieses Kunden, sonst könnte man die Testphase durch Neuabschluss wiederholen.
+      const prev = await stripe.subscriptions.list({ customer, status: "all", limit: 1 });
+      const firstSub = prev.data.length === 0;
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer,
         line_items: [{ price: PRICE[plan], quantity: 1 }],
-        subscription_data: plan === "yearly" ? { trial_period_days: 3 } : undefined,
+        subscription_data: firstSub ? { trial_period_days: 3 } : undefined,
         allow_promotion_codes: true,
         success_url: FRONTEND_URL + "/#billing=success",
         cancel_url: FRONTEND_URL + "/#billing=cancel",

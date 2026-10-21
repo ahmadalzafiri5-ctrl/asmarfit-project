@@ -1113,6 +1113,10 @@ const STR = {
     premiumYearlyAs: "= CHF 4.15 / month",
     premiumSave: "Save 40%",
     premiumTrialNote: "3 days free, then CHF 49.90 / year. Cancel anytime.",
+    premiumToday: "Today you pay CHF 0.00",
+    premiumFromDay4: "From day 4: {p}",
+    premiumCancelAnytime: "Cancel anytime",
+    billingPayHint: "Pay securely with Visa, Mastercard, Apple Pay or Google Pay",
     premiumStart: "Start subscription",
     premiumStartTrial: "Try 3 days for free",
     premiumActive: "Your subscription",
@@ -2350,6 +2354,10 @@ const STR = {
     premiumYearlyAs: "= CHF 4.15 / Monat",
     premiumSave: "40 % sparen",
     premiumTrialNote: "3 Tage gratis, danach CHF 49.90 / Jahr. Jederzeit kündbar.",
+    premiumToday: "Heute zahlst du CHF 0.00",
+    premiumFromDay4: "Ab dem 4. Tag: {p}",
+    premiumCancelAnytime: "Jederzeit kündbar",
+    billingPayHint: "Sicher bezahlen mit Visa, Mastercard, Apple Pay oder Google Pay",
     premiumStart: "Abo starten",
     premiumStartTrial: "3 Tage gratis testen",
     premiumActive: "Dein Abo",
@@ -12772,7 +12780,7 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
   const planLabel = (p) => (p === "yearly" ? t.premiumYearly : t.premiumMonthly);
   const start = (plan) => {
-    const trial = !premium && plan === "yearly"; // 3 Tage gratis nur beim ersten Jahresabo
+    const trial = !premium; // 3 Tage gratis beim ersten Abo (beide Pläne)
     const now = Date.now();
     onChange({ plan, since: now, renews: now + (trial ? 3 : PREMIUM_PLANS[plan].days) * 86400000, cancelled: false, trial });
   };
@@ -12901,15 +12909,29 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
         </div>
       ))}
 
+      {/* Ehrliche Trial-Übersicht wie bei Yazio/MyFitnessPal: heute CHF 0.00, ab Tag 4 der Planpreis */}
+      <div data-premium-trialbox style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 16, padding: "14px 16px", marginTop: 4 }}>
+        {[
+          { icon: "✓", text: t.premiumToday, strong: true },
+          { icon: "→", text: t.premiumFromDay4.replace("{p}", "CHF " + PREMIUM_PLANS[sel].chf + " " + (sel === "yearly" ? t.premiumPerYear : t.premiumPerMonth)) },
+          { icon: "✓", text: t.premiumCancelAnytime },
+        ].map((r, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 2 ? 8 : 0 }}>
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.gold, width: 16, textAlign: "center" }}>{r.icon}</span>
+            <span style={{ fontFamily: r.strong ? "Sora, sans-serif" : "Inter, sans-serif", fontSize: r.strong ? 14 : 12.5, fontWeight: r.strong ? 700 : 400, color: r.strong ? COLORS.text : COLORS.dim }}>{r.text}</span>
+          </div>
+        ))}
+      </div>
+
       <button
         data-premium-start
         onClick={() => (billing ? (authed ? onCheckout(sel) : onGoLogin()) : start(sel))}
-        style={{ width: "100%", marginTop: 8, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+        style={{ width: "100%", marginTop: 12, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
       >
-        {billing ? t.billingPay : sel === "yearly" ? t.premiumStartTrial : t.premiumStart}
+        {t.premiumStartTrial}
       </button>
       {billing && !authed && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{t.billingNeedLogin}</div>}
-      {sel === "yearly" && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.premiumTrialNote}</div>}
+      {billing && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.billingPayHint}</div>}
     </div>
   );
 }

@@ -2,6 +2,10 @@
 // fehlt hier ein Schlüssel, zeigt die App automatisch den englischen Text.
 // Platzhalter wie {n}, {d}, {name} unverändert lassen.
 export default {
+  premiumToday: "Hoy pagas CHF 0.00",
+  premiumFromDay4: "A partir del día 4: {p}",
+  premiumCancelAnytime: "Cancelable en cualquier momento",
+  billingPayHint: "Paga de forma segura con Visa, Mastercard, Apple Pay o Google Pay",
   authSlogan: "Tu entrenamiento. Tu nutrición. Una sola app.",
   authTrialBadge: "Prueba Premium gratis durante 3 días",
   authBack: "Atrás",
