@@ -1,0 +1,122 @@
+# Baut die iOS-App (Store-Variante, ohne Einnahme-Tagebuch) auf einem macOS-Runner und laedt sie
+# direkt zu App Store Connect / TestFlight hoch. Signierung laeuft automatisch ueber den
+# App-Store-Connect-API-Schluessel (Cloud Signing) — kein eigener Mac und kein Zertifikats-Export noetig.
+#
+# Voraussetzungen (einmalig):
+#   1. Apple-Developer-Konto aktiv und die App in App Store Connect angelegt (Bundle-ID com.asfit.app)
+#   2. API-Schluessel unter https://appstoreconnect.apple.com/access/integrations/api erstellen
+#      (Rolle "App-Manager"), die .p8-Datei herunterladen
+#   3. GitHub-Secrets setzen:
+#        ASC_KEY_ID      die Schluessel-ID (z.B. 2X9R4HXF34)
+#        ASC_ISSUER_ID   die Issuer-ID (UUID oben auf der API-Seite)
+#        ASC_KEY_P8      der komplette Inhalt der .p8-Datei (mehrzeilig, inkl. BEGIN/END-Zeilen)
+#        APPLE_TEAM_ID   die Team-ID (developer.apple.com -> Membership, z.B. ABCDE12345)
+name: iOS-TestFlight-Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Versionsname im Store (leer = 1.0)"
+        type: string
+        default: ""
+
+concurrency:
+  group: ios-release
+  cancel-in-progress: true
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Web-App bauen (Store-Variante) und in das iOS-Projekt kopieren
+        working-directory: frontend
+        env:
+          VITE_HIDE_INTAKE: "1"
+        run: |
+          npm ci
+          npm run build
+          # Uebungs-Demos (~71 MB) nicht buendeln — die native App laedt sie vom Server
+          rm -rf dist/gifs
+          npx cap sync ios
+
+      - name: API-Schluessel pruefen und ablegen
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_P8" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo "::error::Secrets ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8 / APPLE_TEAM_ID fehlen — Anleitung oben im Workflow."
+            exit 1
+          fi
+          mkdir -p ~/private_keys
+          printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          grep -q "BEGIN PRIVATE KEY" ~/private_keys/AuthKey_$ASC_KEY_ID.p8 || { echo "::error::ASC_KEY_P8 sieht nicht wie eine .p8-Datei aus (BEGIN PRIVATE KEY fehlt)."; exit 1; }
+
+      - name: Versionsnummern setzen
+        working-directory: frontend/ios/App
+        run: |
+          NAME="${{ inputs.version_name }}"
+          /usr/libexec/PlistBuddy -c "Print" App/Info.plist > /dev/null
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0};/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = ${GITHUB_RUN_NUMBER};/g" App.xcodeproj/project.pbxproj
+          grep -m2 "MARKETING_VERSION\|CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj
+
+      - name: Archiv bauen (automatische Cloud-Signierung)
+        working-directory: frontend/ios/App
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcodebuild archive \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            -allowProvisioningUpdates \
+            -allowProvisioningDeviceRegistration \
+            -authenticationKeyPath ~/private_keys/AuthKey_$ASC_KEY_ID.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Zu TestFlight hochladen
+        working-directory: frontend/ios/App
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_$ASC_KEY_ID.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          echo "Hochgeladen — der Build erscheint in App Store Connect unter TestFlight (Verarbeitung dauert 5-30 Min)."
