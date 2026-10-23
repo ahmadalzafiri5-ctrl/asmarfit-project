@@ -4,8 +4,10 @@ Was ASFIT wirklich tut, damit die Fragebögen bei Google und Apple richtig ausge
 
 ## Grundlagen, die für alle Antworten gelten
 
-- Kein Nutzerkonto, keine Anmeldung, keine Werbung, kein Verkauf von Daten, keine Tracker, keine Analyse-SDKs.
-- Alle Einträge (Mahlzeiten, Gewicht, Training, Notizen, Fotos) liegen nur auf dem Handy (lokaler Speicher). Es gibt kein Cloud-Backup durch uns.
+- **Seit Oktober 2026: Konto-Pflicht.** Registrierung per E-Mail+Passwort oder Google-Login; das Konto (E-Mail, Name, Premium-Status) liegt in unserer Datenbank (Render Postgres). **Premium-Abo** (CHF 6.90/Mt. bzw. 49.90/Jahr, 3 Tage Trial) — im Web via Stripe, in den Store-Apps später via Play Billing/StoreKit.
+- Keine Werbung, kein Verkauf von Daten, keine Tracker, keine Analyse-SDKs.
+- Tagebuch-Einträge (Mahlzeiten, Gewicht, Training, Notizen, Fotos) liegen nur auf dem Handy (lokaler Speicher). Es gibt kein Cloud-Backup durch uns.
+- **Demo-Konto für Prüfer (Google & Apple):** play-review@asdevelopment.ch / Asfit-Review-2026!
 - Der ASFIT-Server (Render) leitet nur bestimmte Anfragen weiter: Lebensmittelsuche, Barcode, KI-Funktionen, Rezept-Import, Übungsvideo-Suche, Meldungen zu KI-Antworten. Er speichert keine Nutzerdaten dauerhaft; Suchergebnisse werden bis zu 6 Stunden zwischengespeichert, Meldungen stehen im Server-Protokoll.
 - Drittanbieter, die Daten sehen: Anthropic (KI-Anfragen: Text, bei Foto-Scan und Potenzial-Vorschau das verkleinerte Foto), Open Food Facts und USDA (Suchbegriffe, Barcodes), jsDelivr (lädt Übungsfotos, sieht die IP-Adresse), YouTube-Suche nur per Link im Browser. Bild-Dienst (OpenAI oder Google) nur, wenn der Betreiber einen einrichtet.
 - Gesundheitsdaten über Health Connect (Android) und Apple Health (iPhone): nur **lesen** von Schritten, Gewicht und Trainings. Nichts wird geschrieben, nichts verlässt das Handy.
@@ -21,7 +23,7 @@ Was ASFIT wirklich tut, damit die Fragebögen bei Google und Apple richtig ausge
 | Datentypen: Gesundheit und Fitness → Fitnessinfos | Erhoben: ja (Training, Schritte). Geteilt: nein. Zweck: App-Funktionen. Optional: ja. |
 | Fotos und Videos → Fotos | Erhoben: ja (Mahlzeit-Foto für den Scan, Foto für die Potenzial-Vorschau, Profil-/Fortschrittsfotos lokal). Geteilt: ja, mit Anthropic (und ggf. Bild-Dienst) nur für die vom Nutzer gestartete Funktion. Zweck: App-Funktionen. Optional: ja. |
 | Nachrichten → sonstige In-App-Nachrichten | Erhoben: ja (Fragen an den Coach, Rezeptwünsche, Meldungen zu KI-Antworten). Geteilt: ja, mit Anthropic. Zweck: App-Funktionen. Optional: ja. |
-| Persönliche Daten (Name, E-Mail, Adresse) | Nicht erhoben (der Vorname im Profil bleibt lokal). |
+| Persönliche Daten → E-Mail-Adresse, Name | Erhoben: ja (Kontoerstellung). Geteilt: nein. Zweck: Kontoverwaltung, App-Funktionen. Optional: nein (Konto ist Pflicht). Löschung: Konto löschen in den Einstellungen oder per Support-E-Mail. |
 | Standort | Nicht erhoben (Land wird aus Zeitzone/Sprache erkannt oder gewählt, keine Ortung). |
 | App-Aktivität, Geräte-IDs, Kontakte, Kalender | Nicht erhoben. |
 | Gesundheitsdaten (Health Connect) im Formular „Gesundheits-Apps" | Gelesene Datentypen: Schritte, Gewicht, Trainingseinheiten. Zweck: Anzeige im Startbildschirm, Kalorienbilanz, Trainingsübersicht. Nicht für Werbung, nicht für Dritte. |
@@ -29,11 +31,11 @@ Was ASFIT wirklich tut, damit die Fragebögen bei Google und Apple richtig ausge
 **Begründung der Health-Connect-Berechtigungen (Formular „Health Connect"):**
 READ_STEPS: Die App zeigt die Schritte des Tages und rechnet den Kalorienverbrauch in die Bilanz ein. READ_WEIGHT: Die App übernimmt Gewichtseinträge in den Gewichtsverlauf. READ_EXERCISE: Die App zeigt Trainingseinheiten in der Trainingsübersicht. Alles nur lokal, nichts wird geschrieben oder weitergegeben.
 
-**Inhaltseinstufung (IARC-Fragebogen):** keine Gewalt, keine sexuellen Inhalte, kein Glücksspiel, keine Nutzer-Interaktion mit Fremden (Pläne werden nur per Link/Text geteilt), In-App-Käufe nein, Standort nein. Gesundheitsthemen: ja (Ernährung, Fasten, Training). Ergebnis voraussichtlich „Ab 3" bei Google; wir setzen die Zielgruppe trotzdem auf 18+, weil die Potenzial-Vorschau mit Foto nur für Erwachsene ist.
+**Inhaltseinstufung (IARC-Fragebogen):** keine Gewalt, keine sexuellen Inhalte, kein Glücksspiel, keine Nutzer-Interaktion mit Fremden (Pläne werden nur per Link/Text geteilt), **In-App-Käufe/digitale Käufe: ja (Premium-Abo)**, Standort nein. Gesundheitsthemen: ja (Ernährung, Fasten, Training). Ergebnis voraussichtlich „Ab 3" bei Google; wir setzen die Zielgruppe trotzdem auf 18+, weil die Potenzial-Vorschau mit Foto nur für Erwachsene ist.
 
 **KI-generierte Inhalte (Google-Richtlinie):** Ja, die App erzeugt Inhalte mit KI (Coach, Rezepte, Wochenplan, Potenzial-Vorschau, Foto-Scan). Nutzer können jede Antwort in der App melden („Antwort melden", geht an unser Server-Protokoll). Die App gibt keine medizinischen Dosierungen und verweist bei Beschwerden an Fachpersonen.
 
-**Anmeldedaten für die Prüfung:** nicht nötig, kein Konto.
+**Anmeldedaten für die Prüfung:** NÖTIG (Konto-Pflicht). Demo-Konto: play-review@asdevelopment.ch / Asfit-Review-2026!
 
 ## Apple App Store: App-Datenschutz (Nutrition Labels)
 
@@ -82,9 +84,9 @@ In App Store Connect unter *App-Überprüfungsinformationen → Notizen* (Englis
 
 ## Google Play: App-Inhalte und Prüfnotiz
 
-**App-Zugriff (App access):** „Alle Funktionen sind ohne Anmeldung verfügbar". Zusätzlich als Anweisung für die Prüfer (Englisch):
+**App-Zugriff (App access):** „Alle oder einige Funktionen sind eingeschränkt" → Anmeldedaten angeben: **play-review@asdevelopment.ch / Asfit-Review-2026!** Zusätzlich als Anweisung für die Prüfer (Englisch):
 
-> ASFIT needs no account. Onboarding: pick any values (birthday 16+). Home shows calories, "Start workout" and quick actions (Food, Weigh, Coach). Nutrition: search, barcode (camera), meal photo (AI), recipes, fast-food planner. Training: exercise library with animated figures, plans, logging, friends & duel via shared codes. Settings → Connections optionally reads steps, weight and workouts from Health Connect (read only). AI answers come from our server (Anthropic API); each has "Report answer". The first AI request after a pause can take up to a minute (server wakes up), the app shows a hint and retries. No purchases, no ads, no tracking.
+> ASFIT requires a free account (e-mail+password or Google). Use the provided review account or register any e-mail. Onboarding: pick any values (birthday 16+, every step can be skipped). Home shows calories, "Start workout" and quick actions (Food, Weigh, Coach). Nutrition: search, barcode (camera), recipes, fast-food planner. Training: exercise library with animated figures, plans, logging, friends & duel via shared codes. Settings → Connections optionally reads steps, weight and workouts from Health Connect (read only). Premium (AI photo scan, AI coach, weekly plan, forecasts) is a subscription with a 3-day free trial; AI answers come from our server (Anthropic API) and each has "Report answer". The first AI request after a pause can take up to a minute (server wakes up), the app shows a hint and retries. No ads, no tracking.
 
 **Gesundheits-Apps (Health apps):** Ja, Gesundheitsfunktionen. Kategorie *Fitness und Wellness*: Ernährung/Kalorien, Training, Gewicht, Schritte, Wasser, Fasten-Timer. Keine Diagnose, keine Medizinprodukt-Funktionen, keine klinischen Daten, keine Studien, keine regulierte Gesundheitsleistung. Health Connect: nur lesen (Schritte, Gewicht, Trainingseinheiten).
 
