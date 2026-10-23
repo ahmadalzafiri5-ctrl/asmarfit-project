@@ -7,7 +7,8 @@
       "namespace": "android_app",
       "package_name": "com.asfit.app",
       "sha256_cert_fingerprints": [
-        "B2:EA:15:40:E4:44:8B:D7:4C:7A:91:A1:AD:0E:0A:96:44:2B:B1:B6:7A:92:D3:E3:4B:10:13:D7:0C:2E:E0:86"
+        "B2:EA:15:40:E4:44:8B:D7:4C:7A:91:A1:AD:0E:0A:96:44:2B:B1:B6:7A:92:D3:E3:4B:10:13:D7:0C:2E:E0:86",
+        "5A:4E:1F:C8:47:37:71:11:57:D6:53:8B:BB:49:52:F4:50:BA:F7:9F:3F:66:0F:E8:98:FD:C2:F6:E0:64:6F:EA"
       ]
     }
   }
