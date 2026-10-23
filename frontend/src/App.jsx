@@ -5483,8 +5483,8 @@ function ExerciseGif({ src, title, corner, t }) {
     <div
       data-exercise-gif
       data-gif-state={state}
-      // Kein eigener Kachel-Hintergrund: die transparente Figur liegt direkt auf der Karte
-      style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}
+      // Weisse Kachel hinter der Demo — auch im Dunkelmodus, damit die Figur immer gleich aussieht
+      style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#FFFFFF" }}
     >
       {state !== "error" && (
         <img
