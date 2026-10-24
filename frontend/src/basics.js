@@ -227,6 +227,9 @@ function editDistance(a, b) {
 function tokenScore(tok, word) {
   if (word.startsWith(tok)) return 0;
   if (tok.length < 4) return -1;
+  // Typos practically never hit the first letter - requiring it to match stops
+  // cross-language false friends like "banana" -> "ananas" (edit distance 2).
+  if (tok[0] !== word[0]) return -1;
   const maxD = tok.length <= 5 ? 1 : 2;
   const d = Math.min(editDistance(tok, word.slice(0, tok.length)), editDistance(tok, word));
   return d <= maxD ? d : -1;

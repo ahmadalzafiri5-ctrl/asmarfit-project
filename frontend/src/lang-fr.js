@@ -1143,6 +1143,8 @@ export default {
   remTime: "Heure",
   remNoteWeb: "Sur iPhone et dans le navigateur, l'app ne peut pas envoyer de notifications quand elle est fermée. Ici, l'écran d'accueil montre ce qui reste à faire. Les notifications app fermée fonctionnent dans l'app Android installée.",
   remNoteNative: "Les notifications arrivent aussi quand l'app est fermée. Elles sont replanifiées à chaque ouverture ou saisie, donc un rappel d'entraînement manqué ne vient que s'il est vrai.",
+  remPermWarn: "Les notifications sont désactivées pour ASFIT sur ce téléphone : les rappels ne peuvent pas arriver. Autorise-les et les rappels fonctionneront.",
+  remPermBtn: "Autoriser les notifications",
   remBreakfast: "Noter le petit-déjeuner",
   remLunch: "Noter le déjeuner",
   remDinner: "Noter le dîner",

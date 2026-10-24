@@ -1360,6 +1360,8 @@ const STR = {
     remTime: "Time",
     remNoteWeb: "On iPhone and in the browser the app cannot send notifications while it is closed. Here it shows on the home screen what is still open. Notifications with the app closed work in the installed Android app.",
     remNoteNative: "The notifications also arrive while the app is closed. They are planned again whenever you open the app or log something, so a missed-workout message only comes if it is true.",
+    remPermWarn: "Notifications are turned off for ASFIT on this phone, so the reminders cannot arrive. Allow them and the reminders will work.",
+    remPermBtn: "Allow notifications",
     remBreakfast: "Log breakfast",
     remLunch: "Log lunch",
     remDinner: "Log dinner",
@@ -2637,6 +2639,8 @@ const STR = {
     remTime: "Uhrzeit",
     remNoteWeb: "Auf dem iPhone und im Browser kann die App bei geschlossener App keine Nachrichten schicken. Hier zeigt sie dir auf der Startseite, was noch offen ist. Nachrichten bei geschlossener App gibt es in der installierten Android-App.",
     remNoteNative: "Die Nachrichten kommen auch bei geschlossener App. Sie werden jedes Mal neu geplant, wenn du die App öffnest oder etwas einträgst, damit \"Training verpasst\" nur kommt, wenn es stimmt.",
+    remPermWarn: "Benachrichtigungen sind für ASFIT auf diesem Handy ausgeschaltet – die Erinnerungen können so nicht ankommen. Erlaube sie, dann funktionieren die Erinnerungen.",
+    remPermBtn: "Benachrichtigungen erlauben",
     remBreakfast: "Frühstück eintragen",
     remLunch: "Mittagessen eintragen",
     remDinner: "Abendessen eintragen",
@@ -13841,7 +13845,44 @@ function StartIntro({ onDone, accent, full }) {
 
 function RemindersSettings({ t, lang, notif, setNotif, native }) {
   const wd = INTAKE_WEEKDAYS[lang] || INTAKE_WEEKDAYS.en;
-  const set = (k, patch) => setNotif({ ...notif, [k]: { ...notif[k], ...patch } });
+  // Android 13+/iOS: notifications only arrive when the system permission is granted. Ask right when a
+  // reminder is switched on and, if the system blocks the dialog (denied earlier), show a hint with a
+  // button into the system settings — otherwise the switch looks on but nothing ever fires.
+  const [notifPerm, setNotifPerm] = useState("granted");
+  useEffect(() => {
+    if (!native) return undefined;
+    const check = async () => {
+      try {
+        const { LocalNotifications } = await import("@capacitor/local-notifications");
+        const p = await LocalNotifications.checkPermissions();
+        setNotifPerm(p.display);
+      } catch {}
+    };
+    check();
+    // Back from the system settings: re-check so the warning disappears right away.
+    const onVis = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [native]);
+  const askNotifPerm = async () => {
+    try {
+      const { LocalNotifications } = await import("@capacitor/local-notifications");
+      const p = await LocalNotifications.requestPermissions();
+      setNotifPerm(p.display);
+    } catch {}
+  };
+  const openNotifSettings = async () => {
+    try {
+      const { NativeSettings, AndroidSettings, IOSSettings } = await import("capacitor-native-settings");
+      await NativeSettings.open({ optionAndroid: AndroidSettings.AppNotification, optionIOS: IOSSettings.App });
+    } catch {}
+  };
+  const set = (k, patch) => {
+    setNotif({ ...notif, [k]: { ...notif[k], ...patch } });
+    if (native && patch.on) askNotifPerm();
+  };
   const rows = [
     { k: "breakfast", label: t.remBreakfast, icon: UtensilsCrossed, kind: "time" },
     { k: "lunch", label: t.remLunch, icon: UtensilsCrossed, kind: "time" },
@@ -13859,6 +13900,21 @@ function RemindersSettings({ t, lang, notif, setNotif, native }) {
   return (
     <div style={{ padding: "0 20px 28px" }}>
       <div style={{ ...small, margin: "0 2px 14px", lineHeight: 1.5 }}>{native ? t.remNoteNative : t.remNoteWeb}</div>
+      {native && notifPerm !== "granted" && NOTIF_KINDS.some((k) => notif[k] && notif[k].on) && (
+        <Card data-notif-perm style={{ padding: "13px 14px", marginBottom: 14, border: "1px solid " + COLORS.gold }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <Bell size={16} color={COLORS.gold} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{t.remPermWarn}</div>
+          </div>
+          <button
+            data-notif-perm-btn
+            onClick={() => (notifPerm === "prompt" ? askNotifPerm() : openNotifSettings())}
+            style={{ width: "100%", marginTop: 12, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}
+          >
+            {t.remPermBtn}
+          </button>
+        </Card>
+      )}
       <Card style={{ padding: 0, overflow: "hidden", marginBottom: 14 }}>
         {rows.map((r, i) => (
           <div key={r.k} data-rem={r.k} style={{ padding: "13px 14px", borderTop: i === 0 ? "none" : "1px solid " + COLORS.border }}>

@@ -1143,6 +1143,8 @@ export default {
   remTime: "Saat",
   remNoteWeb: "iPhone'da ve tarayıcıda uygulama kapalıyken bildirim gönderemez. Burada ana ekran nelerin açık olduğunu gösterir. Uygulama kapalıyken bildirimler kurulu Android uygulamasında çalışır.",
   remNoteNative: "Bildirimler uygulama kapalıyken de gelir. Uygulamayı her açtığında veya bir şey kaydettiğinde yeniden planlanır; kaçırılan antrenman mesajı sadece doğruysa gelir.",
+  remPermWarn: "Bu telefonda ASFIT için bildirimler kapalı; hatırlatmalar bu yüzden gelemiyor. İzin ver, hatırlatmalar çalışsın.",
+  remPermBtn: "Bildirimlere izin ver",
   remBreakfast: "Kahvaltıyı kaydet",
   remLunch: "Öğle yemeğini kaydet",
   remDinner: "Akşam yemeğini kaydet",

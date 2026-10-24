@@ -1143,6 +1143,8 @@ export default {
   remTime: "Hora",
   remNoteWeb: "En iPhone y en el navegador la app no puede enviar notificaciones estando cerrada. Aquí la pantalla de inicio muestra lo que queda pendiente. Las notificaciones con la app cerrada funcionan en la app Android instalada.",
   remNoteNative: "Las notificaciones llegan también con la app cerrada. Se reprograman cada vez que abres la app o registras algo, así que un aviso de entreno perdido solo llega si es verdad.",
+  remPermWarn: "Las notificaciones están desactivadas para ASFIT en este teléfono: los recordatorios no pueden llegar. Permítelas y los recordatorios funcionarán.",
+  remPermBtn: "Permitir notificaciones",
   remBreakfast: "Registrar el desayuno",
   remLunch: "Registrar la comida",
   remDinner: "Registrar la cena",

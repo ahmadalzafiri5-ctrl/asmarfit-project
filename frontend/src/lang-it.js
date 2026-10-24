@@ -1143,6 +1143,8 @@ export default {
   remTime: "Ora",
   remNoteWeb: "Su iPhone e nel browser l'app non può inviare notifiche da chiusa. Qui la schermata iniziale mostra cosa resta da fare. Le notifiche ad app chiusa funzionano nell'app Android installata.",
   remNoteNative: "Le notifiche arrivano anche con l'app chiusa. Vengono ripianificate a ogni apertura o registrazione, quindi un avviso di allenamento mancato arriva solo se è vero.",
+  remPermWarn: "Le notifiche sono disattivate per ASFIT su questo telefono: i promemoria non possono arrivare. Consentile e i promemoria funzioneranno.",
+  remPermBtn: "Consenti le notifiche",
   remBreakfast: "Registra la colazione",
   remLunch: "Registra il pranzo",
   remDinner: "Registra la cena",
