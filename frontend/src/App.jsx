@@ -1155,6 +1155,8 @@ const STR = {
     billingPayHint: "Pay securely with Visa, Mastercard, Apple Pay or Google Pay",
     premiumStart: "Start subscription",
     premiumStartTrial: "Try 3 days for free",
+    playErr: "The purchase was not completed. Please try again.",
+    playPayHint: "Secure payment through Google Play. Cancel anytime in the Play Store.",
     premiumActive: "Your subscription",
     premiumTrialBadge: "Free trial",
     premiumRenews: "Renews on {d}",
@@ -2434,6 +2436,8 @@ const STR = {
     billingPayHint: "Sicher bezahlen mit Visa, Mastercard, Apple Pay oder Google Pay",
     premiumStart: "Abo starten",
     premiumStartTrial: "3 Tage gratis testen",
+    playErr: "Der Kauf wurde nicht abgeschlossen. Bitte versuch es noch einmal.",
+    playPayHint: "Sichere Zahlung über Google Play. Kündigen jederzeit im Play Store.",
     premiumActive: "Dein Abo",
     premiumTrialBadge: "Gratis-Testphase",
     premiumRenews: "Verlängert sich am {d}",
@@ -13179,8 +13183,19 @@ const PREMIUM_PLANS = {
   yearly: { chf: "49.90", days: 365 },
 };
 
-function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = false, onCheckout = () => {}, onPortal = () => {}, onGoLogin = () => {} }) {
+function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = false, isPlay = false, onPlayPurchase = async () => null, onCheckout = () => {}, onPortal = () => {}, onGoLogin = () => {} }) {
   const [sel, setSel] = useState("yearly");
+  const [buying, setBuying] = useState(false);
+  const [buyErr, setBuyErr] = useState(null);
+  // Android-App: Kauf läuft über Google Play Billing; der Server prüft den Kauf bei Google
+  const buyPlay = async () => {
+    if (buying) return;
+    setBuying(true);
+    setBuyErr(null);
+    const err = await onPlayPurchase(sel);
+    setBuyErr(err);
+    setBuying(false);
+  };
   const fmtD = (ts) => new Date(ts).toLocaleDateString(lang === "de" ? "de-CH" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
   const planLabel = (p) => (p === "yearly" ? t.premiumYearly : t.premiumMonthly);
@@ -13224,7 +13239,7 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
 
         {features}
 
-        {billing ? (
+        {isPlay ? null : billing ? (
           <Card style={{ marginBottom: 14 }}>
             {/* Stripe-Abo: Karte speichern/ändern, Abo wechseln oder kündigen — alles im Kundenportal */}
             <button data-premium-portal onClick={onPortal} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
@@ -13330,13 +13345,15 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
 
       <button
         data-premium-start
-        onClick={() => (billing ? (authed ? onCheckout(sel) : onGoLogin()) : start(sel))}
-        style={{ width: "100%", marginTop: 12, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+        disabled={buying}
+        onClick={() => (isPlay ? (authed ? buyPlay() : onGoLogin()) : billing ? (authed ? onCheckout(sel) : onGoLogin()) : start(sel))}
+        style={{ width: "100%", marginTop: 12, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: buying ? 0.6 : 1 }}
       >
-        {t.premiumStartTrial}
+        {buying ? t.authBusy : t.premiumStartTrial}
       </button>
-      {billing && !authed && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{t.billingNeedLogin}</div>}
-      {billing && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.billingPayHint}</div>}
+      {buyErr && <div data-premium-buyerr style={{ ...small, fontSize: 12, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{buyErr}</div>}
+      {(billing || isPlay) && !authed && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{t.billingNeedLogin}</div>}
+      {isPlay ? <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.playPayHint}</div> : billing && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.billingPayHint}</div>}
     </div>
   );
 }
@@ -14337,6 +14354,18 @@ export default function AsmarFitApp() {
         setAuth((a) => (a ? { ...a, user: d.user } : a));
         if (d.user.premium) setPremium({ plan: d.user.premium.plan, since: Date.now(), renews: d.user.premium.renews, cancelled: d.user.premium.cancelled, trial: false, src: "server" });
         else setPremium((p) => (p && p.src === "server" ? null : p));
+        // Android-App: Google-Play-Abo erneut prüfen (Verlängerung nach der Testphase, Kündigung),
+        // damit der Premium-Status in Konto und App aktuell bleibt.
+        if (IS_NATIVE_APP && Capacitor.getPlatform() === "android") {
+          fetch(API_BASE + "/api/billing/play/refresh", { method: "POST", headers: authHeaders() })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((p) => {
+              if (!p || p.premium === undefined) return;
+              if (p.premium) setPremium({ plan: p.premium.plan, since: Date.now(), renews: p.premium.renews, cancelled: Boolean(p.premium.cancelled), trial: Boolean(p.premium.trial), src: "server" });
+              else setPremium((q) => (q && q.src === "server" ? null : q));
+            })
+            .catch(() => {});
+        }
       })
       .catch((status) => {
         if (status === 401) setAuth(null); // Token abgelaufen/Konto weg
@@ -14356,6 +14385,25 @@ export default function AsmarFitApp() {
       if (d.url) window.location.href = d.url;
     } catch {
       /* Server nicht erreichbar */
+    }
+  };
+  // Android-App: Abo über Google Play Billing kaufen. Der Server prüft den Kauf-Token direkt bei
+  // Google und schaltet Premium im Konto frei — erst dann gilt das Abo in der App.
+  // Rückgabe: null = ok oder vom Nutzer abgebrochen, sonst ein Fehlertext für die Anzeige.
+  const openPlayPurchase = async (plan) => {
+    try {
+      const { NativePurchases, PURCHASE_TYPE } = await import("@capgo/native-purchases");
+      const tx = await NativePurchases.purchaseProduct({ productIdentifier: "asfit_premium", planIdentifier: plan, productType: PURCHASE_TYPE.SUBS, quantity: 1 });
+      const token = (tx && (tx.purchaseToken || tx.transactionId)) || "";
+      if (!token) return t.playErr;
+      const r = await fetch(API_BASE + "/api/billing/play/verify", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ token }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.premium) return t.playErr;
+      setPremium({ plan: d.premium.plan, since: Date.now(), renews: d.premium.renews, cancelled: Boolean(d.premium.cancelled), trial: Boolean(d.premium.trial), src: "server" });
+      return null;
+    } catch (e) {
+      const m = String((e && e.message) || e).toLowerCase();
+      return m.includes("cancel") ? null : t.playErr;
     }
   };
   const openPortal = async () => {
@@ -15422,7 +15470,7 @@ export default function AsmarFitApp() {
     topTitle = t.settingsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "premium") {
-    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} />;
+    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} isPlay={IS_NATIVE_APP && Capacitor.getPlatform() === "android"} onPlayPurchase={openPlayPurchase} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} />;
     topTitle = t.premiumTitle;
     showBack = () => setOverlay("settings");
   } else if (overlay === "account") {

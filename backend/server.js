@@ -8,6 +8,7 @@ import { loadCatalog } from "./catalog.js";
 import { isCountryCode, countryNameFor, offCountryTag } from "./countries.js";
 import { mountAuth, initAuthDb, authEnabled } from "./auth.js";
 import { mountBilling, billingWebhook } from "./billing.js";
+import { mountPlayBilling } from "./playBilling.js";
 
 // the country the user shops in (ISO code sent by the app) as an English name for AI prompts; null when missing or invalid
 function shopCountry(cc) {
@@ -32,6 +33,7 @@ app.use(express.json({ limit: "8mb" })); // photo scan sends a downscaled JPEG a
 // Konten (E-Mail/Google/Apple) und Stripe-Abos; ohne DATABASE_URL/Keys bleiben die Routen aus
 mountAuth(app);
 mountBilling(app);
+mountPlayBilling(app);
 if (authEnabled()) initAuthDb().then(() => console.log("Auth-Datenbank bereit")).catch((e) => console.error("Auth-DB:", e.message));
 
 const PORT = process.env.PORT || 3001;

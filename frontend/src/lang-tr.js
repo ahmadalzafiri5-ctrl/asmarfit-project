@@ -971,6 +971,8 @@ export default {
   premiumTrialNote: "3 gün ücretsiz, sonra CHF 49.90 / yıl. İstediğin zaman iptal.",
   premiumStart: "Aboneliği başlat",
   premiumStartTrial: "3 gün ücretsiz dene",
+  playErr: "Satın alma tamamlanmadı. Lütfen tekrar dene.",
+  playPayHint: "Google Play üzerinden güvenli ödeme. Play Store'dan istediğin zaman iptal edebilirsin.",
   premiumActive: "Aboneliğin",
   premiumTrialBadge: "Ücretsiz deneme",
   premiumRenews: "{d} tarihinde yenilenir",

@@ -971,6 +971,8 @@ export default {
   premiumTrialNote: "3 días gratis, luego CHF 49.90 / año. Cancela cuando quieras.",
   premiumStart: "Iniciar suscripción",
   premiumStartTrial: "Probar 3 días gratis",
+  playErr: "La compra no se completó. Inténtalo de nuevo.",
+  playPayHint: "Pago seguro a través de Google Play. Cancela cuando quieras en Play Store.",
   premiumActive: "Tu suscripción",
   premiumTrialBadge: "Prueba gratis",
   premiumRenews: "Se renueva el {d}",

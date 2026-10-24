@@ -971,6 +971,8 @@ export default {
   premiumTrialNote: "3 jours gratuits, puis CHF 49.90 / an. Résiliable à tout moment.",
   premiumStart: "Démarrer l'abonnement",
   premiumStartTrial: "Essayer 3 jours gratuits",
+  playErr: "L'achat n'a pas été finalisé. Réessaie.",
+  playPayHint: "Paiement sécurisé via Google Play. Résiliable à tout moment dans le Play Store.",
   premiumActive: "Ton abonnement",
   premiumTrialBadge: "Essai gratuit",
   premiumRenews: "Se renouvelle le {d}",
