@@ -7801,6 +7801,30 @@ async function shareTextNative({ title, text, url }) {
   }
   return false;
 }
+// Stabile Geräte-Kennung für die Einmal-Gratis-Testphase: in der App die Android-/iOS-Kennung,
+// im Browser eine zufällige, lokal gespeicherte ID. Der Server merkt sich das Gerät, sobald eine
+// Testphase startet — ein neues Konto auf demselben Gerät bekommt dann keinen zweiten Gratis-Test.
+async function deviceIdForBilling() {
+  try {
+    if (IS_NATIVE_APP) {
+      const { Device } = await import("@capacitor/device");
+      const info = await Device.getId();
+      if (info && info.identifier) return String(info.identifier).slice(0, 80);
+    }
+  } catch {
+    /* unten der Web-Weg */
+  }
+  try {
+    let id = localStorage.getItem("asfit.deviceId");
+    if (!id) {
+      id = "web-" + crypto.randomUUID();
+      localStorage.setItem("asfit.deviceId", id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
 // Eine Datei (Blob) über das native Share-Sheet teilen: dafür kurz in den App-Cache schreiben.
 async function shareBlobNative(blob, filename, title) {
   const { Filesystem, Directory } = await import("@capacitor/filesystem");
@@ -14327,7 +14351,7 @@ export default function AsmarFitApp() {
   }, []);
   const openCheckout = async (plan) => {
     try {
-      const r = await fetch(API_BASE + "/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ plan }) });
+      const r = await fetch(API_BASE + "/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ plan, device: await deviceIdForBilling() }) });
       const d = await r.json();
       if (d.url) window.location.href = d.url;
     } catch {

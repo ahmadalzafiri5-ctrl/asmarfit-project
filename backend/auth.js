@@ -33,6 +33,13 @@ export async function initAuthDb() {
     stripe_customer TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`);
+  // Geräte, auf denen die Gratis-Testphase schon einmal lief: verhindert, dass man mit einem
+  // neuen Konto auf demselben Gerät noch einmal gratis testet (siehe billing.js).
+  await pool.query(`CREATE TABLE IF NOT EXISTS trial_devices (
+    device_id TEXT PRIMARY KEY,
+    user_id INTEGER,
+    used_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`);
 }
 
 const secretKey = () => new TextEncoder().encode(JWT_SECRET);

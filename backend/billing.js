@@ -68,6 +68,11 @@ export function billingWebhook() {
         if (s.mode === "subscription" && s.subscription) {
           const sub = await stripe.subscriptions.retrieve(typeof s.subscription === "string" ? s.subscription : s.subscription.id);
           await applySubscription(sub);
+          // Testphase wirklich gestartet → Gerät merken, damit es keinen zweiten Gratis-Test bekommt.
+          const device = s.metadata && s.metadata.asfit_device;
+          if (device && sub.status === "trialing") {
+            await pool.query("INSERT INTO trial_devices (device_id, user_id) VALUES ($1,$2) ON CONFLICT (device_id) DO NOTHING", [device, Number(s.metadata.asfit_user) || null]);
+          }
         }
       } else if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
         await applySubscription(event.data.object);
@@ -89,21 +94,29 @@ export function mountBilling(app) {
   app.post("/api/billing/checkout", requireAuth, async (req, res) => {
     try {
       const plan = req.body && req.body.plan === "monthly" ? "monthly" : "yearly";
+      // Geräte-Kennung der App (Android-ID bzw. zufällige Web-ID): die Gratis-Testphase gibt es
+      // pro Gerät nur einmal, damit "neues Konto = neuer Test" nicht funktioniert.
+      const device = String((req.body && req.body.device) || "").replace(/[^\w.-]/g, "").slice(0, 80);
       const customer = await getOrCreateCustomer(req.userId);
-      // 3 Tage gratis (CHF 0.00 heute) bei beiden Plänen — aber nur beim allerersten
-      // Abo dieses Kunden, sonst könnte man die Testphase durch Neuabschluss wiederholen.
+      // 3 Tage gratis (CHF 0.00 heute) bei beiden Plänen — aber nur beim allerersten Abo dieses
+      // Kunden UND nur, wenn das Gerät noch nie eine Testphase hatte (trial_devices, siehe Webhook).
       const prev = await stripe.subscriptions.list({ customer, status: "all", limit: 1 });
-      const firstSub = prev.data.length === 0;
+      let firstSub = prev.data.length === 0;
+      if (firstSub && device) {
+        const used = await pool.query("SELECT 1 FROM trial_devices WHERE device_id=$1", [device]);
+        if (used.rows.length) firstSub = false;
+      }
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer,
         line_items: [{ price: PRICE[plan], quantity: 1 }],
         subscription_data: firstSub ? { trial_period_days: 3 } : undefined,
         allow_promotion_codes: true,
+        metadata: firstSub && device ? { asfit_device: device, asfit_user: String(req.userId) } : undefined,
         success_url: FRONTEND_URL + "/#billing=success",
         cancel_url: FRONTEND_URL + "/#billing=cancel",
       });
-      res.json({ url: session.url });
+      res.json({ url: session.url, trial: firstSub });
     } catch (e) {
       console.error("checkout:", e.message);
       res.status(500).json({ error: "server" });
