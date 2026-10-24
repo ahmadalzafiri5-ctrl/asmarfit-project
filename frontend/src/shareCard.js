@@ -174,6 +174,26 @@ export function renderShareCard(kind, data, accent = "#E4A64C") {
 
 /** Teilt das Bild über das native Share-Sheet; ohne Share-Sheet wird es heruntergeladen. */
 export async function shareCardBlob(blob, text, filename = "asfit.png") {
+  // Installierte App: der Android/iOS-WebView hat kein navigator.share, darum über das
+  // Capacitor-Share-Sheet (Bild kurz in den App-Cache schreiben, dann teilen).
+  const cap = typeof window !== "undefined" && window.Capacitor;
+  if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
+    try {
+      const { Filesystem, Directory } = await import("@capacitor/filesystem");
+      const b64 = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result).split(",")[1]);
+        fr.onerror = reject;
+        fr.readAsDataURL(blob);
+      });
+      const w = await Filesystem.writeFile({ path: "share/" + filename, data: b64, directory: Directory.Cache, recursive: true });
+      const { Share } = await import("@capacitor/share");
+      await Share.share({ text, files: [w.uri] });
+      return "shared";
+    } catch (e) {
+      return String((e && e.message) || e).toLowerCase().includes("cancel") ? "aborted" : "failed";
+    }
+  }
   const file = new File([blob], filename, { type: "image/png" });
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {

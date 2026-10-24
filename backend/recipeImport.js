@@ -152,17 +152,32 @@ export function extractFromHtml(html) {
 export async function fetchSourceText(url) {
   let target = url;
   let caption = "";
-  // TikTok pages are empty for crawlers, but their public oEmbed answer carries the caption.
+  // TikTok: the page HTML carries the full caption in its embedded JSON ("desc": "...");
+  // the public oEmbed answer is only the fallback, because it often leaves the title out.
   if (/^https?:\/\/([\w-]+\.)?tiktok\.com\//i.test(url)) {
-    const page = await safeGet(url, { maxRedirects: 3, accept: "*/*" }).catch(() => null);
-    if (page) target = page.url;
-    const o = await safeGet("https://www.tiktok.com/oembed?url=" + encodeURIComponent(target), { accept: "application/json" }).catch(() => null);
-    if (o) {
-      try {
-        const j = JSON.parse(o.body);
-        caption = [j.title, j.author_name ? "(@" + j.author_name + ")" : ""].filter(Boolean).join(" ");
-      } catch {
-        /* no caption */
+    const page = await safeGet(url, { maxRedirects: 3, accept: "text/html,*/*;q=0.5" }).catch(() => null);
+    if (page) {
+      target = page.url;
+      let best = "";
+      for (const m of String(page.body || "").matchAll(/"desc":"((?:[^"\\]|\\.)*)"/g)) {
+        try {
+          const d = JSON.parse('"' + m[1] + '"');
+          if (d.length > best.length) best = d;
+        } catch {
+          /* broken escape, skip */
+        }
+      }
+      caption = best;
+    }
+    if (caption.length < 20) {
+      const o = await safeGet("https://www.tiktok.com/oembed?url=" + encodeURIComponent(target), { accept: "application/json" }).catch(() => null);
+      if (o) {
+        try {
+          const j = JSON.parse(o.body);
+          caption = [j.title, j.author_name ? "(@" + j.author_name + ")" : ""].filter(Boolean).join(" ");
+        } catch {
+          /* no caption */
+        }
       }
     }
     return caption.length >= 20 ? "TikTok caption: " + caption : "";

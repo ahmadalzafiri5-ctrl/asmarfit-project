@@ -4494,8 +4494,7 @@ function MealPlanScreen({ t, lang, targets, onAddToMeal }) {
   const shareList = async () => {
     const text = plan.shopping.map((g) => g.group + "\n" + g.items.map((i) => (checked[g.group + "|" + i] ? "☑ " : "☐ ") + i).join("\n")).join("\n\n");
     try {
-      if (navigator.share) await navigator.share({ title: t.mpTabShop, text });
-      else {
+      if (!(await shareTextNative({ title: t.mpTabShop, text }))) {
         await navigator.clipboard.writeText(text);
         setMsg(t.mpShopCopied);
         setTimeout(() => setMsg(null), 1800);
@@ -6713,40 +6712,37 @@ function Confetti() {
 const SeasonCtx = createContext({ key: null });
 const useSeason = () => useContext(SeasonCtx);
 
-// slow particles (falling, floating or rising) over the whole app; they never take touches and are off with "reduce motion"
+// Dezente Jahreszeiten-Deko statt Emoji-Partikeln über der Bedienung: ein weicher Farbschleier
+// oben, eine feine Akzentlinie und zwei grosse, stark weichgezeichnete Farbflächen, die kaum
+// merklich treiben — dazu wenige winzige Farbpunkte für Charakter (Schnee im Winter usw.).
+// Wechselt automatisch mit dem Datum (seasonFor) und steht still bei "Bewegung reduzieren".
 function SeasonLayer({ season }) {
   const def = SEASONS[season];
-  const items = useMemo(() => {
+  const dots = useMemo(() => {
     if (!def) return [];
-    return Array.from({ length: 14 }, (_, i) => {
-      const dur = 12 + ((i * 5) % 9);
-      return {
-        emoji: def.particles[i % def.particles.length],
-        left: (i * 37 + 11) % 96,
-        top: 8 + ((i * 23) % 52),
-        size: 13 + ((i * 7) % 9),
-        dur,
-        delay: -((i * 3.1) % dur),
-        dx: ((i * 13) % 50) - 25,
-        dy: ((i * 17) % 60) - 30,
-      };
+    return Array.from({ length: 7 }, (_, i) => {
+      const dur = 16 + ((i * 7) % 12);
+      return { left: (i * 29 + 9) % 94, size: 3 + (i % 3), dur, delay: -((i * 5.3) % dur), dx: ((i * 13) % 44) - 22 };
     });
   }, [season]);
   if (!def) return null;
-  const anim = def.motion === "fall" ? "asfitSeasonFall" : def.motion === "rise" ? "asfitSeasonRise" : "asfitSeasonFloat";
+  const dotAnim = def.motion === "rise" ? "asfitSeasonDotRise" : "asfitSeasonDotFall";
   return (
     <div data-season-layer={season} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 40 }}>
       <style>{`
-        @keyframes asfitSeasonFall { 0% { transform: translate3d(0,-12vh,0) rotate(0deg); opacity: 0 } 10% { opacity: .85 } 90% { opacity: .85 } 100% { transform: translate3d(var(--dx),108vh,0) rotate(300deg); opacity: 0 } }
-        @keyframes asfitSeasonRise { 0% { transform: translate3d(0,108vh,0) scale(.8); opacity: 0 } 15% { opacity: .8 } 85% { opacity: .8 } 100% { transform: translate3d(var(--dx),-12vh,0) scale(1.1); opacity: 0 } }
-        @keyframes asfitSeasonFloat { 0% { transform: translate3d(-12vw,0,0); opacity: 0 } 10% { opacity: .85 } 50% { transform: translate3d(50vw,var(--dy),0) } 90% { opacity: .85 } 100% { transform: translate3d(112vw,0,0); opacity: 0 } }
-        @media (prefers-reduced-motion: reduce) { .asfit-season-p { display: none !important } }
+        @keyframes asfitSeasonDriftA { 0% { transform: translate3d(-6%,-4%,0) scale(1) } 100% { transform: translate3d(7%,5%,0) scale(1.12) } }
+        @keyframes asfitSeasonDriftB { 0% { transform: translate3d(5%,3%,0) scale(1.08) } 100% { transform: translate3d(-6%,-5%,0) scale(.96) } }
+        @keyframes asfitSeasonGlow { 0% { opacity: .45 } 100% { opacity: .9 } }
+        @keyframes asfitSeasonDotFall { 0% { transform: translate3d(0,-6vh,0); opacity: 0 } 12% { opacity: .4 } 88% { opacity: .4 } 100% { transform: translate3d(var(--dx),106vh,0); opacity: 0 } }
+        @keyframes asfitSeasonDotRise { 0% { transform: translate3d(0,106vh,0); opacity: 0 } 12% { opacity: .4 } 88% { opacity: .4 } 100% { transform: translate3d(var(--dx),-6vh,0); opacity: 0 } }
+        @media (prefers-reduced-motion: reduce) { .asfit-season-drift { animation: none !important } .asfit-season-dot { display: none !important } }
       `}</style>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 260, background: "radial-gradient(ellipse at 50% -12%, " + def.tint + "38, transparent 72%)" }} />
-      {items.map((p, i) => (
-        <span key={i} className="asfit-season-p" style={{ position: "absolute", top: def.motion === "float" ? p.top + "%" : 0, left: def.motion === "float" ? 0 : p.left + "%", fontSize: p.size, lineHeight: 1, animation: anim + " " + p.dur + "s linear " + p.delay + "s infinite", "--dx": p.dx + "px", "--dy": p.dy + "px", willChange: "transform" }}>
-          {p.emoji}
-        </span>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 240, background: "radial-gradient(ellipse at 50% -14%, " + def.tint + "40, transparent 70%)" }} />
+      <div className="asfit-season-drift" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, " + def.tint + "B3, transparent)", animation: "asfitSeasonGlow 6s ease-in-out infinite alternate" }} />
+      <div className="asfit-season-drift" style={{ position: "absolute", top: "-12%", right: "-18%", width: "68vw", height: "68vw", maxWidth: 460, maxHeight: 460, borderRadius: "50%", background: "radial-gradient(circle, " + def.tint + "2E, transparent 68%)", filter: "blur(22px)", animation: "asfitSeasonDriftA 26s ease-in-out infinite alternate", willChange: "transform" }} />
+      <div className="asfit-season-drift" style={{ position: "absolute", bottom: "-16%", left: "-20%", width: "74vw", height: "74vw", maxWidth: 520, maxHeight: 520, borderRadius: "50%", background: "radial-gradient(circle, " + def.tint + "21, transparent 70%)", filter: "blur(26px)", animation: "asfitSeasonDriftB 32s ease-in-out infinite alternate", willChange: "transform" }} />
+      {dots.map((p, i) => (
+        <span key={i} className="asfit-season-dot" style={{ position: "absolute", top: 0, left: p.left + "%", width: p.size, height: p.size, borderRadius: "50%", background: def.tint, opacity: 0, filter: "blur(.5px)", animation: dotAnim + " " + p.dur + "s linear " + p.delay + "s infinite", "--dx": p.dx + "px", willChange: "transform" }} />
       ))}
     </div>
   );
@@ -7782,6 +7778,42 @@ const gifSrc = (key) => {
   const p = gifFor(key);
   return p ? GIF_BASE + p : null;
 };
+// Teilen: im installierten App-WebView gibt es navigator.share nicht — dort öffnet Capacitor das
+// native Share-Sheet. Rückgabe true = geteilt oder bewusst abgebrochen, false = der Aufrufer
+// braucht seinen Fallback (Zwischenablage / Download).
+async function shareTextNative({ title, text, url }) {
+  if (IS_NATIVE_APP) {
+    try {
+      const { Share } = await import("@capacitor/share");
+      await Share.share({ title, text, url, dialogTitle: title });
+      return true;
+    } catch (e) {
+      return String((e && e.message) || e).toLowerCase().includes("cancel");
+    }
+  }
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text, url });
+      return true;
+    }
+  } catch (e) {
+    if (e && e.name === "AbortError") return true;
+  }
+  return false;
+}
+// Eine Datei (Blob) über das native Share-Sheet teilen: dafür kurz in den App-Cache schreiben.
+async function shareBlobNative(blob, filename, title) {
+  const { Filesystem, Directory } = await import("@capacitor/filesystem");
+  const b64 = await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(",")[1]);
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+  const w = await Filesystem.writeFile({ path: "share/" + filename, data: b64, directory: Directory.Cache, recursive: true });
+  const { Share } = await import("@capacitor/share");
+  await Share.share({ title, files: [w.uri] });
+}
 const lsJson = (k) => {
   try {
     return JSON.parse(localStorage.getItem("asfit." + k));
@@ -11666,8 +11698,15 @@ function BackupCard({ t, lang = "de", premium = false, onUpsell = () => {} }) {
   const markBackup = () => localStorage.setItem("asfit.lastBackup", String(Date.now()));
   // iPhone: the share sheet offers "Save to Files" / iCloud Drive — the practical cloud copy.
   const shareFile = async () => {
+    const name = "asfit-backup-" + new Date().toLocaleDateString("sv") + ".json";
     try {
-      const file = new File([collect()], "asfit-backup-" + new Date().toLocaleDateString("sv") + ".json", { type: "application/json" });
+      if (IS_NATIVE_APP) {
+        await shareBlobNative(new Blob([collect()], { type: "application/json" }), name, "ASFIT Backup");
+        markBackup();
+        flash(t.backupDone);
+        return;
+      }
+      const file = new File([collect()], name, { type: "application/json" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: "ASFIT Backup" });
         markBackup();
@@ -11676,7 +11715,8 @@ function BackupCard({ t, lang = "de", premium = false, onUpsell = () => {} }) {
         exportFile();
       }
     } catch (err) {
-      if (err && err.name !== "AbortError") exportFile();
+      const m = String((err && err.message) || err).toLowerCase();
+      if (err && err.name !== "AbortError" && !m.includes("cancel")) exportFile();
     }
   };
   const exportFile = () => {
@@ -14725,14 +14765,7 @@ export default function AsmarFitApp() {
     const code = await encodeShare({ v: 1, n: sharerName(), ...obj });
     const link = SHARE_BASE + "#s=" + code;
     const text = (sharerName() ? sharerName() + ": " : "") + title + "\n" + link + "\n\n" + t.shareCodeHint + "\n" + code;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "ASFIT", text });
-        return;
-      }
-    } catch (e) {
-      if (e && e.name === "AbortError") return;
-    }
+    if (await shareTextNative({ title: "ASFIT", text })) return;
     try {
       await navigator.clipboard.writeText(text);
       flashShare(t.shareCopied);
@@ -14977,10 +15010,7 @@ export default function AsmarFitApp() {
   const shareApp = async () => {
     const url = "https://asmarfit-project.onrender.com";
     try {
-      if (navigator.share) {
-        await navigator.share({ title: "ASFIT", text: t.setShareText, url });
-        return;
-      }
+      if (await shareTextNative({ title: "ASFIT", text: t.setShareText, url })) return;
       await navigator.clipboard.writeText(t.setShareText + " " + url);
       setShareMsg(t.setShareCopied);
       setTimeout(() => setShareMsg(null), 2500);
