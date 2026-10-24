@@ -5467,18 +5467,55 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   );
 }
 
+// Dauerhafter Demo-Cache für die native App: einmal geladene WebPs landen in der Cache API
+// (überlebt App-Neustarts, unabhängig von Server-Cache-Headern). Einmal laden = ab dann sofort da.
+const gifObjectUrls = new Map(); // url -> blob: URL für die laufende Sitzung
+async function cachedGifSrc(url) {
+  if (!IS_NATIVE_APP || !url || !url.startsWith("http")) return url;
+  if (gifObjectUrls.has(url)) return gifObjectUrls.get(url);
+  try {
+    const cache = await caches.open("asfit-gifs-v1");
+    let res = await cache.match(url);
+    if (!res) {
+      res = await fetch(url);
+      if (!res.ok) return url;
+      await cache.put(url, res.clone());
+    }
+    const obj = URL.createObjectURL(await res.blob());
+    gifObjectUrls.set(url, obj);
+    return obj;
+  } catch {
+    return url; // Cache API nicht verfügbar: normal über das Netz laden
+  }
+}
+// Nächste Demos im Hintergrund vorladen (z. B. beim Blättern in der Bibliothek)
+function prefetchGifs(urls) {
+  if (!IS_NATIVE_APP) return;
+  urls.filter(Boolean).forEach((u) => { cachedGifSrc(u); });
+}
+
 // small square on the Training tab (library, records, friends)
 // animated exercise demo: the gold-tinted GIF on a light tile, with the little muscle body in the corner
 function ExerciseGif({ src, title, corner, t }) {
   // In der nativen App kommen die Demos vom Server (nicht gebündelt) — darum ein
   // sichtbarer Ladezustand und ein freundlicher Fehlertext statt leerer Fläche.
   const [state, setState] = useState("loading"); // loading | ready | error
+  const [resolvedSrc, setResolvedSrc] = useState(IS_NATIVE_APP ? null : src);
   const imgRef = useRef(null);
+  // Nativ: erst aus dem dauerhaften Cache auflösen (oder laden und ablegen)
+  useEffect(() => {
+    let alive = true;
+    setState("loading");
+    if (!IS_NATIVE_APP) { setResolvedSrc(src); return; }
+    setResolvedSrc(null);
+    cachedGifSrc(src).then((u) => { if (alive) setResolvedSrc(u); });
+    return () => { alive = false; };
+  }, [src]);
   // Bei gecachten Bildern kann "load" vor dem React-Handler feuern - dann steht complete schon.
   useEffect(() => {
     const el = imgRef.current;
     if (el && el.complete && el.naturalWidth > 0) setState("ready");
-  }, []);
+  }, [resolvedSrc]);
   return (
     <div
       data-exercise-gif
@@ -5486,10 +5523,10 @@ function ExerciseGif({ src, title, corner, t }) {
       // Weisse Kachel hinter der Demo — auch im Dunkelmodus, damit die Figur immer gleich aussieht
       style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#FFFFFF" }}
     >
-      {state !== "error" && (
+      {state !== "error" && resolvedSrc && (
         <img
           ref={imgRef}
-          src={src}
+          src={resolvedSrc}
           alt={title}
           draggable={false}
           onLoad={() => setState("ready")}
@@ -11242,6 +11279,8 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           const idx = pool.findIndex((e) => e.key === selected.key);
           const prev = idx > 0 ? pool[idx - 1] : null;
           const next = idx >= 0 && idx < pool.length - 1 ? pool[idx + 1] : null;
+          // die Demos der Nachbar-Übungen schon im Hintergrund laden, damit das Blättern sofort geht
+          prefetchGifs([next, prev, idx >= 0 ? pool[idx + 2] : null].map((e) => (e ? gifSrc(e.key) : null)));
           const q = swQ.trim().toLowerCase();
           const hits = q ? EXERCISE_LIBRARY.filter((e) => e.key !== selected.key && (e.name.toLowerCase().includes(q) || e.nameDe.toLowerCase().includes(q))).slice(0, 6) : [];
           const go = (ex) => {

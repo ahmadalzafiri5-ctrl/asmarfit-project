@@ -131,3 +131,5 @@ jobs:
           path: frontend/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 90
+
+# Build-Trigger: Demo-Cache 24.10.2026
