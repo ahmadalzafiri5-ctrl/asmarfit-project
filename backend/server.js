@@ -744,6 +744,10 @@ app.post("/api/mealplan", async (req, res) => {
         // time — with 7 days and 5 meals the Sonnet answer regularly hit the token limit mid-JSON.
         model: process.env.MEALPLAN_MODEL || "claude-haiku-5-5",
         max_tokens: 12000,
+        // Ohne diese Zeile denkt Haiku 5.5 adaptiv und verbraucht dabei das ganze Token-Budget,
+        // bevor das JSON beginnt ("answer without JSON, stop: max_tokens"). Achtung: ein
+        // MEALPLAN_MODEL der Sonnet/Opus-Klasse lehnt "disabled" ab — dann diese Zeile anpassen.
+        thinking: { type: "disabled" },
         system:
           "You create a " + days + "-day meal plan for an adult user of a nutrition app. Reply with ONLY a JSON object, no other text, in exactly this shape: " +
           '{"days": [{"meals": [{"slot": "breakfast"|"lunch"|"dinner"|"snacks", "name": string, "kcal": number, "protein": number, "carbs": number, "fat": number, "ingredients": [string]}]}], "shopping": [{"group": string, "items": [string]}]}. ' +
