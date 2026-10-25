@@ -14316,6 +14316,14 @@ export default function AsmarFitApp() {
   const [duelSent, setDuelSent] = usePersisted("duelSent", null);
   // ASFIT Premium (6.90/Mt. oder 49.90/Jahr): Status lokal; Abbuchung spaeter via Store-Billing
   const [premium, setPremium] = usePersisted("premium", null);
+  // Android-App: Premium zählt nur, wenn es vom Server bestätigt wurde (echter Google-Play-Kauf).
+  // Das räumt den Gratis-Unlock alter Testversionen weg und verhindert, dass ein manipuliertes
+  // Backup Premium einschleust — der Kauf-Knopf erscheint dann wieder.
+  useEffect(() => {
+    if (!IS_NATIVE_APP || Capacitor.getPlatform() !== "android") return;
+    setPremium((p) => (p && p.src !== "server" ? null : p));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Premium aktiv? (lokal gekauft oder vom Server bestätigt, Laufzeit nicht abgelaufen)
   const premiumActive = Boolean(premium && premium.renews > Date.now());
   // KI-Funktionen (Foto-Scan, KI-Rezepte, Wochenplan, Coach, Prognose) sind
