@@ -101,3 +101,15 @@ Apple prüft jede App von Hand gegen die *App Store Review Guidelines*. Das sind
 | Export-Compliance | Verschlüsselungs-Frage | `ITSAppUsesNonExemptEncryption = false` (nur HTTPS) |
 
 Die Review-Notizen zum Einfügen und die Checkliste vor dem Einreichen stehen in `store/formulare.md`.
+
+## KI-Paket in den Stores anlegen
+
+Das Premium-Abo enthält pro Monat 60 Coach-Fragen, 40 Foto-Scans, 10 Rezepte, 4 Wochenpläne und 2 Prognosen. Darüber hinaus kaufen Nutzer ein **KI-Paket** (CHF 2.90, einmalig, 60 Tage gültig). Dafür braucht es in jedem Store ein Produkt:
+
+| Store | Produkt | Einstellungen |
+| --- | --- | --- |
+| Google Play | Produkt-ID `asfit_ai_pack`, Typ **Einmalprodukt (verbrauchbar)** | Name „KI-Paket", Preis CHF 2.90; der Server meldet den Kauf nach der Prüfung als verbraucht, damit es erneut gekauft werden kann |
+| Stripe (Web) | Preis einmalig CHF 2.90 | Preis-ID als `STRIPE_PRICE_AI_PACK` bei Render eintragen; Webhook-Ereignis `checkout.session.completed` ist schon abonniert |
+| App Store (iPhone) | Produkt-ID `asfit_ai_pack`, Typ **Verbrauchsartikel** | folgt mit der StoreKit-Anbindung des Abos (offen) |
+
+Die Zahlen lassen sich auf dem Server ohne App-Update ändern (`AI_QUOTA_JSON`, `AI_PACK_CREDITS_JSON`, `AI_PACK_CHF`). Paywall-Pflicht von Apple: Preis, Inhalt und Gültigkeit stehen in der App auf der Karte „KI-Kontingent".

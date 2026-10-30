@@ -106,6 +106,29 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 // store build (VITE_HIDE_INTAKE=1): the intake diary is left out completely (no card, tile, settings row, reminder)
 const HIDE_INTAKE = import.meta.env.VITE_HIDE_INTAKE === "1";
+// Konto-Token für Server-Aufrufe ausserhalb der App-Komponente: die KI-Routen zählen das Monatskontingent pro Konto
+function authHeadersGlobal() {
+  try {
+    const a = JSON.parse(localStorage.getItem("asfit.auth") || "null");
+    return a && a.token ? { Authorization: "Bearer " + a.token } : {};
+  } catch {
+    return {};
+  }
+}
+// Antwort des Servers "Monatskontingent aufgebraucht" (429 ai_quota): die App öffnet den Dialog mit dem KI-Paket.
+// Liefert true, wenn es diese Antwort war (der Aufrufer bricht dann still ab).
+async function aiQuotaStop(res) {
+  if (!res || res.status !== 429) return false;
+  let d = null;
+  try {
+    d = await res.clone().json();
+  } catch {
+    return false;
+  }
+  if (!d || d.error !== "ai_quota") return false;
+  window.dispatchEvent(new CustomEvent("asfit-ai-quota", { detail: d }));
+  return true;
+}
 
 // Colours are CSS variables so the whole app can switch theme at runtime
 // (see THEMES / applyTheme below — the palette follows the gender chosen in onboarding).
@@ -406,6 +429,21 @@ const STR = {
     aiLimitBody: "You've used your free AI requests for this week ({a} of {b}). With ASFIT Premium there's no limit.",
     aiLimitCta: "Discover Premium",
     aiLimitLater: "Maybe later",
+    aiQuotaTitle: "Monthly AI allowance used up",
+    aiQuotaBody: "{k}: {a} of {b} included this month are used. Keep going with an AI pack for CHF {p}, or wait for next month.",
+    aiQuotaCta: "Get the AI pack",
+    aiQuotaCardTitle: "AI allowance this month",
+    aiQuotaCardSub: "Included in Premium. Beyond that, an AI pack adds credits that stay valid for 60 days.",
+    aiQuotaCredits: "+{n} credits",
+    aiKindCoach: "Coach questions",
+    aiKindPhoto: "Photo scans",
+    aiKindRecipe: "AI recipes & imports",
+    aiKindPlan: "Weekly plans",
+    aiKindPotential: "Potential previews",
+    aiPackBuy: "Buy AI pack · CHF {p}",
+    aiPackIncludes: "One pack: {list}. Valid {d} days, used after the monthly allowance.",
+    aiPackUnavailable: "Buying is not available in this version yet.",
+    aiPackErr: "The purchase could not be completed. Please try again.",
     aiFreeLeft: "{n} free this week",
     weekSummaryTitle: "This week",
     exReplace: "Replace exercise",
@@ -1687,6 +1725,21 @@ const STR = {
     aiLimitBody: "Deine kostenlosen KI-Anfragen dieser Woche sind aufgebraucht ({a} von {b}). Mit ASFIT Premium gibt es kein Limit.",
     aiLimitCta: "Premium entdecken",
     aiLimitLater: "Später vielleicht",
+    aiQuotaTitle: "Monats-Kontingent aufgebraucht",
+    aiQuotaBody: "{k}: {a} von {b} inklusiven in diesem Monat sind genutzt. Weiter geht es mit einem KI-Paket für CHF {p}, oder nächsten Monat.",
+    aiQuotaCta: "KI-Paket holen",
+    aiQuotaCardTitle: "KI-Kontingent diesen Monat",
+    aiQuotaCardSub: "Im Premium-Abo inklusive. Darüber hinaus bringt ein KI-Paket Guthaben, das 60 Tage gültig bleibt.",
+    aiQuotaCredits: "+{n} Guthaben",
+    aiKindCoach: "Coach-Fragen",
+    aiKindPhoto: "Foto-Scans",
+    aiKindRecipe: "KI-Rezepte & Importe",
+    aiKindPlan: "Wochenpläne",
+    aiKindPotential: "Potenzial-Vorschauen",
+    aiPackBuy: "KI-Paket kaufen · CHF {p}",
+    aiPackIncludes: "Ein Paket: {list}. {d} Tage gültig, wird nach dem Monatskontingent verbraucht.",
+    aiPackUnavailable: "Der Kauf ist in dieser Version noch nicht möglich.",
+    aiPackErr: "Der Kauf konnte nicht abgeschlossen werden. Bitte noch einmal versuchen.",
     aiFreeLeft: "{n} gratis diese Woche",
     weekSummaryTitle: "Diese Woche",
     exReplace: "Übung ersetzen",
@@ -4428,11 +4481,11 @@ function MealPlanScreen({ t, lang, targets, onAddToMeal }) {
     try {
       const res = await fetch(API_BASE + "/api/mealplan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeadersGlobal() },
         body: JSON.stringify({ lang, days: form.days, meals: form.meals, diet: form.diet, dislikes: form.dislikes, kcal: targets.kcal, protein: targets.protein, carbs: targets.carbs, fat: targets.fat, country: cc || undefined }),
         signal: ctl.signal,
       });
-      if (res.status === 429) return setMsg(t.mpLimit);
+      if (res.status === 429) return (await aiQuotaStop(res)) ? setMsg(null) : setMsg(t.mpLimit);
       if (res.status === 503) return setMsg(t.mpOff);
       if (!res.ok) return setMsg(t.mpErr);
       const d = await res.json();
@@ -8597,7 +8650,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
       const ask = () =>
         fetch(API_BASE + "/api/assistant", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeadersGlobal() },
           body: JSON.stringify({ messages: next, lang, context, data: data || undefined, country: cc || undefined, stream: true }),
         });
       let res = await ask().catch(() => null);
@@ -8609,6 +8662,10 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
       }
       if (!res) {
         setError(t.serverError);
+      } else if (res.status === 429 && (await aiQuotaStop(res))) {
+        // Monatskontingent voll: der Dialog der App erklärt es; die Frage bleibt im Feld
+        setMessages(messages);
+        setInput(text);
       } else if (res.status === 503) {
         setError(t.assistantNotConfigured);
       } else if (!res.ok) {
@@ -8876,7 +8933,7 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
     try {
       const res = await fetch(API_BASE + "/api/potential", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeadersGlobal() },
         body: JSON.stringify({
           image: imageOn ? photo : undefined,
           adult: true,
@@ -8887,7 +8944,7 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
         }),
         signal: ctl.signal,
       });
-      if (res.status === 429) return setMsg(t.potLimit);
+      if (res.status === 429) return (await aiQuotaStop(res)) ? setMsg(null) : setMsg(t.potLimit);
       if (res.status === 503) return setMsg(t.potOff);
       if (!res.ok) return setMsg(t.potErr);
       const d = await res.json();
@@ -9040,10 +9097,11 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
       try {
         const res = await fetch(API_BASE + "/api/food/photo", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeadersGlobal() },
           body: JSON.stringify({ image: dataUrl, lang }),
         });
         if (res.ok) return { data: await res.json() };
+        if (res.status === 429 && (await aiQuotaStop(res))) return { quota: true };
         const body = await res.json().catch(() => ({}));
         if (res.status === 503 && body.error === "not_configured") return { notConfigured: true };
         if (res.status < 500) throw new Error("http " + res.status);
@@ -9066,6 +9124,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
       const dataUrl = await downscaleImage(file, 800);
       setPreview(dataUrl);
       const out = await postPhoto(dataUrl);
+      if (out.quota) return setStatus("idle"); // Dialog mit dem KI-Paket ist offen
       if (out.notConfigured) return setStatus("notConfigured");
       const data = out.data;
       if (!data.isFood) return setStatus("noFood");
@@ -10427,10 +10486,11 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
     try {
       const res = await fetch(API_BASE + "/api/recipe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeadersGlobal() },
         body: JSON.stringify({ prompt: wish, lang, country: cc || undefined }),
       });
-      if (res.status === 503) setAiError(t.assistantNotConfigured);
+      if (res.status === 429 && (await aiQuotaStop(res))) setAiError(null);
+      else if (res.status === 503) setAiError(t.assistantNotConfigured);
       else if (!res.ok) setAiError(t.assistantError);
       else {
         const r = await res.json();
@@ -10453,10 +10513,11 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
     try {
       const res = await fetch(API_BASE + "/api/recipe-import", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeadersGlobal() },
         body: JSON.stringify({ input, lang }),
       });
       if (res.status === 503) setImpError(t.assistantNotConfigured);
+      else if (res.status === 429 && (await aiQuotaStop(res))) setImpError(null);
       else if (res.status === 429) setImpError(t.importTooMany);
       else if (res.status === 422) {
         const j = await res.json().catch(() => ({}));
@@ -13183,7 +13244,64 @@ const PREMIUM_PLANS = {
   yearly: { chf: "49.90", days: 365 },
 };
 
-function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = false, isPlay = false, onPlayPurchase = async () => null, onCheckout = () => {}, onPortal = () => {}, onGoLogin = () => {} }) {
+// Monatskontingent der KI-Funktionen (im Abo inklusive) mit Guthaben aus gekauften Paketen und dem Paket-Angebot
+function AiQuotaCard({ t, usage, onBuy, canBuy, buying = false, err = null, focus = false }) {
+  const kinds = [["coach", t.aiKindCoach], ["photo", t.aiKindPhoto], ["recipe", t.aiKindRecipe], ["plan", t.aiKindPlan], ["potential", t.aiKindPotential]];
+  const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  const pack = (usage && usage.pack) || { chf: "2.90", credits: { coach: 100, photo: 50, recipe: 10, plan: 2, potential: 1 } };
+  const inc = kinds.map(([k, l]) => "+" + (pack.credits[k] || 0) + " " + l).join(" · ");
+  return (
+    <div data-ai-usage>
+    <Card style={{ marginBottom: 14, border: focus ? "1px solid " + COLORS.gold : undefined }}>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.aiQuotaCardTitle}</div>
+      <div style={{ ...small, marginTop: 2, marginBottom: 12, lineHeight: 1.45 }}>{t.aiQuotaCardSub}</div>
+      {kinds.map(([k, label]) => {
+        const used = usage ? usage.used[k] || 0 : 0;
+        const limit = usage ? usage.quota[k] || 0 : 0;
+        const credits = usage ? usage.credits[k] || 0 : 0;
+        const pct = limit ? Math.min(100, (used / limit) * 100) : 0;
+        return (
+          <div key={k} data-ai-usage-row={k} style={{ marginBottom: 9 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", ...small, fontSize: 12, marginBottom: 3 }}>
+              <span style={{ color: COLORS.text }}>{label}</span>
+              <span>
+                {usage ? used + " / " + limit : "–"}
+                {credits > 0 ? " · " + t.aiQuotaCredits.replace("{n}", credits) : ""}
+              </span>
+            </div>
+            <div style={{ height: 6, background: COLORS.raised, borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ width: pct + "%", height: "100%", background: pct >= 100 ? COLORS.coral : COLORS.gold }} />
+            </div>
+          </div>
+        );
+      })}
+      <button
+        data-ai-pack-buy
+        onClick={onBuy}
+        disabled={buying || !canBuy}
+        style={{ width: "100%", marginTop: 8, background: canBuy ? COLORS.gold : COLORS.raised, color: canBuy ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: canBuy ? "pointer" : "default" }}
+      >
+        {buying ? "…" : t.aiPackBuy.replace("{p}", pack.chf)}
+      </button>
+      <div style={{ ...small, fontSize: 11.5, marginTop: 8, lineHeight: 1.45 }}>{t.aiPackIncludes.replace("{list}", inc).replace("{d}", pack.days || 60)}</div>
+      {!canBuy && <div style={{ ...small, fontSize: 11.5, marginTop: 6, color: COLORS.coral }}>{t.aiPackUnavailable}</div>}
+      {err && <div data-ai-pack-err style={{ ...small, fontSize: 12, marginTop: 6, color: COLORS.coral }}>{err}</div>}
+    </Card>
+    </div>
+  );
+}
+
+function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = false, isPlay = false, onPlayPurchase = async () => null, onCheckout = () => {}, onPortal = () => {}, onGoLogin = () => {}, aiUsage = null, onBuyPack = async () => null, packCanBuy = false, packFocus = false }) {
+  const [packBuying, setPackBuying] = useState(false);
+  const [packErr, setPackErr] = useState(null);
+  const buyPack = async () => {
+    if (packBuying) return;
+    setPackBuying(true);
+    setPackErr(null);
+    const err = await onBuyPack();
+    setPackErr(err);
+    setPackBuying(false);
+  };
   const [sel, setSel] = useState("yearly");
   const [buying, setBuying] = useState(false);
   const [buyErr, setBuyErr] = useState(null);
@@ -13236,6 +13354,8 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
             {(premium.cancelled ? t.premiumEnds : t.premiumRenews).replace("{d}", fmtD(premium.renews))}
           </div>
         </Card>
+
+        <AiQuotaCard t={t} usage={aiUsage} onBuy={buyPack} canBuy={packCanBuy} buying={packBuying} err={packErr} focus={packFocus} />
 
         {features}
 
@@ -14331,6 +14451,18 @@ export default function AsmarFitApp() {
   const AI_LIMITS = {};
   const [aiQuota, setAiQuota] = usePersisted("aiQuota", {});
   const [aiLimitHit, setAiLimitHit] = useState(null);
+  // Stand des Monatskontingents vom Server (für den Premium-Bildschirm) und der Paket-Kauf
+  const [aiUsage, setAiUsage] = useState(null);
+  const [billingPack, setBillingPack] = useState(false); // Stripe-Preis für das KI-Paket vorhanden?
+  const [packFocus, setPackFocus] = useState(false);
+  useEffect(() => {
+    const h = (e) => {
+      const d = e.detail || {};
+      setAiLimitHit({ kind: d.kind, used: d.used, limit: d.limit, quota: true, credits: d.credits, pack: d.pack });
+    };
+    window.addEventListener("asfit-ai-quota", h);
+    return () => window.removeEventListener("asfit-ai-quota", h);
+  }, []);
   const aiUsed = (kind) => (aiQuota.wk === isoWeekKey() ? aiQuota[kind] || 0 : 0);
   const aiLeft = (kind) => Math.max(0, (AI_LIMITS[kind] || 0) - aiUsed(kind));
   const aiGate = (kind) => {
@@ -14383,9 +14515,52 @@ export default function AsmarFitApp() {
   useEffect(() => {
     fetch(API_BASE + "/api/billing/config")
       .then((r) => r.json())
-      .then((d) => setBillingOn(Boolean(d.enabled) && !IS_NATIVE_APP))
+      .then((d) => {
+        setBillingOn(Boolean(d.enabled) && !IS_NATIVE_APP);
+        setBillingPack(Boolean(d.aiPack) && !IS_NATIVE_APP);
+      })
       .catch(() => {});
   }, []);
+  const loadAiUsage = () =>
+    fetch(API_BASE + "/api/ai/usage", { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setAiUsage(d))
+      .catch(() => {});
+  // KI-Paket kaufen: Android über Google Play (Server prüft bei Google), Web über Stripe, sonst Test-Route des Servers
+  const buyAiPack = async () => {
+    const isAndroidApp = IS_NATIVE_APP && Capacitor.getPlatform() === "android";
+    try {
+      if (isAndroidApp) {
+        const { NativePurchases, PURCHASE_TYPE } = await import("@capgo/native-purchases");
+        const pid = (aiUsage && aiUsage.pack && aiUsage.pack.id) || "asfit_ai_pack";
+        const tx = await NativePurchases.purchaseProduct({ productIdentifier: pid, productType: PURCHASE_TYPE.INAPP, quantity: 1 });
+        const token = (tx && (tx.purchaseToken || tx.transactionId)) || "";
+        if (!token) return t.aiPackErr;
+        const r = await fetch(API_BASE + "/api/billing/play/verify-pack", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ token, productId: pid }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.credits) return t.aiPackErr;
+        setAiUsage(d);
+        return null;
+      }
+      if (billingPack) {
+        await openCheckout("ai_pack");
+        return null;
+      }
+      // kein Zahlungsweg eingerichtet: nur die Test-Route des Servers (AI_PACK_DEV=1), sonst Hinweis
+      const r = await fetch(API_BASE + "/api/ai/pack/dev", { method: "POST", headers: authHeaders() });
+      if (!r.ok) return t.aiPackUnavailable;
+      setAiUsage(await r.json());
+      return null;
+    } catch (e) {
+      const m = String((e && e.message) || e).toLowerCase();
+      return m.includes("cancel") ? null : t.aiPackErr;
+    }
+  };
+  useEffect(() => {
+    if (overlay === "premium" && premiumActive) loadAiUsage();
+    if (overlay !== "premium") setPackFocus(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlay]);
   const openCheckout = async (plan) => {
     try {
       const r = await fetch(API_BASE + "/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ plan, device: await deviceIdForBilling() }) });
@@ -15478,7 +15653,7 @@ export default function AsmarFitApp() {
     topTitle = t.settingsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "premium") {
-    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} isPlay={IS_NATIVE_APP && Capacitor.getPlatform() === "android"} onPlayPurchase={openPlayPurchase} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} />;
+    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} isPlay={IS_NATIVE_APP && Capacitor.getPlatform() === "android"} onPlayPurchase={openPlayPurchase} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} aiUsage={aiUsage} onBuyPack={buyAiPack} packCanBuy={(IS_NATIVE_APP && Capacitor.getPlatform() === "android") || billingPack || !billingOn} packFocus={packFocus} />;
     topTitle = t.premiumTitle;
     showBack = () => setOverlay("settings");
   } else if (overlay === "account") {
@@ -15766,19 +15941,25 @@ export default function AsmarFitApp() {
               <div data-ai-limit style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
                 <div style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 20, padding: 22, width: "100%", maxWidth: 330, textAlign: "center" }}>
                   <div style={{ fontSize: 30, marginBottom: 8 }}>✨</div>
-                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{aiLimitHit.limit > 0 ? t.aiLimitTitle : t.premiumLockHint}</div>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{aiLimitHit.quota ? t.aiQuotaTitle : aiLimitHit.limit > 0 ? t.aiLimitTitle : t.premiumLockHint}</div>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "8px 0 16px", lineHeight: 1.5 }}>
-                    {aiLimitHit.limit > 0 ? t.aiLimitBody.replace("{a}", aiLimitHit.used).replace("{b}", aiLimitHit.limit) : t.premiumSub}
+                    {aiLimitHit.quota
+                      ? t.aiQuotaBody.replace("{a}", aiLimitHit.used).replace("{b}", aiLimitHit.limit).replace("{k}", t["aiKind" + { coach: "Coach", photo: "Photo", recipe: "Recipe", plan: "Plan", potential: "Potential" }[aiLimitHit.kind]] || "").replace("{p}", (aiLimitHit.pack && aiLimitHit.pack.chf) || "2.90")
+                      : aiLimitHit.limit > 0
+                        ? t.aiLimitBody.replace("{a}", aiLimitHit.used).replace("{b}", aiLimitHit.limit)
+                        : t.premiumSub}
                   </div>
                   <button
                     data-ai-limit-cta
                     onClick={() => {
+                      const q = Boolean(aiLimitHit.quota);
                       setAiLimitHit(null);
+                      setPackFocus(q);
                       setOverlay("premium");
                     }}
                     style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}
                   >
-                    {t.aiLimitCta}
+                    {aiLimitHit.quota ? t.aiQuotaCta : t.aiLimitCta}
                   </button>
                   <div data-ai-limit-later onClick={() => setAiLimitHit(null)} style={{ marginTop: 12, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, cursor: "pointer" }}>
                     {t.aiLimitLater}

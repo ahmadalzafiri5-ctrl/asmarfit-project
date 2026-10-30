@@ -97,3 +97,10 @@ In App Store Connect unter *App-Überprüfungsinformationen → Notizen* (Englis
 **Berechtigungen, die Google abfragt:** Kamera (Barcode-Scan, Mahlzeiten-Foto), Mitteilungen (Erinnerungen, nur wenn der Nutzer sie einschaltet). Keine Standort-, Hintergrund-, SMS-, Anruf- oder Dateizugriffs-Rechte. Health-Connect-Rechte: READ_STEPS, READ_WEIGHT, READ_EXERCISE mit den Begründungen oben.
 
 **Testen vor der Freigabe:** Google verlangt für neue private Konten einen geschlossenen Test mit mindestens 12 Testern über 14 Tage; danach den Antrag auf Produktionszugang stellen und die Fragen zur App ehrlich beantworten (Zweck, Zielgruppe, was getestet wurde).
+
+## KI-Paket (In-App-Produkt)
+
+- **Produkt-ID:** `asfit_ai_pack` (Google Play: Einmalprodukt, verbrauchbar; App Store: Verbrauchsartikel).
+- **Name/Beschreibung:** „KI-Paket" — +100 Coach-Fragen, +50 Foto-Scans, +10 Rezepte, +2 Wochenpläne, +1 Prognose. 60 Tage gültig. Wird nach dem Monatskontingent des Abos verbraucht.
+- **Preis:** CHF 2.90 (Preisstufe nach Store-Tabelle wählen).
+- **Steuern/Kategorie:** digitale Dienstleistung, wie das Abo.
