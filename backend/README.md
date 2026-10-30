@@ -95,3 +95,14 @@ the example picture is not switched on):
 
 The adapters are covered by `asfit-shots/potential-backend-test.cjs` against mock servers only; they have not been run
 against the real provider APIs yet.
+
+## KI-Kontingent und KI-Paket
+
+Jede KI-Route (Coach, Foto-Scan, KI-Rezept, Rezept-Import, Wochenplan, Prognose) zählt pro Konto und Monat mit (`backend/aiQuota.js`). Im Premium-Abo sind pro Monat inklusive: 60 Coach-Fragen, 40 Foto-Scans, 10 Rezepte (KI + Import), 4 Wochenpläne, 2 Prognosen. Ist das Kontingent aufgebraucht, antwortet die Route mit `429 { error: "ai_quota", kind, used, limit, credits, pack }`; die App zeigt den Dialog mit dem KI-Paket. Ein Paket (CHF 2.90) bringt +100 Coach-Fragen, +50 Foto-Scans, +10 Rezepte, +2 Wochenpläne, +1 Prognose, gültig 60 Tage, und wird erst nach dem Monatskontingent verbraucht.
+
+- `GET /api/ai/usage` — Stand für die App (genutzt, inklusive, Guthaben, Paket-Angebot). Mit Konto-Token pro Konto, sonst pro IP.
+- `POST /api/billing/checkout` mit `{ "plan": "ai_pack" }` — Stripe-Einmalzahlung (Web); der Webhook schreibt das Guthaben gut (`checkout.session.completed`, Metadaten `asfit_kind=ai_pack`).
+- `POST /api/billing/play/verify-pack` mit `{ token, productId }` — Android: Kauf des verbrauchbaren Produkts bei Google prüfen, gutschreiben, als verbraucht melden.
+- `POST /api/ai/pack/dev` — nur mit `AI_PACK_DEV=1` (Tests), schaltet ein Paket ohne Kauf frei.
+
+Umgebungsvariablen (optional): `AI_QUOTA_JSON`, `AI_PACK_PRODUCT` (Standard `asfit_ai_pack`), `AI_PACK_CHF`, `AI_PACK_DAYS`, `AI_PACK_CREDITS_JSON`, `STRIPE_PRICE_AI_PACK` (Stripe-Preis des Pakets), `AI_PACK_DEV`. Tabellen `ai_usage` und `ai_packs` entstehen beim Start automatisch (Postgres); ohne Datenbank zählt der Prozess im Speicher.

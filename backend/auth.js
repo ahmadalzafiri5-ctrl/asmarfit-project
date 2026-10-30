@@ -85,6 +85,19 @@ export async function requireAuth(req, res, next) {
   }
 }
 
+// Bearer-Token prüfen, ohne die Anfrage abzuweisen: Nutzer-ID oder null (für Routen, die auch ohne Konto laufen)
+export async function optionalUserId(req) {
+  try {
+    if (!authEnabled()) return null;
+    const m = /^Bearer (.+)$/.exec(req.headers.authorization || "");
+    if (!m) return null;
+    const { payload } = await jwtVerify(m[1], secretKey(), { algorithms: ["HS256"] });
+    return Number(payload.uid) || null;
+  } catch {
+    return null;
+  }
+}
+
 // Einfache Bremse gegen Passwort-Raten: pro IP höchstens 20 Auth-Versuche je 10 Minuten
 const attempts = new Map();
 function tooMany(ip) {

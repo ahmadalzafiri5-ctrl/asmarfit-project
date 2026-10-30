@@ -7,6 +7,7 @@
 //                         unter "Nutzer und Berechtigungen" Zugriff auf Finanzdaten der App hat
 import { importPKCS8, SignJWT } from "jose";
 import { pool, requireAuth, authEnabled } from "./auth.js";
+import { grantPack, AI_PACK } from "./aiQuota.js";
 
 const PKG = process.env.ANDROID_PACKAGE || "com.asfit.app";
 let SA = null;
@@ -88,6 +89,31 @@ export function mountPlayBilling(app) {
       res.json(out);
     } catch (e) {
       console.error("Play verify:", e.message);
+      res.status(502).json({ error: "upstream_error" });
+    }
+  });
+
+  // KI-Paket (Einmalkauf, verbrauchbar): Kauf bei Google prüfen, Guthaben gutschreiben und den Kauf als
+  // verbraucht melden, damit dasselbe Produkt erneut gekauft werden kann.
+  app.post("/api/billing/play/verify-pack", requireAuth, async (req, res) => {
+    const token = String((req.body && req.body.token) || "").replace(/[^\w.-]/g, "").slice(0, 300);
+    const productId = String((req.body && req.body.productId) || AI_PACK.id).replace(/[^\w.]/g, "").slice(0, 80);
+    if (token.length < 20) return res.status(400).json({ error: "bad_token" });
+    try {
+      const at = await googleToken();
+      const base = API + "/purchases/products/" + encodeURIComponent(productId) + "/tokens/" + encodeURIComponent(token);
+      const r = await fetch(base, { headers: { authorization: "Bearer " + at } });
+      if (r.status === 404 || r.status === 400) return res.status(422).json({ error: "invalid_token" });
+      if (!r.ok) throw new Error("google_" + r.status);
+      const p = await r.json();
+      if (Number(p.purchaseState) !== 0) return res.status(422).json({ error: "not_purchased" }); // 0 = gekauft, 1 = storniert, 2 = ausstehend
+      const usage = await grantPack("u:" + req.userId, "play:" + (p.orderId || token), "play");
+      if (Number(p.consumptionState) === 0) {
+        await fetch(base + ":consume", { method: "POST", headers: { authorization: "Bearer " + at, "content-type": "application/json" }, body: "{}" }).catch((e) => console.error("Play consume:", e.message));
+      }
+      res.json(usage);
+    } catch (e) {
+      console.error("Play verify-pack:", e.message);
       res.status(502).json({ error: "upstream_error" });
     }
   });

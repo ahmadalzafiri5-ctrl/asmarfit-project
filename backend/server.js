@@ -9,6 +9,7 @@ import { isCountryCode, countryNameFor, offCountryTag } from "./countries.js";
 import { mountAuth, initAuthDb, authEnabled } from "./auth.js";
 import { mountBilling, billingWebhook } from "./billing.js";
 import { mountPlayBilling } from "./playBilling.js";
+import { mountAiQuota, initAiQuotaDb, aiQuotaGate } from "./aiQuota.js";
 
 // the country the user shops in (ISO code sent by the app) as an English name for AI prompts; null when missing or invalid
 function shopCountry(cc) {
@@ -34,7 +35,12 @@ app.use(express.json({ limit: "8mb" })); // photo scan sends a downscaled JPEG a
 mountAuth(app);
 mountBilling(app);
 mountPlayBilling(app);
-if (authEnabled()) initAuthDb().then(() => console.log("Auth-Datenbank bereit")).catch((e) => console.error("Auth-DB:", e.message));
+mountAiQuota(app); // Stand des KI-Kontingents (GET /api/ai/usage)
+if (authEnabled())
+  initAuthDb()
+    .then(() => initAiQuotaDb())
+    .then(() => console.log("Auth-Datenbank bereit"))
+    .catch((e) => console.error("Auth-DB:", e.message));
 
 const PORT = process.env.PORT || 3001;
 const USDA_API_KEY = process.env.USDA_API_KEY;
@@ -418,7 +424,7 @@ function sweepRateLimits() {
 }
 setInterval(sweepRateLimits, 5 * 60_000).unref();
 
-app.post("/api/assistant", async (req, res) => {
+app.post("/api/assistant", aiQuotaGate("coach", () => Boolean(ANTHROPIC_API_KEY)), async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
   if (isRateLimited(assistantHits, req.ip, 15)) return res.status(429).json({ error: "rate_limited" });
 
@@ -564,7 +570,7 @@ async function generatePotentialImage(mediaType, b64, prompt) {
   }
 }
 
-app.post("/api/potential", async (req, res) => {
+app.post("/api/potential", aiQuotaGate("potential", () => Boolean(ANTHROPIC_API_KEY)), async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
   if (isRateLimited(potentialMinute, req.ip, Number(process.env.POTENTIAL_PER_MINUTE) || 3)) return res.status(429).json({ error: "rate_limited" });
   const today = new Date().toISOString().slice(0, 10);
@@ -715,7 +721,7 @@ function parseLenientJson(s) {
   return null;
 }
 const MEALPLAN_DAILY_LIMIT = Number(process.env.MEALPLAN_DAILY_LIMIT) || 4;
-app.post("/api/mealplan", async (req, res) => {
+app.post("/api/mealplan", aiQuotaGate("plan", () => Boolean(ANTHROPIC_API_KEY)), async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
   if (isRateLimited(mealplanMinute, req.ip, Number(process.env.MEALPLAN_PER_MINUTE) || 2)) return res.status(429).json({ error: "rate_limited" });
   const today = new Date().toISOString().slice(0, 10);
@@ -818,7 +824,7 @@ app.post("/api/mealplan", async (req, res) => {
 /* ---------- POST /api/food/photo ---------- */
 // AI food photo recognition: a vision model estimates the dish and its
 // nutrition from one photo. Estimates only — the app lets the user review.
-app.post("/api/food/photo", async (req, res) => {
+app.post("/api/food/photo", aiQuotaGate("photo", () => Boolean(ANTHROPIC_API_KEY)), async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
   if (isRateLimited(assistantHits, req.ip, 15)) return res.status(429).json({ error: "rate_limited" });
 
@@ -928,7 +934,7 @@ app.get("/api/food/barcode/:code", async (req, res) => {
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-app.post("/api/recipe", async (req, res) => {
+app.post("/api/recipe", aiQuotaGate("recipe", () => Boolean(ANTHROPIC_API_KEY)), async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
   if (isRateLimited(assistantHits, req.ip, 15)) return res.status(429).json({ error: "rate_limited" });
 
@@ -1042,7 +1048,7 @@ app.get("/api/exercise-video", async (req, res) => {
 // A recipe link (website, TikTok, public Instagram post) or a pasted caption in, a recipe with
 // nutrition values per serving out. Links are read on the server (see recipeImport.js for the
 // safety checks); when a site blocks that, the app asks the user to paste the text instead.
-app.post("/api/recipe-import", async (req, res) => {
+app.post("/api/recipe-import", aiQuotaGate("recipe", () => Boolean(ANTHROPIC_API_KEY)), async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
   if (isRateLimited(assistantHits, req.ip, 8)) return res.status(429).json({ error: "rate_limited" });
 

@@ -8,13 +8,15 @@
 //   STRIPE_SECRET_KEY        sk_live_... oder sk_test_...
 //   STRIPE_PRICE_MONTHLY     price_... (CHF 6.90 / Monat)
 //   STRIPE_PRICE_YEARLY      price_... (CHF 49.90 / Jahr)
+//   STRIPE_PRICE_AI_PACK     price_... (CHF 2.90 einmalig, KI-Paket; optional)
 //   STRIPE_WEBHOOK_SECRET    whsec_... (Webhook-Endpunkt /api/billing/webhook)
 //   FRONTEND_URL             z.B. https://asmarfit-project.onrender.com
 import Stripe from "stripe";
 import { pool, requireAuth, authEnabled } from "./auth.js";
+import { grantPack } from "./aiQuota.js";
 
 const KEY = process.env.STRIPE_SECRET_KEY || "";
-const PRICE = { monthly: process.env.STRIPE_PRICE_MONTHLY || "", yearly: process.env.STRIPE_PRICE_YEARLY || "" };
+const PRICE = { monthly: process.env.STRIPE_PRICE_MONTHLY || "", yearly: process.env.STRIPE_PRICE_YEARLY || "", ai_pack: process.env.STRIPE_PRICE_AI_PACK || "" };
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const FRONTEND_URL = (process.env.FRONTEND_URL || "https://asmarfit-project.onrender.com").replace(/\/$/, "");
 
@@ -65,6 +67,10 @@ export function billingWebhook() {
     try {
       if (event.type === "checkout.session.completed") {
         const s = event.data.object;
+        // KI-Paket (Einmalzahlung): Guthaben dem Konto gutschreiben; die Session-ID verhindert Doppelgutschriften
+        if (s.mode === "payment" && s.metadata && s.metadata.asfit_kind === "ai_pack" && s.payment_status === "paid" && s.metadata.asfit_user) {
+          await grantPack("u:" + Number(s.metadata.asfit_user), "stripe:" + s.id, "stripe");
+        }
         if (s.mode === "subscription" && s.subscription) {
           const sub = await stripe.subscriptions.retrieve(typeof s.subscription === "string" ? s.subscription : s.subscription.id);
           await applySubscription(sub);
@@ -86,13 +92,27 @@ export function billingWebhook() {
 }
 
 export function mountBilling(app) {
-  app.get("/api/billing/config", (_req, res) => res.json({ enabled: billingEnabled() }));
+  app.get("/api/billing/config", (_req, res) => res.json({ enabled: billingEnabled(), aiPack: billingEnabled() && Boolean(PRICE.ai_pack) }));
   if (!billingEnabled()) return;
 
   // Abo abschliessen: Stripe-Checkout (Karte, Apple Pay, Google Pay; Karte wird
   // für die Verlängerung automatisch gespeichert). Erstes Abo: 3 Tage gratis.
   app.post("/api/billing/checkout", requireAuth, async (req, res) => {
     try {
+      // KI-Paket: Einmalzahlung statt Abo
+      if (req.body && req.body.plan === "ai_pack") {
+        if (!PRICE.ai_pack) return res.status(404).json({ error: "no_pack" });
+        const customer = await getOrCreateCustomer(req.userId);
+        const session = await stripe.checkout.sessions.create({
+          mode: "payment",
+          customer,
+          line_items: [{ price: PRICE.ai_pack, quantity: 1 }],
+          metadata: { asfit_kind: "ai_pack", asfit_user: String(req.userId) },
+          success_url: FRONTEND_URL + "/#billing=pack",
+          cancel_url: FRONTEND_URL + "/#billing=cancel",
+        });
+        return res.json({ url: session.url });
+      }
       const plan = req.body && req.body.plan === "monthly" ? "monthly" : "yearly";
       // Geräte-Kennung der App (Android-ID bzw. zufällige Web-ID): die Gratis-Testphase gibt es
       // pro Gerät nur einmal, damit "neues Konto = neuer Test" nicht funktioniert.
