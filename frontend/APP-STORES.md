@@ -10,7 +10,7 @@ Kurzfassung: Google Play geht von deinem Windows-PC aus. Für Apple braucht es e
 | App-Symbol 512×512, App-Name „ASFIT" | fertig (`public/icon-512.png`) | – |
 | Datenschutzerklärung als Web-Adresse | fertig ausgefüllt und live: `https://asmarfit-project.onrender.com/privacypolicy.html` | – |
 | Impressum und Nutzungsbedingungen | fertig ausgefüllt und live (Martin Urs AS Web&App development, Kloten) | – |
-| ASFIT Premium (Abo-Screen) | **Achtung: Kauf-Knopf schaltet noch ohne Zahlung frei.** Vor dem Einreichen entweder Google Play Billing / StoreKit anbinden oder den Premium-Screen vorerst ausblenden — Apple lehnt Schein-Kaufflüsse ab | Claude, auf Zuruf |
+| ASFIT Premium (Abo-Screen) | Android: fertig über **Google Play Billing** mit Server-Prüfung des Kaufs (Abo und KI-Paket `asfit_ai_pack`). Web: Stripe. **Achtung iPhone / Web ohne Stripe-Konfiguration: dort schaltet der Kauf-Knopf noch ohne Zahlung frei.** Vor der Apple-Einreichung StoreKit anbinden oder den Premium-Screen in der iPhone-App ausblenden — Apple lehnt Schein-Kaufflüsse ab | Claude, auf Zuruf |
 | Store-Texte (Kurzbeschreibung, lange Beschreibung, Stichwörter) DE/EN | fertig: `frontend/store/store-texte.md` | – |
 | Bildschirmfotos vom Handy (je Store eigene Größen) | fertig: `C:\Users\StartKlar\Downloads\ASFIT-Store\` → `de`/`en` mit `apple-6.7` (1290×2796), `apple-6.5` (1242×2688), `google-phone` (1080×2160), `google-feature-1024x500.png`. Neu erzeugen: `node store-shots.cjs de` und `node store-frames.cjs de` in `asfit-shots` | – |
 | „Antwort melden"-Knopf für KI-Antworten | fertig (unter jeder KI-Antwort; Meldungen stehen im Server-Protokoll bei Render, Leseroute mit `REPORT_ADMIN_KEY`) | – |
@@ -91,7 +91,7 @@ Apple prüft jede App von Hand gegen die *App Store Review Guidelines*. Das sind
 | --- | --- | --- |
 | 1.4.1 Gesundheit | keine riskanten Gesundheitsratschläge, Hinweis auf Fachpersonen | Arzt-Hinweis im Willkommensschritt und unter „Über", Fasten-Warnung, Kalorien-Untergrenze (1200/1500) plus Warnung bei manuell niedrigerem Ziel, Coach lehnt Dosierungen/Zyklen ab; Einnahme-Tagebuch ist im Store-Build nicht enthalten |
 | 1.2 KI-Inhalte | Melden-Funktion, Leitplanken | „Antwort melden" unter jeder KI-Antwort, Themen-Leitplanken im Server-Prompt |
-| 2.1 Vollständigkeit | funktioniert beim ersten Start, keine Fehlerseiten | ohne Konto nutzbar, Server-Aufwachen wird abgefangen (Hinweis + zweiter Versuch), verständlicher Offline-Text, Rechtstexte ohne Platzhalter (`legal.json`) |
+| 2.1 Vollständigkeit | funktioniert beim ersten Start, keine Fehlerseiten | Konto-Pflicht mit Demo-Konto für die Prüfer (in App Store Connect hinterlegt), Server-Aufwachen wird abgefangen (Hinweis + zweiter Versuch), verständlicher Offline-Text, Rechtstexte ohne Platzhalter (`legal.json`) |
 | 2.3 Metadaten | Screenshots aus der echten App, keine anderen Plattformen | Screenshots aus der App, keine „nur Android"-Texte mehr |
 | 2.4.1 / 4.0 iPad, Design | läuft auf allen Zielgeräten sauber | nur iPhone (`TARGETED_DEVICE_FAMILY = 1`), nur Hochformat |
 | 4.2 Mindestfunktion | kein blosser Web-Wrapper | Web-Code liegt in der App, dazu Kamera/Barcode, Apple Health, Mitteilungen, offline nutzbar |

@@ -48,8 +48,9 @@ FORTSCHRITT, DER MOTIVIERT
 • Weekly Auto-Review mit Empfehlungen für die nächste Woche
 
 ASFIT PREMIUM – 3 TAGE GRATIS TESTEN
-• KI-Foto-Scan ohne Limit, persönlicher KI-Coach, KI-Rezepte und Wochenplan
+• KI-Foto-Scan, persönlicher KI-Coach, KI-Rezepte und Wochenplan – monatliches KI-Kontingent inklusive
 • Potenzial-Prognose, Cheat-Day-Planer mit Kalorien-Ausgleich
+• Mehr KI gefällig? KI-Pakete zum Nachkaufen, direkt in der App
 • CHF 6.90/Monat oder CHF 49.90/Jahr – heute CHF 0.00, jederzeit kündbar
 • Tracking, Übungen und Freunde-Duell bleiben für immer gratis
 
@@ -121,8 +122,9 @@ PROGRESS THAT MOTIVATES
 • Weekly auto-review with recommendations for next week
 
 ASFIT PREMIUM – 3-DAY FREE TRIAL
-• Unlimited AI photo scan, personal AI coach, AI recipes and weekly plan
+• AI photo scan, personal AI coach, AI recipes and weekly plan – monthly AI quota included
 • Potential forecast, cheat-day planner with calorie balancing
+• Need more AI? Buy AI packs right in the app
 • CHF 6.90/month or CHF 49.90/year – CHF 0.00 today, cancel anytime
 • Tracking, exercises and the friends duel stay free forever
 

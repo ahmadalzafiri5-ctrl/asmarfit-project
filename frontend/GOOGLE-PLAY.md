@@ -6,12 +6,12 @@ Stand der App: Paketname `com.asfit.app` (kann nach der ersten Veröffentlichung
 
 1. **Entwicklerkonto** bei <https://play.google.com/console> anlegen: einmalig etwa 25 US-Dollar, Ausweis-Prüfung. Das machst du selbst (Zahlung und Identität kann ich nicht für dich erledigen).
 2. **Test-Pflicht für neue private Konten:** Bevor die App für alle erscheint, muss sie in einem *geschlossenen Test* mit mindestens 12 Testern 14 Tage lang laufen. Die genaue Zahl und Dauer zeigt die Play Console beim Anlegen an, sie ändert sich ab und zu.
-2b. **Links öffnen die App (App Links):** Die App ist für `https://asmarfit-project.onrender.com/` registriert (nur die Startseite, nicht die Rechtstexte). Android prüft dafür `https://asmarfit-project.onrender.com/.well-known/assetlinks.json` (liegt in `frontend/public/.well-known/`). Drin steht heute der Fingerabdruck des Debug-Schlüssels; für die Store-Version muss der SHA-256-Fingerabdruck des App-Signaturschlüssels aus der Play Console (*App-Integrität*) dazu. Ohne diesen Eintrag landen Teilen-Links weiter im Browser (Import klappt dort auch, nur eben in der Web-Version).
+2b. **Links öffnen die App (App Links):** Die App ist für `https://asmarfit-project.onrender.com/` registriert (nur die Startseite, nicht die Rechtstexte). Android prüft dafür `https://asmarfit-project.onrender.com/.well-known/assetlinks.json` (liegt in `frontend/public/.well-known/`). Drin stehen der Fingerabdruck des Debug-Schlüssels und der SHA-256-Fingerabdruck des Play-App-Signaturschlüssels (aus der Play Console, *App-Integrität*) — **erledigt**. Sollte Google den Signaturschlüssel je neu ausstellen, den neuen Fingerabdruck dort nachtragen und deployen.
 3. **App Bundle statt APK:** Google nimmt `.aab` an, nicht die Debug-APK. Dafür braucht es einen eigenen *Upload-Schlüssel* (neu erzeugt, nicht der Debug-Schlüssel). Google verwaltet danach den eigentlichen Signaturschlüssel (Play App Signing).
 4. **Store-Eintrag:** Name, Kurzbeschreibung (80 Zeichen), lange Beschreibung, Symbol 512×512, Titelbild 1024×500, mindestens 2 Handy-Bilder, Kategorie „Gesundheit & Fitness", Kontakt-E-Mail.
 5. **Datenschutzerklärung als Web-Adresse:** `https://asmarfit-project.onrender.com/privacypolicy.html`. Vorher die Platzhalter für Name, Adresse, E-Mail und Datum in `frontend/public/privacypolicy.html` (und Impressum / Nutzungsbedingungen in der App) ausfüllen.
 6. **Fragebögen in der Play Console:**
-   - *Datensicherheit:* Was die App sammelt (Mahlzeiten, Gewicht, Training liegen lokal auf dem Handy; Fotos und Texte gehen für die KI-Funktionen an den ASFIT-Server; keine Werbung, kein Verkauf von Daten).
+   - *Datensicherheit:* Was die App sammelt (Konto mit E-Mail und Name auf dem ASFIT-Server, Kaufbelege für Premium/KI-Paket; Mahlzeiten, Gewicht, Training liegen lokal auf dem Handy; Fotos und Texte gehen für die KI-Funktionen an den ASFIT-Server; keine Werbung, kein Verkauf von Daten). Antworten stehen in `store/formulare.md`.
    - *Gesundheitsdaten (Health Connect):* Die App liest nur Schritte, Gewicht und Training. Google verlangt dafür eine Begründung pro Berechtigung.
    - *Inhaltseinstufung* und *Zielgruppe* (18+ ist am einfachsten).
    - *KI-Inhalte:* Apps mit KI-Antworten brauchen eine Möglichkeit, unpassende Antworten **in der App zu melden**. Das ist der Knopf „Antwort melden" unter jeder KI-Antwort (fertig).
@@ -52,14 +52,14 @@ Google prüft automatisch (Bundle, Berechtigungen, Ziel-API, 16-KB-Seiten) und v
 | Gesundheits-Apps-Erklärung | Kategorie und Funktionen angeben | Fitness und Wellness: Ernährung, Training, Gewicht; keine Diagnose, keine Medizinprodukt-Funktion; Einnahme-Tagebuch nicht im Store-Build |
 | Zielgruppe und Inhalt | Altersgruppen, Familienrichtlinie | Zielgruppe „18 und älter" (keine Familien-Pflichten); App selbst ab 16 laut Nutzungsbedingungen mit Prüfung im Onboarding |
 | Irreführung / Platzhalter | fertige Rechtstexte, echte Screenshots | `legal.json` + `node tools/fill-legal.cjs`; Screenshots aus der App (`ASFIT-Store`) |
-| App Links | assetlinks.json mit dem Signaturschlüssel | Debug-Schlüssel drin; Play-App-Signaturschlüssel nachtragen (Schritt 2b oben) |
+| App Links | assetlinks.json mit dem Signaturschlüssel | erledigt: Debug-Schlüssel und Play-App-Signaturschlüssel stehen in `assetlinks.json` (Schritt 2b oben) |
 | Werbe-ID, Finanzfunktionen, Nachrichten-App, staatliche App | Erklärungen in „App-Inhalte" | alle „Nein" |
 
 ## Checkliste vor dem Hochladen
 
 1. `frontend/legal.json` füllen, `node tools/fill-legal.cjs`, committen (die mitgelieferte Datenschutzseite wird auch aus dem Health-Connect-Dialog heraus gezeigt).
 2. Upload-Schlüssel erzeugen, Secrets setzen, Lauf „Android-Store-Bundle bauen" starten, `.aab` herunterladen.
-3. Play Console → App-Inhalte: Datensicherheit, Gesundheits-Apps, Health Connect (Begründungen), Inhaltseinstufung, Zielgruppe 18+, Werbe-ID nein, KI-Inhalte ja mit Meldefunktion, Datenschutz-URL, App-Zugriff „alle Funktionen ohne Anmeldung" plus die Prüfnotiz aus `store/formulare.md`.
+3. Play Console → App-Inhalte: Datensicherheit, Gesundheits-Apps, Health Connect (Begründungen), Inhaltseinstufung, Zielgruppe 18+, Werbe-ID nein, KI-Inhalte ja mit Meldefunktion, Datenschutz-URL, Datenlöschungs-URL (`delete-account.html`), App-Zugriff „eingeschränkt" mit dem Prüfkonto (Passwort nur in der Play Console) plus die Prüfnotiz aus `store/formulare.md`.
 4. Store-Eintrag: Texte aus `store/store-texte.md`, Symbol, Titelbild, Screenshots.
-5. Interner Test → geschlossener Test (12 Tester, 14 Tage) → Produktion. Erst nach dem ersten Upload den App-Signaturschlüssel-Fingerabdruck in `assetlinks.json` eintragen und deployen.
+5. Interner Test → geschlossener Test (12 Tester, 14 Tage) → Produktion. (Der App-Signaturschlüssel-Fingerabdruck steht bereits in `assetlinks.json`.)
 6. Render-Backend für die Prüfzeit auf *Starter*, damit der Coach beim Prüfer sofort antwortet.
