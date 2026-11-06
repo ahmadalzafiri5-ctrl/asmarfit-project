@@ -1145,6 +1145,8 @@ export default {
   remNoteNative: "Las notificaciones llegan también con la app cerrada. Se reprograman cada vez que abres la app o registras algo, así que un aviso de entreno perdido solo llega si es verdad.",
   remPermWarn: "Las notificaciones están desactivadas para ASFIT en este teléfono: los recordatorios no pueden llegar. Permítelas y los recordatorios funcionarán.",
   remPermBtn: "Permitir notificaciones",
+  remExactWarn: "Para que los recordatorios lleguen puntuales al minuto, permite “Alarmas y recordatorios” para ASFIT. Sin este permiso pueden llegar unos minutos más tarde.",
+  remExactBtn: "Activar recordatorios puntuales",
   remBreakfast: "Registrar el desayuno",
   remLunch: "Registrar la comida",
   remDinner: "Registrar la cena",

@@ -49,7 +49,7 @@ async function verifyAndApply(userId, token) {
   const at = await googleToken();
   const r = await fetch(API + "/purchases/subscriptionsv2/tokens/" + encodeURIComponent(token), { headers: { authorization: "Bearer " + at } });
   if (r.status === 404 || r.status === 400) return { error: "invalid_token" };
-  if (!r.ok) throw new Error("google_" + r.status);
+  if (!r.ok) throw new Error("google_" + r.status + " " + (await r.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 300));
   const sub = await r.json();
   const item = (sub.lineItems || [])[0] || {};
   const active = ["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD"].includes(sub.subscriptionState);
@@ -104,7 +104,7 @@ export function mountPlayBilling(app) {
       const base = API + "/purchases/products/" + encodeURIComponent(productId) + "/tokens/" + encodeURIComponent(token);
       const r = await fetch(base, { headers: { authorization: "Bearer " + at } });
       if (r.status === 404 || r.status === 400) return res.status(422).json({ error: "invalid_token" });
-      if (!r.ok) throw new Error("google_" + r.status);
+      if (!r.ok) throw new Error("google_" + r.status + " " + (await r.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 300));
       const p = await r.json();
       if (Number(p.purchaseState) !== 0) return res.status(422).json({ error: "not_purchased" }); // 0 = gekauft, 1 = storniert, 2 = ausstehend
       const usage = await grantPack("u:" + req.userId, "play:" + (p.orderId || token), "play");

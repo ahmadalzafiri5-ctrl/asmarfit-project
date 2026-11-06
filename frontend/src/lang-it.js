@@ -1145,6 +1145,8 @@ export default {
   remNoteNative: "Le notifiche arrivano anche con l'app chiusa. Vengono ripianificate a ogni apertura o registrazione, quindi un avviso di allenamento mancato arriva solo se è vero.",
   remPermWarn: "Le notifiche sono disattivate per ASFIT su questo telefono: i promemoria non possono arrivare. Consentile e i promemoria funzioneranno.",
   remPermBtn: "Consenti le notifiche",
+  remExactWarn: "Perché i promemoria arrivino puntuali al minuto, consenti “Sveglie e promemoria” per ASFIT. Senza questo permesso possono arrivare qualche minuto più tardi.",
+  remExactBtn: "Attiva promemoria puntuali",
   remBreakfast: "Registra la colazione",
   remLunch: "Registra il pranzo",
   remDinner: "Registra la cena",

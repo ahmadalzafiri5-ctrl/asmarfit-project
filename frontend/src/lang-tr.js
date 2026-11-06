@@ -1145,6 +1145,8 @@ export default {
   remNoteNative: "Bildirimler uygulama kapalıyken de gelir. Uygulamayı her açtığında veya bir şey kaydettiğinde yeniden planlanır; kaçırılan antrenman mesajı sadece doğruysa gelir.",
   remPermWarn: "Bu telefonda ASFIT için bildirimler kapalı; hatırlatmalar bu yüzden gelemiyor. İzin ver, hatırlatmalar çalışsın.",
   remPermBtn: "Bildirimlere izin ver",
+  remExactWarn: "Hatırlatmaların dakikası dakikasına gelmesi için ASFIT'e “Alarmlar ve hatırlatıcılar” izni ver. Bu izin olmadan birkaç dakika geç gelebilirler.",
+  remExactBtn: "Dakik hatırlatmaları aç",
   remBreakfast: "Kahvaltıyı kaydet",
   remLunch: "Öğle yemeğini kaydet",
   remDinner: "Akşam yemeğini kaydet",

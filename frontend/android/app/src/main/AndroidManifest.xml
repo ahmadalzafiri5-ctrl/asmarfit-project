@@ -100,6 +100,8 @@
     <uses-permission android:name="android.permission.health.WRITE_HYDRATION" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_NUTRITION" tools:node="remove" />
     <uses-permission android:name="android.permission.health.WRITE_NUTRITION" tools:node="remove" />
-    <!-- Exact alarms are not needed: reminders may arrive a few minutes late, and Play restricts this permission -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
+    <!-- Exact alarms: user-scheduled meal/workout reminders should fire on the minute. Android 14+
+         ships the permission OFF; the app offers a deep link into the system toggle and falls back
+         to inexact alarms (up to ~15 min late) when it stays off. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 </manifest>
