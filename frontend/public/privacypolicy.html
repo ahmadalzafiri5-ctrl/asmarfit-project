@@ -27,7 +27,7 @@
 
       <div class="card" id="de">
         <h1>Datenschutzerklärung</h1>
-        <p class="updated">Stand: 17. Oktober 2026</p>
+        <p class="updated">Stand: 6. November 2026</p>
 
         <h2>1. Verantwortlicher</h2>
         <div class="addr">
@@ -38,7 +38,7 @@
         </div>
 
         <h2>2. Was ASFIT ist und wie Daten grundsätzlich gespeichert werden</h2>
-        <p>ASFIT ist eine Fitness- und Ernährungs-App. Es gibt kein Nutzerkonto und keinen Login. Profil, Mahlzeiten, Workouts, Gewichtsverlauf, Notizen und Einstellungen werden ausschließlich lokal auf deinem Gerät gespeichert (im lokalen Speicher der App bzw. des Browsers). Diese Daten laufen zu keinem Zeitpunkt über unsere Server, ausser dort, wo es für eine Funktion technisch nötig ist (siehe unten). Löschst du die App oder nutzt „Einstellungen → Daten → Alles löschen", sind diese Daten unwiderruflich weg — wir haben keine Kopie.</p>
+        <p>ASFIT ist eine Fitness- und Ernährungs-App. Für die Nutzung der App legst du ein kostenloses Konto an (siehe Abschnitt 4); Premium und die KI-Funktionen sind an dieses Konto gebunden. Profil, Mahlzeiten, Workouts, Gewichtsverlauf, Notizen und Einstellungen werden ausschließlich lokal auf deinem Gerät gespeichert (im lokalen Speicher der App bzw. des Browsers). Diese Daten laufen zu keinem Zeitpunkt über unsere Server, ausser dort, wo es für eine Funktion technisch nötig ist (siehe unten). Löschst du die App oder nutzt „Einstellungen → Daten → Alles löschen", sind diese Daten unwiderruflich weg — wir haben keine Kopie.</p>
 
         <h2>3. Welche Daten über unseren Server verarbeitet werden</h2>
         <div class="tablewrap">
@@ -56,33 +56,39 @@
           <tr><td>„Antwort melden"</td><td>Die gemeldete KI-Antwort, der gewählte Grund, deine optionale Notiz, die App-Sprache</td><td>Nur unser Server (Render); Eintrag im Server-Protokoll</td><td>Fehlerhafte oder unpassende KI-Antworten prüfen und die KI-Funktionen verbessern</td></tr>
         </table>
         </div>
-        <p>Unser Server (gehostet bei Render) leitet diese Anfragen nur weiter und speichert die Inhalte nicht dauerhaft — Suchergebnisse werden bis zu 6 Stunden zwischengespeichert (Cache), um Anfragen zu sparen. Fotos werden nicht auf dem Server abgelegt. Dein Land (gewählt oder aus Zeitzone und Sprache erkannt) geht bei Suche und KI-Funktionen mit, damit Produkte und Vorschläge zu deinem Einkauf passen. Die Übungsfotos lädt die App vom Auslieferungsnetz jsDelivr (Open-Source-Dateien); dabei sieht jsDelivr deine IP-Adresse. Alle Anfragen laufen anonym, ohne Nutzerkonto — wir können sie dir nicht persönlich zuordnen, ausser über deine IP-Adresse, die aus technischen Gründen (Missbrauchsschutz, Rate-Limiting) kurzzeitig verarbeitet wird.</p>
+        <p>Unser Server (gehostet bei Render) leitet diese Anfragen nur weiter und speichert die Inhalte nicht dauerhaft — Suchergebnisse werden bis zu 6 Stunden zwischengespeichert (Cache), um Anfragen zu sparen. Fotos werden nicht auf dem Server abgelegt. Dein Land (gewählt oder aus Zeitzone und Sprache erkannt) geht bei Suche und KI-Funktionen mit, damit Produkte und Vorschläge zu deinem Einkauf passen. Die Übungsfotos lädt die App vom Auslieferungsnetz jsDelivr (Open-Source-Dateien); dabei sieht jsDelivr deine IP-Adresse. Lebensmittelsuche und Barcode-Scan laufen anonym, ohne Bezug zu deinem Konto. Die KI-Funktionen sind deinem Konto zugeordnet, allerdings nur als Zähler für das monatliche Kontingent (siehe Abschnitt 4) — die Inhalte deiner Anfragen speichern wir nicht. Deine IP-Adresse wird aus technischen Gründen (Missbrauchsschutz, Rate-Limiting) kurzzeitig verarbeitet.</p>
 
-        <h2>4. Gesundheitsdaten (Health Connect / Apple Health)</h2>
+        <h2>4. Konto und Zahlungen</h2>
+        <p><strong>Konto.</strong> Für die Nutzung der App — und damit auch für Premium und die KI-Funktionen — brauchst du ein kostenloses ASFIT-Konto. Dafür speichern wir deine E-Mail-Adresse, deinen Namen und — bei Registrierung mit E-Mail — einen Passwort-Hash (nie das Passwort selbst). Meldest du dich mit Google oder Apple an, erhalten wir von Google bzw. Apple nur E-Mail-Adresse, Name und eine Konto-Kennung; ein Passwort wird dann nicht bei uns gespeichert. Diese Daten liegen in einer Postgres-Datenbank bei unserem Hosting-Anbieter Render (Render Services, Inc.), der als Auftragsverarbeiter nach Art. 28 DSGVO für uns tätig ist. Je nach Server-Region steht die Datenbank in der EU oder in den USA; Render stellt dafür einen Auftragsverarbeitungsvertrag mit den EU-Standardvertragsklauseln bereit.</p>
+        <p><strong>Premium-Abo.</strong> Das Premium-Abo kaufst du in der Android-App über Google Play Billing und im Web über Stripe. Deine Zahlungsdaten (Karte, Bankverbindung, Rechnungsadresse) gehen dabei direkt an Google bzw. Stripe — wir sehen sie nicht und speichern sie nicht. Von Google erhalten wir nur das Kauf-Token und den Abo-Status (aktiv, gekündigt, abgelaufen), von Stripe eine Kunden- und Abo-Kennung sowie den Abo-Status. Diese Angaben speichern wir in deinem Konto, um Premium freizuschalten. Für die Zahlung gelten zusätzlich die Datenschutzerklärungen von Google bzw. Stripe.</p>
+        <p><strong>KI-Kontingent.</strong> Die KI-Funktionen haben ein monatliches Kontingent. Dafür führen wir pro Konto einen Zähler mit Monat, Art der Funktion (z. B. Foto-Scan, Coach, Rezept) und Anzahl der Aufrufe. Die Inhalte deiner Anfragen (Nachrichten, Fotos, Antworten) werden dabei nicht gespeichert.</p>
+        <p><strong>Löschung.</strong> Du kannst dein Konto jederzeit in der App unter „Einstellungen → Konto → Konto löschen" oder über die Seite <a href="/delete-account.html">delete-account.html</a> löschen. Dabei werden Konto-Daten, Kauf-Token/Abo-Status und Kontingent-Zähler dauerhaft entfernt. Ein laufendes Abo musst du zusätzlich bei Google Play bzw. Stripe kündigen — das Löschen des Kontos kündigt das Abo nicht automatisch.</p>
+
+        <h2>5. Gesundheitsdaten (Health Connect / Apple Health)</h2>
         <p>Auf Wunsch liest ASFIT deine Tagesschritte, dein Gewicht und deine Workouts der letzten Tage aus Health Connect bzw. Apple Health, um Kalorienverbrauch zu schätzen und den Trainingsverlauf zu ergänzen. Die Android-App fordert dafür ausschließlich diese drei Berechtigungen an (Lesen von Schritten, Gewicht und Trainingseinheiten), keine weiteren Gesundheitsdaten. Diese Werte bleiben ausschließlich auf deinem Gerät und werden nicht an unseren Server gesendet. Du kannst den Zugriff jederzeit in den Einstellungen deines Geräts oder in ASFIT unter „Verbindungen" widerrufen.</p>
 
-        <h2>5. Eigene Fotos (Profilbild, Fortschrittsfotos, eigenes Rezeptfoto)</h2>
+        <h2>6. Eigene Fotos (Profilbild, Fortschrittsfotos, eigenes Rezeptfoto)</h2>
         <p>Fotos, die du selbst auswählst (Profilbild, Fortschrittsvergleich, eigenes Rezeptbild), werden ausschließlich lokal auf deinem Gerät gespeichert und nirgends hochgeladen.</p>
 
-        <h2>6. Rechtsgrundlage</h2>
-        <p>Die Verarbeitung erfolgt auf Grundlage deiner Einwilligung (Art. 6 Abs. 1 lit. a DSGVO) bzw. zur Erfüllung der von dir gewünschten Funktion (Art. 6 Abs. 1 lit. b DSGVO). Für Schweizer Nutzer gilt zusätzlich das Bundesgesetz über den Datenschutz (DSG).</p>
+        <h2>7. Rechtsgrundlage</h2>
+        <p>Die Verarbeitung erfolgt auf Grundlage deiner Einwilligung (Art. 6 Abs. 1 lit. a DSGVO) bzw. zur Erfüllung der von dir gewünschten Funktion und des Nutzungsvertrags, einschliesslich Konto und Abo (Art. 6 Abs. 1 lit. b DSGVO). Für Schweizer Nutzer gilt zusätzlich das Bundesgesetz über den Datenschutz (DSG).</p>
 
-        <h2>7. Speicherdauer</h2>
-        <p>Lokale Daten bleiben, bis du sie löschst oder die App deinstallierst. Server-seitige Zwischenspeicherung (Cache) von Suchergebnissen: maximal 6 Stunden. Log-Daten zur Missbrauchsabwehr (z. B. Anfragen pro IP-Adresse) werden nach spätestens wenigen Minuten automatisch verworfen.</p>
+        <h2>8. Speicherdauer</h2>
+        <p>Lokale Daten bleiben, bis du sie löschst oder die App deinstallierst. Konto-Daten (E-Mail, Name, Passwort-Hash bzw. Login-Kennung, Abo-Status, Kauf-Token) und die KI-Kontingent-Zähler bleiben in der Datenbank, solange dein Konto besteht, und werden mit der Löschung des Kontos entfernt. Server-seitige Zwischenspeicherung (Cache) von Suchergebnissen: maximal 6 Stunden. Log-Daten zur Missbrauchsabwehr (z. B. Anfragen pro IP-Adresse) werden nur im Arbeitsspeicher gehalten, nicht in der Datenbank, und nach spätestens wenigen Minuten automatisch verworfen.</p>
 
-        <h2>8. Deine Rechte</h2>
-        <p>Da wir keine Nutzerkonten führen und keine personenbezogenen Daten dauerhaft auf unseren Servern speichern, betreffen die meisten deiner Daten nur dein eigenes Gerät — du hast dort jederzeit vollen Zugriff und kannst sie über „Einstellungen → Daten → Alles löschen" vollständig entfernen. Für Anfragen zu Auskunft, Berichtigung oder Löschung bezüglich serverseitig kurzzeitig verarbeiteter Daten (z. B. IP-Adressen im Rate-Limiting) wende dich an die oben genannte Adresse.</p>
+        <h2>9. Deine Rechte</h2>
+        <p>Deine Tagebuch-Daten liegen nur auf deinem eigenen Gerät — du hast dort jederzeit vollen Zugriff und kannst sie über „Einstellungen → Daten → Alles löschen" vollständig entfernen. Für dein Konto hast du das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Dein Konto löschst du selbst in der App oder über <a href="/delete-account.html">delete-account.html</a>; für alle anderen Anfragen (auch zu kurzzeitig verarbeiteten Daten wie IP-Adressen im Rate-Limiting) wende dich an die oben genannte Adresse. Du kannst dich ausserdem bei einer Datenschutz-Aufsichtsbehörde beschweren.</p>
 
-        <h2>9. Kinder</h2>
+        <h2>10. Kinder</h2>
         <p>ASFIT richtet sich nicht an Kinder unter 16 Jahren.</p>
 
-        <h2>10. Änderungen dieser Erklärung</h2>
+        <h2>11. Änderungen dieser Erklärung</h2>
         <p>Wir passen diese Erklärung an, wenn sich die App oder die Rechtslage ändert. Die aktuelle Version ist immer unter dieser Adresse abrufbar.</p>
       </div>
 
       <div class="card" id="en">
         <h1>Privacy Policy</h1>
-        <p class="updated">Last updated: 17 October 2026</p>
+        <p class="updated">Last updated: 6 November 2026</p>
 
         <h2>1. Data controller</h2>
         <div class="addr">
@@ -93,7 +99,7 @@
         </div>
 
         <h2>2. What ASFIT is and how data is stored by default</h2>
-        <p>ASFIT is a fitness and nutrition app. There is no user account and no login. Your profile, meals, workouts, weight history, notes and settings are stored exclusively on your device (local app/browser storage). This data never passes through our servers except where a feature technically requires it (see below). If you delete the app or use "Settings → Data → Delete everything", this data is gone for good — we don't keep a copy.</p>
+        <p>ASFIT is a fitness and nutrition app. To use the app you create a free account (see section 4); Premium and the AI features are tied to this account. Your profile, meals, workouts, weight history, notes and settings are stored exclusively on your device (local app/browser storage). This data never passes through our servers except where a feature technically requires it (see below). If you delete the app or use "Settings → Data → Delete everything", this data is gone for good — we don't keep a copy.</p>
 
         <h2>3. Data processed through our server</h2>
         <div class="tablewrap">
@@ -111,27 +117,33 @@
           <tr><td>"Report this answer"</td><td>The reported AI answer, the reason you picked, your optional note, the app language</td><td>Only our server (Render); an entry in the server log</td><td>Review wrong or inappropriate AI answers and improve the AI features</td></tr>
         </table>
         </div>
-        <p>Our server (hosted on Render) only forwards these requests and does not permanently store the content — search results are cached for up to 6 hours to reduce repeat requests. Photos are not stored on the server. Your country (chosen, or recognised from your time zone and language) is sent with searches and AI features so that products and suggestions fit your shopping. The app loads the exercise photos from the delivery network jsDelivr (open-source files); jsDelivr sees your IP address when it does. All requests are anonymous, with no user account — we cannot personally identify you except via your IP address, which is processed briefly for technical reasons (abuse prevention, rate limiting).</p>
+        <p>Our server (hosted on Render) only forwards these requests and does not permanently store the content — search results are cached for up to 6 hours to reduce repeat requests. Photos are not stored on the server. Your country (chosen, or recognised from your time zone and language) is sent with searches and AI features so that products and suggestions fit your shopping. The app loads the exercise photos from the delivery network jsDelivr (open-source files); jsDelivr sees your IP address when it does. Food search and barcode scan are anonymous, without reference to your account. The AI features are tied to your account, but only as a counter for the monthly quota (see section 4) — we do not store the content of your requests. Your IP address is processed briefly for technical reasons (abuse prevention, rate limiting).</p>
 
-        <h2>4. Health data (Health Connect / Apple Health)</h2>
+        <h2>4. Account and payments</h2>
+        <p><strong>Account.</strong> Using the app — and therefore Premium and the AI features — requires a free ASFIT account. For it we store your e-mail address, your name and — if you sign up with e-mail — a password hash (never the password itself). If you sign in with Google or Apple, we receive only your e-mail address, name and an account identifier from Google or Apple; no password is stored with us in that case. This data lives in a Postgres database at our hosting provider Render (Render Services, Inc.), which acts as our data processor under Art. 28 GDPR. Depending on the server region the database is located in the EU or in the USA; Render provides a data processing agreement with the EU standard contractual clauses for this.</p>
+        <p><strong>Premium subscription.</strong> You buy the Premium subscription in the Android app through Google Play Billing and on the web through Stripe. Your payment details (card, bank account, billing address) go directly to Google or Stripe — we never see or store them. From Google we receive only the purchase token and the subscription status (active, cancelled, expired); from Stripe a customer and subscription identifier plus the subscription status. We store these in your account to unlock Premium. The privacy policies of Google and Stripe additionally apply to the payment.</p>
+        <p><strong>AI quota.</strong> The AI features have a monthly quota. For this we keep a counter per account with month, type of feature (e.g. photo scan, coach, recipe) and number of calls. The content of your requests (messages, photos, answers) is not stored.</p>
+        <p><strong>Deletion.</strong> You can delete your account at any time in the app under "Settings → Account → Delete account" or via the page <a href="/delete-account.html">delete-account.html</a>. This permanently removes the account data, purchase token/subscription status and quota counters. A running subscription must additionally be cancelled with Google Play or Stripe — deleting the account does not cancel the subscription automatically.</p>
+
+        <h2>5. Health data (Health Connect / Apple Health)</h2>
         <p>On request, ASFIT reads your daily steps, your weight and your workouts of the last days from Health Connect or Apple Health to estimate calories burned and complete your training history. The Android app requests only these three permissions (read steps, weight and exercise sessions), no other health data. These values stay on your device only and are never sent to our server. You can revoke access at any time in your device settings or in ASFIT under "Connections".</p>
 
-        <h2>5. Your own photos (profile picture, progress photos, own recipe photo)</h2>
+        <h2>6. Your own photos (profile picture, progress photos, own recipe photo)</h2>
         <p>Photos you choose yourself (profile picture, progress comparison, your own recipe photo) are stored exclusively on your device and never uploaded anywhere.</p>
 
-        <h2>6. Legal basis</h2>
-        <p>Processing is based on your consent (Art. 6(1)(a) GDPR) or on performing the feature you requested (Art. 6(1)(b) GDPR). Swiss users are additionally covered by the Federal Act on Data Protection (FADP).</p>
+        <h2>7. Legal basis</h2>
+        <p>Processing is based on your consent (Art. 6(1)(a) GDPR) or on performing the feature you requested and the usage contract, including account and subscription (Art. 6(1)(b) GDPR). Swiss users are additionally covered by the Federal Act on Data Protection (FADP).</p>
 
-        <h2>7. Retention</h2>
-        <p>Local data stays until you delete it or uninstall the app. Server-side caching of search results: up to 6 hours. Abuse-prevention logs (e.g. requests per IP address) are discarded automatically after a few minutes at most.</p>
+        <h2>8. Retention</h2>
+        <p>Local data stays until you delete it or uninstall the app. Account data (e-mail, name, password hash or login identifier, subscription status, purchase token) and the AI quota counters stay in the database for as long as your account exists and are removed when the account is deleted. Server-side caching of search results: up to 6 hours. Abuse-prevention logs (e.g. requests per IP address) are kept in memory only, not in the database, and are discarded automatically after a few minutes at most.</p>
 
-        <h2>8. Your rights</h2>
-        <p>Since we don't run user accounts and don't permanently store personal data on our servers, most of your data lives only on your own device — you have full access there at any time and can remove it completely via "Settings → Data → Delete everything". For requests about access, correction or deletion regarding briefly server-processed data (e.g. IP addresses used for rate limiting), contact the address above.</p>
+        <h2>9. Your rights</h2>
+        <p>Your diary data lives only on your own device — you have full access there at any time and can remove it completely via "Settings → Data → Delete everything". For your account you have the right to access, rectification, erasure, restriction of processing, data portability and objection. You delete your account yourself in the app or via <a href="/delete-account.html">delete-account.html</a>; for all other requests (including briefly processed data such as IP addresses used for rate limiting), contact the address above. You may also lodge a complaint with a data protection supervisory authority.</p>
 
-        <h2>9. Children</h2>
+        <h2>10. Children</h2>
         <p>ASFIT is not directed at children under 16.</p>
 
-        <h2>10. Changes to this policy</h2>
+        <h2>11. Changes to this policy</h2>
         <p>We update this policy when the app or the legal situation changes. The current version is always available at this address.</p>
       </div>
 
