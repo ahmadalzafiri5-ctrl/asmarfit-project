@@ -116,7 +116,7 @@ jobs:
             echo "Unsigniertes Probe-Bundle (versionCode $ASFIT_VERSION_CODE)."
           fi
 
-      - name: Pruefung Gesundheitsrechte im Manifest (nur Schritte, Gewicht, Workouts; kein SCHEDULE_EXACT_ALARM)
+      - name: Pruefung Gesundheitsrechte im Manifest (nur Schritte, Gewicht, Workouts; SCHEDULE_EXACT_ALARM fuer puenktliche Erinnerungen)
         run: |
           M=frontend/android/app/build/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml
           [ -f "$M" ] || M=$(find frontend/android/app/build/intermediates -name AndroidManifest.xml -path "*release*" | head -1)
@@ -124,7 +124,8 @@ jobs:
           HEALTH=$(grep -o "android.permission.health.[A-Z_]*" "$M" | sort -u | tr '\n' ' ')
           echo "Gesundheitsrechte: $HEALTH"
           [ "$HEALTH" = "android.permission.health.READ_EXERCISE android.permission.health.READ_STEPS android.permission.health.READ_WEIGHT " ]
-          ! grep -q SCHEDULE_EXACT_ALARM "$M"
+          # Seit 1.0.10 gewollt: exakte Alarme fuer minutengenaue Erinnerungen (App fragt den Nutzer)
+          grep -q SCHEDULE_EXACT_ALARM "$M"
 
       - uses: actions/upload-artifact@v4
         with:
