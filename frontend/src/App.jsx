@@ -315,6 +315,7 @@ const STR = {
     obLegalTerms: "Terms of Use",
     obLegalAnd: "and the",
     obLegalPrivacy: "Privacy Policy",
+    obMedical: "ASFIT is not a substitute for medical advice. Talk to a doctor before starting a training or nutrition program, especially if you have health conditions.",
     obTooYoung: "ASFIT is for people aged 16 and over.",
     obGenderTitle: "What's your gender?",
     obGenderSub: "We need this to calculate your daily calorie target accurately.",
@@ -426,7 +427,7 @@ const STR = {
     proteinLeft: "{n} g protein left to hit your goal",
     premiumPopular: "Most popular choice",
     aiLimitTitle: "Weekly free limit reached",
-    aiLimitBody: "You've used your free AI requests for this week ({a} of {b}). With ASFIT Premium there's no limit.",
+    aiLimitBody: "You've used your free AI requests for this week ({a} of {b}). ASFIT Premium includes a monthly allowance (60 coach questions, 40 photo scans), with AI packs on top.",
     aiLimitCta: "Discover Premium",
     aiLimitLater: "Maybe later",
     aiQuotaTitle: "Monthly AI allowance used up",
@@ -1137,7 +1138,7 @@ const STR = {
     premiumTitle: "ASFIT Premium",
     premiumSub: "Unlock all AI features",
     premiumFeatTitle: "What you get",
-    premiumFeat1: "AI photo scan without limits",
+    premiumFeat1: "AI photo scan (monthly allowance: 40 scans and 60 coach questions included, AI packs on top)",
     premiumFeat2: "Personal AI coach",
     premiumFeat3: "AI recipes & weekly meal plan",
     premiumFeat4: "Potential forecast",
@@ -1611,6 +1612,7 @@ const STR = {
     obLegalTerms: "Nutzungsbedingungen",
     obLegalAnd: "und die",
     obLegalPrivacy: "Datenschutzerklärung",
+    obMedical: "ASFIT ersetzt keine ärztliche Beratung. Sprich vor Beginn eines Trainings- oder Ernährungsprogramms mit einem Arzt, besonders bei gesundheitlichen Einschränkungen.",
     obTooYoung: "ASFIT ist für Personen ab 16 Jahren.",
     obGenderTitle: "Was ist dein Geschlecht?",
     obGenderSub: "Wir benötigen dein Geschlecht, um dein tägliches Kalorienziel genau zu berechnen.",
@@ -1722,7 +1724,7 @@ const STR = {
     proteinLeft: "Noch {n} g Protein bis zum Ziel",
     premiumPopular: "Beliebteste Wahl",
     aiLimitTitle: "Wochen-Limit erreicht",
-    aiLimitBody: "Deine kostenlosen KI-Anfragen dieser Woche sind aufgebraucht ({a} von {b}). Mit ASFIT Premium gibt es kein Limit.",
+    aiLimitBody: "Deine kostenlosen KI-Anfragen dieser Woche sind aufgebraucht ({a} von {b}). ASFIT Premium enthält ein Monatskontingent (60 Coach-Fragen, 40 Foto-Scans), dazu gibt es Zusatzpakete.",
     aiLimitCta: "Premium entdecken",
     aiLimitLater: "Später vielleicht",
     aiQuotaTitle: "Monats-Kontingent aufgebraucht",
@@ -2433,7 +2435,7 @@ const STR = {
     premiumTitle: "ASFIT Premium",
     premiumSub: "Alle KI-Funktionen freischalten",
     premiumFeatTitle: "Das bekommst du",
-    premiumFeat1: "KI-Foto-Scan ohne Limit",
+    premiumFeat1: "KI-Foto-Scan (Monatskontingent: 40 Scans und 60 Coach-Fragen inklusive, Zusatzpakete möglich)",
     premiumFeat2: "Persönlicher KI-Coach",
     premiumFeat3: "KI-Rezepte & Wochenplan",
     premiumFeat4: "Potenzial-Prognose",
@@ -3757,6 +3759,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
               <span data-ob-terms onClick={() => setLegal("terms")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalTerms}</span> {t.obLegalAnd}{" "}
               <span data-ob-privacy onClick={() => setLegal("privacy")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.obLegalPrivacy}</span>.
             </p>
+            <p data-ob-medical style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, margin: "10px 0 0", lineHeight: 1.55 }}>{t.obMedical}</p>
           </div>
         )}
 
