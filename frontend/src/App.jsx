@@ -13404,7 +13404,16 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
             <div style={{ ...small, lineHeight: 1.5, marginBottom: 10 }}>{t.premiumStoreHint}</div>
             <button
               data-premium-store
-              onClick={() => window.open(Capacitor.getPlatform() === "ios" ? "https://apps.apple.com/account/subscriptions" : "https://play.google.com/store/account/subscriptions", "_blank")}
+              onClick={async () => {
+                // In der nativen App öffnet window.open nichts — die Abo-Verwaltung des Stores
+                // muss über das Billing-Plugin geöffnet werden (Play Store / App Store).
+                try {
+                  const { NativePurchases } = await import("@capgo/native-purchases");
+                  await NativePurchases.manageSubscriptions();
+                } catch {
+                  window.open(Capacitor.getPlatform() === "ios" ? "https://apps.apple.com/account/subscriptions" : "https://play.google.com/store/account/subscriptions", "_blank");
+                }
+              }}
               style={{ width: "100%", background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}
             >
               {t.premiumManageStore}

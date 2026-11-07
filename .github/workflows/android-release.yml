@@ -1,6 +1,6 @@
 # Baut das Android App Bundle (.aab) fuer Google Play: Store-Variante (ohne Einnahme-Tagebuch), signiert mit dem
 # Upload-Schluessel aus den Secrets. Ohne die Secrets baut der Lauf trotzdem (unsigniert, nur zur Probe).
-# Stand: 1.0.10 (Kauf-Nachmeldung, exakte Alarme)
+# Stand: 1.0.12 (Store-Verwaltung nativ oeffnen)
 # Ergebnis: Actions -> (Lauf anklicken) -> unten "Artifacts" -> ASFIT-android-store-aab
 #
 # Secrets (Anleitung: frontend/APP-STORES.md):
