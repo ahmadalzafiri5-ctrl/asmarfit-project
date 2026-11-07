@@ -14604,8 +14604,9 @@ export default function AsmarFitApp() {
       setAiUsage(await r.json());
       return null;
     } catch (e) {
-      const m = String((e && e.message) || e).toLowerCase();
-      return m.includes("cancel") ? null : t.aiPackErr;
+      const raw = String((e && e.message) || e);
+      // Googles Originaltext mit anzeigen — "Fehler" allein lässt sich nicht diagnostizieren
+      return raw.toLowerCase().includes("cancel") ? null : t.aiPackErr + " — " + raw.slice(0, 160);
     }
   };
   useEffect(() => {
@@ -14660,8 +14661,8 @@ export default function AsmarFitApp() {
       setPremium({ plan: d.premium.plan, since: Date.now(), renews: d.premium.renews, cancelled: Boolean(d.premium.cancelled), trial: Boolean(d.premium.trial), src: "server" });
       return null;
     } catch (e) {
-      const m = String((e && e.message) || e).toLowerCase();
-      return m.includes("cancel") ? null : t.playErr;
+      const raw = String((e && e.message) || e);
+      return raw.toLowerCase().includes("cancel") ? null : t.playErr + " — " + raw.slice(0, 160);
     }
   };
   const openPortal = async () => {
