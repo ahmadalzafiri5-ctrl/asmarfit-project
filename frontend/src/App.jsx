@@ -13257,6 +13257,9 @@ function AiQuotaCard({ t, usage, onBuy, canBuy, buying = false, err = null, focu
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
   const pack = (usage && usage.pack) || { chf: "2.90", credits: { coach: 100, photo: 50, recipe: 10, plan: 2, potential: 1 } };
   const inc = kinds.map(([k, l]) => "+" + (pack.credits[k] || 0) + " " + l).join(" · ");
+  // Das Paket wird erst angeboten, wenn mindestens ein Monats-Limit (inkl. Guthaben) aufgebraucht
+  // ist — vorher wäre der Kauf-Knopf nur Lärm. "focus" (Dialog "Kontingent aufgebraucht") zeigt ihn immer.
+  const limitHit = focus || Boolean(usage && kinds.some(([k]) => (usage.quota[k] || 0) > 0 && (usage.used[k] || 0) >= (usage.quota[k] || 0) && (usage.credits[k] || 0) <= 0));
   return (
     <div data-ai-usage>
     <Card style={{ marginBottom: 14, border: focus ? "1px solid " + COLORS.gold : undefined }}>
@@ -13282,17 +13285,21 @@ function AiQuotaCard({ t, usage, onBuy, canBuy, buying = false, err = null, focu
           </div>
         );
       })}
-      <button
-        data-ai-pack-buy
-        onClick={onBuy}
-        disabled={buying || !canBuy}
-        style={{ width: "100%", marginTop: 8, background: canBuy ? COLORS.gold : COLORS.raised, color: canBuy ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: canBuy ? "pointer" : "default" }}
-      >
-        {buying ? "…" : t.aiPackBuy.replace("{p}", pack.chf)}
-      </button>
-      <div style={{ ...small, fontSize: 11.5, marginTop: 8, lineHeight: 1.45 }}>{t.aiPackIncludes.replace("{list}", inc).replace("{d}", pack.days || 60)}</div>
-      {!canBuy && <div style={{ ...small, fontSize: 11.5, marginTop: 6, color: COLORS.coral }}>{t.aiPackUnavailable}</div>}
-      {err && <div data-ai-pack-err style={{ ...small, fontSize: 12, marginTop: 6, color: COLORS.coral }}>{err}</div>}
+      {limitHit && (
+        <>
+          <button
+            data-ai-pack-buy
+            onClick={onBuy}
+            disabled={buying || !canBuy}
+            style={{ width: "100%", marginTop: 8, background: canBuy ? COLORS.gold : COLORS.raised, color: canBuy ? COLORS.bg : COLORS.dim, border: "none", borderRadius: 12, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: canBuy ? "pointer" : "default" }}
+          >
+            {buying ? "…" : t.aiPackBuy.replace("{p}", pack.chf)}
+          </button>
+          <div style={{ ...small, fontSize: 11.5, marginTop: 8, lineHeight: 1.45 }}>{t.aiPackIncludes.replace("{list}", inc).replace("{d}", pack.days || 60)}</div>
+          {!canBuy && <div style={{ ...small, fontSize: 11.5, marginTop: 6, color: COLORS.coral }}>{t.aiPackUnavailable}</div>}
+          {err && <div data-ai-pack-err style={{ ...small, fontSize: 12, marginTop: 6, color: COLORS.coral }}>{err}</div>}
+        </>
+      )}
     </Card>
     </div>
   );
