@@ -27,7 +27,16 @@ async function getOrCreateCustomer(userId) {
   const r = await pool.query("SELECT * FROM users WHERE id=$1", [userId]);
   const u = r.rows[0];
   if (!u) throw new Error("no_user");
-  if (u.stripe_customer) return u.stripe_customer;
+  if (u.stripe_customer) {
+    // Gespeicherte Kunden-ID prüfen: Nach dem Wechsel Test- → Live-Modus kennt Stripe die alten
+    // Sandbox-Kunden nicht mehr ("No such customer") — dann einfach neu anlegen statt zu scheitern.
+    try {
+      const existing = await stripe.customers.retrieve(u.stripe_customer);
+      if (existing && !existing.deleted) return u.stripe_customer;
+    } catch (e) {
+      if (!/No such customer/i.test(String(e.message))) throw e;
+    }
+  }
   const c = await stripe.customers.create({ email: u.email, name: u.name || undefined, metadata: { asfit_user: String(u.id) } });
   await pool.query("UPDATE users SET stripe_customer=$1 WHERE id=$2", [c.id, u.id]);
   return c.id;
