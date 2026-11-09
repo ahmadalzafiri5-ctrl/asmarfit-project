@@ -130,25 +130,37 @@ export function welcomeHtml(name, lang) {
     <div style="color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:2px;">ASFIT</div>
     <div style="color:${gold};font-size:12px;letter-spacing:1px;margin-top:4px;">${T.tagline}</div>
   </td></tr>
-  <tr><td style="padding:36px 40px 8px;">
-    <div style="font-size:20px;font-weight:bold;color:${text};">${T.hello(n)}</div>
+  <tr><td style="padding:36px 40px 8px;" align="center">
+    <div style="font-size:22px;font-weight:bold;color:${text};">${T.hello(n)}</div>
     <p style="font-size:14.5px;line-height:1.65;color:${text};margin:14px 0 0;">${T.intro}</p>
   </td></tr>
-  <tr><td style="padding:16px 40px 0;">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="font-size:14px;color:${text};line-height:1.7;">
-      <tr><td style="padding:6px 0;">${T.b1}</td></tr>
-      <tr><td style="padding:6px 0;">${T.b2}</td></tr>
-      <tr><td style="padding:6px 0;">${T.b3}</td></tr>
-      <tr><td style="padding:6px 0;">${T.b4}</td></tr>
+  <tr><td style="padding:26px 40px 0;" align="center">
+    <div style="font-size:18px;font-weight:bold;color:${text};">${T.stepsTitle}</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="font-size:14px;color:${text};line-height:1.65;margin-top:14px;text-align:left;">
+      <tr><td style="padding:7px 0;"><span style="display:inline-block;background:${bg};color:#ffffff;font-weight:bold;font-size:12px;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;">1</span>${T.s1}</td></tr>
+      <tr><td style="padding:7px 0;"><span style="display:inline-block;background:${bg};color:#ffffff;font-weight:bold;font-size:12px;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;">2</span>${T.s2}</td></tr>
+      <tr><td style="padding:7px 0;"><span style="display:inline-block;background:${bg};color:#ffffff;font-weight:bold;font-size:12px;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;">3</span>${T.s3}</td></tr>
     </table>
   </td></tr>
-  <tr><td style="padding:28px 40px 8px;" align="center">
-    <a href="${PLAY_URL}" style="display:inline-block;background:${bg};color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:12px;">${T.cta}</a>
-    <div style="font-size:12px;color:${dim};margin-top:10px;">${T.web} <a href="${APP_URL()}" style="color:${dim};">${APP_URL().replace("https://", "")}</a></div>
+  <tr><td style="padding:18px 40px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>
+      <td width="33%" align="center" style="padding:8px 4px;"><div style="font-size:30px;line-height:1;">🔍</div><div style="font-size:13px;font-weight:bold;color:${text};margin-top:8px;">${T.tool1}</div><div style="font-size:11.5px;color:${dim};margin-top:2px;">${T.tool1d}</div></td>
+      <td width="33%" align="center" style="padding:8px 4px;"><div style="font-size:30px;line-height:1;">📷</div><div style="font-size:13px;font-weight:bold;color:${text};margin-top:8px;">${T.tool2}</div><div style="font-size:11.5px;color:${dim};margin-top:2px;">${T.tool2d}</div></td>
+      <td width="33%" align="center" style="padding:8px 4px;"><div style="font-size:30px;line-height:1;">🤖</div><div style="font-size:13px;font-weight:bold;color:${text};margin-top:8px;">${T.tool3}</div><div style="font-size:11.5px;color:${dim};margin-top:2px;">${T.tool3d}</div></td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:20px 40px 0;" align="center">
+    <p style="font-size:14px;line-height:1.65;color:${text};margin:0;font-style:italic;">${T.moti}</p>
+  </td></tr>
+  <tr><td style="padding:26px 40px 8px;" align="center">
+    <a href="${PLAY_URL}" style="display:inline-block;background:${bg};color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:999px;">${T.cta}</a>
+    <div style="margin-top:18px;"><a href="${PLAY_URL}"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/${T.badge}_badge_web_generic.png" alt="Google Play" height="56" style="height:56px;"></a></div>
+    <div style="font-size:12px;color:${dim};margin-top:8px;">${T.web} <a href="${APP_URL()}" style="color:${dim};">${APP_URL().replace("https://", "")}</a></div>
   </td></tr>
   <tr><td style="padding:24px 40px 32px;">
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
-    <div style="font-size:12px;color:${dim};line-height:1.6;">${T.footer(mail)}</div>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 14px;">
+    <div style="font-size:12px;color:${dim};text-align:center;margin-bottom:12px;"><a href="${APP_URL()}" style="color:${dim};font-weight:bold;">${T.help}</a> &nbsp;|&nbsp; <a href="${APP_URL()}" style="color:${dim};font-weight:bold;">${APP_URL().replace("https://", "")}</a></div>
+    <div style="font-size:12px;color:${dim};line-height:1.6;text-align:center;">${T.footer(mail)}</div>
   </td></tr>
 </table>
 <div style="font-size:11px;color:#9ca3af;margin-top:14px;">© ${new Date().getFullYear()} ASFIT · AsM Development, Schweiz</div>
