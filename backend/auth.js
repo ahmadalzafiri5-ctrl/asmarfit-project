@@ -138,7 +138,7 @@ export function mountAuth(app) {
       if (!r.rows[0]) return res.status(409).json({ error: "email_taken" });
       // Betreiber sofort informieren (ohne zu warten; Fehler stören die Antwort nicht)
       notifyAdmin("user_new", { id: r.rows[0].id, email: r.rows[0].email, name: r.rows[0].name, provider: "email" });
-      sendWelcomeEmail(r.rows[0]); // Willkommens-Mail an den Kunden (wartet nicht, wirft nie)
+      sendWelcomeEmail(r.rows[0], req.body && req.body.lang); // Willkommens-Mail in der App-Sprache (wartet nicht, wirft nie)
       res.json({ token: await signToken(r.rows[0].id), user: publicUser(r.rows[0]) });
     } catch (e) {
       console.error("register:", e.message);
@@ -178,7 +178,7 @@ export function mountAuth(app) {
         [email, String(payload.name || "").slice(0, 60), String(payload.sub)]
       );
       // xmax = 0 heisst: die Zeile wurde gerade neu angelegt (kein vorhandenes Konto) → Betreiber informieren
-      if (r.rows[0] && r.rows[0].inserted) { notifyAdmin("user_new", { id: r.rows[0].id, email: r.rows[0].email, name: r.rows[0].name, provider: "google" }); sendWelcomeEmail(r.rows[0]); }
+      if (r.rows[0] && r.rows[0].inserted) { notifyAdmin("user_new", { id: r.rows[0].id, email: r.rows[0].email, name: r.rows[0].name, provider: "google" }); sendWelcomeEmail(r.rows[0], req.body && req.body.lang); }
       res.json({ token: await signToken(r.rows[0].id), user: publicUser(r.rows[0]) });
     } catch (e) {
       console.error("google:", e.message);
@@ -208,7 +208,7 @@ export function mountAuth(app) {
           [email, name, sub]
         );
         u = r.rows[0];
-        if (u && u.inserted) { notifyAdmin("user_new", { id: u.id, email: u.email, name: u.name, provider: "apple" }); sendWelcomeEmail(u); }
+        if (u && u.inserted) { notifyAdmin("user_new", { id: u.id, email: u.email, name: u.name, provider: "apple" }); sendWelcomeEmail(u, req.body && req.body.lang); }
       }
       res.json({ token: await signToken(u.id), user: publicUser(u) });
     } catch (e) {

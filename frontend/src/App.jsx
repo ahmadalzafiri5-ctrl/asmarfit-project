@@ -3512,7 +3512,7 @@ function AuthScreen({ t, compact = false, onDone, onSkip = null }) {
             setBusy(true);
             setErr(null);
             try {
-              await finish(await fetch(API_BASE + "/api/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken: resp.credential }) }));
+              await finish(await fetch(API_BASE + "/api/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken: resp.credential, lang: JSON.parse(localStorage.getItem("asfit.lang") || '"de"') }) }));
             } catch {
               setErr(t.authErrServer);
             }
@@ -3544,7 +3544,7 @@ function AuthScreen({ t, compact = false, onDone, onSkip = null }) {
         await fetch(API_BASE + "/api/auth/" + (mode === "register" ? "register" : "login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim(), password, name: name.trim() }),
+          body: JSON.stringify({ email: email.trim(), password, name: name.trim(), lang: JSON.parse(localStorage.getItem("asfit.lang") || '"de"') }),
         })
       );
     } catch {
