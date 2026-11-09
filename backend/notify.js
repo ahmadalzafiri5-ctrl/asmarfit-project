@@ -106,3 +106,68 @@ export async function notifyAdmin(kind, fields = {}) {
   });
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Willkommens-E-Mail an den KUNDEN nach der Registrierung (professionell, ASFIT-Branding).
+// Läuft nur, wenn RESEND_API_KEY gesetzt ist. Absender: MAIL_FROM (eigene Domain, z. B.
+// "ASFIT <no-reply@development-info.org>"), sonst NOTIFY_FROM. Fire-and-forget, wirft nie.
+const APP_URL = () => env("FRONTEND_URL") || "https://asmarfit-project.onrender.com";
+const PLAY_URL = "https://play.google.com/store/apps/details?id=com.asfit.app";
+
+export function welcomeHtml(name) {
+  const hallo = name ? "Hallo " + String(name).slice(0, 60) : "Hallo";
+  const gold = "#D4AF37", bg = "#0B0B0A", text = "#1d2126", dim = "#6b7280";
+  return `<!doctype html><html lang="de"><body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;">Dein ASFIT-Konto ist bereit — Training, Ernährung und Fortschritt in einer App.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 0;"><tr><td align="center">
+<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">
+  <tr><td style="background:${bg};padding:32px 40px;" align="center">
+    <img src="${APP_URL()}/icon-192.png" width="56" height="56" alt="ASFIT" style="border-radius:14px;display:block;margin:0 auto 12px;">
+    <div style="color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:2px;">ASFIT</div>
+    <div style="color:${gold};font-size:12px;letter-spacing:1px;margin-top:4px;">DEIN TRAINING. DEINE ZAHLEN. DEIN FORTSCHRITT.</div>
+  </td></tr>
+  <tr><td style="padding:36px 40px 8px;">
+    <div style="font-size:20px;font-weight:bold;color:${text};">${hallo}, willkommen bei ASFIT! 👋</div>
+    <p style="font-size:14.5px;line-height:1.65;color:${text};margin:14px 0 0;">Dein Konto ist eingerichtet — ab jetzt hast du Training, Ernährung und Fortschritt an einem Ort, auf allen Geräten.</p>
+  </td></tr>
+  <tr><td style="padding:16px 40px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="font-size:14px;color:${text};line-height:1.7;">
+      <tr><td style="padding:6px 0;">🍽️ <b>Kalorien &amp; Makros</b> — Schweizer Lebensmittel-Datenbank, Barcode und KI-Foto-Scan</td></tr>
+      <tr><td style="padding:6px 0;">🏋️ <b>170+ Übungen</b> mit Anleitung, fertige Pläne und Trainings-Tagebuch</td></tr>
+      <tr><td style="padding:6px 0;">📈 <b>Fortschritt</b> — Gewicht, Masse, Rekorde und Wochen-Auswertung</td></tr>
+      <tr><td style="padding:6px 0;">🤖 <b>KI-Coach</b> — Rezepte, Wochenplan und Antworten auf deine Fragen</td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:28px 40px 8px;" align="center">
+    <a href="${PLAY_URL}" style="display:inline-block;background:${bg};color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:12px;">App öffnen</a>
+    <div style="font-size:12px;color:${dim};margin-top:10px;">Auch im Browser: <a href="${APP_URL()}" style="color:${dim};">${APP_URL().replace("https://", "")}</a></div>
+  </td></tr>
+  <tr><td style="padding:24px 40px 32px;">
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
+    <div style="font-size:12px;color:${dim};line-height:1.6;">Fragen? Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:${env("ADMIN_EMAIL") || "as@development-info.org"}" style="color:${dim};">${env("ADMIN_EMAIL") || "as@development-info.org"}</a>.<br>Du erhältst diese Nachricht, weil mit dieser Adresse ein ASFIT-Konto erstellt wurde.</div>
+  </td></tr>
+</table>
+<div style="font-size:11px;color:#9ca3af;margin-top:14px;">© ${new Date().getFullYear()} ASFIT · AsM Development, Schweiz</div>
+</td></tr></table></body></html>`;
+}
+
+export async function sendWelcomeEmail(user) {
+  try {
+    const c = config();
+    const to = user && user.email;
+    if (!c.resendKey || !to) return false;
+    const from = env("MAIL_FROM") || c.from;
+    await postJson(c.resendBase + "/emails", {
+      from,
+      to: [to],
+      reply_to: env("ADMIN_EMAIL") || undefined,
+      subject: "Willkommen bei ASFIT" + (user.name ? ", " + String(user.name).slice(0, 60) : "") + " 💪",
+      html: welcomeHtml(user.name),
+      text: "Willkommen bei ASFIT! Dein Konto ist eingerichtet. App: " + PLAY_URL + " — Web: " + APP_URL(),
+    }, { authorization: "Bearer " + c.resendKey });
+    return true;
+  } catch (e) {
+    console.error("notify: welcome", String((e && e.message) || e).slice(0, 200));
+    return false;
+  }
+}
