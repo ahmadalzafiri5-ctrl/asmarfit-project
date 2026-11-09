@@ -144,6 +144,9 @@ const COLORS = {
   teal: "var(--c-teal)",
   coral: "var(--c-coral)",
   coralSoft: "var(--c-coralSoft)",
+  // colour of the current section (tab) — see SECTION_COLORS / applySection
+  section: "var(--c-section)",
+  sectionSoft: "var(--c-sectionSoft)",
 };
 
 // who is using the app (the onboarding choice): decides the figures, the mascot and which exercises are shown first
@@ -169,11 +172,39 @@ const THEMES = {
   },
 };
 
-let themeMode = "system";
+// One colour per section (bottom tab) so you always see where you are.
+// home = theme accent (null -> --c-gold); the others are fixed and chosen for
+// >= 4.5:1 contrast on the light resp. dark backgrounds of THEMES.
+const SECTION_COLORS = {
+  home: null,
+  nutrition: { light: "#0F7A3E", dark: "#3DD68C", lightSoft: "rgba(15,122,62,0.13)", darkSoft: "rgba(61,214,140,0.16)" },
+  training: { light: "#AD5407", dark: "#FF9F43", lightSoft: "rgba(173,84,7,0.13)", darkSoft: "rgba(255,159,67,0.16)" },
+  progress: { light: "#2563EB", dark: "#5B9DF5", lightSoft: "rgba(37,99,235,0.13)", darkSoft: "rgba(91,157,245,0.16)" },
+  notes: { light: "#7C4DDB", dark: "#B08AF0", lightSoft: "rgba(124,77,219,0.13)", darkSoft: "rgba(176,138,240,0.16)" },
+};
+let currentSection = "home";
+let themeIsDark = true;
+function applySection(tabKey = currentSection) {
+  currentSection = tabKey;
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  const c = SECTION_COLORS[tabKey];
+  if (!c) {
+    root.style.setProperty("--c-section", "var(--c-gold)");
+    root.style.setProperty("--c-sectionSoft", "var(--c-goldSoft)");
+    return;
+  }
+  root.style.setProperty("--c-section", themeIsDark ? c.dark : c.light);
+  root.style.setProperty("--c-sectionSoft", themeIsDark ? c.darkSoft : c.lightSoft);
+}
+
+// Default appearance is dark (the app must never open white); a saved choice in
+// localStorage (asfit.appearance: light / dark / system) always wins.
+let themeMode = "dark";
 try {
-  themeMode = JSON.parse(localStorage.getItem("asfit.appearance") || "\"system\"");
+  themeMode = JSON.parse(localStorage.getItem("asfit.appearance") || "\"dark\"");
 } catch {
-  themeMode = "system";
+  themeMode = "dark";
 }
 
 function applyTheme(gender, mode = themeMode) {
@@ -184,6 +215,8 @@ function applyTheme(gender, mode = themeMode) {
   Object.entries(theme).forEach(([k, v]) => root.style.setProperty("--c-" + k, v));
   root.style.colorScheme = dark ? "dark" : "light";
   document.body && (document.body.style.background = theme.bg);
+  themeIsDark = dark;
+  applySection(currentSection);
 }
 
 // Apply the saved theme before the first paint to avoid a colour flash.
@@ -3348,7 +3381,7 @@ function TextField({ value, onChange, placeholder, type = "text" }) {
   );
 }
 
-function TopBar({ title, lang, setLang, onBack, onSettings }) {
+function TopBar({ title, lang, setLang, onBack, onSettings, accent = null }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 8px", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
@@ -3357,6 +3390,7 @@ function TopBar({ title, lang, setLang, onBack, onSettings }) {
             <ChevronLeft size={22} color={COLORS.text} />
           </div>
         )}
+        {accent && <span data-section-dot style={{ width: 10, height: 10, borderRadius: "50%", background: accent, flexShrink: 0 }} />}
         <h1 style={{ fontFamily: "Sora, sans-serif", fontSize: 21, fontWeight: 700, color: COLORS.text, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</h1>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -14367,6 +14401,10 @@ export default function AsmarFitApp() {
   const isPhone = useIsPhone();
   const [onboarded, setOnboarded] = usePersisted("onboarded", false);
   const [tab, setTab] = useState("home");
+  // section colour follows the active tab (CSS variable --c-section)
+  useEffect(() => {
+    applySection(tab);
+  }, [tab]);
   const [lang, setLang] = usePersisted("lang", detectLang());
   const [overlay, setOverlay] = useState(null);
   const [libraryReturnTo, setLibraryReturnTo] = useState("main");
@@ -14403,7 +14441,7 @@ export default function AsmarFitApp() {
     vision3Months: "",
     visionWhy: "",
   });
-  const [appearance, setAppearance] = usePersisted("appearance", "system");
+  const [appearance, setAppearance] = usePersisted("appearance", "dark");
   const [colorTheme, setColorTheme] = usePersisted("colorTheme", "auto");
   const [textSize, setTextSize] = usePersisted("textSize", "m");
   // Opening animation: once per app launch, never for people who asked the OS to reduce motion.
@@ -16018,7 +16056,7 @@ export default function AsmarFitApp() {
           </div>
         ) : (
           <>
-            <TopBar title={topTitle} lang={lang} setLang={setLang} onBack={showBack} onSettings={!showBack ? () => setOverlay("settings") : null} />
+            <TopBar title={topTitle} lang={lang} setLang={setLang} onBack={showBack} onSettings={!showBack ? () => setOverlay("settings") : null} accent={!overlay ? COLORS.section : null} />
             {/* Upsell-Dialog: Wochen-Limit erreicht oder Premium-exklusive Funktion angetippt */}
             {aiLimitHit && (
               <div data-ai-limit style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
@@ -16052,6 +16090,7 @@ export default function AsmarFitApp() {
             )}
             {activeWorkout && overlay !== "workout" && <WorkoutBanner t={t} aw={activeWorkout} onOpen={() => startOrResumeWorkout()} />}
             {activeWorkout && <WorkoutLongPrompt t={t} aw={activeWorkout} onEnd={() => startOrResumeWorkout()} />}
+            {!overlay && <div data-section-line style={{ height: 3, flexShrink: 0, margin: "0 20px", borderRadius: 2, background: `linear-gradient(90deg, ${COLORS.section}, transparent)` }} />}
             <div ref={scrollRef} style={isPhone ? { flex: 1, minHeight: 0, overflowY: "auto" } : { height: 700, overflowY: "auto" }}>{content}</div>
             <div style={{ display: "flex", justifyContent: "space-around", padding: isPhone ? "10px 6px calc(12px + env(safe-area-inset-bottom))" : "10px 6px 20px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
               {nav.map(({ key, icon: Icon, label }) => {
@@ -16063,10 +16102,13 @@ export default function AsmarFitApp() {
                       setOverlay(null);
                       setTab(key);
                     }}
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", padding: "4px 8px" }}
+                    data-tab={key}
+                    data-active={active ? "true" : "false"}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", padding: "0 8px 4px", position: "relative" }}
                   >
-                    <Icon size={20} color={active ? COLORS.gold : COLORS.dim} strokeWidth={active ? 2.3 : 1.8} />
-                    <span style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: active ? 600 : 400, color: active ? COLORS.gold : COLORS.dim }}>{label}</span>
+                    <div style={{ width: 22, height: 3, borderRadius: 2, marginBottom: 3, background: active ? COLORS.section : "transparent" }} />
+                    <Icon size={20} color={active ? COLORS.section : COLORS.dim} strokeWidth={active ? 2.3 : 1.8} />
+                    <span style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: active ? 600 : 400, color: active ? COLORS.section : COLORS.dim }}>{label}</span>
                   </div>
                 );
               })}
