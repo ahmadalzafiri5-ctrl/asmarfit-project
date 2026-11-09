@@ -106,3 +106,28 @@ Jede KI-Route (Coach, Foto-Scan, KI-Rezept, Rezept-Import, Wochenplan, Prognose)
 - `POST /api/ai/pack/dev` — nur mit `AI_PACK_DEV=1` (Tests), schaltet ein Paket ohne Kauf frei.
 
 Umgebungsvariablen (optional): `AI_QUOTA_JSON`, `AI_PACK_PRODUCT` (Standard `asfit_ai_pack`), `AI_PACK_CHF`, `AI_PACK_DAYS`, `AI_PACK_CREDITS_JSON`, `STRIPE_PRICE_AI_PACK` (Stripe-Preis des Pakets), `AI_PACK_DEV`. Tabellen `ai_usage` und `ai_packs` entstehen beim Start automatisch (Postgres); ohne Datenbank zählt der Prozess im Speicher.
+
+## Benachrichtigungen an den Betreiber
+
+`backend/notify.js` schickt dem Betreiber sofort eine kurze Nachricht, wenn etwas Wichtiges passiert — ohne die Antwort an den Nutzer zu verzögern (Fire-and-forget, 5 s Timeout, Fehler landen nur im Log mit Präfix `notify:`). Ereignisse:
+
+- **Neuer Nutzer** (`user_new`) — Registrierung per E-Mail, oder erstes "Weiter mit Google/Apple" (nur wenn das Konto wirklich neu angelegt wurde, nicht bei jedem Login). Text z.B. `🆕 Neuer Nutzer: Anna (anna@…), via google — Nr. 123`.
+- **Neues Abo** (`premium_new`) — Stripe (Web) und Google Play (Android), nur wenn der Nutzer vorher kein aktives Premium hatte (Verlängerungen und der Status-Refresh beim App-Start lösen nichts aus). Text z.B. `💎 Neues Abo: monthly bis 2026-12-06 (Gratis-Testphase) — user Nr. 123, anna@… , Quelle play`.
+- **KI-Paket gekauft** (`pack_new`) — Stripe-Webhook und Play `verify-pack`.
+
+In den Nachrichten stehen nie Passwörter, Hashes, Kauf-Token oder Schlüssel; die E-Mail des Nutzers ist enthalten (der Betreiber ist Verantwortlicher). Es gehen alle eingerichteten Kanäle gleichzeitig raus; ohne gesetzte Variablen passiert nichts.
+
+| Kanal | Variablen (Render → Environment) |
+| --- | --- |
+| Telegram (empfohlen, Push aufs Handy) | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` |
+| E-Mail über Resend | `RESEND_API_KEY`, `ADMIN_EMAIL`, optional `NOTIFY_FROM` (Standard `ASFIT <onboarding@resend.dev>`; eigene Domain erst nach Verifizierung bei Resend) |
+| Eigener Webhook (Slack/Discord/Zapier …) | `ADMIN_NOTIFY_URL` — bekommt `POST` JSON `{ kind, text, fields, at }` |
+
+Telegram-Bot einrichten (5 Minuten):
+
+1. In Telegram **@BotFather** öffnen, `/newbot` schicken, Namen vergeben → BotFather antwortet mit dem **Token** (Form `123456:ABC-…`).
+2. Den neuen Bot öffnen und ihm irgendeine Nachricht schreiben (z.B. „hallo“), sonst darf er dir nicht schreiben.
+3. Im Browser `https://api.telegram.org/bot<TOKEN>/getUpdates` aufrufen; in der Antwort steht `"chat":{"id":123456789,…}` — das ist die **Chat-ID** (bei einer Gruppe negativ).
+4. In Render beim Service `asmarfit-backend` unter *Environment* `TELEGRAM_BOT_TOKEN` und `TELEGRAM_CHAT_ID` eintragen, speichern → Render startet neu. Test: ein Probekonto registrieren, die Nachricht muss sofort ankommen.
+
+Für Tests zeigen `TELEGRAM_API_BASE` und `RESEND_API_BASE` auf einen Stub-Server (`asfit-shots/notify-admin-unit.mjs`, `asfit-shots/notify-backend-test.cjs`).

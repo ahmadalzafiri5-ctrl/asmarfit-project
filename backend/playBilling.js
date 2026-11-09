@@ -8,6 +8,7 @@
 import { importPKCS8, SignJWT } from "jose";
 import { pool, requireAuth, authEnabled } from "./auth.js";
 import { grantPack, AI_PACK } from "./aiQuota.js";
+import { notifyAdmin } from "./notify.js";
 
 const PKG = process.env.ANDROID_PACKAGE || "com.asfit.app";
 let SA = null;
@@ -59,7 +60,12 @@ async function verifyAndApply(userId, token) {
   const cancelled = Boolean(sub.canceledStateContext) || item.autoRenewingPlan?.autoRenewEnabled === false;
 
   if (active && until > Date.now()) {
+    // Vorher-Stand: nur ein NEUES Abo wird dem Betreiber gemeldet (der Refresh beim App-Start läuft sonst bei jedem Start)
+    const before = await pool.query("SELECT id, email, premium_plan, premium_until FROM users WHERE id=$1", [userId]);
     await pool.query("UPDATE users SET premium_plan=$1, premium_until=to_timestamp($2/1000.0), premium_cancelled=$3, play_token=$4 WHERE id=$5", [plan, until, cancelled, token, userId]);
+    const b = before.rows[0];
+    const hadActive = Boolean(b && b.premium_plan); // Plan-Feld statt Laufzeit, sonst meldet jede Verlängerung ein neues Abo
+    if (b && !hadActive) notifyAdmin("premium_new", { id: b.id, email: b.email, plan, until, trial, source: "play" });
     // Kauf bestätigen, sonst erstattet Google nach 3 Tagen automatisch zurück
     if (sub.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING") {
       const productId = item.productId || "asfit_premium";
@@ -108,6 +114,7 @@ export function mountPlayBilling(app) {
       const p = await r.json();
       if (Number(p.purchaseState) !== 0) return res.status(422).json({ error: "not_purchased" }); // 0 = gekauft, 1 = storniert, 2 = ausstehend
       const usage = await grantPack("u:" + req.userId, "play:" + (p.orderId || token), "play");
+      pool.query("SELECT email FROM users WHERE id=$1", [req.userId]).then((q) => notifyAdmin("pack_new", { id: req.userId, email: q.rows[0] && q.rows[0].email, source: "play" })).catch((e) => console.error("notify:", e.message));
       if (Number(p.consumptionState) === 0) {
         await fetch(base + ":consume", { method: "POST", headers: { authorization: "Bearer " + at, "content-type": "application/json" }, body: "{}" }).catch((e) => console.error("Play consume:", e.message));
       }

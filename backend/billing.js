@@ -14,6 +14,7 @@
 import Stripe from "stripe";
 import { pool, requireAuth, authEnabled } from "./auth.js";
 import { grantPack } from "./aiQuota.js";
+import { notifyAdmin } from "./notify.js";
 
 const KEY = process.env.STRIPE_SECRET_KEY || "";
 const PRICE = { monthly: process.env.STRIPE_PRICE_MONTHLY || "", yearly: process.env.STRIPE_PRICE_YEARLY || "", ai_pack: process.env.STRIPE_PRICE_AI_PACK || "" };
@@ -51,12 +52,19 @@ async function applySubscription(sub) {
   const active = ["active", "trialing", "past_due"].includes(sub.status);
   const until = (item && item.current_period_end ? item.current_period_end : sub.current_period_end || 0) * 1000;
   if (active) {
+    // Vorher-Stand lesen: nur ein NEUES Abo (vorher kein aktives Premium) wird dem Betreiber gemeldet, nicht jede Verlängerung
+    const before = await pool.query("SELECT id, email, premium_plan, premium_until FROM users WHERE stripe_customer=$1", [customer]);
     await pool.query("UPDATE users SET premium_plan=$1, premium_until=to_timestamp($2/1000.0), premium_cancelled=$3 WHERE stripe_customer=$4", [
       plan,
       until,
       Boolean(sub.cancel_at_period_end),
       customer,
     ]);
+    for (const u of before.rows) {
+      // Plan-Feld statt Laufzeit: bei einer Verlängerung ist die alte Laufzeit oft schon abgelaufen, der Plan aber noch gesetzt
+      const hadActive = Boolean(u.premium_plan);
+      if (!hadActive) notifyAdmin("premium_new", { id: u.id, email: u.email, plan, until, trial: sub.status === "trialing", source: "stripe" });
+    }
   } else {
     await pool.query("UPDATE users SET premium_plan=NULL, premium_until=NULL, premium_cancelled=FALSE WHERE stripe_customer=$1", [customer]);
   }
@@ -79,6 +87,7 @@ export function billingWebhook() {
         // KI-Paket (Einmalzahlung): Guthaben dem Konto gutschreiben; die Session-ID verhindert Doppelgutschriften
         if (s.mode === "payment" && s.metadata && s.metadata.asfit_kind === "ai_pack" && s.payment_status === "paid" && s.metadata.asfit_user) {
           await grantPack("u:" + Number(s.metadata.asfit_user), "stripe:" + s.id, "stripe");
+          notifyAdmin("pack_new", { id: Number(s.metadata.asfit_user), email: s.customer_details && s.customer_details.email, source: "stripe" });
         }
         if (s.mode === "subscription" && s.subscription) {
           const sub = await stripe.subscriptions.retrieve(typeof s.subscription === "string" ? s.subscription : s.subscription.id);

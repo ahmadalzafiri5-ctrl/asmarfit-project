@@ -5,6 +5,7 @@
 import pg from "pg";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify, createRemoteJWKSet, decodeJwt } from "jose";
+import { notifyAdmin } from "./notify.js";
 
 const DATABASE_URL = process.env.DATABASE_URL || "";
 const JWT_SECRET = process.env.AUTH_JWT_SECRET || "";
@@ -135,6 +136,8 @@ export function mountAuth(app) {
         [email, name, hash]
       );
       if (!r.rows[0]) return res.status(409).json({ error: "email_taken" });
+      // Betreiber sofort informieren (ohne zu warten; Fehler stören die Antwort nicht)
+      notifyAdmin("user_new", { id: r.rows[0].id, email: r.rows[0].email, name: r.rows[0].name, provider: "email" });
       res.json({ token: await signToken(r.rows[0].id), user: publicUser(r.rows[0]) });
     } catch (e) {
       console.error("register:", e.message);
@@ -170,9 +173,11 @@ export function mountAuth(app) {
       const r = await pool.query(
         `INSERT INTO users (email, name, provider, google_sub) VALUES ($1,$2,'google',$3)
          ON CONFLICT (email) DO UPDATE SET google_sub=COALESCE(users.google_sub, EXCLUDED.google_sub), name=CASE WHEN users.name='' THEN EXCLUDED.name ELSE users.name END
-         RETURNING *`,
+         RETURNING *, (xmax = 0) AS inserted`,
         [email, String(payload.name || "").slice(0, 60), String(payload.sub)]
       );
+      // xmax = 0 heisst: die Zeile wurde gerade neu angelegt (kein vorhandenes Konto) → Betreiber informieren
+      if (r.rows[0] && r.rows[0].inserted) notifyAdmin("user_new", { id: r.rows[0].id, email: r.rows[0].email, name: r.rows[0].name, provider: "google" });
       res.json({ token: await signToken(r.rows[0].id), user: publicUser(r.rows[0]) });
     } catch (e) {
       console.error("google:", e.message);
@@ -198,10 +203,11 @@ export function mountAuth(app) {
         const r = await pool.query(
           `INSERT INTO users (email, name, provider, apple_sub) VALUES ($1,$2,'apple',$3)
            ON CONFLICT (email) DO UPDATE SET apple_sub=COALESCE(users.apple_sub, EXCLUDED.apple_sub)
-           RETURNING *`,
+           RETURNING *, (xmax = 0) AS inserted`,
           [email, name, sub]
         );
         u = r.rows[0];
+        if (u && u.inserted) notifyAdmin("user_new", { id: u.id, email: u.email, name: u.name, provider: "apple" });
       }
       res.json({ token: await signToken(u.id), user: publicUser(u) });
     } catch (e) {
