@@ -110,8 +110,9 @@ jobs:
           echo "Gesundheitsrechte: $HEALTH"
           [ "$HEALTH" = "android.permission.health.READ_EXERCISE android.permission.health.READ_STEPS android.permission.health.READ_WEIGHT " ]
 
-      - name: Pruefung Alarm-Recht (kein SCHEDULE_EXACT_ALARM)
-        run: "! grep -q SCHEDULE_EXACT_ALARM perms.txt"
+      # Seit 1.0.10 gewollt: exakte Alarme fuer minutengenaue Erinnerungen (App fragt den Nutzer); gleiche Pruefung wie im Store-Lauf
+      - name: Pruefung Alarm-Recht (SCHEDULE_EXACT_ALARM vorhanden)
+        run: grep -q SCHEDULE_EXACT_ALARM perms.txt
 
       # Google Play verlangt fuer Apps mit Ziel Android 15+ Bibliotheken, die auf 16-KB-Speicherseiten ausgerichtet sind
       - name: Pruefung 16-KB-Speicherseiten (alle .so ausgerichtet)
