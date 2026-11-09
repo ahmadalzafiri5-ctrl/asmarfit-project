@@ -12,3 +12,6 @@ dist-store/
 .claude/skills/
 skills-lock.json
 frontend/.env.local
+
+# QA-Testkonto mit Passwort, nie committen
+frontend/testkonto-qa.txt
