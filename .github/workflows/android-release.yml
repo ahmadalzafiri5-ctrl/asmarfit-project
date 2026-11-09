@@ -1,6 +1,6 @@
-# Baut das Android App Bundle (.aab) fuer Google Play: Store-Variante (ohne Einnahme-Tagebuch), signiert mit dem
+# Baut das Android App Bundle (.aab) fuer Google Play: Store-Variante (Einnahme-Tagebuch nur mit freiverkaeuflichen Mitteln), signiert mit dem
 # Upload-Schluessel aus den Secrets. Ohne die Secrets baut der Lauf trotzdem (unsigniert, nur zur Probe).
-# Stand: 1.0.15 (dunkler Start, Bereichsfarben, Betreiber-Benachrichtigungen)
+# Stand: 1.0.16 (Einnahme-Tagebuch im Store: nur freiverkaeufliche Mittel)
 # Ergebnis: Actions -> (Lauf anklicken) -> unten "Artifacts" -> ASFIT-android-store-aab
 #
 # Secrets (Anleitung: frontend/APP-STORES.md):
@@ -51,7 +51,7 @@ jobs:
       - name: Web-App bauen (Store-Variante) und in das Android-Projekt kopieren
         working-directory: frontend
         env:
-          VITE_HIDE_INTAKE: "1"
+          VITE_INTAKE_SAFE: "1"
         run: |
           npm ci
           npm run build

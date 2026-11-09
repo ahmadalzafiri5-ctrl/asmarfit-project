@@ -2,15 +2,23 @@
 // Only names, the usual form (injection / oral / gel) and a unit to start with. No doses, no cycles, no advice of any kind.
 // Not on the list? The diary also takes any name typed in by hand.
 // Row: [name, aliases (for the search), route, unit, group]
-export const INTAKE_GROUPS = [
+// Play-Store-Variante (VITE_INTAKE_SAFE=1): nur frei verkäufliche Mittel. Verschreibungspflichtige
+// und Graumarkt-Gruppen (Anabolika, Orale, PCT, Hormone, GH-/Forschungs-Peptide, SARMs) entfernt der
+// Bundler dann komplett aus der App-Datei — Google Play entfernt Apps mit Steroid-Inhalten.
+// Eigene Namen kann man weiterhin von Hand eintragen; die App schlägt sie nur nicht vor.
+const SAFE_ONLY = import.meta.env.VITE_INTAKE_SAFE === "1";
+const RISKY_GROUPS = SAFE_ONLY ? [] : [
   { k: "inj", de: "Testosteron & Anabolika", en: "Testosterone & anabolics" },
   { k: "oral", de: "Orale", en: "Orals" },
   { k: "pct", de: "Anti-Östrogen / PCT", en: "Anti-estrogen / PCT" },
   { k: "horm", de: "Hormone", en: "Hormones" },
   { k: "gh", de: "Wachstumshormon-Peptide", en: "Growth hormone peptides" },
   { k: "pep", de: "Weitere Peptide", en: "Other peptides" },
-  { k: "glp", de: "Abnehm-Spritzen (GLP-1)", en: "Weight-loss injections (GLP-1)" },
   { k: "sarm", de: "SARMs", en: "SARMs" },
+];
+export const INTAKE_GROUPS = [
+  ...RISKY_GROUPS,
+  { k: "glp", de: "Abnehm-Spritzen (GLP-1)", en: "Weight-loss injections (GLP-1)" },
   { k: "supp", de: "Begleitmittel (Leber, Blutdruck, Blutzucker)", en: "Support (liver, blood pressure, blood sugar)" },
   { k: "sleep", de: "Schlaf & Entspannung", en: "Sleep & relaxation" },
   { k: "vit", de: "Vitamine", en: "Vitamins" },
@@ -26,8 +34,9 @@ export const INTAKE_GROUPS = [
   { k: "hsup", de: "Hormon-Support (pflanzlich)", en: "Hormone support (herbal)" },
 ];
 
-const R = [
-  // injectable androgens and anabolics
+// Heikle Zeilen (Anabolika, Orale, PCT, Hormone, GH-/Forschungs-Peptide, SARMs) stehen separat:
+// im Store-Build (VITE_INTAKE_SAFE=1) entfernt der Bundler sie komplett aus der App-Datei.
+const RISKY_ROWS = SAFE_ONLY ? [] : [
   ["Testosteron Enantat", "testosterone enanthate test e delatestryl", "inject", "mg", "inj"],
   ["Testosteron Cypionat", "testosterone cypionate test cyp depo-testosterone", "inject", "mg", "inj"],
   ["Testosteron Propionat", "testosterone propionate test prop", "inject", "mg", "inj"],
@@ -42,7 +51,6 @@ const R = [
   ["Drostanolon", "drostanolone masteron propionate enanthate", "inject", "mg", "inj"],
   ["Methenolon Enantat", "methenolone enanthate primobolan primo depot", "inject", "mg", "inj"],
   ["Stanozolol (Spritze)", "stanozolol winstrol depot winny", "inject", "mg", "inj"],
-  // oral androgens
   ["Methandienon", "methandienone dianabol dbol d-bol", "oral", "mg", "oral"],
   ["Oxandrolon", "oxandrolone anavar var", "oral", "mg", "oral"],
   ["Stanozolol (oral)", "stanozolol winstrol winny tabletten", "oral", "mg", "oral"],
@@ -52,7 +60,6 @@ const R = [
   ["Methenolon (oral)", "methenolone acetate primobolan tabletten", "oral", "mg", "oral"],
   ["Mesterolon", "mesterolone proviron", "oral", "mg", "oral"],
   ["Methyltestosteron", "methyltestosterone", "oral", "mg", "oral"],
-  // anti-estrogens, AIs, PCT and similar
   ["Tamoxifen", "nolvadex tamox", "oral", "mg", "pct"],
   ["Clomifen", "clomiphene clomid", "oral", "mg", "pct"],
   ["Enclomifen", "enclomiphene", "oral", "mg", "pct"],
@@ -63,7 +70,6 @@ const R = [
   ["Cabergolin", "cabergoline dostinex caber", "oral", "mg", "pct"],
   ["Finasterid", "finasteride proscar propecia", "oral", "mg", "pct"],
   ["Dutasterid", "dutasteride avodart", "oral", "mg", "pct"],
-  // hormones
   ["hCG (Choriongonadotropin)", "hcg human chorionic gonadotropin pregnyl ovitrelle", "inject", "IE", "horm"],
   ["HMG / FSH", "hmg fsh menopur gonal-f follitropin", "inject", "IE", "horm"],
   ["Wachstumshormon (Somatropin)", "hgh gh somatropin growth hormone genotropin norditropin", "inject", "IE", "horm"],
@@ -71,7 +77,6 @@ const R = [
   ["L-Thyroxin (T4)", "levothyroxine l-thyroxin euthyrox t4", "oral", "mcg", "horm"],
   ["Liothyronin (T3)", "liothyronine t3 cytomel thybon", "oral", "mcg", "horm"],
   ["Oxytocin", "oxytocin nasal", "other", "IE", "horm"],
-  // growth hormone secretagogues
   ["CJC-1295 (ohne DAC)", "cjc 1295 no dac mod grf 1-29 modified grf", "inject", "mcg", "gh"],
   ["CJC-1295 (mit DAC)", "cjc 1295 dac", "inject", "mg", "gh"],
   ["Ipamorelin", "ipamorelin ipa", "inject", "mcg", "gh"],
@@ -81,7 +86,6 @@ const R = [
   ["Sermorelin", "sermorelin", "inject", "mcg", "gh"],
   ["Tesamorelin", "tesamorelin egrifta", "inject", "mg", "gh"],
   ["MK-677 (Ibutamoren)", "mk677 mk-677 ibutamoren nutrobal", "oral", "mg", "gh"],
-  // other peptides
   ["BPC-157", "bpc157 bpc 157 body protection compound", "inject", "mcg", "pep"],
   ["TB-500 (Thymosin Beta-4)", "tb500 tb-500 thymosin beta 4", "inject", "mg", "pep"],
   ["GHK-Cu", "ghk cu copper peptide", "inject", "mg", "pep"],
@@ -100,13 +104,6 @@ const R = [
   ["KPV", "kpv", "inject", "mcg", "pep"],
   ["NAD+", "nad nad+ nicotinamide adenine dinucleotide", "inject", "mg", "pep"],
   ["Follistatin 344", "follistatin 344 fst344", "inject", "mcg", "pep"],
-  // GLP-1 and similar
-  ["Semaglutid", "semaglutide ozempic wegovy rybelsus", "inject", "mg", "glp"],
-  ["Tirzepatid", "tirzepatide mounjaro zepbound", "inject", "mg", "glp"],
-  ["Liraglutid", "liraglutide saxenda victoza", "inject", "mg", "glp"],
-  ["Retatrutid", "retatrutide", "inject", "mg", "glp"],
-  ["Cagrilintid", "cagrilintide", "inject", "mg", "glp"],
-  // SARMs
   ["Ostarin (MK-2866)", "ostarine enobosarm mk2866 mk-2866", "oral", "mg", "sarm"],
   ["Ligandrol (LGD-4033)", "ligandrol lgd4033 lgd-4033", "oral", "mg", "sarm"],
   ["Testolon (RAD-140)", "testolone rad140 rad-140", "oral", "mg", "sarm"],
@@ -114,6 +111,23 @@ const R = [
   ["Cardarin (GW-501516)", "cardarine gw501516 gw-501516", "oral", "mg", "sarm"],
   ["Stenabolic (SR9009)", "stenabolic sr9009", "oral", "mg", "sarm"],
   ["YK-11", "yk11 yk-11", "oral", "mg", "sarm"],
+  ["DHEA", "dhea dehydroepiandrosterone prasterone", "oral", "mg", "horm"],
+  ["Pregnenolon", "pregnenolone", "oral", "mg", "horm"],
+];
+const R = [
+  // injectable androgens and anabolics
+  // oral androgens
+  // anti-estrogens, AIs, PCT and similar
+  // hormones
+  // growth hormone secretagogues
+  // other peptides
+  // GLP-1 and similar
+  ["Semaglutid", "semaglutide ozempic wegovy rybelsus", "inject", "mg", "glp"],
+  ["Tirzepatid", "tirzepatide mounjaro zepbound", "inject", "mg", "glp"],
+  ["Liraglutid", "liraglutide saxenda victoza", "inject", "mg", "glp"],
+  ["Retatrutid", "retatrutide", "inject", "mg", "glp"],
+  ["Cagrilintid", "cagrilintide", "inject", "mg", "glp"],
+  // SARMs
   // supplements and support (the rest is below, in groups)
   ["TUDCA", "tudca tauroursodeoxycholic", "oral", "mg", "supp"],
   ["NAC (N-Acetylcystein)", "nac n-acetylcysteine acc", "oral", "mg", "supp"],
@@ -121,8 +135,6 @@ const R = [
   ["Metformin", "metformin", "oral", "mg", "supp"],
   ["Telmisartan", "telmisartan micardis", "oral", "mg", "supp"],
   ["Candesartan", "candesartan atacand", "oral", "mg", "supp"],
-  ["DHEA", "dhea dehydroepiandrosterone prasterone", "oral", "mg", "horm"],
-  ["Pregnenolon", "pregnenolone", "oral", "mg", "horm"],
   // sleep & relaxation
   ["Melatonin", "melatonin schlafhormon circadin sleep", "oral", "mg", "sleep"],
   ["Magnesium-Glycinat (abends)", "magnesium glycinate bisglycinate sleep schlaf", "oral", "mg", "sleep"],
@@ -303,7 +315,11 @@ const R = [
   ["Kürbiskern-Extrakt", "pumpkin seed kürbiskern", "oral", "mg", "hsup"],
   ["Chrysin", "chrysin passionflower", "oral", "mg", "hsup"],
   ["Mucuna pruriens (L-Dopa)", "mucuna pruriens velvet bean l-dopa", "oral", "mg", "hsup"],
-];
+].concat(RISKY_ROWS);
+
+// Im Store-Build sind RISKY_GROUPS/RISKY_ROWS leer — INTAKE_GROUPS und der Katalog sind dann
+// automatisch die sichere Liste; die sichtbare Gruppenliste ist dieselbe.
+export const INTAKE_GROUPS_VISIBLE = INTAKE_GROUPS;
 
 export const INTAKE_CATALOG = R.map(([n, a, r, u, g]) => ({ n, a: n.toLowerCase() + " " + a, r, u, g }));
 

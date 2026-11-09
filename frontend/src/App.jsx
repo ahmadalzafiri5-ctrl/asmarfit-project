@@ -9,7 +9,7 @@ import { varietyDue, varietyAlternatives } from "./variety.js";
 import { renderShareCard, shareCardBlob } from "./shareCard.js";
 import { CHALLENGE_GOAL, isoWeekKey, myChallengeProgress, challengeDone } from "./challenge.js";
 import { visibleFor } from "./genderContent.js";
-import { INTAKE_GROUPS, searchIntake } from "./intakeCatalog.js";
+import { INTAKE_GROUPS, INTAKE_GROUPS_VISIBLE, searchIntake } from "./intakeCatalog.js";
 import { weeklyReview, reviewDue } from "./weeklyReview.js";
 import { PLAN_TEMPLATES, buildFromTemplate } from "./planTemplates.js";
 import { suggestNext } from "./progression.js";
@@ -12642,7 +12642,7 @@ function IntakeCatalog({ t, lang, onPick, onCustom, onClose }) {
         </div>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 12, paddingBottom: 2 }}>
           <Chip label={t.intakeAll} active={g === "all"} onClick={() => setG("all")} />
-          {INTAKE_GROUPS.map((x) => (
+          {INTAKE_GROUPS_VISIBLE.map((x) => (
             <Chip key={x.k} label={lbl(x)} active={g === x.k} onClick={() => setG(x.k)} />
           ))}
         </div>

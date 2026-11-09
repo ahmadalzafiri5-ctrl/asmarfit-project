@@ -53,7 +53,7 @@ jobs:
       - name: Web-App bauen und in das Android-Projekt kopieren
         working-directory: frontend
         env:
-          VITE_HIDE_INTAKE: ${{ inputs.store && '1' || '' }}
+          VITE_INTAKE_SAFE: ${{ inputs.store && '1' || '' }}
         run: |
           npm ci
           npm run build

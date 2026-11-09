@@ -44,7 +44,7 @@ jobs:
       - name: Web-App bauen
         working-directory: frontend
         env:
-          VITE_HIDE_INTAKE: "1"
+          VITE_INTAKE_SAFE: "1"
         run: |
           npm ci
           npm run build
