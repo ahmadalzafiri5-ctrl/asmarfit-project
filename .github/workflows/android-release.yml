@@ -1,6 +1,6 @@
 # Baut das Android App Bundle (.aab) fuer Google Play: Store-Variante (Einnahme-Tagebuch nur mit freiverkaeuflichen Mitteln), signiert mit dem
 # Upload-Schluessel aus den Secrets. Ohne die Secrets baut der Lauf trotzdem (unsigniert, nur zur Probe).
-# Stand: 1.0.16 (Einnahme-Tagebuch im Store: nur freiverkaeufliche Mittel)
+# Stand: 1.0.17 (Premium sofort nach Login uebernehmen)
 # Ergebnis: Actions -> (Lauf anklicken) -> unten "Artifacts" -> ASFIT-android-store-aab
 #
 # Secrets (Anleitung: frontend/APP-STORES.md):

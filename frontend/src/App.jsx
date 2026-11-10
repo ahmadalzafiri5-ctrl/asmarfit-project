@@ -14671,13 +14671,14 @@ export default function AsmarFitApp() {
   // Bereits bezahlte Google-Play-Käufe beim Server nachmelden (Abo + KI-Pakete). Läuft beim Start
   // und nach Kauffehlern: Der Server prüft jeden Token bei Google, bestätigt ihn (acknowledge) und
   // schaltet frei — so bleibt kein Kauf unbestätigt liegen.
-  const recoverPlayPurchases = async () => {
+  const recoverPlayPurchases = async (headers = null) => {
+    const h = headers || authHeaders();
     try {
       const { NativePurchases, PURCHASE_TYPE } = await import("@capgo/native-purchases");
       const subs = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.SUBS }).catch(() => null);
       for (const tx of (subs && subs.purchases) || []) {
         if (!tx || !tx.purchaseToken) continue;
-        const r = await fetch(API_BASE + "/api/billing/play/verify", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ token: tx.purchaseToken }) });
+        const r = await fetch(API_BASE + "/api/billing/play/verify", { method: "POST", headers: { "Content-Type": "application/json", ...h }, body: JSON.stringify({ token: tx.purchaseToken }) });
         const d = await r.json().catch(() => ({}));
         if (r.ok && d.premium) {
           setPremium({ plan: d.premium.plan, since: Date.now(), renews: d.premium.renews, cancelled: Boolean(d.premium.cancelled), trial: Boolean(d.premium.trial), src: "server" });
@@ -14687,9 +14688,28 @@ export default function AsmarFitApp() {
       const packs = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.INAPP }).catch(() => null);
       for (const tx of (packs && packs.purchases) || []) {
         if (!tx || !tx.purchaseToken) continue;
-        await fetch(API_BASE + "/api/billing/play/verify-pack", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ token: tx.purchaseToken, productId: tx.productId || tx.productIdentifier || undefined }) }).catch(() => {});
+        await fetch(API_BASE + "/api/billing/play/verify-pack", { method: "POST", headers: { "Content-Type": "application/json", ...h }, body: JSON.stringify({ token: tx.purchaseToken, productId: tx.productId || tx.productIdentifier || undefined }) }).catch(() => {});
       }
     } catch {}
+  };
+  // Nach JEDER Anmeldung: Premium aus der Server-Antwort sofort übernehmen (nicht erst beim
+  // nächsten App-Start) und auf Android den Play-Status mit dem neuen Konto abgleichen.
+  // Wer ein Konto mit gekauftem Abo hat, sieht Premium damit direkt nach dem Login — nie doppelt kaufen.
+  const applyLogin = (a) => {
+    setAuth(a);
+    const p = a && a.user && a.user.premium;
+    if (p) setPremium({ plan: p.plan, since: Date.now(), renews: p.renews, cancelled: Boolean(p.cancelled), trial: false, src: "server" });
+    else setPremium((q) => (q && q.src === "server" ? null : q));
+    if (IS_NATIVE_APP && Capacitor.getPlatform() === "android" && a && a.token) {
+      const h = { Authorization: "Bearer " + a.token };
+      fetch(API_BASE + "/api/billing/play/refresh", { method: "POST", headers: h })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((x) => {
+          if (x && x.premium) setPremium({ plan: x.premium.plan, since: Date.now(), renews: x.premium.renews, cancelled: Boolean(x.premium.cancelled), trial: Boolean(x.premium.trial), src: "server" });
+          else if (!p) recoverPlayPurchases(h);
+        })
+        .catch(() => {});
+    }
   };
   // Android-App: Abo über Google Play Billing kaufen. Der Server prüft den Kauf-Token direkt bei
   // Google und schaltet Premium im Konto frei — erst dann gilt das Abo in der App.
@@ -15782,7 +15802,7 @@ export default function AsmarFitApp() {
       <AccountScreen
         t={t}
         auth={auth}
-        onAuthed={(a) => setAuth(a)}
+        onAuthed={applyLogin}
         onLogout={() => {
           setAuth(null);
           setPremium((p) => (p && p.src === "server" ? null : p));
@@ -16038,7 +16058,7 @@ export default function AsmarFitApp() {
               country={country}
               onPickCountry={(cc) => setCountryPref(cc)}
               authDone={Boolean(auth) || authSkipped}
-              onAuthed={(a) => setAuth(a)}
+              onAuthed={applyLogin}
               onAuthSkip={() => setAuthSkipped(true)}
             />
           </div>
