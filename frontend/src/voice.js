@@ -8,7 +8,10 @@ export const voiceSupported = () => typeof window !== "undefined" && "speechSynt
 const GOOD = /natural|neural|premium|enhanced|erweitert|online|wavenet|siri|studio/i;
 const POOR = /compact|eloquence|espeak|robo/i;
 const quality = (v) => (GOOD.test(v.name || "") ? 4 : 0) + (v.localService === false ? 2 : 0) - (POOR.test(v.name || "") ? 5 : 0);
-const sameLang = (v, lang) => !!v.lang && v.lang.replace("_", "-").toLowerCase().startsWith(lang === "de" ? "de" : "en");
+const sameLang = (v, lang) => {
+  const l = String(lang || "en").slice(0, 2).toLowerCase();
+  return !!v.lang && v.lang.replace("_", "-").toLowerCase().startsWith(KNOWN_CLIP_LANGS.includes(l) ? l : "en");
+};
 
 // installed voices for the app language, best first
 export function voicesFor(lang) {
@@ -23,14 +26,31 @@ export function voicesFor(lang) {
 }
 export const voiceId = (v) => v.voiceURI || v.name;
 
-// opts: { voiceURI: the user's pick (falls back to the best voice when it is gone), rate: 0.8 .. 1.2 }
+// opts: { voiceURI: the user's pick (falls back to the best voice when it is gone), rate: 0.8 .. 1.2,
+//         onEnd: called once speaking finished (or at once when speech is unavailable) }
 export function speak(text, lang, opts = {}) {
-  if (!voiceSupported() || !text) return;
+  if (!voiceSupported() || !text) {
+    if (opts.onEnd) opts.onEnd();
+    return;
+  }
   try {
     const synth = window.speechSynthesis;
     synth.cancel();
     const u = new window.SpeechSynthesisUtterance(text);
-    u.lang = lang === "de" ? "de-DE" : "en-GB";
+    if (opts.onEnd) {
+      let done = false;
+      const fin = () => {
+        if (!done) {
+          done = true;
+          opts.onEnd();
+        }
+      };
+      u.onend = fin;
+      u.onerror = fin;
+      // Sicherheitsnetz: manche Engines feuern onend nicht zuverlässig
+      setTimeout(fin, Math.min(15000, 1800 + text.length * 80));
+    }
+    u.lang = { de: "de-DE", en: "en-GB", fr: "fr-FR", it: "it-IT", es: "es-ES", tr: "tr-TR", pt: "pt-BR", ru: "ru-RU", pl: "pl-PL", nl: "nl-NL", ar: "ar-SA", hi: "hi-IN", id: "id-ID", ja: "ja-JP", ko: "ko-KR", zh: "zh-CN" }[String(lang || "en").slice(0, 2)] || "en-GB";
     const list = voicesFor(lang);
     const v = (opts.voiceURI && list.find((x) => voiceId(x) === opts.voiceURI)) || list[0];
     if (v) {
@@ -57,11 +77,24 @@ export function stopSpeaking() {
 // public/voice/manifest.json lists which clips exist per language; a line without a clip is spoken by the phone's own voice instead.
 let manifestPromise = null;
 const loadManifest = () => manifestPromise || (manifestPromise = fetch("/voice/manifest.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
-const langKey = (lang) => (lang === "de" ? "de" : "en");
-export const clipUrl = (lang, id) => "/voice/" + langKey(lang) + "/" + id + ".mp3";
-export async function hasClip(lang, id) {
+// Alle 6 App-Sprachen können eigene Clips haben; fehlt die Sprache (noch), fällt
+// die Ansage auf die englischen Clips zurück (immer noch menschlich, nie Roboter).
+const KNOWN_CLIP_LANGS = ["de", "en", "fr", "it", "es", "tr", "pt", "ru", "pl", "nl", "ar", "hi", "id", "ja", "ko", "zh"];
+const langKey = (lang) => {
+  const l = String(lang || "").slice(0, 2).toLowerCase();
+  return KNOWN_CLIP_LANGS.includes(l) ? l : "en";
+};
+export const clipUrl = (key, id) => "/voice/" + key + "/" + id + ".mp3";
+// in welcher Sprache existiert der Clip? (exakte Sprache → sonst Englisch → sonst keiner)
+async function clipLang(lang, id) {
   const m = await loadManifest();
-  return Array.isArray(m[langKey(lang)]) && m[langKey(lang)].includes(id);
+  const k = langKey(lang);
+  if (Array.isArray(m[k]) && m[k].includes(id)) return k;
+  if (Array.isArray(m.en) && m.en.includes(id)) return "en";
+  return null;
+}
+export async function hasClip(lang, id) {
+  return Boolean(await clipLang(lang, id));
 }
 
 const decoded = new Map(); // url -> Promise<AudioBuffer | null>
@@ -106,12 +139,14 @@ function stopClip() {
 }
 
 // plays the clip; resolves true when the clip is (or was about to be) played, false when there is none or it failed (then speak the text)
-export async function playClip(lang, id) {
+// onEnd (optional) fires once the clip finished playing — used by the voice onboarding to open the microphone right after.
+export async function playClip(lang, id, onEnd = null) {
   stopClip();
   const my = playSeq;
   try {
-    if (!audioCtx || !(await hasClip(lang, id))) return false;
-    const buf = await decodeClip(clipUrl(lang, id));
+    const k = await clipLang(lang, id);
+    if (!audioCtx || !k) return false;
+    const buf = await decodeClip(clipUrl(k, id));
     if (!buf) return false;
     if (my !== playSeq) return true; // a newer announcement took over while this one was loading
     const src = audioCtx.createBufferSource();
@@ -121,6 +156,7 @@ export async function playClip(lang, id) {
     playing = src;
     src.onended = () => {
       if (playing === src) playing = null;
+      if (onEnd && my === playSeq) onEnd();
     };
     return true;
   } catch {
@@ -131,16 +167,16 @@ export async function playClip(lang, id) {
 // get the next clips ready (download and decode) so they start the moment they are needed
 export function preloadClips(lang, ids) {
   ids.forEach((id) => {
-    hasClip(lang, id)
-      .then((ok) => (ok ? decodeClip(clipUrl(lang, id)) : null))
+    clipLang(lang, id)
+      .then((k) => (k ? decodeClip(clipUrl(k, id)) : null))
       .catch(() => {});
   });
 }
 // only warm the download cache (before any tap, when sound is not unlocked yet)
 export function warmClips(lang, ids) {
   ids.forEach((id) => {
-    hasClip(lang, id)
-      .then((ok) => (ok ? fetch(clipUrl(lang, id)).catch(() => {}) : null))
+    clipLang(lang, id)
+      .then((k) => (k ? fetch(clipUrl(k, id)).catch(() => {}) : null))
       .catch(() => {});
   });
 }
@@ -156,6 +192,11 @@ export function unlockAudio() {
   } catch {
     /* no audio */
   }
+}
+
+// Ist die Tonausgabe wirklich freigeschaltet? (Autoplay-Sperre: erst nach einer Berührung)
+export function audioReady() {
+  return Boolean(audioCtx && audioCtx.state === "running");
 }
 
 export function beep(freq = 880, ms = 120) {

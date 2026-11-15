@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASFIT Icon-Test</title>
+<style>
+  body { margin: 0; font-family: "Segoe UI", Roboto, sans-serif; background: #111; color: #eee; }
+  h2 { text-align: center; font-size: 15px; font-weight: 600; margin: 22px 0 10px; color: #bbb; }
+  .screen { width: 360px; margin: 0 auto 8px; border-radius: 28px; padding: 26px 18px 30px; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+  .dark { background: linear-gradient(160deg, #1d2430, #0b0e14 70%); }
+  .light { background: linear-gradient(160deg, #e8edf4, #c9d4e2 70%); color: #222; }
+  .row { display: flex; justify-content: space-around; margin-bottom: 8px; }
+  .app { text-align: center; width: 82px; }
+  .app img { width: 64px; height: 64px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); display: block; margin: 0 auto 6px; }
+  .app span { font-size: 11.5px; }
+  .light .app span { color: #1d2430; }
+  .dark .app span { color: #e9edf3; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+  .small .app img { width: 42px; height: 42px; border-radius: 11px; }
+  .small .app { width: 64px; }
+  .small .app span { font-size: 10px; }
+  .fake { background: #666; border-radius: 16px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+  .small .fake { width: 42px; height: 42px; border-radius: 11px; font-size: 20px; }
+</style>
+</head>
+<body>
+
+<h2>Dunkler Homescreen — Standardgröße</h2>
+<div class="screen dark">
+  <div class="row">
+    <div class="app"><div class="fake" style="background:#25D366">💬</div><span>WhatsApp</span></div>
+    <div class="app"><img src="icon-drafts/v1.png"><span>ASFIT · V1</span></div>
+    <div class="app"><img src="icon-drafts/v2.png"><span>ASFIT · V2</span></div>
+    <div class="app"><img src="icon-drafts/v3.png"><span>ASFIT · V3</span></div>
+  </div>
+  <div class="row">
+    <div class="app"><div class="fake" style="background:#FF0050">🎵</div><span>TikTok</span></div>
+    <div class="app"><div class="fake" style="background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)">📷</div><span>Instagram</span></div>
+    <div class="app"><div class="fake" style="background:#4285F4">🗺️</div><span>Maps</span></div>
+    <div class="app"><div class="fake" style="background:#1a1a1a;color:#fff">🎬</div><span>Netflix</span></div>
+  </div>
+</div>
+
+<h2>Heller Homescreen — Standardgröße</h2>
+<div class="screen light">
+  <div class="row">
+    <div class="app"><div class="fake" style="background:#25D366">💬</div><span>WhatsApp</span></div>
+    <div class="app"><img src="icon-drafts/v1.png"><span>ASFIT · V1</span></div>
+    <div class="app"><img src="icon-drafts/v2.png"><span>ASFIT · V2</span></div>
+    <div class="app"><img src="icon-drafts/v3.png"><span>ASFIT · V3</span></div>
+  </div>
+</div>
+
+<h2>Klein (Benachrichtigung / App-Übersicht)</h2>
+<div class="screen dark small">
+  <div class="row">
+    <div class="app"><img src="icon-drafts/v1.png"><span>V1</span></div>
+    <div class="app"><img src="icon-drafts/v2.png"><span>V2</span></div>
+    <div class="app"><img src="icon-drafts/v3.png"><span>V3</span></div>
+    <div class="app"><div class="fake" style="background:#25D366">💬</div><span>—</span></div>
+  </div>
+</div>
+
+<h2>Groß (Play-Store-Ansicht)</h2>
+<div class="screen dark" style="text-align:center">
+  <img src="icon-drafts/v1.png" style="width:110px;border-radius:26px;margin:0 6px">
+  <img src="icon-drafts/v2.png" style="width:110px;border-radius:26px;margin:0 6px">
+  <img src="icon-drafts/v3.png" style="width:110px;border-radius:26px;margin:0 6px">
+</div>
+
+</body>
+</html>

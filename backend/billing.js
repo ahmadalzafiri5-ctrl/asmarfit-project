@@ -148,15 +148,61 @@ export function mountBilling(app) {
         mode: "subscription",
         customer,
         line_items: [{ price: PRICE[plan], quantity: 1 }],
-        subscription_data: firstSub ? { trial_period_days: 3 } : undefined,
+        // Kein Probeabo mehr: das Abo wird ab Tag 1 voll berechnet
+        subscription_data: undefined,
         allow_promotion_codes: true,
         metadata: firstSub && device ? { asfit_device: device, asfit_user: String(req.userId) } : undefined,
         success_url: FRONTEND_URL + "/#billing=success",
         cancel_url: FRONTEND_URL + "/#billing=cancel",
       });
-      res.json({ url: session.url, trial: firstSub });
+      res.json({ url: session.url, trial: false });
     } catch (e) {
       console.error("checkout:", e.message);
+      res.status(500).json({ error: "server" });
+    }
+  });
+
+  // Gast-Checkout (neue Reihenfolge: zuerst zahlen, DANACH Konto anlegen):
+  // erstellt eine Checkout-Session OHNE App-Konto. Die Rückkehr-URL trägt die
+  // Session-ID; nach der Registrierung holt /api/billing/claim das Abo ins Konto.
+  app.post("/api/billing/checkout-guest", async (req, res) => {
+    try {
+      const plan = req.body && req.body.plan === "monthly" ? "monthly" : "yearly";
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        line_items: [{ price: PRICE[plan], quantity: 1 }],
+        allow_promotion_codes: true,
+        success_url: FRONTEND_URL + "/#billing=success&cs={CHECKOUT_SESSION_ID}",
+        cancel_url: FRONTEND_URL + "/#billing=cancel",
+      });
+      res.json({ url: session.url });
+    } catch (e) {
+      console.error("checkout-guest:", e.message);
+      res.status(500).json({ error: "server" });
+    }
+  });
+
+  // Nach Gast-Kauf + Registrierung: holt das bezahlte Abo der Checkout-Session
+  // in das frisch erstellte Konto (einmalig; eine Session gehört genau einem Konto).
+  app.post("/api/billing/claim", requireAuth, async (req, res) => {
+    try {
+      const sid = String((req.body && req.body.sessionId) || "");
+      if (!/^cs_/.test(sid)) return res.status(400).json({ error: "bad_session" });
+      const s = await stripe.checkout.sessions.retrieve(sid, { expand: ["subscription"] });
+      if (!s || s.mode !== "subscription" || s.payment_status !== "paid" || !s.subscription) return res.status(400).json({ error: "not_paid" });
+      const customer = typeof s.customer === "string" ? s.customer : s.customer && s.customer.id;
+      // Schon von einem anderen Konto beansprucht? Dann ablehnen.
+      const other = await pool.query("SELECT id FROM users WHERE stripe_customer=$1 AND id<>$2", [customer, req.userId]);
+      if (other.rows.length) return res.status(409).json({ error: "claimed" });
+      await pool.query("UPDATE users SET stripe_customer=$1 WHERE id=$2", [customer, req.userId]);
+      await applySubscription(s.subscription);
+      const sub = s.subscription;
+      const item = sub.items && sub.items.data && sub.items.data[0];
+      const plan = item && item.price && item.price.id === PRICE.yearly ? "yearly" : "monthly";
+      const until = (item && item.current_period_end ? item.current_period_end : sub.current_period_end || 0) * 1000;
+      res.json({ premium: { plan, renews: until, cancelled: Boolean(sub.cancel_at_period_end) } });
+    } catch (e) {
+      console.error("claim:", e.message);
       res.status(500).json({ error: "server" });
     }
   });

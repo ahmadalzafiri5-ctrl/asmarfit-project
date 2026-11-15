@@ -25,9 +25,21 @@ import LANG_FR from "./lang-fr.js";
 import LANG_IT from "./lang-it.js";
 import LANG_ES from "./lang-es.js";
 import LANG_TR from "./lang-tr.js";
+import LANG_PT from "./lang-pt.js";
+import LANG_RU from "./lang-ru.js";
+import LANG_PL from "./lang-pl.js";
+import LANG_NL from "./lang-nl.js";
+import LANG_AR from "./lang-ar.js";
+import LANG_HI from "./lang-hi.js";
+import LANG_ID from "./lang-id.js";
+import LANG_JA from "./lang-ja.js";
+import LANG_KO from "./lang-ko.js";
+import LANG_ZH from "./lang-zh.js";
 import { alarmCfg, fastAlarmPlan, fastAlarmsDue, markFired, icsForFast, FAST_NOTIF_END, FAST_NOTIF_SOON } from "./fastAlarm.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
+import { ACCENTS, applyAccentOverride, saveAccent, savedAccent, AccentPicker, AvatarPicker, PublicProfileScreen, loadPub, savePub, soc, Avatar } from "./social.jsx";
+import { OnboardModePick, AiOnboarding } from "./aiOnboard.jsx";
 import { Health } from "@capgo/capacitor-health";
 import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
 // @zxing/* (the browser barcode fallback) is loaded lazily inside scanWeb()
@@ -88,6 +100,14 @@ import {
   Users,
   Scale,
   Globe,
+  Package,
+  CalendarDays,
+  Lock,
+  Trophy,
+  Lightbulb,
+  Utensils,
+  Zap,
+  BarChart3,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -213,6 +233,9 @@ function applyTheme(gender, mode = themeMode) {
   const theme = (THEMES[gender] || THEMES.neutral)[dark ? "dark" : "light"];
   const root = document.documentElement;
   Object.entries(theme).forEach(([k, v]) => root.style.setProperty("--c-" + k, v));
+  // Wunsch-Akzentfarbe aus dem Onboarding: überschreibt nur den Akzent — der
+  // Hintergrund (Start bleibt schwarz) kommt weiter aus dem Theme.
+  applyAccentOverride(root);
   root.style.colorScheme = dark ? "dark" : "light";
   document.body && (document.body.style.background = theme.bg);
   themeIsDark = dark;
@@ -231,7 +254,7 @@ try {
 // Alle wählbaren App-Sprachen. Deutsch und Englisch sind vollständig (STR unten);
 // die weiteren Sprachen liegen in eigenen Dateien und fallen bei fehlenden
 // Schlüsseln automatisch auf Englisch zurück (siehe t-useMemo).
-const EXTRA_LANGS = { fr: LANG_FR, it: LANG_IT, es: LANG_ES, tr: LANG_TR };
+const EXTRA_LANGS = { fr: LANG_FR, it: LANG_IT, es: LANG_ES, tr: LANG_TR, pt: LANG_PT, ru: LANG_RU, pl: LANG_PL, nl: LANG_NL, ar: LANG_AR, hi: LANG_HI, id: LANG_ID, ja: LANG_JA, ko: LANG_KO, zh: LANG_ZH };
 const LANG_LIST = [
   { code: "de", label: "Deutsch" },
   { code: "en", label: "English" },
@@ -239,7 +262,19 @@ const LANG_LIST = [
   { code: "it", label: "Italiano" },
   { code: "es", label: "Español" },
   { code: "tr", label: "Türkçe" },
+  { code: "pt", label: "Português" },
+  { code: "ru", label: "Русский" },
+  { code: "pl", label: "Polski" },
+  { code: "nl", label: "Nederlands" },
+  { code: "ar", label: "العربية" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "id", label: "Bahasa Indonesia" },
+  { code: "ja", label: "日本語" },
+  { code: "ko", label: "한국어" },
+  { code: "zh", label: "中文" },
 ];
+// Datums-/Zahlenformate folgen der App-Sprache (nicht nur de/en)
+const localeOf = (lang) => ({ de: "de-DE", en: "en-GB", fr: "fr-FR", it: "it-IT", es: "es-ES", tr: "tr-TR", pt: "pt-BR", ru: "ru-RU", pl: "pl-PL", nl: "nl-NL", ar: "ar", hi: "hi-IN", id: "id-ID", ja: "ja-JP", ko: "ko-KR", zh: "zh-CN" }[String(lang || "en").slice(0, 2)] || "en-GB");
 const detectLang = () => {
   const c = (typeof navigator !== "undefined" && navigator.language ? navigator.language : "de").slice(0, 2).toLowerCase();
   return LANG_LIST.some((l) => l.code === c) ? c : "en";
@@ -1220,13 +1255,13 @@ const STR = {
     premiumPerYear: "/ year",
     premiumYearlyAs: "= CHF 4.15 / month",
     premiumSave: "Save 40%",
-    premiumTrialNote: "3 days free, then CHF 49.90 / year. Cancel anytime.",
-    premiumToday: "Today you pay CHF 0.00",
+    premiumTrialNote: "CHF 49.90 / year. Cancel anytime — full access right away.",
+    premiumToday: "Instant full access to everything",
     premiumFromDay4: "From day 4: {p}",
     premiumCancelAnytime: "Cancel anytime",
     billingPayHint: "Pay securely with Visa, Mastercard, Apple Pay or Google Pay",
     premiumStart: "Start subscription",
-    premiumStartTrial: "Try 3 days for free",
+    premiumStartTrial: "Unlock Premium now",
     playErr: "The purchase was not completed. Please try again.",
     playPayHint: "Secure payment through Google Play. Cancel anytime in the Play Store.",
     premiumActive: "Your subscription",
@@ -1254,7 +1289,7 @@ const STR = {
     authSwitchToRegister: "New here? Create account",
     authSkip: "Continue without account",
     authSlogan: "Your training. Your nutrition. One app.",
-    authTrialBadge: "Try Premium free for 3 days",
+    authTrialBadge: "Your body. Your plan. ASFIT Premium.",
     authBack: "Back",
     authBusy: "One moment …",
     authErrTaken: "This email is already registered — sign in instead.",
@@ -1777,7 +1812,7 @@ const STR = {
     aiPackIncludes: "Ein Paket: {list}. {d} Tage gültig, wird nach dem Monatskontingent verbraucht.",
     aiPackUnavailable: "Der Kauf ist in dieser Version noch nicht möglich.",
     aiPackErr: "Der Kauf konnte nicht abgeschlossen werden. Bitte noch einmal versuchen.",
-    aiFreeLeft: "{n} gratis diese Woche",
+    aiFreeLeft: "{n} kostenlos diese Woche",
     weekSummaryTitle: "Diese Woche",
     exReplace: "Übung ersetzen",
     emptyWorkout: "Füge deine erste Übung hinzu.",
@@ -2512,24 +2547,24 @@ const STR = {
     cheatTip2: "Rund {s} Extra-Schritte verbrennen etwa die Hälfte",
     cheatTip3: "Trainiere am Cheat-Day — die Extra-Kohlenhydrate füllen deine Speicher",
     cheatNoDay: "Plane oben einen Cheat-Day, um deinen Ausgleichsplan zu sehen.",
-    premiumFree: "Tracking, Übungen, Freunde & Duell bleiben für immer gratis.",
+    premiumFree: "Tracking, Übungen, Freunde & Duell bleiben für immer kostenlos.",
     premiumMonthly: "Monatlich",
     premiumYearly: "Jährlich",
     premiumPerMonth: "/ Monat",
     premiumPerYear: "/ Jahr",
     premiumYearlyAs: "= CHF 4.15 / Monat",
     premiumSave: "40 % sparen",
-    premiumTrialNote: "3 Tage gratis, danach CHF 49.90 / Jahr. Jederzeit kündbar.",
-    premiumToday: "Heute zahlst du CHF 0.00",
+    premiumTrialNote: "CHF 49.90 / Jahr. Jederzeit kündbar — voller Zugriff ab sofort.",
+    premiumToday: "Sofort voller Zugriff auf alles",
     premiumFromDay4: "Ab dem 4. Tag: {p}",
     premiumCancelAnytime: "Jederzeit kündbar",
     billingPayHint: "Sicher bezahlen mit Visa, Mastercard, Apple Pay oder Google Pay",
     premiumStart: "Abo starten",
-    premiumStartTrial: "3 Tage gratis testen",
+    premiumStartTrial: "Jetzt Premium freischalten",
     playErr: "Der Kauf wurde nicht abgeschlossen. Bitte versuch es noch einmal.",
     playPayHint: "Sichere Zahlung über Google Play. Kündigen jederzeit im Play Store.",
     premiumActive: "Dein Abo",
-    premiumTrialBadge: "Gratis-Testphase",
+    premiumTrialBadge: "Kostenlose Testphase",
     premiumRenews: "Verlängert sich am {d}",
     premiumEnds: "Gekündigt — läuft noch bis {d}",
     premiumChangeTo: "Wechseln zu {p}",
@@ -2553,7 +2588,7 @@ const STR = {
     authSwitchToRegister: "Neu hier? Konto erstellen",
     authSkip: "Ohne Konto fortfahren",
     authSlogan: "Dein Training. Deine Ernährung. Eine App.",
-    authTrialBadge: "3 Tage Premium gratis testen",
+    authTrialBadge: "Dein Körper. Dein Plan. ASFIT Premium.",
     authBack: "Zurück",
     authBusy: "Einen Moment …",
     authErrTaken: "Diese E-Mail ist schon registriert — melde dich an.",
@@ -3381,7 +3416,10 @@ function TextField({ value, onChange, placeholder, type = "text" }) {
   );
 }
 
-function TopBar({ title, lang, setLang, onBack, onSettings, accent = null }) {
+function TopBar({ title, lang, setLang, onBack, onSettings, accent = null, onProfile = null, alertCount = 0, profileName = "" }) {
+  // Profil oben rechts (Bild oder Tier-Charakter); ein rotes Ausrufezeichen
+  // zeigt offene Erinnerungen von heute an.
+  const pub = onProfile ? loadPub() : null;
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 8px", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
@@ -3397,6 +3435,16 @@ function TopBar({ title, lang, setLang, onBack, onSettings, accent = null }) {
         {onSettings && (
           <div onClick={onSettings} style={{ width: 32, height: 32, borderRadius: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <SettingsIcon size={15} color={COLORS.dim} />
+          </div>
+        )}
+        {onProfile && (
+          <div data-topbar-profile onClick={onProfile} style={{ position: "relative", cursor: "pointer", flexShrink: 0 }}>
+            <Avatar avatar={pub && pub.avatar} name={(pub && pub.username) || profileName} size={34} />
+            {alertCount > 0 && (
+              <span data-topbar-alert style={{ position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 9, background: "#E5484D", border: `2px solid ${COLORS.bg}`, color: "#fff", fontFamily: "Sora, sans-serif", fontSize: 10.5, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 2px", lineHeight: 1 }}>
+                !
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -3646,7 +3694,9 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
   // Shown once, before anything else — a returning-to-onboarding user (via
   // "replay onboarding" in Settings) has already picked a language, so this
   // doesn't need its own persisted flag; it just gates step 0.
-  const [langChosen, setLangChosen] = useState(false);
+  // Sprache + Land werden automatisch erkannt (detectLang / guessCountry) —
+  // der frühere Auswahl-Screen entfällt; ändern geht jederzeit in den Einstellungen.
+  const [langChosen] = useState(true);
   const [step, setStep] = useState(0);
   const [gender, setGender] = useState(null);
   const [goal, setGoal] = useState(null);
@@ -3663,6 +3713,12 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
   const [vision3Months, setVision3Months] = useState("");
   const [visionWhy, setVisionWhy] = useState("");
   const [stepsGoal, setStepsGoal] = useState(10000);
+  // Wunschfarbe + öffentliches Profil (Nutzername, Bild/Charakter, Sichtbarkeit)
+  const [accent, setAccent] = useState(savedAccent() || "asfit"); // Standard: ASFIT-Rot (Farbe des App-Icons)
+  const [obMode, setObMode] = useState("ai"); // KI-Gespräch startet direkt; "manuell" bleibt als Link im Gespräch
+  const [pubAvatar, setPubAvatar] = useState(() => loadPub().avatar);
+  const [pubUsername, setPubUsername] = useState(() => loadPub().username);
+  const [pubVis, setPubVis] = useState(() => loadPub().visibility);
   const toggleMoreGoal = (key) => {
     setMoreGoals((g) => (g.includes(key) ? g.filter((x) => x !== key) : [...g, key]));
   };
@@ -3677,7 +3733,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
 
   // Gekürztes Onboarding: nur noch 5 Screens (Willkommen, Geschlecht, Ziel, Zahlen, Fertig).
   // Die Schritt-Nummern bleiben die alten Kennungen; FLOW bestimmt die Reihenfolge.
-  const FLOW = [0, 1, 3, 7, 13];
+  const FLOW = [0, 1, 2, 3, 7, 14, 13];
   const flowIdx = FLOW.indexOf(step);
   const LAST_STEP = 13;
   // "Überspringen": sinnvolle Standardwerte setzen und weiter — niemand bleibt hängen
@@ -3711,23 +3767,33 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
         <div style={{ textAlign: "center", marginBottom: 30 }}>
           <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
           <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>
-            {({ de: "Sprache & Land wählen", fr: "Choisir la langue et le pays", it: "Scegli lingua e paese", es: "Elige idioma y país", tr: "Dil ve ülke seç" }[lang] || "Choose language & country")}
+            {({ de: "Welche Sprache sprichst du?", fr: "Quelle langue parles-tu ?", it: "Che lingua parli?", es: "¿Qué idioma hablas?", tr: "Hangi dili konuşuyorsun?" }[lang] || "Which language do you speak?")}
           </h2>
+          <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "8px 0 0" }}>
+            {({ de: "Die ganze App passt sich deiner Sprache an.", fr: "Toute l'app s'adapte à ta langue.", it: "Tutta l'app si adatta alla tua lingua.", es: "Toda la app se adapta a tu idioma.", tr: "Tüm uygulama diline uyum sağlar." }[lang] || "The whole app adapts to your language.")}
+          </p>
         </div>
-        {/* Sprache und Land als Auswahl-Menüs (vorbelegt mit dem Erkannten), bestätigt per "Weiter" */}
-        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6, textAlign: "center" }}>Sprache · Language</div>
-        <select
-          data-ob-lang
-          value={lang}
-          onChange={(e) => setLang(e.target.value)}
-          style={{ width: "100%", boxSizing: "border-box", padding: "14px 12px", borderRadius: 14, border: `1.5px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, textAlign: "center", textAlignLast: "center", appearance: "none", cursor: "pointer" }}
-        >
-          {LANG_LIST.map((l) => (
-            <option key={l.code} value={l.code}>
-              {l.label}
-            </option>
+        {/* Sprache als klare Auswahl-Liste mit Flaggen — jeder Nutzer MUSS hier seine Sprache antippen */}
+        <div data-ob-lang style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
+          {[
+            { code: "de", flag: "🇩🇪", label: "Deutsch" },
+            { code: "en", flag: "🇬🇧", label: "English" },
+            { code: "fr", flag: "🇫🇷", label: "Français" },
+            { code: "it", flag: "🇮🇹", label: "Italiano" },
+            { code: "es", flag: "🇪🇸", label: "Español" },
+            { code: "tr", flag: "🇹🇷", label: "Türkçe" },
+          ].map((l) => (
+            <div
+              key={l.code}
+              data-ob-lang-pick={l.code}
+              onClick={() => setLang(l.code)}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, cursor: "pointer", background: lang === l.code ? COLORS.goldSoft : COLORS.surface, border: `2px solid ${lang === l.code ? COLORS.gold : COLORS.border}` }}
+            >
+              <span style={{ fontSize: 20 }}>{l.flag}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{l.label}</span>
+            </div>
           ))}
-        </select>
+        </div>
         {/* Land gleich beim Start wählbar (für Lebensmittel-Datenbank & Vorschläge); vorbelegt mit dem erkannten Land */}
         <div style={{ marginTop: 16 }}>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6, textAlign: "center" }}>Land · Country</div>
@@ -3755,9 +3821,46 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
     );
   }
 
-  // Nach der Sprachwahl: Anmelden/Registrieren (überspringbar), dann erst das Onboarding
-  if (!authDone) {
-    return <AuthScreen t={t} onDone={onAuthed} onSkip={onAuthSkip} />;
+  // Neue Reihenfolge: Nach der Sprachwahl startet SOFORT das KI-Gespräch —
+  // ohne Konto. Bezahlt wird nach dem zensierten Plan; das Konto kommt erst
+  // NACH der Zahlung (sichert den gekauften Zugang).
+  if (obMode === null) {
+    return <OnboardModePick lang={lang} onPick={setObMode} />;
+  }
+  if (obMode === "ai") {
+    return (
+      <AiOnboarding
+        lang={lang}
+        onManual={() => setObMode("manual")}
+        onDone={(d) => {
+          // Gesammelte Antworten in den normalen Abschluss geben: gleiche Berechnung,
+          // gleicher Weg wie beim Formular — danach steht die Paywall (zensiert → Abo → App).
+          const birthY = { d: "1", m: "1", y: String(new Date().getFullYear() - (Number(d.age) || 25)) };
+          const kcal = computeKcalGoal({ gender: d.gender, age: Number(d.age) || 25, height: Number(d.height), weight: Number(d.weight), target: Number(d.target), goal: d.goal, targetDate });
+          if (accent) saveAccent(accent);
+          savePub({ ...loadPub(), username: (d.name || "").toLowerCase(), avatar: pubAvatar, visibility: pubVis });
+          onFinish({
+            name: d.name || "",
+            gender: d.gender || "diverse",
+            weight: Number(d.weight) || 80,
+            height: Number(d.height) || 175,
+            target: Number(d.target) || Number(d.weight) || 80,
+            goal: d.goal || "maintain",
+            birth: birthY,
+            age: Number(d.age) || 25,
+            targetDate,
+            reason: null,
+            moreGoals: [],
+            experience: null,
+            kcalGoal: kcal,
+            macroTargets: computeMacroTargets(kcal),
+            vision3Months: "",
+            visionWhy: "",
+            stepsGoal,
+          });
+        }}
+      />
+    );
   }
 
   return (
@@ -3814,6 +3917,45 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 600, color: COLORS.text }}>{title}</div>
               </div>
             ))}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{soc(lang).pickColor}</h2>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 22px", lineHeight: 1.5 }}>{soc(lang).pickColorSub}</p>
+            <AccentPicker
+              lang={lang}
+              value={accent}
+              onPick={(id) => {
+                setAccent(id);
+                saveAccent(id);
+                applyTheme(gender || "diverse");
+              }}
+            />
+          </div>
+        )}
+
+        {step === 14 && (
+          <div>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{soc(lang).profTitle}</h2>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 18px", lineHeight: 1.5 }}>{soc(lang).profSub}</p>
+            <AvatarPicker lang={lang} avatar={pubAvatar} onChange={setPubAvatar} />
+            <div style={{ marginTop: 18 }}>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{soc(lang).username}</div>
+              <TextField value={pubUsername} onChange={(v) => setPubUsername(String(v).replace(/[^\w.\-]/g, "").toLowerCase().slice(0, 24))} placeholder={soc(lang).unamePh} />
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{soc(lang).vis}</div>
+              <div style={{ display: "flex", background: COLORS.raised, borderRadius: 12, padding: 3 }}>
+                {[{ v: "public", l: soc(lang).visPub }, { v: "private", l: soc(lang).visPriv }].map((o) => (
+                  <div key={o.v} data-ob-vis={o.v} onClick={() => setPubVis(o.v)} style={{ flex: 1, textAlign: "center", padding: "9px 4px", borderRadius: 10, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: pubVis === o.v ? COLORS.bg : COLORS.dim, background: pubVis === o.v ? COLORS.gold : "transparent" }}>
+                    {o.l}
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 8, lineHeight: 1.5 }}>{soc(lang).visHint}</div>
+            </div>
           </div>
         )}
 
@@ -3900,10 +4042,16 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
         )}
         <button
           disabled={!canContinue}
-          onClick={() =>
-            step === LAST_STEP
+          onClick={() => {
+            if (step === LAST_STEP) {
+              // Wunschfarbe + öffentliches Profil sichern (bleiben auch ohne Server erhalten)
+              if (accent) saveAccent(accent);
+              savePub({ ...loadPub(), username: pubUsername.trim(), avatar: pubAvatar, visibility: pubVis });
+            }
+            return step === LAST_STEP
               ? onFinish({
-                  name: name.trim(),
+                  name: name.trim() || pubUsername.trim(),
+                  avatarUrl: pubAvatar && pubAvatar.type === "photo" ? pubAvatar.data : undefined,
                   gender,
                   weight: Number(weight),
                   height: Number(height),
@@ -3921,8 +4069,8 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
                   visionWhy: visionWhy.trim(),
                   stepsGoal,
                 })
-              : setStep(FLOW[flowIdx + 1])
-          }
+              : setStep(FLOW[flowIdx + 1]);
+          }}
           style={{
             flex: 1,
             background: canContinue ? COLORS.gold : COLORS.raised,
@@ -3940,7 +4088,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
         </button>
       </div>
       {/* "Später einrichten": jeder Zwischenschritt ist überspringbar (Standardwerte) */}
-      {[1, 3, 7].includes(step) && (
+      {[1, 2, 3, 7, 14].includes(step) && (
         <div data-ob-skip onClick={skipStep} style={{ textAlign: "center", marginTop: 14, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, cursor: "pointer" }}>
           {t.obStepsSkip}
         </div>
@@ -4089,7 +4237,7 @@ function WeeklyReviewCard({ t, review, mode = "home", onApply, onDone, premium =
     <div data-weekly-review>
       <Card style={{ marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold }}>📊 {t.wrTitle}</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold }}>{t.wrTitle}</div>
           {s.type !== "needData" && (
             <span data-wr-share onClick={shareImage} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
               <Share2 size={13} /> {t.shareAsImage}
@@ -4163,7 +4311,7 @@ function MeasuresCard({ t, lang, measures, onAdd, onDelete, rangeDays }) {
   const shown = all.filter((m) => rangeDays === Infinity || Date.now() - new Date(m.dateISO).getTime() <= rangeDays * 86400000);
   const latest = all.length ? all[all.length - 1] : null;
   const first = all.length > 1 ? all[0] : null;
-  const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short", year: "numeric" });
   const fmt = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",");
   const save = () => {
     const v = parseFloat(val.replace(",", "."));
@@ -4232,7 +4380,7 @@ const fastHm = (ms) => {
   const m = Math.max(0, Math.floor(ms / 60000));
   return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
 };
-const fastClock = (ms, lang) => new Date(ms).toLocaleTimeString(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit" });
+const fastClock = (ms, lang) => new Date(ms).toLocaleTimeString(localeOf(lang), { hour: "2-digit", minute: "2-digit" });
 
 function FastingScreen({ t, lang }) {
   const [fast, setFast] = usePersisted("fast", FAST_INIT);
@@ -4358,7 +4506,7 @@ function FastingScreen({ t, lang }) {
 
       <div data-fast-alarm style={{ marginTop: 18 }}>
         <Card>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 12 }}>🔔 {t.fastAlarmTitle}</div>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 12 }}>{t.fastAlarmTitle}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{t.fastAlarmEnd}</span>
             <div data-fast-alarm-end style={{ display: "flex", gap: 6 }}>
@@ -4376,7 +4524,7 @@ function FastingScreen({ t, lang }) {
           <div style={{ ...small, fontSize: 11.5 }}>{IS_NATIVE_APP ? t.fastAlarmNative : t.fastAlarmWeb}</div>
           {!IS_NATIVE_APP && a && (alarm.end || alarm.soon) && (
             <div data-fast-ics onClick={saveIcs} style={{ marginTop: 10, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>
-              📅 {t.fastIcs}
+              {t.fastIcs}
             </div>
           )}
         </Card>
@@ -4393,7 +4541,7 @@ function FastingScreen({ t, lang }) {
               const ok = h.end - h.start >= h.hours * 3600000 - 60000;
               return (
                 <div key={h.start} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 12px", borderBottom: i < arr.length - 1 ? "1px solid " + COLORS.border : "none" }}>
-                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{new Date(h.start).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { weekday: "short", day: "numeric", month: "short" })}</span>
+                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{new Date(h.start).toLocaleDateString(localeOf(lang), { weekday: "short", day: "numeric", month: "short" })}</span>
                   <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: ok ? COLORS.teal : COLORS.text }}>{dur(h.end - h.start)} {ok ? "✓" : ""}</span>
                 </div>
               );
@@ -4424,7 +4572,7 @@ function FastHomeCard({ t, onOpen }) {
     <div data-fast-card>
       <Card onClick={onOpen} style={{ marginBottom: 12, cursor: "pointer" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 22 }}>⏱️</span>
+          <Timer size={22} color={COLORS.text} strokeWidth={1.8} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.fastTitle} · {a.hours}:{24 - a.hours}</div>
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: reached ? COLORS.teal : COLORS.dim, marginTop: 2 }}>{reached ? t.fastHomeReached : t.fastHomeLeft.replace("{t}", fastHm(targetMs - elapsed))}</div>
@@ -4485,7 +4633,7 @@ function FastWatcher({ t, lang, offset = 0, onOpen }) {
   if (!due) return null;
   return (
     <div data-fast-banner={due} style={{ position: "fixed", top: "calc(env(safe-area-inset-top) + " + (8 + offset) + "px)", left: 12, right: 12, maxWidth: 366, margin: "0 auto", background: due === "end" ? COLORS.teal : COLORS.gold, color: COLORS.bg, borderRadius: 12, padding: "9px 10px 9px 14px", display: "flex", alignItems: "center", gap: 10, fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 24px rgba(0,0,0,0.3)", zIndex: 1190 }}>
-      <span style={{ flex: 1 }}>⏱️ {due === "end" ? t.fastBannerEnd : t.fastBannerSoon}</span>
+      <span style={{ flex: 1 }}>{due === "end" ? t.fastBannerEnd : t.fastBannerSoon}</span>
       <span data-fast-banner-open onClick={() => { setDue(null); onOpen(); }} style={{ cursor: "pointer", background: COLORS.bg, color: COLORS.text, borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>
         {t.fastBannerOpen}
       </span>
@@ -4510,7 +4658,7 @@ function MealPlanScreen({ t, lang, targets, onAddToMeal }) {
   const [open, setOpen] = useState(null);
   const [added, setAdded] = useState({});
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, lineHeight: 1.5 };
-  const locale = lang === "de" ? "de-DE" : "en-GB";
+  const locale = localeOf(lang);
   const slotLabel = { breakfast: t.breakfast, lunch: t.lunch, dinner: t.dinner, snacks: t.snacks };
 
   const create = async () => {
@@ -4574,7 +4722,7 @@ function MealPlanScreen({ t, lang, targets, onAddToMeal }) {
         <div style={{ ...small, margin: "16px 0 6px" }}>{t.mpDislikes}</div>
         <input data-mp-dislikes value={form.dislikes} onChange={(e) => setForm((f) => ({ ...f, dislikes: e.target.value.slice(0, 200) }))} placeholder={t.mpDislikesPh} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
         <button data-mp-go onClick={create} disabled={busy} style={{ width: "100%", marginTop: 22, background: busy ? COLORS.raised : COLORS.gold, color: busy ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "14px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: busy ? "default" : "pointer" }}>
-          {busy ? t.mpBusyShort : "📅 " + t.mpGo}
+          {busy ? t.mpBusyShort : t.mpGo}
         </button>
         {busy && <div data-mp-busy style={{ ...small, marginTop: 10, textAlign: "center" }}>{t.mpBusy}</div>}
         {msg && <div data-mp-msg style={{ marginTop: 12, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.coral, lineHeight: 1.45 }}>{msg}</div>}
@@ -4742,14 +4890,14 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
 
   const [potential] = usePersisted("potential", null);
   const { key: sKey } = useSeason();
-  const locale = lang === "de" ? "de-DE" : "en-US";
+  const locale = localeOf(lang);
   const hour = new Date().getHours();
   const dateLabel = new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
   const intakeRow = intakeDue.length === 0 && intakeShow && (
     <div data-intake-home>
       <Card onClick={onOpenIntake} style={{ marginBottom: 12, cursor: "pointer" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 22 }}>💊</span>
+          <Pill size={22} color={COLORS.text} strokeWidth={1.8} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.intakeTitle}</div>
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 2 }}>{intakeCount > 0 ? t.intakeHomeSubSome : t.intakeHomeSubNone}</div>
@@ -4770,7 +4918,7 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3, textTransform: "capitalize" }}>
             {dateLabel}
-            {sKey && <span data-season-chip style={{ textTransform: "none" }}> · {SEASONS[sKey].emoji} {t["season_" + sKey]}</span>}
+            {sKey && <span data-season-chip style={{ textTransform: "none" }}> · {t["season_" + sKey]}</span>}
           </div>
         </div>
       </div>
@@ -4804,7 +4952,7 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
         {/* Protein prominent: der eine Makro-Wert, der fuers Ziel am meisten zaehlt */}
         {profile.macroTargets.protein > 0 && proteinEaten < profile.macroTargets.protein && (
           <div data-protein-left style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "color-mix(in srgb, var(--c-teal) 12%, transparent)", border: "1px solid " + COLORS.teal, borderRadius: 12, padding: "9px 12px", fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.teal }}>
-            💪 {t.proteinLeft.replace("{n}", Math.round(profile.macroTargets.protein - proteinEaten))}
+            {t.proteinLeft.replace("{n}", Math.round(profile.macroTargets.protein - proteinEaten))}
           </div>
         )}
       </Card>
@@ -4821,10 +4969,10 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.dim, textTransform: "uppercase", letterSpacing: 0.6 }}>{t.weekSummaryTitle}</span>
               <span style={{ flex: 1 }} />
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>🏋️ {weekWorkouts}× {t.duelTrainings}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>{weekWorkouts}× {t.duelTrainings}</span>
               {weekDelta !== null && (
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.teal }}>
-                  ⚖️ {weekDelta > 0 ? "+" : ""}{String(weekDelta).replace(".", ",")} kg
+                  {weekDelta > 0 ? "+" : ""}{String(weekDelta).replace(".", ",")} kg
                 </span>
               )}
             </div>
@@ -4834,7 +4982,7 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
 
       <RecoveryCard t={t} premium={premium} onUpsell={onUpsell} workoutHistory={workoutHistory} weightLog={weightLog} />
       {backupDue && <BackupReminder t={t} onOpen={onOpenBackup} />}
-      {todayCfg && todayInfo && <TodayOpen t={t} lang={lang} cfg={todayCfg} info={todayInfo} hideIntake={intakeDue.length > 0} onGo={onTodayGo} onSettings={onTodaySettings} />}
+      {/* „Heute noch offen" ist bewusst weg — offene Erinnerungen zeigt nur noch das rote ! auf dem Profil oben rechts */}
       <FastHomeCard t={t} onOpen={onOpenFasting} />
       {weeklyCard && <WeeklyReviewCard t={t} review={weeklyCard} mode="home" onApply={onReviewApply} onDone={onReviewDone} premium={premium} onUpsell={onUpsell} />}
       {intakeDue.length > 0 && (
@@ -4872,7 +5020,7 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               {(potential.after || potential.before) && <img src={potential.after || potential.before} alt="" style={{ width: 64, height: 86, objectFit: "cover", borderRadius: 12, flexShrink: 0 }} />}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold }}>✨ {t.potHomeTitle.replace("{n}", potential.months)}</div>
+                <div style={{ fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.gold }}>{t.potHomeTitle.replace("{n}", potential.months)}</div>
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text, marginTop: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{potential.goalText}</div>
                 {potential.projected && potential.projected.weightKg != null && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.teal, marginTop: 4 }}>{profile.weight} → {potential.projected.weightKg} kg</div>}
               </div>
@@ -4958,20 +5106,21 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
     if (isToday) return t.diaryToday;
     const y = dateKey(new Date(Date.now() - 86400000));
     if (viewDate === y) return t.diaryYesterday;
-    const locale = lang === "de" ? "de-DE" : "en-US";
+    const locale = localeOf(lang);
     return new Date(viewDate + "T12:00:00").toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
   })();
 
   const tools = [
-    { k: "recipes", emoji: "📖", label: t.toolRecipes, onClick: onOpenRecipes },
-    { k: "link", emoji: "🔗", label: t.toolImport, onClick: () => setShowLink((v) => !v), active: showLink },
-    { k: "pantry", emoji: "🥫", label: t.toolPantry, onClick: onOpenPantry },
-    { k: "fastfood", emoji: "🍔", label: t.toolFastFood, onClick: onOpenFastFood, attr: "data-fastfood" },
-    { k: "fast", emoji: "⏱️", label: t.toolFast, onClick: onOpenFasting },
-    { k: "mealplan", emoji: "📅", label: t.toolMealplan, onClick: onOpenMealPlan },
-    { k: "mine", emoji: "⭐", label: t.toolMyMeals, onClick: onOpenMyMeals },
-    ...(HIDE_INTAKE ? [] : [{ k: "intake", emoji: "💊", label: t.toolIntake, onClick: onOpenIntake, attr: "data-intake-nutrition" }]),
-    { k: "cheat", emoji: "🍕", label: t.toolCheat, sub: nextCheat ? (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : null, onClick: onOpenCheats },
+    { k: "recipes", icon: BookOpen, label: t.toolRecipes, onClick: onOpenRecipes },
+    // Supplements direkt vorn in der Ernährung — klar benannt, in jeder Sprache verständlich
+    ...(HIDE_INTAKE ? [] : [{ k: "intake", icon: Pill, label: "Supplements", onClick: onOpenIntake, attr: "data-intake-nutrition" }]),
+    { k: "link", icon: Link2, label: t.toolImport, onClick: () => setShowLink((v) => !v), active: showLink },
+    { k: "pantry", icon: Package, label: t.toolPantry, onClick: onOpenPantry },
+    { k: "fastfood", icon: Utensils, label: t.toolFastFood, onClick: onOpenFastFood, attr: "data-fastfood" },
+    { k: "fast", icon: Timer, label: t.toolFast, onClick: onOpenFasting },
+    { k: "mealplan", icon: CalendarDays, label: t.toolMealplan, onClick: onOpenMealPlan },
+    { k: "mine", icon: Star, label: t.toolMyMeals, onClick: onOpenMyMeals },
+    { k: "cheat", icon: Flame, label: t.toolCheat, sub: nextCheat ? (nextCheat.diff === 0 ? t.cheatToday : nextCheat.diff === 1 ? t.cheatTomorrow : t.cheatIn + " " + nextCheat.diff + " " + t.cheatDays) : null, onClick: onOpenCheats },
   ];
 
   return (
@@ -5050,7 +5199,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
           <div data-tools style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 14px", padding: "0 20px 4px" }}>
             {tools.map((x) => (
               <div key={x.k} {...(x.attr ? { [x.attr]: true } : {})} data-tool={x.k} onClick={x.onClick} style={{ flex: "0 0 auto", width: 96, minHeight: 92, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "space-between", gap: 6, padding: "11px 11px 10px", borderRadius: 16, background: x.active ? COLORS.goldSoft : COLORS.surface, border: "1px solid " + (x.active ? COLORS.gold : COLORS.border), cursor: "pointer" }}>
-                <span style={{ fontSize: 24, lineHeight: 1 }}>{x.emoji}</span>
+                <x.icon size={22} color={x.active ? COLORS.gold : COLORS.text} strokeWidth={1.8} />
                 <div>
                   <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.text, lineHeight: 1.2 }}>{x.label}</div>
                   {x.sub && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim, marginTop: 2, lineHeight: 1.25 }}>{x.sub}</div>}
@@ -5102,7 +5251,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
                 "day",
                 {
                   title: t.shareTypeDay,
-                  date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { weekday: "long", day: "numeric", month: "long" }),
+                  date: new Date().toLocaleDateString(localeOf(lang), { weekday: "long", day: "numeric", month: "long" }),
                   kcal: sum("kcal"),
                   kcalLabel: "kcal",
                   macros: [
@@ -5284,7 +5433,7 @@ function QuickWorkoutCards({ t, onOpen }) {
       <div data-quick-cards style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px", padding: "0 20px 4px" }}>
         {QUICK_PRESETS.map((p) => (
           <div key={p.key} data-quick-card={p.key} onClick={() => onOpen(p.key)} style={{ flex: "0 0 auto", width: 150, boxSizing: "border-box", padding: "12px 12px 11px", borderRadius: 16, background: COLORS.surface, border: "1px solid " + COLORS.border, cursor: "pointer", display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ fontSize: 24, lineHeight: 1 }}>{p.emoji}</div>
+            <QuickIcon k={p.key} size={22} />
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text, lineHeight: 1.2 }}>{t["quick_" + p.key]}</div>
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, lineHeight: 1.3 }}>{t.quickSub.replace("{n}", moveCount(p)).replace("{m}", presetMinutes(p))}</div>
           </div>
@@ -5308,7 +5457,7 @@ function QuickPhoto({ media, item, name, cue, onFail, muscles = null }) {
       </div>
       {cue && (
         <div style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: COLORS.dim }}>
-          <span style={{ color: COLORS.gold, fontWeight: 700 }}>💡</span> {cue}
+          <Lightbulb size={14} color={COLORS.gold} style={{ verticalAlign: -2, marginRight: 2 }} /> {cue}
         </div>
       )}
     </div>
@@ -5320,7 +5469,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const tl = useMemo(() => buildTimeline(preset), [preset]);
   const [phase, setPhase] = useState("intro"); // intro | run | done
   const [voiceOn, setVoiceOn] = usePersisted("quickVoice", true);
-  // announcements: the recorded voice of the app language (ElevenLabs clips shipped with the app) when there is a clip for the line,
+  // announcements: the recorded voice of the app language (OpenAI-TTS clips shipped with the app) when there is a clip for the line,
   // otherwise the phone's own voice reads the text
   const said = useRef(0);
   const announce = (id, text) => {
@@ -5330,10 +5479,14 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
     });
   };
   const clipId = (x) => x.kind + "_" + x.key;
-  // download the first lines while the preview is open (sound is not unlocked yet, so only the files are fetched)
+  // Schon im Vorschau-Screen ALLES vorladen: sämtliche Sprach-Clips des Workouts
+  // (menschliche Stimme startet ohne Verzögerung) und alle Übungs-Demos (kein
+  // Hängen beim Übungswechsel).
   useEffect(() => {
-    if (phase === "intro" && voiceOn) warmClips(lang, [clipId(tl[0]), clipId(tl[1]), "done"]);
-  }, [phase, voiceOn, lang, presetKey]);
+    if (phase !== "intro") return;
+    if (voiceOn) warmClips(lang, [...new Set(tl.map(clipId)), "half", "done"]);
+    prefetchGifs([...new Set(tl.map((x) => gifSrc(x.key)))]);
+  }, [phase, voiceOn, lang, presetKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [startedAt, setStartedAt] = useState(0);
   const [pausedAt, setPausedAt] = useState(null);
   const [pausedMs, setPausedMs] = useState(0);
@@ -5409,6 +5562,8 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
         if (seg.kind === "work") beep(1100, 300);
         preloadClips(lang, [tl[loc.i + 1], tl[loc.i + 2]].filter(Boolean).map(clipId).concat(["half", "done"])); // the next lines are ready the moment they are needed
       }
+      // die Demos der nächsten Übungen parallel vorladen — der Wechsel ruckelt nie
+      prefetchGifs([tl[loc.i + 1], tl[loc.i + 2]].filter(Boolean).map((x) => gifSrc(x.key)));
     }
     const sec = Math.ceil(loc.left);
     if (voiceOn && sec >= 1 && sec <= 3 && !m.beeped[loc.i + ":" + sec]) {
@@ -5423,7 +5578,8 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
 
   const start = () => {
     unlockAudio();
-    if (voiceOn) preloadClips(lang, [clipId(tl[0]), clipId(tl[1]), "half", "done"]);
+    // alle Clips des Workouts fertig dekodieren — jede Ansage startet sofort und menschlich
+    if (voiceOn) preloadClips(lang, [...new Set(tl.map(clipId)), "half", "done"]);
     mem.current = { idx: -1, beeped: {}, half: {} };
     setPausedAt(null);
     setPausedMs(0);
@@ -5460,7 +5616,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   if (phase === "intro") {
     return (
       <div data-quick-intro style={{ padding: "0 20px 24px" }}>
-        <div style={{ fontSize: 34, lineHeight: 1, marginBottom: 8 }}>{preset.emoji}</div>
+        <div style={{ marginBottom: 8 }}><QuickIcon k={preset.key} size={30} /></div>
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text }}>{t["quick_" + preset.key]}</div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "4px 0 14px", lineHeight: 1.45 }}>
           {t.quickSub.replace("{n}", moveCount(preset)).replace("{m}", presetMinutes(preset))} · {preset.work} s / {preset.rest} s · {preset.chair ? t.quickChair : t.quickNoGear}
@@ -5492,7 +5648,7 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   if (phase === "done" && result) {
     return (
       <div data-quick-done style={{ padding: "30px 20px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 54, lineHeight: 1 }}>{result.partial ? "👍" : "🎉"}</div>
+        <div style={{ display: "flex", justifyContent: "center" }}><div style={{ width: 84, height: 84, borderRadius: "50%", background: COLORS.goldSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>{result.partial ? <Check size={42} color={COLORS.gold} /> : <Award size={42} color={COLORS.gold} />}</div></div>
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, color: COLORS.text, margin: "12px 0 6px" }}>{result.partial ? t.quickDonePartial : t.quickDone}</div>
         <div data-quick-stats style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, marginBottom: 24 }}>{t.quickStats.replace("{time}", fmt(result.seconds)).replace("{kcal}", result.kcal)}</div>
         <button data-quick-log onClick={() => onLog({ presetKey: preset.key, seconds: result.seconds, kcal: result.kcal })} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 0", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", marginBottom: 10 }}>
@@ -5589,10 +5745,19 @@ async function cachedGifSrc(url) {
     return url; // Cache API nicht verfügbar: normal über das Netz laden
   }
 }
-// Nächste Demos im Hintergrund vorladen (z. B. beim Blättern in der Bibliothek)
+// Nächste Demos im Hintergrund vorladen (z. B. beim Blättern in der Bibliothek,
+// und alle Übungen eines Kurz-Workouts beim Start): native App → Cache API,
+// Web → Browser-HTTP-Cache über ein unsichtbares Image. So hängt beim
+// Übungswechsel nichts mehr — die Demo ist schon da.
 function prefetchGifs(urls) {
-  if (!IS_NATIVE_APP) return;
-  urls.filter(Boolean).forEach((u) => { cachedGifSrc(u); });
+  urls.filter(Boolean).forEach((u) => {
+    if (IS_NATIVE_APP) cachedGifSrc(u);
+    else {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = u;
+    }
+  });
 }
 
 // small square on the Training tab (library, records, friends)
@@ -5650,10 +5815,16 @@ function ExerciseGif({ src, title, corner, t }) {
   );
 }
 
-function TrainTile({ emoji, label, onClick }) {
+const QUICK_ICONS = { seven: Zap, hiit: Flame, core: Target, legs: Footprints };
+function QuickIcon({ k, size }) {
+  const I = QUICK_ICONS[k] || Timer;
+  return <I size={size} color={COLORS.text} strokeWidth={1.8} />;
+}
+
+function TrainTile({ icon: Icon, label, onClick }) {
   return (
     <Card onClick={onClick} style={{ cursor: "pointer", padding: "14px 8px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" }}>
-      <div style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</div>
+      <Icon size={22} color={COLORS.text} strokeWidth={1.8} />
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.text, lineHeight: 1.2, overflowWrap: "anywhere" }}>{label}</div>
     </Card>
   );
@@ -5749,8 +5920,8 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
         <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
       </Card></div>
       <div data-train-tiles style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-        <TrainTile emoji="🏆" label={t.recordsTitle} onClick={onOpenRecords} />
-        <TrainTile emoji="⚔️" label={t.friendsTitle} onClick={onOpenFriends} />
+        <TrainTile icon={Trophy} label={t.recordsTitle} onClick={onOpenRecords} />
+        <TrainTile icon={Users} label={t.friendsTitle} onClick={onOpenFriends} />
       </div>
 
       {trained.length > 0 && (
@@ -5959,7 +6130,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
   const sorted = [...photos].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
   const before = sorted[0] || null;
   const after = sorted.find((p) => p.id === compareId) || sorted[sorted.length - 1] || null;
-  const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short", year: "numeric" });
 
   const [photoError, setPhotoError] = useState(null);
   const [cropSrc, setCropSrc] = useState(null);
@@ -6231,7 +6402,7 @@ function NotesScreen({ t, lang, notes, filter, setFilter, onAddNote }) {
     const k = dateKey(d);
     if (k === dateKey(new Date())) return t.diaryToday;
     if (k === dateKey(new Date(Date.now() - 86400000))) return t.diaryYesterday;
-    return d.toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
+    return d.toLocaleDateString(localeOf(lang), { day: "numeric", month: "short", year: "numeric" });
   };
 
   return (
@@ -6700,7 +6871,7 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
               if (!sug) return null;
               return (
                 <div data-suggest onClick={() => useSuggestion(ei, sug)} style={{ display: "flex", alignItems: "center", gap: 8, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 12, padding: "8px 12px", margin: "-2px 0 12px", cursor: "pointer" }}>
-                  <span style={{ fontSize: 15 }}>💡</span>
+                  <Lightbulb size={15} color={COLORS.gold} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text }}>{t.suggestToday}: {sug.weight > 0 ? String(sug.weight).replace(".", ",") + " kg × " : ""}{sug.reps}</div>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 1 }}>{sug.weight === 0 ? t.suggestBody : t["suggest_" + sug.kind]}</div>
@@ -7091,7 +7262,7 @@ function Celebration({ t, data, onClose }) {
         <Confetti />
         <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
-            <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 8 }}>🔥</div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><Flame size={52} color={COLORS.gold} /></div>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 44, fontWeight: 800, color: COLORS.gold, lineHeight: 1 }}>{data.days}</div>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 800, color: COLORS.text, margin: "6px 0 10px" }}>{t.streakCelebrateTitle}</div>
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.dim, lineHeight: 1.5 }}>{t["streakMsg" + data.days]}</div>
@@ -7127,7 +7298,6 @@ function Celebration({ t, data, onClose }) {
     <Confetti />
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
-        <div style={{ fontSize: 30, letterSpacing: 6, marginBottom: 6 }}>🎉🏆🎉</div>
         <div style={{ width: 84, height: 84, borderRadius: "50%", background: COLORS.goldSoft, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Laugh size={46} color={COLORS.gold} />
         </div>
@@ -7139,7 +7309,7 @@ function Celebration({ t, data, onClose }) {
         {data.reward ? (
           <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 14, background: COLORS.surface, border: "1px solid " + COLORS.border }}>
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.celebrateReward}</div>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, marginTop: 2 }}>🎁 {data.reward}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text, marginTop: 2 }}>{data.reward}</div>
           </div>
         ) : null}
         <button onClick={onClose} style={{ width: "100%", marginTop: 20, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>
@@ -7186,7 +7356,7 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
           <>
             {strength.map((r) => (
               <div key={r.key} style={rowStyle}>
-                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>🏆 {nameOf(r.key)}</span>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(r.key)}</span>
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold, textAlign: "right" }}>
                   {fmtNum(r.best)} kg{repsAt(r.key, r.best) ? " × " + repsAt(r.key, r.best) : ""}
                 </span>
@@ -7194,7 +7364,7 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
             ))}
             {cardio.map((r) => (
               <div key={r.key} style={rowStyle}>
-                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>🏆 {nameOf(r.key)} · {t.cardioLongest}</span>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(r.key)} · {t.cardioLongest}</span>
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{fmtNum(r.best)} min</span>
               </div>
             ))}
@@ -7230,10 +7400,10 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
         return (
           <Card key={r.id} style={{ marginBottom: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>🏆 {r.name}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{r.name}</span>
               <span style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.gold }}>{fmtNum(r.best)} {r.unit}</span>
             </div>
-            {r.reward ? <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8 }}>🎁 {r.reward}</div> : null}
+            {r.reward ? <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8 }}>{r.reward}</div> : null}
             {pts.length >= 2 && <LineChart points={pts} color={COLORS.gold} unit={r.unit} height={120} />}
             <input value={inputs["rw" + r.id] || ""} onChange={(e) => setInputs({ ...inputs, ["rw" + r.id]: e.target.value })} placeholder={t.recordRewardNow} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginTop: 10 }} />
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
@@ -7274,7 +7444,6 @@ function WorkoutSummary({ t, lang, summary, onDone, onDifficulty = () => {} }) {
       <div style={{ width: 72, height: 72, borderRadius: "50%", background: COLORS.goldSoft, margin: "10px auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {prExercises.length > 0 ? <Laugh size={38} color={COLORS.gold} /> : <Award size={30} color={COLORS.gold} />}
       </div>
-      {prExercises.length > 0 && <div style={{ fontSize: 26, marginTop: -8, marginBottom: 8 }}>🎉🏆🎉</div>}
       <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 24px" }}>{t.workoutDone}</h2>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18, textAlign: "left" }}>
@@ -7355,7 +7524,7 @@ function WorkoutSummary({ t, lang, summary, onDone, onDifficulty = () => {} }) {
             "workout",
             {
               title: t.workoutDone,
-              date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { weekday: "long", day: "numeric", month: "long" }),
+              date: new Date().toLocaleDateString(localeOf(lang), { weekday: "long", day: "numeric", month: "long" }),
               duration: formatDuration(summary?.durationSec),
               durationLabel: t.duration,
               volume: Math.round(summary?.volumeKg || 0) + " kg",
@@ -7563,7 +7732,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
           ) : status === "tooShort" ? (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>🥫 {t.pantryTitle}</span>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.pantryTitle}</span>
                 <span onClick={onOpenPantry} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{pantry.length ? t.pantryManage : "+ " + t.pantryNewFolder}</span>
               </div>
               {pantry.length === 0 ? (
@@ -7830,7 +7999,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                 {t.addItem}
               </button>
               <button onClick={() => setPick((p) => !p)} disabled={!(grams > 0)} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
-                🥫 {t.pantrySaveTo}
+                {t.pantrySaveTo}
               </button>
               {pick && (
                 <PantryPicker
@@ -8092,7 +8261,7 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
   const [monthOffset, setMonthOffset] = useState(0);
   const [selected, setSelected] = useState(todayKey);
   const [chartRange, setChartRange] = useState(14);
-  const locale = lang === "de" ? "de-DE" : "en-US";
+  const locale = localeOf(lang);
 
   const view = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
   const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
@@ -8133,7 +8302,7 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
   return (
     <div style={{ padding: "0 20px 28px" }}>
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-        {stat(t.streakDaysLabel, (streak.current > 0 ? "🔥 " : "") + streak.current)}
+        {stat(t.streakDaysLabel, String(streak.current))}
         {stat(t.streakBest, streak.best)}
         {stat(t.streakThisMonth, monthTracked + " " + t.daysUnit, HIST_GREEN)}
       </div>
@@ -8222,7 +8391,7 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
             const got = streak.best >= m;
             return (
               <div key={m} style={{ flex: 1, textAlign: "center", padding: "8px 0", borderRadius: 12, background: got ? COLORS.goldSoft : COLORS.raised, border: "1px solid " + (got ? COLORS.gold : COLORS.border), opacity: got ? 1 : 0.6 }}>
-                <div style={{ fontSize: 17 }}>{got ? "🔥" : "🔒"}</div>
+                <div style={{ display: "flex", justifyContent: "center" }}>{got ? <Flame size={17} color={COLORS.gold} /> : <Lock size={15} color={COLORS.dim} />}</div>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: got ? COLORS.gold : COLORS.dim }}>{m}</div>
               </div>
             );
@@ -8285,8 +8454,8 @@ function HistoryScreen({ t, lang, history, streak, workoutHistory, kcalGoal }) {
         )}
         {!isFuture && selDay && (selDay.water > 0 || selDay.steps > 0) && (
           <div style={{ display: "flex", gap: 16, marginTop: 10, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>
-            {selDay.water > 0 && <span>💧 {t.dayWater}: {selDay.water} ml</span>}
-            {selDay.steps > 0 && <span>👣 {t.daySteps}: {Number(selDay.steps).toLocaleString(locale)}</span>}
+            {selDay.water > 0 && <span>{t.dayWater}: {selDay.water} ml</span>}
+            {selDay.steps > 0 && <span>{t.daySteps}: {Number(selDay.steps).toLocaleString(locale)}</span>}
           </div>
         )}
       </Card>
@@ -8537,7 +8706,7 @@ function BarcodeScanScreen({ t, lang, onAdd, onDone, pantry = [], onPantrySave }
             <div style={{ marginTop: 10, textAlign: "center", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.gold }}>✓ {savedMsg}</div>
           ) : (
             <button onClick={() => setPickP((p) => !p)} disabled={!(grams > 0)} style={{ width: "100%", marginTop: 8, background: "transparent", color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 18px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
-              🥫 {t.pantrySaveTo}
+              {t.pantrySaveTo}
             </button>
           )}
           {pickP && !savedMsg && (
@@ -9068,7 +9237,7 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
 
   return (
     <div data-potential style={card}>
-      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15.5, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>✨ {t.potTitle}</div>
+      <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15.5, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{t.potTitle}</div>
       <div style={{ ...small, marginBottom: 14 }}>{n(imageOn ? t.potSub : t.potSubNoImage, months)}</div>
 
       {ownGoalField && (
@@ -9112,7 +9281,7 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
       )}
 
       <button data-potential-go onClick={run} disabled={busy} style={{ width: "100%", background: busy ? COLORS.raised : COLORS.gold, color: busy ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "13px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: busy ? "default" : "pointer" }}>
-        {busy ? t.potBusyShort : "✨ " + t.potGo}
+        {busy ? t.potBusyShort : t.potGo}
       </button>
       {busy && <div data-potential-busy style={{ ...small, marginTop: 10, textAlign: "center" }}>{t.potBusy}</div>}
       {msg && <div data-potential-msg style={{ marginTop: 10, fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.coral, lineHeight: 1.45 }}>{msg}</div>}
@@ -9457,7 +9626,7 @@ function FastFoodMenu({ t, lang, chain, items, onAdd, onDelete, onDeleteChain, o
       <div style={{ ...small, marginBottom: 14 }}>{chain.emoji} {chain.name}</div>
 
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>🌍 {t.ffWorldSearch}</div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{t.ffWorldSearch}</div>
         <div style={{ ...small, fontSize: 11.5, lineHeight: 1.45, marginBottom: 10 }}>{t.ffWorldHint}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.raised, borderRadius: 12, padding: "10px 12px", marginBottom: 10 }}>
           <Search size={15} color={COLORS.dim} />
@@ -9493,7 +9662,7 @@ function FastFoodMenu({ t, lang, chain, items, onAdd, onDelete, onDeleteChain, o
       </Card>
 
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>✎ {t.ffOwnItem}</div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.ffOwnItem}</div>
         <div style={{ marginBottom: 8 }}>{field("name", t.ffOwnName)}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
           {field("kcal", "kcal")}
@@ -9733,7 +9902,7 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
           ))}
           {!q && (ctype === "all" || ctype === "mine") && (
             <div data-new-place onClick={() => setCreating(true)} style={{ borderRadius: 18, padding: "16px 14px 14px", cursor: "pointer", minHeight: 118, border: "1.5px dashed " + COLORS.gold, display: "flex", flexDirection: "column", justifyContent: "space-between", background: COLORS.goldSoft }}>
-              <span style={{ fontSize: 30 }}>➕</span>
+              <Plus size={28} color={COLORS.dim} strokeWidth={1.8} />
               <div style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 800, color: COLORS.gold, lineHeight: 1.2 }}>{t.ffOtherRestaurant}</div>
             </div>
           )}
@@ -9961,7 +10130,7 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
               </div>
             ))}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderTop: "1px solid " + COLORS.border }}>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>💧 {t.ffWater}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text }}>{t.ffWater}</span>
               <span style={{ ...small, fontSize: 11.5 }}>{t.ffFreeDrink}</span>
             </div>
             <div onClick={() => setAdding((a) => !a)} data-add style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0 4px", borderTop: "1px solid " + COLORS.border, color: COLORS.gold, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
@@ -10390,7 +10559,7 @@ function CheatScreen({ t, cheats, onAdd, onDelete, onUpdate = () => {}, premium 
     <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: "1px solid " + COLORS.border, opacity: dim ? 0.55 : 1 }}>
       <div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>
-          {r.type === "day" ? "🍕 " + t.cheatDay : "🍔 " + t.cheatMeal}
+          {r.type === "day" ? t.cheatDay : t.cheatMeal}
           {r.note ? <span style={{ color: COLORS.dim }}> · {r.note}</span> : null}
         </div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
@@ -10451,7 +10620,7 @@ function CheatScreen({ t, cheats, onAdd, onDelete, onUpdate = () => {}, premium 
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>{t.cheatPlanTitle}</span>
               </div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>
-                🍕 {new Date(nextDay.date + "T00:00").toLocaleDateString()}
+                {new Date(nextDay.date + "T00:00").toLocaleDateString()}
               </div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 7 }}>{t.cheatExtra}</div>
               <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
@@ -10611,7 +10780,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       {mode === "form" && !selected ? (
         <>
           <Card style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>🔗 {t.importTitle}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>{t.importTitle}</div>
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8, lineHeight: 1.45 }}>{t.importHint}</div>
             <textarea value={impText} onChange={(e) => setImpText(e.target.value)} placeholder={t.importPlaceholder} rows={3} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
             <button onClick={() => importRecipe()} disabled={impBusy || !impText.trim()} style={{ width: "100%", background: impBusy || !impText.trim() ? COLORS.raised : COLORS.gold, color: impBusy || !impText.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: impBusy ? "default" : "pointer" }}>
@@ -10627,7 +10796,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
           </Card>
 
           <Card style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>✨ {t.recipeCreateAi}</div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 8 }}>{t.recipeCreateAi}</div>
             <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder={t.recipeAiPrompt} rows={2} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", resize: "vertical", marginBottom: 10, fontFamily: "Inter, sans-serif" }} />
             <button onClick={generate} disabled={aiBusy || !aiPrompt.trim()} style={{ width: "100%", background: aiBusy || !aiPrompt.trim() ? COLORS.raised : COLORS.gold, color: aiBusy || !aiPrompt.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: aiBusy ? "default" : "pointer" }}>
               {aiBusy ? t.recipeAiBusy : t.recipeAiGo}
@@ -10689,14 +10858,14 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
         <>
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
             <button onClick={() => setMode("form")} style={{ flex: 1, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, color: COLORS.gold, borderRadius: 12, padding: "10px 8px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
-              ✨ {t.recipeCreateAi}
+              {t.recipeCreateAi}
             </button>
             <button onClick={() => setMode("form")} style={{ flex: 1, background: COLORS.raised, border: "1px solid " + COLORS.border, color: COLORS.gold, borderRadius: 12, padding: "10px 8px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
               + {t.recipeCreateOwn}
             </button>
           </div>
           <button onClick={() => setMode("form")} style={{ width: "100%", marginBottom: 14, background: COLORS.surface, border: "1px solid " + COLORS.border, color: COLORS.text, borderRadius: 12, padding: "11px 14px", fontFamily: "Sora, sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-            🔗 {t.importTitle}
+            {t.importTitle}
           </button>
           <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto", paddingBottom: 2 }}>
             {categories.map((c) => (
@@ -11433,7 +11602,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "12px 0" }}>{cueOf(selected)}</div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            {best ? <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.gold }}>🏆 {t.exerciseBest}: {best} kg</div> : null}
+            {best ? <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.gold }}>{t.exerciseBest}: {best} kg</div> : null}
             {maxReps ? <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.teal }}>{t.exerciseMaxReps}: {maxReps}</div> : null}
           </div>
         </Card>
@@ -11514,7 +11683,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
                 const tab = gif ? "gif" : item ? "photo" : null;
                 const tipLine = (
                   <div data-tip style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 12.5, lineHeight: 1.45, color: COLORS.dim }}>
-                    <div><span style={{ color: COLORS.gold, fontWeight: 700 }}>💡</span> {cueOf(selected)}</div>
+                    <div><Lightbulb size={14} color={COLORS.gold} style={{ verticalAlign: -2, marginRight: 2 }} /> {cueOf(selected)}</div>
                     <div><span style={{ color: COLORS.gold, fontWeight: 700 }}>●</span> {t.libRedMeans} {names(mus.primary)}</div>
                   </div>
                 );
@@ -11564,10 +11733,10 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
               <ExerciseVideoRow t={t} lang={lang} exKey={selected.key} name={nameOf(selected)} onShare={() => onShareEx(selected.key, nameOf(selected))} />
               {board.some((r) => !r.me) && (
                 <Card style={{ marginBottom: 14 }}>
-                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>🏆 {t.libBoard}</div>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 10 }}>{t.libBoard}</div>
                   {board.map((r, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderTop: i ? "1px solid " + COLORS.border : "none" }}>
-                      <span style={{ width: 22, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: i === 0 ? COLORS.gold : COLORS.dim }}>{i === 0 ? "👑" : i + 1}</span>
+                      <span style={{ width: 22, fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: i === 0 ? COLORS.gold : COLORS.dim }}>{i + 1}</span>
                       <span style={{ flex: 1, fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text, fontWeight: r.me ? 700 : 400 }}>{r.name}</span>
                       <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: r.me ? COLORS.gold : COLORS.text }}>{r.kg} kg</span>
                     </div>
@@ -11602,7 +11771,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
           ) : (
             history.map((h, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "6px 0", fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.text }}>
-                <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>{new Date(h.dateISO).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB")}</span>
+                <span style={{ color: COLORS.dim, whiteSpace: "nowrap" }}>{new Date(h.dateISO).toLocaleDateString(localeOf(lang))}</span>
                 <span style={{ textAlign: "right" }}>{h.text}</span>
               </div>
             ))
@@ -12370,7 +12539,7 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
       )}
 
       <Card data-challenge style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>🏁 {t.chalTitle}</div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{t.chalTitle}</div>
         <div style={{ ...small, marginTop: 2, marginBottom: 12 }}>{t.chalGoal.replace("{tr}", CHALLENGE_GOAL.tr).replace("{d}", CHALLENGE_GOAL.days)}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
           {[
@@ -12382,7 +12551,7 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
             side ? (
               <div key={i} style={{ background: COLORS.raised, borderRadius: 12, padding: "10px 12px", opacity: side.stale ? 0.6 : 1 }}>
                 <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>
-                  {side.done ? "✅ " : ""}{side.name}
+                  {side.done ? "✓ " : ""}{side.name}
                 </div>
                 <div style={{ ...small, fontSize: 12 }}>
                   {Math.min(side.p.tr, CHALLENGE_GOAL.tr)}/{CHALLENGE_GOAL.tr} {t.duelTrainings}
@@ -12428,7 +12597,7 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>
-                            {f.kind === "recipe" ? "📖 " : "🍽️ "}{f.label}
+                            {f.label}
                           </div>
                           <div style={{ ...small, fontSize: 11.5, marginTop: 2 }}>{(f.kind === "recipe" ? t.shareTypeRecipe : t.shareTypeMeal) + " · " + t.shareFrom.replace("{n}", f.name)}</div>
                         </div>
@@ -12511,8 +12680,7 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
                 </div>
               </div>
               <div style={{ ...small, marginBottom: 12 }}>
-                {sc.me > sc.them ? "👑 " : ""}
-                {leading} · {t.friendsAsOf.replace("{d}", ageText(r.ts))}
+                                {leading} · {t.friendsAsOf.replace("{d}", ageText(r.ts))}
               </div>
               {DUEL_CATS.map((c) => {
                 if (!duelCatActive(c, myStats, r.stats)) return null;
@@ -12845,7 +13013,7 @@ function IntakeScreen({ t, lang, data, setData, premium = false, onUpsell = () =
   // Blutwerte (Premium): eigene Laborwerte als einfache Verlaufsliste
   const [bf, setBf] = useState({ name: "", value: "", unit: "nmol/l", date: new Date().toLocaleDateString("sv") });
   const blood = data.blood || [];
-  const locale = lang === "de" ? "de-DE" : "en-US";
+  const locale = localeOf(lang);
   const flash = (m) => {
     setToast(m);
     setTimeout(() => setToast(null), 1500);
@@ -13366,9 +13534,9 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
   const planLabel = (p) => (p === "yearly" ? t.premiumYearly : t.premiumMonthly);
   const start = (plan) => {
-    const trial = !premium; // 3 Tage gratis beim ersten Abo (beide Pläne)
+    const trial = false; // kein Probeabo mehr: das Abo gilt ab Tag 1 für die volle Laufzeit
     const now = Date.now();
-    onChange({ plan, since: now, renews: now + (trial ? 3 : PREMIUM_PLANS[plan].days) * 86400000, cancelled: false, trial });
+    onChange({ plan, since: now, renews: now + PREMIUM_PLANS[plan].days * 86400000, cancelled: false, trial });
   };
   const features = (
     <Card style={{ marginBottom: 14 }}>
@@ -13506,14 +13674,13 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
         </div>
       ))}
 
-      {/* Ehrliche Trial-Übersicht wie bei Yazio/MyFitnessPal: heute CHF 0.00, ab Tag 4 der Planpreis */}
+      {/* Vertrauens-Zeile: sofortiger Vollzugriff, jederzeit kündbar — kein Kleingedrucktes */}
       <div data-premium-trialbox style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 16, padding: "14px 16px", marginTop: 4 }}>
         {[
           { icon: "✓", text: t.premiumToday, strong: true },
-          { icon: "→", text: t.premiumFromDay4.replace("{p}", "CHF " + PREMIUM_PLANS[sel].chf + " " + (sel === "yearly" ? t.premiumPerYear : t.premiumPerMonth)) },
           { icon: "✓", text: t.premiumCancelAnytime },
         ].map((r, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 2 ? 8 : 0 }}>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 1 ? 8 : 0 }}>
             <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.gold, width: 16, textAlign: "center" }}>{r.icon}</span>
             <span style={{ fontFamily: r.strong ? "Sora, sans-serif" : "Inter, sans-serif", fontSize: r.strong ? 14 : 12.5, fontWeight: r.strong ? 700 : 400, color: r.strong ? COLORS.text : COLORS.dim }}>{r.text}</span>
           </div>
@@ -13523,13 +13690,13 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
       <button
         data-premium-start
         disabled={buying}
-        onClick={() => (isPlay ? (authed ? buyPlay() : onGoLogin()) : billing ? (authed ? onCheckout(sel) : onGoLogin()) : start(sel))}
-        style={{ width: "100%", marginTop: 12, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "15px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: buying ? 0.6 : 1 }}
+        onClick={() => (isPlay ? buyPlay() : billing ? onCheckout(sel) : start(sel))}
+        style={{ width: "100%", marginTop: 12, background: `linear-gradient(135deg, ${COLORS.gold}, ${COLORS.coral})`, color: "#fff", border: "none", borderRadius: 16, padding: "17px 16px", fontFamily: "Sora, sans-serif", fontWeight: 800, fontSize: 15.5, letterSpacing: 0.3, cursor: "pointer", opacity: buying ? 0.6 : 1, boxShadow: "0 12px 30px rgba(0,0,0,0.35)" }}
       >
         {buying ? t.authBusy : t.premiumStartTrial}
       </button>
       {buyErr && <div data-premium-buyerr style={{ ...small, fontSize: 12, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{buyErr}</div>}
-      {(billing || isPlay) && !authed && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{t.billingNeedLogin}</div>}
+      {/* Konto kommt NACH der Zahlung — hier ist keine Anmeldung mehr nötig */}
       {isPlay ? <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.playPayHint}</div> : billing && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.billingPayHint}</div>}
     </div>
   );
@@ -13594,6 +13761,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
         { tint: "teal", icon: Link2, label: t.connSettings, key: "connections" },
         { tint: "teal", icon: Globe, label: t.countryRow, sub: ccSet ? flagOf(ccSet) + " " + ccSetName : t.countryNone2, key: "country" },
         { tint: "teal", icon: Users, label: t.friendsTitle, sub: friendsCount === 1 ? t.setFriendsOne : friendsCount ? t.setFriendsCount.replace("{n}", friendsCount) : t.setFriendsNone, key: "friends" },
+        { tint: "teal", icon: User, label: soc(lang).profTitle, sub: loadPub().visibility === "public" ? soc(lang).visPub : soc(lang).visPriv, key: "publicProfile" },
         ...(!HIDE_INTAKE ? [{ tint: "teal", icon: Pill, label: t.intakeTitle, key: "intake" }] : []),
       ],
     },
@@ -13662,7 +13830,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
       </div>
       {!needle && (
         <div data-settings-quick style={{ display: "flex", gap: 8, marginBottom: 22 }}>
-          {seg([{ v: "light", l: "☀️ " + t.setLight }, { v: "dark", l: "🌙 " + t.setDark }, { v: "system", l: t.setSystem }], appearance, setAppearance, "look")}
+          {seg([{ v: "light", l: t.setLight }, { v: "dark", l: t.setDark }, { v: "system", l: t.setSystem }], appearance, setAppearance, "look")}
           <select
             data-settings-lang
             value={lang}
@@ -13879,7 +14047,7 @@ function DisplaySettings({ t, lang, setLang, display }) {
         <Chip label={t.seasonAuto} active={display.season === "auto"} onClick={() => display.setSeason("auto")} />
         <Chip label={t.seasonOff} active={display.season === "off"} onClick={() => display.setSeason("off")} />
         {SEASON_KEYS.map((k) => (
-          <Chip key={k} label={SEASONS[k].emoji + " " + t["season_" + k]} active={display.season === k} onClick={() => display.setSeason(k)} />
+          <Chip key={k} label={t["season_" + k]} active={display.season === k} onClick={() => display.setSeason(k)} />
         ))}
       </div>
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 8, lineHeight: 1.5 }}>{t.seasonHint}</div>
@@ -14096,6 +14264,49 @@ function StartIntro({ onDone, accent, full }) {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Professioneller Start: tiefschwarzer Screen, Logo + Wortmarke blenden ruhig
+// ein, eine feine Akzentlinie läuft durch — kein Spektakel, ein Markenauftritt.
+// Erscheint nur beim allerersten Start (asfit.introEver), danach nie wieder.
+// Kinoreifes, typografisches Intro: Die Wortmarke baut sich Buchstabe für
+// Buchstabe auf (aus der Unschärfe, mit Versatz), ein schmaler Lichtstrahl in
+// der Markenfarbe zieht einmal darüber, eine Haarlinie setzt den Schlusspunkt.
+// Zurückhaltung statt Spektakel — nichts blinkt, nichts wirkt generiert.
+function StartIntroPro({ onDone, accent }) {
+  const [exit, setExit] = useState(false);
+  useEffect(() => {
+    const end = setTimeout(() => setExit(true), 2300);
+    return () => clearTimeout(end);
+  }, []);
+  useEffect(() => {
+    if (!exit) return undefined;
+    const id = setTimeout(onDone, 500);
+    return () => clearTimeout(id);
+  }, [exit, onDone]);
+  return (
+    <div data-intro-pro onClick={() => setExit(true)} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "#040404", display: "flex", alignItems: "center", justifyContent: "center", opacity: exit ? 0 : 1, transition: "opacity 0.5s ease", cursor: "pointer", overflow: "hidden" }}>
+      <style>{`
+        @keyframes inLetter { 0% { opacity: 0; transform: translateY(18px); filter: blur(10px); } 100% { opacity: 1; transform: translateY(0); filter: blur(0); } }
+        @keyframes inSweep { 0% { left: -12%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { left: 108%; opacity: 0; } }
+        @keyframes inRule { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+        @keyframes inCaption { 0% { opacity: 0; } 100% { opacity: 1; } }
+      `}</style>
+      <div style={{ position: "relative", textAlign: "center", padding: "0 24px" }}>
+        <div style={{ position: "relative", display: "inline-block", overflow: "hidden", padding: "6px 10px" }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 46, fontWeight: 800, letterSpacing: 10, color: "#F4F4F5", lineHeight: 1 }}>
+            {"ASFIT".split("").map((ch, i) => (
+              <span key={i} style={{ display: "inline-block", animation: `inLetter 0.65s cubic-bezier(0.2, 0.75, 0.25, 1) ${0.15 + i * 0.09}s both` }}>{ch}</span>
+            ))}
+          </div>
+          {/* schmaler Lichtstrahl, der einmal über die Wortmarke zieht */}
+          <div style={{ position: "absolute", top: 0, bottom: 0, width: 46, left: "-12%", background: `linear-gradient(100deg, transparent, ${accent}33 35%, #FFFFFF2E 50%, ${accent}33 65%, transparent)`, animation: "inSweep 0.9s cubic-bezier(0.6, 0, 0.3, 1) 0.85s both", pointerEvents: "none" }} />
+        </div>
+        <div style={{ width: 46, height: 2, background: accent, margin: "18px auto 0", transformOrigin: "center", animation: "inRule 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 1.35s both" }} />
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, fontWeight: 600, letterSpacing: 4, color: "rgba(255,255,255,0.4)", marginTop: 16, animation: "inCaption 0.7s ease 1.6s both" }}>SWISS MADE FITNESS</div>
       </div>
     </div>
   );
@@ -14406,6 +14617,13 @@ export default function AsmarFitApp() {
     applySection(tab);
   }, [tab]);
   const [lang, setLang] = usePersisted("lang", detectLang());
+  // Arabisch liest von rechts nach links — das Layout (Flexbox) spiegelt der
+  // Browser über dir="rtl" von selbst.
+  useEffect(() => {
+    try {
+      document.documentElement.dir = String(lang).slice(0, 2) === "ar" ? "rtl" : "ltr";
+    } catch {}
+  }, [lang]);
   const [overlay, setOverlay] = useState(null);
   const [libraryReturnTo, setLibraryReturnTo] = useState("main");
   const [activeMealKey, setActiveMealKey] = useState("snacks");
@@ -14448,6 +14666,8 @@ export default function AsmarFitApp() {
   const [introOn, setIntroOn] = usePersisted("intro", true);
   const [introDone, setIntroDone] = useState(() => {
     try {
+      // Das Intro kommt genau EINMAL (allererster Start) — danach nie wieder.
+      if (localStorage.getItem("asfit.introEver")) return true;
       if (sessionStorage.getItem("asfit.introShown")) return true;
     } catch {
       /* storage unavailable */
@@ -14471,6 +14691,7 @@ export default function AsmarFitApp() {
   }, []);
   const finishIntro = () => {
     try {
+      localStorage.setItem("asfit.introEver", "1");
       sessionStorage.setItem("asfit.introShown", "1");
     } catch {
       /* storage unavailable */
@@ -14661,7 +14882,13 @@ export default function AsmarFitApp() {
   }, [overlay]);
   const openCheckout = async (plan) => {
     try {
-      const r = await fetch(API_BASE + "/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ plan, device: await deviceIdForBilling() }) });
+      // Ohne Konto: Gast-Checkout (zahlen zuerst, Konto danach); mit Konto: normaler Checkout
+      const guest = !auth || !auth.token;
+      const r = await fetch(API_BASE + (guest ? "/api/billing/checkout-guest" : "/api/billing/checkout"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(guest ? {} : authHeaders()) },
+        body: JSON.stringify({ plan, device: await deviceIdForBilling() }),
+      });
       const d = await r.json();
       if (d.url) window.location.href = d.url;
     } catch {
@@ -14700,6 +14927,14 @@ export default function AsmarFitApp() {
     const p = a && a.user && a.user.premium;
     if (p) setPremium({ plan: p.plan, since: Date.now(), renews: p.renews, cancelled: Boolean(p.cancelled), trial: false, src: "server" });
     else setPremium((q) => (q && q.src === "server" ? null : q));
+    // Gast-Kauf einlösen: Nach der Registrierung das bereits bezahlte Abo ins Konto holen
+    if (pendingCs && a && a.token) {
+      claimPending(a.token, pendingCs);
+      return;
+    }
+    // Neue Reihenfolge (zahlen -> Konto): Wer sich beim Bezahlen anmeldet und noch
+    // kein Abo hat, landet direkt wieder auf der Paywall, um den Kauf abzuschliessen.
+    if (!p && onboarded) setOverlay("premium");
     if (IS_NATIVE_APP && Capacitor.getPlatform() === "android" && a && a.token) {
       const h = { Authorization: "Bearer " + a.token };
       fetch(API_BASE + "/api/billing/play/refresh", { method: "POST", headers: h })
@@ -14720,6 +14955,12 @@ export default function AsmarFitApp() {
       const tx = await NativePurchases.purchaseProduct({ productIdentifier: "asfit_premium", planIdentifier: plan, productType: PURCHASE_TYPE.SUBS, quantity: 1 });
       const token = (tx && (tx.purchaseToken || tx.transactionId)) || "";
       if (!token) return t.playErr;
+      // Kauf VOR dem Konto (neue Reihenfolge): Der Play-Kauf ist durch — jetzt das
+      // Konto anlegen; der Login verknüpft den Kauf automatisch (recoverPlayPurchases).
+      if (!auth || !auth.token) {
+        setPremium({ plan, since: Date.now(), renews: Date.now() + PREMIUM_PLANS[plan].days * 86400000, cancelled: false, trial: false, src: "play-pending" });
+        return null;
+      }
       const r = await fetch(API_BASE + "/api/billing/play/verify", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ token }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.premium) return t.playErr;
@@ -15438,6 +15679,97 @@ export default function AsmarFitApp() {
     };
   }, [meals, waterMl, profile.waterGoalMl, profile.weight, workoutHistory, weightLog, streak.current, intake, todayStamp()]);
 
+  // Harte Paywall: Die App öffnet erst, wenn über "3 Tage gratis testen" das
+  // Probeabo gestartet wurde — ohne aktives Abo bleibt der Premium-Screen stehen.
+  // Gast-Kauf (zahlen vor Konto): Die Rückkehr-URL trägt die Checkout-Session —
+  // merken, Konto-Screen zeigen, nach der Registrierung das Abo ins Konto holen.
+  const [pendingCs, setPendingCs] = usePersisted("pendingCs", null);
+  useEffect(() => {
+    try {
+      const m = window.location.hash.match(/billing=success&cs=(cs_[A-Za-z0-9_]+)/);
+      if (m) {
+        setPendingCs(m[1]);
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const paywallForced = useRef(false);
+  useEffect(() => {
+    if (onboarded && !premiumActive && !pendingCs) {
+      paywallForced.current = true;
+      setOverlay("premium");
+    }
+  }, [onboarded, premiumActive, pendingCs]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Sobald das Abo aktiv ist (Kauf bestätigt), öffnet die App von selbst — kein
+  // Zurück-Tippen nötig. Gilt nur für die erzwungene Paywall, nicht für den
+  // Premium-Screen aus den Einstellungen.
+  useEffect(() => {
+    if (premiumActive && paywallForced.current && overlay === "premium") {
+      paywallForced.current = false;
+      setOverlay(null);
+    }
+  }, [premiumActive, overlay]);
+  // Fehlermeldung, wenn jemand ohne Abo auf einen Tab tippt (verschwindet von selbst)
+  const [paywallLock, setPaywallLock] = useState(null);
+  useEffect(() => {
+    if (!paywallLock) return undefined;
+    const id = setTimeout(() => setPaywallLock(null), 2600);
+    return () => clearTimeout(id);
+  }, [paywallLock]);
+  // Rückkehr vom Stripe-Checkout (#billing=success): Der Webhook braucht manchmal
+  // ein paar Sekunden — so lange beim Server nachfragen, bis das Abo da ist.
+  const claimPending = async (token, cs) => {
+    try {
+      const r = await fetch(API_BASE + "/api/billing/claim", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ sessionId: cs }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.premium) {
+        setPremium({ plan: d.premium.plan, since: Date.now(), renews: d.premium.renews, cancelled: Boolean(d.premium.cancelled), trial: false, src: "server" });
+        setPendingCs(null);
+        setOverlay(null);
+        return true;
+      }
+      if (r.status === 400 || r.status === 409) setPendingCs(null); // nicht (mehr) einlösbar
+    } catch {}
+    return false;
+  };
+  const [billingWait, setBillingWait] = useState(() => {
+    try {
+      return window.location.hash.indexOf("billing=success") !== -1 && window.location.hash.indexOf("&cs=") === -1;
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (!billingWait || !auth || !auth.token) return undefined;
+    let tries = 0;
+    const id = setInterval(async () => {
+      tries++;
+      try {
+        const r = await fetch(API_BASE + "/api/auth/me", { headers: authHeaders() });
+        const d = r.ok ? await r.json() : null;
+        if (d && d.user && d.user.premium) {
+          setPremium({ plan: d.user.premium.plan, since: Date.now(), renews: d.user.premium.renews, cancelled: Boolean(d.user.premium.cancelled), trial: false, src: "server" });
+          setBillingWait(false);
+          try {
+            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          } catch {}
+        }
+      } catch {}
+      if (tries >= 20) setBillingWait(false); // nach ~40 s aufgeben; der normale Start-Check übernimmt
+    }, 2000);
+    return () => clearInterval(id);
+  }, [billingWait, Boolean(auth)]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Offene Erinnerungen von heute — fürs rote Ausrufezeichen auf dem Profil oben rechts
+  const openReminders = useMemo(() => {
+    try {
+      return dueNow({ now: Date.now(), cfg: notif, lang, today: todayInfo }).length;
+    } catch {
+      return 0;
+    }
+  }, [notif, lang, todayInfo]);
+
   // Installed app: schedule the next days of reminders as local notifications. They are planned again whenever something
   // changes (a meal, a workout, water ...) and whenever the app comes back to the front, so "missed workout" only fires if it is true.
   const [notifTick, setNotifTick] = useState(0);
@@ -15796,7 +16128,8 @@ export default function AsmarFitApp() {
   } else if (overlay === "premium") {
     content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} isPlay={IS_NATIVE_APP && Capacitor.getPlatform() === "android"} onPlayPurchase={openPlayPurchase} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} aiUsage={aiUsage} onBuyPack={buyAiPack} packCanBuy={(IS_NATIVE_APP && Capacitor.getPlatform() === "android") || billingPack || !billingOn} packFocus={packFocus} />;
     topTitle = t.premiumTitle;
-    showBack = () => setOverlay("settings");
+    // Ohne aktives Abo gibt es kein Zurück — erst das Probeabo starten, dann öffnet die App
+    showBack = premiumActive ? () => setOverlay("settings") : null;
   } else if (overlay === "account") {
     content = (
       <AccountScreen
@@ -15829,6 +16162,10 @@ export default function AsmarFitApp() {
   } else if (overlay === "settingsGoals") {
     content = <GoalsSettings t={t} lang={lang} profile={profile} stepsGoal={stepsGoal} onSave={saveGoals} premium={premiumActive} onUpsell={() => setOverlay("premium")} />;
     topTitle = t.setGoalsRow;
+    showBack = () => setOverlay("settings");
+  } else if (overlay === "publicProfile") {
+    content = <PublicProfileScreen lang={lang} />;
+    topTitle = soc(lang).profTitle;
     showBack = () => setOverlay("settings");
   } else if (overlay === "settingsDisplay") {
     content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize, intro: introOn, setIntro: setIntroOn, season: seasonMode, setSeason: setSeasonMode, ampel: ampelOn, setAmpel: setAmpelOn }} />;
@@ -16062,26 +16399,31 @@ export default function AsmarFitApp() {
               onAuthSkip={() => setAuthSkipped(true)}
             />
           </div>
-        ) : !auth && !authSkipped ? (
-          // Konto-Pflicht: Wer eingerichtet, aber nicht (mehr) angemeldet ist, landet beim Login
+        ) : (premiumActive || pendingCs) && !auth && !authSkipped ? (
+          // Konto NACH der Zahlung: Der Kauf ist durch (Play-Kauf oder Stripe-Gast-
+          // Session) — jetzt den Zugang mit einem Konto sichern; der Login verknüpft
+          // das bezahlte Abo automatisch mit dem neuen Konto.
           <div style={isPhone ? { flex: 1, minHeight: 0 } : { height: 720 }}>
-            <AuthScreen
-              t={t}
-              onDone={(a) => {
-                setAuth(a);
-                if (!premiumActive) setOverlay("premium");
-              }}
-              onSkip={() => setAuthSkipped(true)}
-            />
+            <AuthScreen t={t} onDone={applyLogin} onSkip={() => setAuthSkipped(true)} />
           </div>
         ) : (
           <>
-            <TopBar title={topTitle} lang={lang} setLang={setLang} onBack={showBack} onSettings={!showBack ? () => setOverlay("settings") : null} accent={!overlay ? COLORS.section : null} />
+            <TopBar
+              title={topTitle}
+              lang={lang}
+              setLang={setLang}
+              onBack={showBack}
+              onSettings={!showBack ? () => setOverlay("settings") : null}
+              accent={!overlay ? COLORS.section : null}
+              onProfile={!showBack ? () => setOverlay("publicProfile") : null}
+              alertCount={openReminders}
+              profileName={profile.name}
+            />
             {/* Upsell-Dialog: Wochen-Limit erreicht oder Premium-exklusive Funktion angetippt */}
             {aiLimitHit && (
               <div data-ai-limit style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
                 <div style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 20, padding: 22, width: "100%", maxWidth: 330, textAlign: "center" }}>
-                  <div style={{ fontSize: 30, marginBottom: 8 }}>✨</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><Lock size={26} color={COLORS.gold} /></div>
                   <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{aiLimitHit.quota ? t.aiQuotaTitle : aiLimitHit.limit > 0 ? t.aiLimitTitle : t.premiumLockHint}</div>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, margin: "8px 0 16px", lineHeight: 1.5 }}>
                     {aiLimitHit.quota
@@ -16112,6 +16454,11 @@ export default function AsmarFitApp() {
             {activeWorkout && <WorkoutLongPrompt t={t} aw={activeWorkout} onEnd={() => startOrResumeWorkout()} />}
             {!overlay && <div data-section-line style={{ height: 3, flexShrink: 0, margin: "0 20px", borderRadius: 2, background: `linear-gradient(90deg, ${COLORS.section}, transparent)` }} />}
             <div ref={scrollRef} style={isPhone ? { flex: 1, minHeight: 0, overflowY: "auto" } : { height: 700, overflowY: "auto" }}>{content}</div>
+            {paywallLock && (
+              <div data-paywall-lock style={{ position: "absolute", left: 16, right: 16, bottom: "calc(78px + env(safe-area-inset-bottom))", zIndex: 600, background: "#E5484D", color: "#fff", borderRadius: 14, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, textAlign: "center", boxShadow: "0 10px 28px rgba(0,0,0,0.45)" }}>
+                {({ de: "Schliesse zuerst dein ASFIT-Premium-Abo ab.", fr: "Active d'abord ton abonnement ASFIT Premium.", it: "Attiva prima il tuo abbonamento ASFIT Premium.", es: "Activa primero tu suscripción ASFIT Premium.", tr: "Önce ASFIT Premium aboneliğini başlat." }[lang] || "Activate your ASFIT Premium subscription first.")}
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-around", padding: isPhone ? "10px 6px calc(12px + env(safe-area-inset-bottom))" : "10px 6px 20px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
               {nav.map(({ key, icon: Icon, label }) => {
                 const active = tab === key && !overlay;
@@ -16119,6 +16466,14 @@ export default function AsmarFitApp() {
                   <div
                     key={key}
                     onClick={() => {
+                      // Harte Paywall: ohne aktives (Probe-)Abo führt KEIN Tab in die App —
+                      // stattdessen Fehlermeldung und zurück auf den Premium-Screen.
+                      if (!premiumActive && onboarded) {
+                        setPaywallLock(Date.now());
+                        paywallForced.current = true;
+                        setOverlay("premium");
+                        return;
+                      }
                       setOverlay(null);
                       setTab(key);
                     }}
@@ -16145,7 +16500,7 @@ export default function AsmarFitApp() {
             <Check size={15} /> {shareToast}
           </div>
         )}
-        {introOn && !introDone && <StartIntro onDone={finishIntro} full={introFull} accent={(THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
+        {introOn && !introDone && <StartIntroPro onDone={finishIntro} accent={(ACCENTS.find((a) => a.id === savedAccent()) || {}).c || (THEMES[colorTheme === "auto" ? profile.gender : colorTheme] || THEMES.neutral).dark.gold} />}
       </div>
     </div>
     </CountryCtx.Provider>
