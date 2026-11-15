@@ -58,7 +58,7 @@ const bundle = await jfetch(UP + "/edits/" + edit.id + "/bundles?uploadType=medi
 console.log("Hochgeladen: versionCode", bundle.versionCode);
 
 // 3) Track setzen (Entwurf, vollständiger Rollout bei Freigabe)
-const notes = notesText ? [{ language: "de-DE", text: notesText }] : [];
+const notes = notesText ? [{ language: "en-US", text: notesText }] : [];
 await jfetch(API + "/edits/" + edit.id + "/tracks/" + track, {
   method: "PUT",
   headers: { "content-type": "application/json" },
