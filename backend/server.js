@@ -479,7 +479,17 @@ app.post("/api/ai/realtime-session", async (req, res) => {
           type: "realtime",
           model: REALTIME_MODEL,
           instructions,
-          audio: { output: { voice: REALTIME_VOICE } },
+          audio: {
+            input: {
+              // Ruhiges, sauberes Gespräch: Rauschen wird gefiltert, und die KI
+              // wartet, bis der Satz wirklich zu Ende ist. Während sie spricht,
+              // darf NICHTS sie unterbrechen (sonst schneidet das Echo der
+              // eigenen Stimme aus dem Lautsprecher ihr ständig das Wort ab).
+              noise_reduction: { type: "near_field" },
+              turn_detection: { type: "semantic_vad", eagerness: "low", interrupt_response: false, create_response: true },
+            },
+            output: { voice: REALTIME_VOICE },
+          },
           tools: [
             {
               type: "function",

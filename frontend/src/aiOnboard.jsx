@@ -671,7 +671,9 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
       });
       if (!sRes.ok) return fallback();
       const { client_secret, model } = await sRes.json();
-      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Echo-Entfernung ist entscheidend: ohne sie hört die KI ihre eigene
+      // Stimme aus dem Lautsprecher und fühlt sich ständig unterbrochen.
+      const mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       if (fellRef.current) {
         mic.getTracks().forEach((t) => t.stop());
         return;
