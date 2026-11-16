@@ -578,12 +578,247 @@ export function OnboardModePick({ lang, onPick }) {
   );
 }
 
-// Das KI-Gespräch: Vollbild-Spracherlebnis OHNE Chat. Die KI spricht, der Nutzer
-// antwortet nur mit der Stimme (das Mikrofon öffnet automatisch nach jeder Frage).
-// Im Hintergrund füllen sich die Angaben — zensiert (geblurrt, 🔒) — bis die KI
-// am Ende sagt: „So könnte dein Körper aussehen."
+// Das KI-Gespräch: Vollbild-Spracherlebnis OHNE Chat. Zuerst wird das echte
+// Live-Gespräch versucht (OpenAI-Echtzeitmodell per WebRTC — hört zu, versteht,
+// antwortet frei wie ChatGPT). Scheitert Verbindung oder Mikrofon, übernimmt
+// nahtlos das bewährte Clip-Onboarding.
 export function AiOnboarding({ lang, onDone, onManual }) {
-  return <AiVoiceOnboarding lang={lang} onDone={onDone} onManual={onManual} />;
+  const [mode, setMode] = useState("live"); // live | clips
+  if (mode === "clips") return <AiVoiceOnboarding lang={lang} onDone={onDone} onManual={onManual} />;
+  return <LiveVoiceOnboarding lang={lang} onDone={onDone} onManual={onManual} onFallback={() => setMode("clips")} />;
+}
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+
+// Live-Gespräch mit OpenAIs Echtzeit-Modell: Audio in beide Richtungen per WebRTC,
+// die KI stellt die Fragen frei, versteht die Antworten selbst und füllt die
+// Felder über Werkzeug-Aufrufe (set_field/finish). Der API-Schlüssel bleibt auf
+// dem Server — die App holt sich nur ein kurzlebiges Ticket.
+function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
+  const s2 = String(lang || "de").slice(0, 2);
+  const l2 = FIELD_LABELS[s2] ? s2 : "en";
+  const FL = FIELD_LABELS[l2];
+  const [state, setState] = useState("speak");
+  const [data, setData] = useState({});
+  const [step, setStep] = useState("talk"); // talk | preview
+  const [needsTap, setNeedsTap] = useState(false);
+  const connRef = useRef(null);
+  const dataRef = useRef({});
+  const doneRef = useRef(false);
+  const fellRef = useRef(false);
+
+  const cleanup = () => {
+    const c = connRef.current;
+    connRef.current = null;
+    if (!c) return;
+    try {
+      if (c.dc) c.dc.close();
+    } catch {}
+    try {
+      if (c.pc) c.pc.close();
+    } catch {}
+    try {
+      if (c.mic) c.mic.getTracks().forEach((t) => t.stop());
+    } catch {}
+    try {
+      if (c.audioEl) c.audioEl.srcObject = null;
+    } catch {}
+  };
+  const fallback = () => {
+    if (fellRef.current || doneRef.current) return;
+    fellRef.current = true;
+    cleanup();
+    onFallback();
+  };
+
+  const applyField = (field, value) => {
+    const d = { ...dataRef.current };
+    const v = String(value == null ? "" : value).trim();
+    if (field === "goal") {
+      if (["cut", "bulk", "maintain"].includes(v)) d.goal = v;
+    } else if (field === "gender") {
+      if (["male", "female", "diverse"].includes(v)) d.gender = v;
+    } else if (field === "name") {
+      const n = v.split(/\s+/)[0] || "";
+      if (n) d.name = n.charAt(0).toUpperCase() + n.slice(1);
+    } else {
+      const n = parseFloat(v.replace(",", "."));
+      if (Number.isFinite(n)) {
+        if (field === "height") d.height = n < 3 ? Math.round(n * 100) : Math.round(n);
+        else d[field] = Math.round(n);
+      }
+    }
+    dataRef.current = d;
+    setData(d);
+  };
+
+  const finishTalk = () => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    // den Schlusssatz der KI ausklingen lassen, dann zur zensierten Vorschau
+    setTimeout(() => {
+      cleanup();
+      setStep("preview");
+    }, 2600);
+  };
+
+  const connect = async () => {
+    try {
+      const sRes = await fetch(API_BASE + "/api/ai/realtime-session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lang: l2 }),
+      });
+      if (!sRes.ok) return fallback();
+      const { client_secret, model } = await sRes.json();
+      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (fellRef.current) {
+        mic.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      const pc = new RTCPeerConnection();
+      const audioEl = new Audio();
+      audioEl.autoplay = true;
+      pc.ontrack = (e) => {
+        audioEl.srcObject = e.streams[0];
+        const p = audioEl.play();
+        if (p && p.catch) p.catch(() => {});
+      };
+      mic.getTracks().forEach((t) => pc.addTrack(t, mic));
+      const dc = pc.createDataChannel("oai-events");
+      connRef.current = { pc, dc, mic, audioEl };
+      // Kommt die Verbindung nicht zustande, übernimmt das Clip-Onboarding
+      const guard = setTimeout(() => {
+        if (!fellRef.current && dc.readyState !== "open") fallback();
+      }, 12000);
+      dc.onopen = () => {
+        clearTimeout(guard);
+        setState("speak");
+        try {
+          dc.send(JSON.stringify({ type: "response.create" }));
+        } catch {}
+      };
+      dc.onclose = () => {
+        if (!doneRef.current) fallback();
+      };
+      dc.onmessage = (m) => {
+        let ev;
+        try {
+          ev = JSON.parse(m.data);
+        } catch {
+          return;
+        }
+        const t = ev.type || "";
+        if (t === "output_audio_buffer.started") setState("speak");
+        else if (t === "output_audio_buffer.stopped" || t === "output_audio_buffer.cleared") {
+          if (!doneRef.current) setState("listen");
+        } else if (t === "input_audio_buffer.speech_started") {
+          if (!doneRef.current) setState("listen");
+        } else if (t === "response.output_item.done" && ev.item && ev.item.type === "function_call") {
+          let args = {};
+          try {
+            args = JSON.parse(ev.item.arguments || "{}");
+          } catch {}
+          if (ev.item.name === "set_field") {
+            applyField(args.field, args.value);
+            try {
+              dc.send(JSON.stringify({ type: "conversation.item.create", item: { type: "function_call_output", call_id: ev.item.call_id, output: JSON.stringify({ ok: true }) } }));
+              dc.send(JSON.stringify({ type: "response.create" }));
+            } catch {}
+          } else if (ev.item.name === "finish") {
+            try {
+              dc.send(JSON.stringify({ type: "conversation.item.create", item: { type: "function_call_output", call_id: ev.item.call_id, output: JSON.stringify({ ok: true }) } }));
+            } catch {}
+            finishTalk();
+          }
+        }
+      };
+      pc.onconnectionstatechange = () => {
+        if ((pc.connectionState === "failed" || pc.connectionState === "disconnected") && !doneRef.current) fallback();
+      };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      const aRes = await fetch("https://api.openai.com/v1/realtime/calls?model=" + encodeURIComponent(model), {
+        method: "POST",
+        headers: { authorization: "Bearer " + client_secret, "content-type": "application/sdp" },
+        body: offer.sdp,
+      });
+      if (!aRes.ok) return fallback();
+      await pc.setRemoteDescription({ type: "answer", sdp: await aRes.text() });
+    } catch {
+      fallback();
+    }
+  };
+
+  const didInit = useRef(false);
+  useEffect(() => {
+    if (didInit.current) return undefined;
+    didInit.current = true;
+    unlockAudio();
+    if (audioReady()) connect();
+    else {
+      setNeedsTap(true);
+      setState("idle");
+    }
+    return () => cleanup();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const startByTap = () => {
+    unlockAudio();
+    setNeedsTap(false);
+    setState("speak");
+    connect();
+  };
+
+  if (step === "preview") {
+    return <CensoredPreview lang={lang} data={dataRef.current} onUnlock={() => onDone(dataRef.current)} />;
+  }
+
+  const ORDER = ["goal", "name", "gender", "age", "weight", "height", "target"];
+  const rows = ORDER.map((k) => {
+    let v = data[k];
+    if (k === "goal" && v) v = GOAL_WORDS[l2][v];
+    if (k === "gender" && v) v = GENDER_WORDS[l2][v];
+    if ((k === "weight" || k === "target") && v) v = v + " kg";
+    if (k === "height" && v) v = v + " cm";
+    return { k, label: FL[k], value: v };
+  });
+
+  return (
+    <div style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%", padding: "0 22px 22px", overflow: "hidden" }}>
+      {/* zensierte Angaben im Hintergrund */}
+      <div aria-hidden="true" style={{ position: "absolute", left: 22, right: 22, bottom: 20, zIndex: 0 }}>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "14px 16px", opacity: 0.85 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, color: C.dim, letterSpacing: 0.5, marginBottom: 8 }}>
+            <span>{DATA_TITLE[l2]}</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /></svg>
+          </div>
+          {rows.map((r) => (
+            <div key={r.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: C.dim }}>{r.label}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: r.value ? C.gold : C.dim, filter: r.value ? "blur(5px)" : "none", userSelect: "none" }}>
+                {r.value || "—"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Kopf: Stift-Symbol als Ausweg zum Formular */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "16px 0 0", zIndex: 1 }}>
+        <div data-ai-manual onClick={onManual} style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0.6 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Mitte: nur der Orb — das Gespräch führt die Stimme */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 1, paddingBottom: 150 }}>
+        <AsfitOrb state={state} size={230} onClick={() => needsTap && startByTap()} />
+      </div>
+    </div>
+  );
 }
 
 const FIELD_LABELS = {

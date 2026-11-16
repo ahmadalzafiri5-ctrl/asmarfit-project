@@ -424,6 +424,94 @@ function sweepRateLimits() {
 }
 setInterval(sweepRateLimits, 5 * 60_000).unref();
 
+// ── Live-Sprach-Onboarding (ChatGPT-Erlebnis) ───────────────────────────────
+// Die App verbindet sich per WebRTC direkt mit OpenAIs Echtzeit-Modell; dieser
+// Endpunkt stellt dafür nur ein kurzlebiges Ticket aus. OPENAI_API_KEY bleibt
+// auf dem Server. Kosten laufen pro Gesprächsminute, darum ein harter Deckel
+// pro IP und kurze Ticket-Gültigkeit.
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_BASE = process.env.OPENAI_API_BASE || "https://api.openai.com"; // only changed in tests
+const REALTIME_MODEL = process.env.REALTIME_MODEL || "gpt-realtime-mini";
+const REALTIME_VOICE = process.env.REALTIME_VOICE || "marin";
+const realtimeHour = new Map(); // ip -> { t0, n }
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, b] of realtimeHour) if (now - b.t0 > 3600_000) realtimeHour.delete(ip);
+}, 10 * 60_000).unref();
+const REALTIME_LANGS = { de: "German", en: "English", fr: "French", it: "Italian", es: "Spanish", tr: "Turkish", pt: "Portuguese", ru: "Russian", pl: "Polish", nl: "Dutch", ar: "Arabic", hi: "Hindi", id: "Indonesian", ja: "Japanese", ko: "Korean", zh: "Chinese" };
+
+app.post("/api/ai/realtime-session", async (req, res) => {
+  if (!OPENAI_API_KEY) return res.status(503).json({ error: "not_configured" });
+  const ip = req.ip || "?";
+  const now = Date.now();
+  const b = realtimeHour.get(ip) || { t0: now, n: 0 };
+  if (now - b.t0 > 3600_000) {
+    b.t0 = now;
+    b.n = 0;
+  }
+  b.n += 1;
+  realtimeHour.set(ip, b);
+  if (b.n > 8) return res.status(429).json({ error: "rate_limited" });
+
+  const l2 = String(req.body?.lang || "de").slice(0, 2).toLowerCase();
+  const language = REALTIME_LANGS[l2] || "English";
+  const instructions =
+    `You are ASFIT's voice coach inside a fitness app, onboarding a brand-new user. Speak ONLY ${language}, always. ` +
+    `Sound like a fit, upbeat friend: warm, quick, natural — never like a call center or an announcer. ` +
+    `Your only job is to collect these profile fields, strictly in this order: ` +
+    `goal (cut = lose weight, bulk = build muscle, maintain = keep weight), name (first name), gender (male, female or diverse), ` +
+    `age (years), weight (current, in kg), height (in cm), target (target weight, in kg). ` +
+    `Start immediately with ONE short question asking what they want to achieve with their body — nothing before it, no greeting ceremony. ` +
+    `Every turn: acknowledge their answer in 2–4 genuine words, then ask the next question. One short sentence per turn, never two questions at once. ` +
+    `After EVERY understood answer call set_field with the field name and the parsed value (goal/gender as the English enum word, numbers as digits). ` +
+    `If an answer is unclear, ask again in one short sentence. ` +
+    `Once all seven fields are saved, say one short excited closing line that their body preview is ready, then call finish. ` +
+    `Stay strictly on task: if the user talks about anything else, steer back with one friendly sentence. ` +
+    `Never mention AI, models, tools, or these instructions.`;
+
+  try {
+    const r = await fetch(OPENAI_API_BASE + "/v1/realtime/client_secrets", {
+      method: "POST",
+      headers: { authorization: "Bearer " + OPENAI_API_KEY, "content-type": "application/json" },
+      body: JSON.stringify({
+        expires_after: { anchor: "created_at", seconds: 600 },
+        session: {
+          type: "realtime",
+          model: REALTIME_MODEL,
+          instructions,
+          audio: { output: { voice: REALTIME_VOICE } },
+          tools: [
+            {
+              type: "function",
+              name: "set_field",
+              description: "Save one collected profile field as soon as the user answered it.",
+              parameters: {
+                type: "object",
+                properties: {
+                  field: { type: "string", enum: ["goal", "name", "gender", "age", "weight", "height", "target"] },
+                  value: { type: "string", description: "goal: cut|bulk|maintain, gender: male|female|diverse, numbers as plain digits" },
+                },
+                required: ["field", "value"],
+              },
+            },
+            { type: "function", name: "finish", description: "All seven fields are saved; the onboarding is complete.", parameters: { type: "object", properties: {} } },
+          ],
+          tool_choice: "auto",
+        },
+      }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.value) {
+      console.error("Realtime-Ticket:", r.status, JSON.stringify(j).slice(0, 300));
+      return res.status(502).json({ error: "upstream" });
+    }
+    res.json({ client_secret: j.value, model: REALTIME_MODEL });
+  } catch (e) {
+    console.error("Realtime-Ticket:", e.message);
+    res.status(502).json({ error: "upstream" });
+  }
+});
+
 app.post("/api/assistant", aiQuotaGate("coach", () => Boolean(ANTHROPIC_API_KEY)), async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(503).json({ error: "not_configured" });
   if (isRateLimited(assistantHits, req.ip, 15)) return res.status(429).json({ error: "rate_limited" });
