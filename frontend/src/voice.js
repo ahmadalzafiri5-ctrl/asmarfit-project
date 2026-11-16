@@ -146,6 +146,12 @@ export async function playClip(lang, id, onEnd = null) {
   try {
     const k = await clipLang(lang, id);
     if (!audioCtx || !k) return false;
+    // Nach der Autoplay-Freigabe kann der Kontext noch einen Moment "suspended" sein
+    if (audioCtx.state === "suspended") {
+      try {
+        await audioCtx.resume();
+      } catch {}
+    }
     const buf = await decodeClip(clipUrl(k, id));
     if (!buf) return false;
     if (my !== playSeq) return true; // a newer announcement took over while this one was loading

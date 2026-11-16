@@ -653,9 +653,11 @@ function AiVoiceOnboarding({ lang, onDone, onManual }) {
   const [data, setData] = useState({});
   const [fails, setFails] = useState(0);
   const [typed, setTyped] = useState("");
+  const [caption, setCaption] = useState("");
   const recRef = useRef(null);
   const stepRef = useRef("goal");
   const dataRef = useRef({});
+  const failsRef = useRef(0);
 
   const ORDER = ["goal", "name", "gender", "age", "weight", "height", "target"];
   const qOf = (s) => ({ goal: t.welcome, name: t.qName, gender: t.qGender, age: t.qAge, weight: t.qWeight, height: t.qHeight, target: t.qTarget }[s]);
@@ -675,6 +677,7 @@ function AiVoiceOnboarding({ lang, onDone, onManual }) {
       // Zwischenergebnisse: Eindeutige Antworten werden SOFORT übernommen,
       // ohne auf die Sprechpause zu warten — fühlt sich an wie ein Gespräch.
       r.interimResults = true;
+      r.continuous = true; // nicht nach der ersten Pause aufgeben — zuhören wie ein Gesprächspartner
       r.maxAlternatives = 1;
       let got = false;
       let settled = false;
@@ -686,8 +689,18 @@ function AiVoiceOnboarding({ lang, onDone, onManual }) {
         try {
           r.abort();
         } catch {}
-        setState("idle");
-        setFails((f) => f + 1);
+        failsRef.current += 1;
+        setFails(failsRef.current);
+        // Wie ein echtes Gespräch: das Mikrofon öffnet sich von selbst wieder —
+        // erst nach vielen stillen Versuchen wartet der Orb auf einen Tipp.
+        const s = stepRef.current;
+        if (failsRef.current < 6 && s !== "final" && s !== "preview") {
+          setTimeout(() => {
+            if (stepRef.current === s) listen();
+          }, 300);
+        } else {
+          setState("idle");
+        }
       };
       const accept = (text) => {
         if (settled) return;
@@ -738,11 +751,21 @@ function AiVoiceOnboarding({ lang, onDone, onManual }) {
     }
   };
 
-  // Spricht eine Zeile: zuerst der Studio-Clip (ob_<id>), sonst die Gerätestimme.
+  // Spricht eine Zeile — NUR mit dem Studio-Clip (ob_<id>). Die Roboter-Gerätestimme
+  // kommt nie zum Einsatz: klappt der Clip nicht, kurzer zweiter Versuch, danach
+  // erscheint die Frage als Text und das Mikrofon öffnet trotzdem.
   const sayLine = (id, text, after) => {
     setState("speak");
+    setCaption("");
     playClip(l2, id, after).then((played) => {
-      if (!played) speak(text, l2, { onEnd: after });
+      if (played) return;
+      setTimeout(() => {
+        playClip(l2, id, after).then((again) => {
+          if (again) return;
+          setCaption(text);
+          if (after) after();
+        });
+      }, 350);
     });
   };
 
@@ -831,6 +854,7 @@ function AiVoiceOnboarding({ lang, onDone, onManual }) {
     }
     dataRef.current = d;
     setData(d);
+    failsRef.current = 0;
     setFails(0);
     const i = ORDER.indexOf(s);
     const nx = ORDER[i + 1];
@@ -906,6 +930,12 @@ function AiVoiceOnboarding({ lang, onDone, onManual }) {
       {/* Mitte: nur der Orb — die Stimme führt, kein Text */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 1, paddingBottom: 150 }}>
         <AsfitOrb state={state} size={230} onClick={() => (needsTap ? startByTap() : state !== "speak" && listen())} />
+        {/* Nur wenn der Sprach-Clip nicht abspielbar war: Frage als Text zeigen (nie Roboterstimme) */}
+        {caption && (
+          <div style={{ marginTop: 18, maxWidth: 320, textAlign: "center", fontFamily: "Sora, sans-serif", fontSize: 15.5, fontWeight: 600, color: C.text, animation: "aiFade .4s ease" }}>
+            {caption}
+          </div>
+        )}
         {/* Fallback erst, wenn das Mikrofon mehrfach nicht klappt (oder es keins gibt) */}
         {fails >= 2 && state !== "speak" && (
           <div style={{ display: "flex", gap: 8, marginTop: 20, width: "100%", maxWidth: 320 }}>
