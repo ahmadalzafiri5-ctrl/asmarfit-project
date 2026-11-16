@@ -668,20 +668,25 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
 
   const connect = async () => {
     try {
-      const sRes = await fetch(API_BASE + "/api/ai/realtime-session", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ lang: l2 }),
-      });
-      if (!sRes.ok) return fallback();
-      const { client_secret, model } = await sRes.json();
-      // Echo-Entfernung ist entscheidend: ohne sie hört die KI ihre eigene
-      // Stimme aus dem Lautsprecher und fühlt sich ständig unterbrochen.
-      const mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
-      if (fellRef.current) {
+      // Ticket und Mikrofon-Freigabe GLEICHZEITIG: die Browser-Anfrage erscheint
+      // sofort beim Öffnen, und während der Nutzer „Erlauben" drückt, ist das
+      // Ticket längst geholt — die KI spricht direkt danach los.
+      // (Echo-Entfernung ist entscheidend: ohne sie hört die KI ihre eigene
+      // Stimme aus dem Lautsprecher und fühlt sich ständig unterbrochen.)
+      const [sRes, mic] = await Promise.all([
+        fetch(API_BASE + "/api/ai/realtime-session", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ lang: l2 }),
+        }),
+        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }),
+      ]);
+      if (!sRes.ok || fellRef.current) {
         mic.getTracks().forEach((t) => t.stop());
+        if (!fellRef.current) fallback();
         return;
       }
+      const { client_secret, model } = await sRes.json();
       const pc = new RTCPeerConnection();
       const audioEl = new Audio();
       audioEl.autoplay = true;
