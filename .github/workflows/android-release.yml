@@ -1,6 +1,6 @@
 # Baut das Android App Bundle (.aab) fuer Google Play: Store-Variante (Einnahme-Tagebuch nur mit freiverkaeuflichen Mitteln), signiert mit dem
 # Upload-Schluessel aus den Secrets. Ohne die Secrets baut der Lauf trotzdem (unsigniert, nur zur Probe).
-# Stand: 1.0.19 (Voice-Onboarding: Sofort-Reaktion, kurze Eroeffnung, lebendigere Clips)
+# Stand: 1.0.20 (Live-Sprach-Onboarding: echtes Echtzeit-Gespraech, Cedar-Stimme, Sofort-Start)
 # Ergebnis: Actions -> (Lauf anklicken) -> unten "Artifacts" -> ASFIT-android-store-aab
 #
 # Secrets (Anleitung: frontend/APP-STORES.md):
@@ -134,7 +134,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-# Build-Trigger: Release 1.0.19 am 16.11.2026
+# Build-Trigger: Release 1.0.20 am 17.11.2026
 
 
 
