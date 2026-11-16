@@ -28,7 +28,7 @@ const AI = {
     pickAiSub: "Die KI fragt dich alles — du antwortest einfach",
     pickManual: "Manuell ausfüllen",
     pickManualSub: "Klassisch mit Formular",
-    welcome: "Willkommen bei ASFIT! Was möchtest du mit deinem Körper erreichen — abnehmen, Muskeln aufbauen oder dein Gewicht halten?",
+    welcome: "Was möchtest du mit deinem Körper erreichen?",
     qName: "Stark! Und wie heisst du?",
     qGender: "Bist du männlich, weiblich oder divers?",
     qAge: "Wie alt bist du?",
@@ -58,7 +58,7 @@ const AI = {
     pickAiSub: "The AI asks you everything — just answer",
     pickManual: "Fill in manually",
     pickManualSub: "Classic form",
-    welcome: "Welcome to ASFIT! What do you want to achieve with your body — lose weight, build muscle, or maintain?",
+    welcome: "What do you want to achieve with your body?",
     qName: "Great! What's your name?",
     qGender: "Are you male, female or diverse?",
     qAge: "How old are you?",
@@ -83,7 +83,7 @@ const AI = {
     skip: "Fill in manually instead",
   },
   fr: {
-    welcome: "Bienvenue chez ASFIT ! Que veux-tu accomplir avec ton corps — perdre du poids, prendre du muscle ou maintenir ton poids ?",
+    welcome: "Que veux-tu accomplir avec ton corps ?",
     qName: "Super ! Et comment tu t'appelles ?",
     qGender: "Tu es un homme, une femme ou divers ?",
     qAge: "Quel âge as-tu ?",
@@ -108,7 +108,7 @@ const AI = {
     skip: "Remplir manuellement",
   },
   it: {
-    welcome: "Benvenuto in ASFIT! Cosa vuoi ottenere con il tuo corpo — dimagrire, mettere su muscoli o mantenere il peso?",
+    welcome: "Cosa vuoi ottenere con il tuo corpo?",
     qName: "Ottimo! E come ti chiami?",
     qGender: "Sei maschio, femmina o diverso?",
     qAge: "Quanti anni hai?",
@@ -133,7 +133,7 @@ const AI = {
     skip: "Compila manualmente",
   },
   es: {
-    welcome: "¡Bienvenido a ASFIT! ¿Qué quieres lograr con tu cuerpo — bajar de peso, ganar músculo o mantenerte?",
+    welcome: "¿Qué quieres lograr con tu cuerpo?",
     qName: "¡Genial! ¿Y cómo te llamas?",
     qGender: "¿Eres hombre, mujer o diverso?",
     qAge: "¿Cuántos años tienes?",
@@ -158,7 +158,7 @@ const AI = {
     skip: "Rellenar manualmente",
   },
   tr: {
-    welcome: "ASFIT'e hoş geldin! Vücudunla neyi başarmak istiyorsun — kilo vermek, kas yapmak yoksa kilonu korumak mı?",
+    welcome: "Vücudunla neyi başarmak istiyorsun?",
     qName: "Harika! Peki adın ne?",
     qGender: "Erkek misin, kadın mısın yoksa diğer mi?",
     qAge: "Kaç yaşındasın?",
@@ -183,7 +183,7 @@ const AI = {
     skip: "Manuel doldur",
   },
   pt: {
-    welcome: "Bem-vindo ao ASFIT! O que você quer alcançar com o seu corpo — perder peso, ganhar músculo ou manter o peso?",
+    welcome: "O que você quer alcançar com o seu corpo?",
     qName: "Ótimo! E qual é o seu nome?",
     qGender: "Você é homem, mulher ou outro?",
     qAge: "Quantos anos você tem?",
@@ -208,7 +208,7 @@ const AI = {
     skip: "Preencher manualmente",
   },
   ru: {
-    welcome: "Добро пожаловать в ASFIT! Чего ты хочешь добиться со своим телом — похудеть, набрать мышцы или удержать вес?",
+    welcome: "Чего ты хочешь добиться со своим телом?",
     qName: "Отлично! А как тебя зовут?",
     qGender: "Ты мужчина, женщина или другое?",
     qAge: "Сколько тебе лет?",
@@ -233,7 +233,7 @@ const AI = {
     skip: "Заполнить вручную",
   },
   pl: {
-    welcome: "Witaj w ASFIT! Co chcesz osiągnąć ze swoim ciałem — schudnąć, zbudować mięśnie czy utrzymać wagę?",
+    welcome: "Co chcesz osiągnąć ze swoim ciałem?",
     qName: "Super! A jak masz na imię?",
     qGender: "Jesteś mężczyzną, kobietą czy osobą inną?",
     qAge: "Ile masz lat?",
@@ -258,7 +258,7 @@ const AI = {
     skip: "Wypełnij ręcznie",
   },
   nl: {
-    welcome: "Welkom bij ASFIT! Wat wil je met je lichaam bereiken — afvallen, spieren opbouwen of je gewicht behouden?",
+    welcome: "Wat wil je met je lichaam bereiken?",
     qName: "Super! En hoe heet je?",
     qGender: "Ben je een man, een vrouw of anders?",
     qAge: "Hoe oud ben je?",
@@ -283,7 +283,7 @@ const AI = {
     skip: "Handmatig invullen",
   },
   ar: {
-    welcome: "مرحبًا بك في ASFIT! ماذا تريد أن تحقق مع جسمك — خسارة الوزن، بناء العضلات أم الحفاظ على وزنك؟",
+    welcome: "ماذا تريد أن تحقق مع جسمك؟",
     qName: "رائع! وما اسمك؟",
     qGender: "هل أنت ذكر أم أنثى أم آخر؟",
     qAge: "كم عمرك؟",
@@ -308,7 +308,7 @@ const AI = {
     skip: "التعبئة يدويًا",
   },
   hi: {
-    welcome: "ASFIT में तुम्हारा स्वागत है! तुम अपने शरीर के साथ क्या पाना चाहते हो — वज़न घटाना, मसल बनाना या वज़न बनाए रखना?",
+    welcome: "तुम अपने शरीर के साथ क्या पाना चाहते हो?",
     qName: "बढ़िया! और तुम्हारा नाम क्या है?",
     qGender: "तुम पुरुष हो, महिला या अन्य?",
     qAge: "तुम्हारी उम्र कितनी है?",
@@ -333,7 +333,7 @@ const AI = {
     skip: "ख़ुद भरो",
   },
   id: {
-    welcome: "Selamat datang di ASFIT! Apa yang ingin kamu capai dengan tubuhmu — menurunkan berat badan, membangun otot atau menjaga berat badanmu?",
+    welcome: "Apa yang ingin kamu capai dengan tubuhmu?",
     qName: "Mantap! Siapa namamu?",
     qGender: "Kamu laki-laki, perempuan atau lainnya?",
     qAge: "Berapa usiamu?",
@@ -358,7 +358,7 @@ const AI = {
     skip: "Isi manual",
   },
   ja: {
-    welcome: "ASFIT へようこそ!体でどんなことを達成したい? — 減量、筋肉をつける、それとも体重キープ?",
+    welcome: "体でどんなことを達成したい?",
     qName: "いいね!名前は何て呼べばいい?",
     qGender: "性別は男性、女性、それともその他?",
     qAge: "何歳?",
@@ -383,7 +383,7 @@ const AI = {
     skip: "手動で入力",
   },
   ko: {
-    welcome: "ASFIT에 오신 걸 환영해요! 몸으로 무엇을 이루고 싶나요 — 체중 감량, 근육 키우기, 아니면 체중 유지?",
+    welcome: "몸으로 무엇을 이루고 싶나요?",
     qName: "좋아요! 이름이 뭐예요?",
     qGender: "남성, 여성, 아니면 기타인가요?",
     qAge: "나이가 어떻게 되나요?",
@@ -408,7 +408,7 @@ const AI = {
     skip: "직접 입력하기",
   },
   zh: {
-    welcome: "欢迎来到 ASFIT！你想让自己的身体达成什么目标——减重、增肌，还是保持体重？",
+    welcome: "你想让自己的身体达成什么目标？",
     qName: "很好！你叫什么名字？",
     qGender: "你是男性、女性，还是多元性别？",
     qAge: "你多大了？",
@@ -672,27 +672,55 @@ function AiVoiceOnboarding({ lang, onDone, onManual }) {
       const r = new Rec();
       recRef.current = r;
       r.lang = srLang(lang);
-      r.interimResults = false;
+      // Zwischenergebnisse: Eindeutige Antworten werden SOFORT übernommen,
+      // ohne auf die Sprechpause zu warten — fühlt sich an wie ein Gespräch.
+      r.interimResults = true;
       r.maxAlternatives = 1;
       let got = false;
       let settled = false;
+      let numTimer = null;
       const fail = () => {
         if (settled) return;
         settled = true;
+        clearTimeout(numTimer);
         try {
           r.abort();
         } catch {}
         setState("idle");
         setFails((f) => f + 1);
       };
+      const accept = (text) => {
+        if (settled) return;
+        got = true;
+        settled = true;
+        clearTimeout(guard);
+        clearTimeout(numTimer);
+        try {
+          r.abort();
+        } catch {}
+        handleAnswer(text);
+      };
       // Zeitwächter: Wenn in 8 s weder Sprache noch Fehler kommt (z. B. Mikrofon
       // blockiert oder Freigabe hängt), gilt der Versuch als gescheitert.
       const guard = setTimeout(fail, 8000);
       r.onresult = (e) => {
-        got = true;
-        settled = true;
-        clearTimeout(guard);
-        handleAnswer(e.results[0][0].transcript);
+        if (settled) return;
+        let text = "";
+        let anyFinal = false;
+        for (let i = 0; i < e.results.length; i++) {
+          text += e.results[i][0].transcript + " ";
+          if (e.results[i].isFinal) anyFinal = true;
+        }
+        text = text.trim();
+        const s = stepRef.current;
+        if (anyFinal) return accept(text);
+        // Sofort-Übernahme aus dem Zwischenergebnis:
+        if ((s === "goal" && parseGoal(text)) || (s === "gender" && parseGender(text))) return accept(text);
+        // Zahlen: kurz warten, ob noch mehr kommt ("achtzig" statt "acht"), dann übernehmen
+        if (s !== "goal" && s !== "gender" && s !== "name" && firstNumber(text) !== null) {
+          clearTimeout(numTimer);
+          numTimer = setTimeout(() => accept(text), 600);
+        }
       };
       r.onerror = () => {
         clearTimeout(guard);

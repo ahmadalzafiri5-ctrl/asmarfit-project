@@ -17,28 +17,28 @@ const OUT = join(ROOT, "public", "voice");
 const VOICE = process.env.VOICE || "ash";
 
 const INSTR = {
-  de: "Du bist ein energiegeladener, sympathischer deutscher Personal Trainer. Sprich motivierend, warm und kraftvoll, natürliches Tempo.",
-  en: "You are an energetic, likeable personal trainer. Speak in a motivating, warm, powerful way at a natural pace.",
-  fr: "Tu es un coach sportif énergique et sympathique. Parle de façon motivante, chaleureuse et puissante, à un rythme naturel.",
-  it: "Sei un personal trainer energico e simpatico. Parla in modo motivante, caloroso e potente, a ritmo naturale.",
-  es: "Eres un entrenador personal enérgico y simpático. Habla de forma motivadora, cálida y potente, a un ritmo natural.",
-  tr: "Enerjik ve sempatik bir kişisel antrenörsün. Motive edici, sıcak ve güçlü bir şekilde, doğal bir tempoda konuş.",
-  pt: "Você é um personal trainer cheio de energia e simpático. Fale de forma motivadora, calorosa e vigorosa, em um ritmo natural.",
-  ru: "Ты энергичный и дружелюбный фитнес-тренер. Говори мотивирующе, тепло и мощно, в естественном темпе.",
-  pl: "Jesteś energicznym i sympatycznym trenerem fitness. Mów motywująco, ciepło i z mocą, w naturalnym tempie.",
-  nl: "Je bent een energieke en vriendelijke fitnesscoach. Spreek motiverend, warm en krachtig, in een natuurlijk tempo.",
-  ar: "أنت مدرب رياضي نشيط وودود. تحدث بأسلوب محفّز ودافئ وقوي، وبإيقاع طبيعي.",
-  hi: "तुम एक जोशीले और दोस्ताना फ़िटनेस कोच हो। प्रेरक, गर्मजोशी भरे और दमदार अंदाज़ में, सहज रफ़्तार से बोलो।",
-  id: "Kamu adalah pelatih kebugaran yang energik dan ramah. Bicaralah dengan nada memotivasi, hangat dan bertenaga, dengan tempo yang alami.",
-  ja: "あなたはエネルギッシュでフレンドリーなフィットネスコーチ。自然なテンポで、温かく力強く、やる気を引き出すように話して。",
-  ko: "당신은 에너지 넘치고 친근한 피트니스 코치예요. 자연스러운 속도로 따뜻하고 힘차게, 동기부여가 되도록 말하세요.",
-  zh: "你是一位充满活力、亲切友好的健身教练。说话要有感染力，温暖有力，节奏自然。",
+  de: "Du bist ein mitreißender, lebendiger Fitness-Coach. Sprich schnell, mit echter Emotion und Begeisterung — warm, dynamisch, nie monoton.",
+  en: "You are a vibrant, charismatic fitness coach. Speak fast, with real emotion and excitement — warm, dynamic, never monotone.",
+  fr: "Tu es un coach fitness vibrant et charismatique. Parle vite, avec une vraie émotion et de l'enthousiasme — chaleureux, dynamique, jamais monotone.",
+  it: "Sei un coach fitness vivace e carismatico. Parla veloce, con vera emozione ed entusiasmo — caloroso, dinamico, mai monotono.",
+  es: "Eres un coach fitness vibrante y carismático. Habla rápido, con emoción real y entusiasmo — cálido, dinámico, nunca monótono.",
+  tr: "Canlı ve karizmatik bir fitness koçusun. Hızlı, gerçek duygu ve coşkuyla konuş — sıcak, dinamik, asla monoton değil.",
+  pt: "Você é um coach fitness vibrante e carismático. Fale rápido, com emoção real e entusiasmo — caloroso, dinâmico, nunca monótono.",
+  ru: "Ты яркий, харизматичный фитнес-коуч. Говори быстро, с настоящими эмоциями и азартом — тепло, динамично, никогда монотонно.",
+  pl: "Jesteś porywającym, charyzmatycznym trenerem fitness. Mów szybko, z prawdziwymi emocjami i entuzjazmem — ciepło, dynamicznie, nigdy monotonnie.",
+  nl: "Je bent een levendige, charismatische fitnesscoach. Spreek snel, met echte emotie en enthousiasme — warm, dynamisch, nooit monotoon.",
+  ar: "أنت مدرب لياقة حيوي وجذاب. تحدث بسرعة وبعاطفة حقيقية وحماس — دافئ وديناميكي ولا رتيب أبدًا.",
+  hi: "तुम एक जोशीले, करिश्माई फिटनेस कोच हो। तेज़, सच्ची भावना और जोश के साथ बोलो — गर्मजोशी से, कभी नीरस नहीं।",
+  id: "Kamu pelatih kebugaran yang hidup dan karismatik. Bicaralah cepat, dengan emosi dan antusiasme nyata — hangat, dinamis, tidak pernah monoton.",
+  ja: "あなたは生き生きとしたカリスマフィットネスコーチ。速いテンポで、本物の感情と熱意を込めて話して — 温かくダイナミックに、決して単調にならないで。",
+  ko: "당신은 생기 넘치는 카리스마 피트니스 코치예요. 빠르게, 진짜 감정과 열정을 담아 말하세요 — 따뜻하고 다이내믹하게, 절대 단조롭지 않게.",
+  zh: "你是一位充满活力、有魅力的健身教练。语速要快，带着真实的情感和热情——温暖、有活力，绝不单调。",
 };
 
 // ---- KI-Onboarding (Stimme führt durchs Anmelden) ----
 const OB = {
   de: {
-    ob_goal: "Willkommen bei ASFIT! Was möchtest du mit deinem Körper erreichen — abnehmen, Muskeln aufbauen oder dein Gewicht halten?",
+    ob_goal: "Was möchtest du mit deinem Körper erreichen?",
     ob_name: "Stark! Und wie heisst du?",
     ob_gender: "Bist du männlich, weiblich oder divers?",
     ob_age: "Wie alt bist du?",
@@ -49,7 +49,7 @@ const OB = {
     ob_numerr: "Sag mir bitte eine Zahl — zum Beispiel achtzig.",
   },
   en: {
-    ob_goal: "Welcome to ASFIT! What do you want to achieve with your body — lose weight, build muscle, or maintain?",
+    ob_goal: "What do you want to achieve with your body?",
     ob_name: "Great! What's your name?",
     ob_gender: "Are you male, female or diverse?",
     ob_age: "How old are you?",
@@ -60,7 +60,7 @@ const OB = {
     ob_numerr: "Please tell me a number — for example eighty.",
   },
   fr: {
-    ob_goal: "Bienvenue chez ASFIT ! Que veux-tu accomplir avec ton corps — perdre du poids, prendre du muscle ou maintenir ton poids ?",
+    ob_goal: "Que veux-tu accomplir avec ton corps ?",
     ob_name: "Super ! Et comment tu t'appelles ?",
     ob_gender: "Tu es un homme, une femme ou divers ?",
     ob_age: "Quel âge as-tu ?",
@@ -71,7 +71,7 @@ const OB = {
     ob_numerr: "Dis-moi un nombre, s'il te plaît — par exemple quatre-vingts.",
   },
   it: {
-    ob_goal: "Benvenuto in ASFIT! Cosa vuoi ottenere con il tuo corpo — dimagrire, mettere su muscoli o mantenere il peso?",
+    ob_goal: "Cosa vuoi ottenere con il tuo corpo?",
     ob_name: "Ottimo! E come ti chiami?",
     ob_gender: "Sei maschio, femmina o diverso?",
     ob_age: "Quanti anni hai?",
@@ -82,7 +82,7 @@ const OB = {
     ob_numerr: "Dimmi un numero, per favore — ad esempio ottanta.",
   },
   es: {
-    ob_goal: "¡Bienvenido a ASFIT! ¿Qué quieres lograr con tu cuerpo — bajar de peso, ganar músculo o mantenerte?",
+    ob_goal: "¿Qué quieres lograr con tu cuerpo?",
     ob_name: "¡Genial! ¿Y cómo te llamas?",
     ob_gender: "¿Eres hombre, mujer o diverso?",
     ob_age: "¿Cuántos años tienes?",
@@ -93,7 +93,7 @@ const OB = {
     ob_numerr: "Dime un número, por favor — por ejemplo ochenta.",
   },
   tr: {
-    ob_goal: "ASFIT'e hoş geldin! Vücudunla neyi başarmak istiyorsun — kilo vermek, kas yapmak yoksa kilonu korumak mı?",
+    ob_goal: "Vücudunla neyi başarmak istiyorsun?",
     ob_name: "Harika! Peki adın ne?",
     ob_gender: "Erkek misin, kadın mısın yoksa diğer mi?",
     ob_age: "Kaç yaşındasın?",
@@ -104,7 +104,7 @@ const OB = {
     ob_numerr: "Lütfen bana bir sayı söyle — örneğin seksen.",
   },
   pt: {
-    ob_goal: "Bem-vindo ao ASFIT! O que você quer alcançar com o seu corpo — perder peso, ganhar músculo ou manter o peso?",
+    ob_goal: "O que você quer alcançar com o seu corpo?",
     ob_name: "Ótimo! E qual é o seu nome?",
     ob_gender: "Você é homem, mulher ou outro?",
     ob_age: "Quantos anos você tem?",
@@ -115,7 +115,7 @@ const OB = {
     ob_numerr: "Me diga um número, por favor — por exemplo oitenta.",
   },
   ru: {
-    ob_goal: "Добро пожаловать в ASFIT! Чего ты хочешь добиться со своим телом — похудеть, набрать мышцы или удержать вес?",
+    ob_goal: "Чего ты хочешь добиться со своим телом?",
     ob_name: "Отлично! А как тебя зовут?",
     ob_gender: "Ты мужчина, женщина или другое?",
     ob_age: "Сколько тебе лет?",
@@ -126,7 +126,7 @@ const OB = {
     ob_numerr: "Назови мне число, пожалуйста — например восемьдесят.",
   },
   pl: {
-    ob_goal: "Witaj w ASFIT! Co chcesz osiągnąć ze swoim ciałem — schudnąć, zbudować mięśnie czy utrzymać wagę?",
+    ob_goal: "Co chcesz osiągnąć ze swoim ciałem?",
     ob_name: "Super! A jak masz na imię?",
     ob_gender: "Jesteś mężczyzną, kobietą czy osobą inną?",
     ob_age: "Ile masz lat?",
@@ -137,7 +137,7 @@ const OB = {
     ob_numerr: "Podaj mi liczbę, proszę — na przykład osiemdziesiąt.",
   },
   nl: {
-    ob_goal: "Welkom bij ASFIT! Wat wil je met je lichaam bereiken — afvallen, spieren opbouwen of je gewicht behouden?",
+    ob_goal: "Wat wil je met je lichaam bereiken?",
     ob_name: "Super! En hoe heet je?",
     ob_gender: "Ben je een man, een vrouw of anders?",
     ob_age: "Hoe oud ben je?",
@@ -148,7 +148,7 @@ const OB = {
     ob_numerr: "Zeg me een getal, alsjeblieft — bijvoorbeeld tachtig.",
   },
   ar: {
-    ob_goal: "مرحبًا بك في ASFIT! ماذا تريد أن تحقق مع جسمك — خسارة الوزن، بناء العضلات أم الحفاظ على وزنك؟",
+    ob_goal: "ماذا تريد أن تحقق مع جسمك؟",
     ob_name: "رائع! وما اسمك؟",
     ob_gender: "هل أنت ذكر أم أنثى أم آخر؟",
     ob_age: "كم عمرك؟",
@@ -159,7 +159,7 @@ const OB = {
     ob_numerr: "قل لي رقمًا من فضلك — مثلًا ثمانين.",
   },
   hi: {
-    ob_goal: "ASFIT में तुम्हारा स्वागत है! तुम अपने शरीर के साथ क्या पाना चाहते हो — वज़न घटाना, मसल बनाना या वज़न बनाए रखना?",
+    ob_goal: "तुम अपने शरीर के साथ क्या पाना चाहते हो?",
     ob_name: "बढ़िया! और तुम्हारा नाम क्या है?",
     ob_gender: "तुम पुरुष हो, महिला या अन्य?",
     ob_age: "तुम्हारी उम्र कितनी है?",
@@ -170,7 +170,7 @@ const OB = {
     ob_numerr: "मुझे एक नंबर बताओ, प्लीज़ — जैसे अस्सी।",
   },
   id: {
-    ob_goal: "Selamat datang di ASFIT! Apa yang ingin kamu capai dengan tubuhmu — menurunkan berat badan, membangun otot atau menjaga berat badanmu?",
+    ob_goal: "Apa yang ingin kamu capai dengan tubuhmu?",
     ob_name: "Mantap! Siapa namamu?",
     ob_gender: "Kamu laki-laki, perempuan atau lainnya?",
     ob_age: "Berapa usiamu?",
@@ -181,7 +181,7 @@ const OB = {
     ob_numerr: "Sebutkan sebuah angka, ya — misalnya delapan puluh.",
   },
   ja: {
-    ob_goal: "ASFIT へようこそ!体でどんなことを達成したい? 減量、筋肉をつける、それとも体重キープ?",
+    ob_goal: "体でどんなことを達成したい?",
     ob_name: "いいね!名前は何て呼べばいい?",
     ob_gender: "性別は男性、女性、それともその他?",
     ob_age: "何歳?",
@@ -192,7 +192,7 @@ const OB = {
     ob_numerr: "数字で教えてね — 例えば、はちじゅう。",
   },
   ko: {
-    ob_goal: "ASFIT에 오신 걸 환영해요! 몸으로 무엇을 이루고 싶나요 — 체중 감량, 근육 키우기, 아니면 체중 유지?",
+    ob_goal: "몸으로 무엇을 이루고 싶나요?",
     ob_name: "좋아요! 이름이 뭐예요?",
     ob_gender: "남성, 여성, 아니면 기타인가요?",
     ob_age: "나이가 어떻게 되나요?",
@@ -203,7 +203,7 @@ const OB = {
     ob_numerr: "숫자로 말해 주세요 — 예를 들어 팔십처럼요.",
   },
   zh: {
-    ob_goal: "欢迎来到 ASFIT！你想让自己的身体达成什么目标——减重、增肌，还是保持体重？",
+    ob_goal: "你想让自己的身体达成什么目标？",
     ob_name: "很好！你叫什么名字？",
     ob_gender: "你是男性、女性，还是多元性别？",
     ob_age: "你多大了？",
@@ -314,6 +314,7 @@ for (const lang of LANGS) {
     ...(OB[lang] ? Object.entries(OB[lang]).map(([id, text]) => ({ id, text })) : []),
   ];
   if (ONLY) jobs = jobs.filter((j) => j.id === ONLY);
+  if (process.argv.includes("--ob")) jobs = jobs.filter((j) => j.id.startsWith("ob_"));
   const ids = new Set(Array.isArray(manifest[lang]) ? manifest[lang] : []);
   for (const j of jobs) {
     const out = join(dir, j.id + ".mp3");
