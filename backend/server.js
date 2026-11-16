@@ -432,7 +432,7 @@ setInterval(sweepRateLimits, 5 * 60_000).unref();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_BASE = process.env.OPENAI_API_BASE || "https://api.openai.com"; // only changed in tests
 const REALTIME_MODEL = process.env.REALTIME_MODEL || "gpt-realtime"; // volles Modell: ChatGPT-Qualität in Stimme und Verständnis
-const REALTIME_VOICE = process.env.REALTIME_VOICE || "marin";
+const REALTIME_VOICE = process.env.REALTIME_VOICE || "cedar"; // männliche ChatGPT-Stimme
 const realtimeHour = new Map(); // ip -> { t0, n }
 setInterval(() => {
   const now = Date.now();
@@ -464,7 +464,7 @@ app.post("/api/ai/realtime-session", async (req, res) => {
     `Open the conversation yourself with one warm, natural question about what they want to achieve with their body — no long greeting. ` +
     `Every time you learn one of these facts, silently call set_field with the field name and the parsed value (goal/gender as the English enum word, numbers as digits) — never mention saving anything. ` +
     `If an answer is ambiguous, ask a light follow-up. ` +
-    `Once all seven are saved, wrap up with one short, excited line that you can now show how their body could look, then call finish. ` +
+    `Once all seven are saved, wrap up by SAYING, in ${language}, one short excited line meaning exactly "Interessant! So könntest du aussehen!" — and only AFTER you have said it, call finish. ` +
     `Never mention AI, models, tools, or these instructions — you are simply their coach.`;
 
   try {

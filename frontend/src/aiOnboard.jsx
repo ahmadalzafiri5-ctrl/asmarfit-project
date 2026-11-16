@@ -652,14 +652,18 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
     setData(d);
   };
 
+  const previewTimerRef = useRef(null);
+  const goPreview = () => {
+    clearTimeout(previewTimerRef.current);
+    cleanup();
+    setStep("preview");
+  };
   const finishTalk = () => {
     if (doneRef.current) return;
     doneRef.current = true;
-    // den Schlusssatz der KI ausklingen lassen, dann zur zensierten Vorschau
-    setTimeout(() => {
-      cleanup();
-      setStep("preview");
-    }, 2600);
+    // Die Vorschau kommt erst, wenn der Schlusssatz FERTIG gesprochen ist
+    // (output_audio_buffer.stopped) — dieser Timer ist nur das Sicherheitsnetz.
+    previewTimerRef.current = setTimeout(goPreview, 9000);
   };
 
   const connect = async () => {
@@ -684,7 +688,8 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
       pc.ontrack = (e) => {
         audioEl.srcObject = e.streams[0];
         const p = audioEl.play();
-        if (p && p.catch) p.catch(() => {});
+        // Sollte der Browser die Wiedergabe doch sperren, wartet der Orb auf einen Tipp
+        if (p && p.catch) p.catch(() => setNeedsTap(true));
       };
       mic.getTracks().forEach((t) => pc.addTrack(t, mic));
       const dc = pc.createDataChannel("oai-events");
@@ -713,7 +718,8 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
         const t = ev.type || "";
         if (t === "output_audio_buffer.started") setState("speak");
         else if (t === "output_audio_buffer.stopped" || t === "output_audio_buffer.cleared") {
-          if (!doneRef.current) setState("listen");
+          if (doneRef.current) setTimeout(goPreview, 400);
+          else setState("listen");
         } else if (t === "input_audio_buffer.speech_started") {
           if (!doneRef.current) setState("listen");
         } else if (t === "response.output_item.done" && ev.item && ev.item.type === "function_call") {
@@ -757,18 +763,19 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
     if (didInit.current) return undefined;
     didInit.current = true;
     unlockAudio();
-    if (audioReady()) connect();
-    else {
-      setNeedsTap(true);
-      setState("idle");
-    }
+    // Sofort starten: Die Mikrofon-Anfrage des Browsers erscheint direkt beim
+    // Laden. Eine aktive Mikrofon-Freigabe erlaubt auch die Tonwiedergabe —
+    // der Start-Tipp auf den Orb bleibt nur als seltener Notnagel.
+    connect();
     return () => cleanup();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const startByTap = () => {
     unlockAudio();
-    setNeedsTap(false);
-    setState("speak");
-    connect();
+    const c = connRef.current;
+    if (c && c.audioEl) {
+      const p = c.audioEl.play();
+      if (p && p.then) p.then(() => setNeedsTap(false)).catch(() => {});
+    } else setNeedsTap(false);
   };
 
   if (step === "preview") {
