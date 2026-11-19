@@ -73,6 +73,15 @@ jobs:
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = ${GITHUB_RUN_NUMBER};/g" App.xcodeproj/project.pbxproj
           grep -m2 "MARKETING_VERSION\|CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj
 
+      - name: Neuestes Xcode waehlen (Apple verlangt das iOS-26-SDK fuer Uploads)
+        run: |
+          ls -d /Applications/Xcode*.app
+          # bewusst Xcode 26 (stabil) — eine evtl. installierte Xcode-27-BETA lehnt Apple beim Upload ab
+          NEU=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          echo "Gewaehlt: $NEU"
+          sudo xcode-select -s "$NEU"
+          xcodebuild -version
+
       - name: Archiv bauen (automatische Cloud-Signierung)
         working-directory: frontend/ios/App
         env:
