@@ -64,6 +64,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Die Kamera scannt Barcodes und fotografiert Mahlzeiten, um Kalorien zu schätzen.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Das Mikrofon ermöglicht das Sprach-Onboarding: Du sprichst mit deinem KI-Coach, statt zu tippen.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Die Spracherkennung versteht deine Antworten im Gespräch mit dem KI-Coach.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Fotos aus der Mediathek für Fortschrittsfotos, Profilbild, Rezeptfoto und die Potenzial-Vorschau.</string>
 	<key>NSHealthShareUsageDescription</key>

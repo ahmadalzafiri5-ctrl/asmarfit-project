@@ -1,5 +1,22 @@
 # ASFIT in den App Store (Apple) und in Google Play bringen
 
+## Stand 19.11.2026 — Apple-Bereitschaft
+
+Alles, was ohne aktives Apple-Konto geht, ist FERTIG:
+
+- **iOS-Projekt** (`frontend/ios/`): komplett, Bundle-ID `com.asfit.app`, alle Berechtigungs-Texte inkl. Mikrofon + Spracherkennung (neu, fürs Live-Gespräch zwingend)
+- **Neuester App-Stand enthalten:** 16 Sprachen, Live-Sprach-Onboarding (gpt-realtime/WebRTC mit Clip-Fallback), neuer Kauf-Trichter
+- **Bau-Pipeline:** GitHub-Lauf „iOS-TestFlight-Build" (`ios-release.yml`) baut auf Apple-Rechnern in der Cloud und lädt direkt zu TestFlight hoch — kein Mac nötig; `ios-build.yml` baut bei jedem iOS-Änderungs-Push unsigniert zur Probe
+- **Store-Material:** Texte, Apple-Screenshots (1290×2796 / 1242×2688), Datenschutz/Impressum — alles fertig (siehe Tabelle unten)
+
+Sobald dein Apple-Entwicklerkonto aktiv ist, fehlen nur noch diese Schritte:
+
+1. **Du:** App Store Connect öffnen → neue App anlegen (Bundle-ID com.asfit.app) → API-Schlüssel erstellen (Anleitung oben in `ios-release.yml`) → die 4 Werte als GitHub-Secrets eintragen
+2. **Claude:** TestFlight-Build auslösen, App-Store-Eintrag befüllen, einreichen
+3. **Einziger offener Bau-Punkt:** Abo-Kauf über Apple (StoreKit) statt Stripe — Apple erlaubt in der App KEINE fremden Bezahlwege. Bis das eingebaut ist, wird der Premium-Kauf in der iPhone-App ausgeblendet (sonst Ablehnung). Claude baut das analog zum fertigen Google-Play-Billing, sobald die Abo-Produkte in App Store Connect angelegt sind.
+
+**Achtung Konto-Problem (Stand 17.11.):** Die Apple-ID, die in Claudes Browser angemeldet war, hat KEINE Mitgliedschaft und keine laufende Anmeldung („Jetzt registrieren" wird angezeigt). Erst klären: Mit welcher Apple-ID wurde gekauft? Quittungs-Mail von Apple suchen (auch Spam), Kontoauszug prüfen. Geld abgebucht ohne Mitgliedschaft → reportaproblem.apple.com; nichts abgebucht → einfach neu registrieren (am besten über die „Apple Developer"-App auf einem iPhone).
+
 Kurzfassung: Google Play geht von deinem Windows-PC aus. Für Apple braucht es ein Apple-Entwicklerkonto und einen Mac zum Bauen, oder wir bauen auf GitHub (dort gibt es Mac-Rechner). Beides erledigt sich nicht an einem Tag; die Prüfung durch Apple und Google dauert jeweils Tage.
 
 ## Was bei beiden gleich ist
