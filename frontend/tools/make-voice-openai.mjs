@@ -14,7 +14,7 @@ import { execSync } from "child_process";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "public", "voice");
-const VOICE = process.env.VOICE || "ash";
+const VOICE = process.env.VOICE || "cedar"; // ChatGPT-Männerstimme — dieselbe wie im Live-Gespräch (aiOnboard)
 
 const INSTR = {
   de: "Du bist ein mitreißender, lebendiger Fitness-Coach. Sprich schnell, mit echter Emotion und Begeisterung — warm, dynamisch, nie monoton.",
