@@ -1203,6 +1203,9 @@ const STR = {
     friendsHow3: "Paste their code below. Done — you both see the duel.",
     friendsPendingTitle: "Duel sent",
     friendsPendingBody: "Waiting for your friend's reply code — paste it below and your duel appears here.",
+    friendsAccepted: "accepted your duel — you both see it now! 🎉",
+    friendsReplyTitle: "Send your stats back 🤝",
+    friendsReplyHint: "Your friend sees the duel only once you share your stats back — one tap:",
     premiumTitle: "ASFIT Premium",
     premiumSub: "Unlock all AI features",
     premiumFeatTitle: "What you get",
@@ -2502,6 +2505,9 @@ const STR = {
     friendsHow3: "Füge seinen Code unten ein. Fertig — ihr seht beide das Duell.",
     friendsPendingTitle: "Duell gesendet",
     friendsPendingBody: "Warte auf den Antwort-Code deines Freundes — füge ihn unten ein, dann erscheint euer Duell hier.",
+    friendsAccepted: "hat dein Duell angenommen — ihr seht es jetzt beide! 🎉",
+    friendsReplyTitle: "Schick deinen Stand zurück 🤝",
+    friendsReplyHint: "Dein Freund sieht das Duell erst, wenn du deinen Stand zurückschickst — ein Tipp genügt:",
     premiumTitle: "ASFIT Premium",
     premiumSub: "Alle KI-Funktionen freischalten",
     premiumFeatTitle: "Das bekommst du",
@@ -4856,12 +4862,17 @@ function TodayOpen({ t, lang, cfg, info, hideIntake, onGo, onSettings }) {
   );
 }
 
-function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, weeklyCard = null, onReviewDone = () => {}, onReviewApply = () => {}, onOpenFasting = () => {}, steps, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings, premium = false, onUpsell = () => {} }) {
+function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals, weightLog, workoutHistory, notes, waterMl, onAddWater, onUndoWater, lastWaterMl, onSaveWaterGoal, onOpenAssistant, onQuick = () => {}, onOpenGoals = () => {}, weeklyCard = null, onReviewDone = () => {}, onReviewApply = () => {}, onOpenFasting = () => {}, steps, healthKcal = 0, stepsSource, stepsGoal, onSaveStepsGoal, onConnectSteps, onSaveSteps, history, streak, onOpenHistory, backupDue, onOpenBackup, intakeDue = [], onOpenIntake, intakeShow = false, intakeCount = 0, lang = "de", todayCfg, todayInfo, onTodayGo, onTodaySettings, premium = false, onUpsell = () => {} }) {
   const kcalGoal = profile.kcalGoal;
   const kcalEaten = sumMeals(meals, "kcal");
   const todayStr = new Date().toDateString();
-  const workoutKcalToday = workoutHistory.filter((wo) => new Date(wo.dateISO).toDateString() === todayStr).reduce((sum, wo) => sum + (wo.burnedKcal || 0), 0);
-  const kcalBurned = workoutKcalToday + stepsKcal(steps, profile.weight);
+  const todaysWorkouts = workoutHistory.filter((wo) => new Date(wo.dateISO).toDateString() === todayStr);
+  const workoutKcalToday = todaysWorkouts.reduce((sum, wo) => sum + (wo.burnedKcal || 0), 0);
+  // Liegt der echte Aktivitäts-Verbrauch aus Apple/Google Health vor, zählt er statt der
+  // Schritt-Schätzung. Aus Health importierte Trainings stecken darin schon drin — nur
+  // in der App erfasste Workouts kommen obendrauf (keine Doppelzählung).
+  const manualWorkoutKcal = todaysWorkouts.filter((wo) => !wo.imported).reduce((sum, wo) => sum + (wo.burnedKcal || 0), 0);
+  const kcalBurned = healthKcal > 0 ? Math.round(healthKcal) + manualWorkoutKcal : workoutKcalToday + stepsKcal(steps, profile.weight);
   const proteinEaten = sumMeals(meals, "protein");
   const carbsEaten = sumMeals(meals, "carbs");
   const fatEaten = sumMeals(meals, "fat");
@@ -6113,10 +6124,12 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
   const [range, setRange] = useState(3);
   const [slider, setSlider] = useState(50);
   const [compareId, setCompareId] = useState(null);
+  const [beforeId, setBeforeId] = useState(null); // Vorher frei wählbar (Standard: ältestes Foto)
+  const [photoDate, setPhotoDate] = useState(() => dateKey(new Date())); // Aufnahmedatum fürs nächste Foto
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const sorted = [...photos].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-  const before = sorted[0] || null;
+  const before = sorted.find((p) => p.id === beforeId) || sorted[0] || null;
   const after = sorted.find((p) => p.id === compareId) || sorted[sorted.length - 1] || null;
   const fmtDate = (iso) => new Date(iso).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short", year: "numeric" });
 
@@ -6135,7 +6148,9 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
     }
   };
   const saveCropped = (dataUrl) => {
-    onAddPhoto({ id: Date.now(), dateISO: new Date().toISOString(), dataUrl });
+    // Aufnahmedatum frei wählbar — so lassen sich auch ältere Fotos korrekt einsortieren
+    const iso = /^\d{4}-\d{2}-\d{2}$/.test(photoDate) ? new Date(photoDate + "T12:00").toISOString() : new Date().toISOString();
+    onAddPhoto({ id: Date.now(), dateISO: iso, dataUrl });
     // A photo you just added should always show up as "after" — otherwise
     // an earlier tap on an older thumbnail keeps overriding new uploads.
     setCompareId(null);
@@ -6308,9 +6323,11 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
                     onClick={() => setCompareId(p.id)}
                     style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: isAfterSel ? `2px solid ${COLORS.gold}` : isBefore ? "2px solid #8E97A3" : `2px solid ${COLORS.border}` }}
                   />
-                  <div style={{ display: "flex", gap: 3, justifyContent: "center", marginTop: 4 }}>
-                    {isBefore && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#8E97A3" }} />}
-                    {isAfterSel && <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.gold }} />}
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9.5, color: COLORS.dim, textAlign: "center", marginTop: 3 }}>{new Date(p.dateISO).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short" })}</div>
+                  {/* Vorher/Nachher frei wählbar: grauer Punkt = Vorher, goldener Punkt = Nachher */}
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 3 }}>
+                    <span data-set-before={p.id} onClick={() => setBeforeId(p.id)} title={t.progressBefore} style={{ width: 12, height: 12, borderRadius: "50%", cursor: "pointer", background: isBefore ? "#8E97A3" : "transparent", border: "2px solid #8E97A3" }} />
+                    <span data-set-after={p.id} onClick={() => setCompareId(p.id)} title={t.progressAfter} style={{ width: 12, height: 12, borderRadius: "50%", cursor: "pointer", background: isAfterSel ? COLORS.gold : "transparent", border: `2px solid ${COLORS.gold}` }} />
                   </div>
                   <div
                     onClick={() => onDeletePhoto(p.id)}
@@ -6343,6 +6360,11 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
 
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, margin: "16px 0 8px" }}>
           {sorted.length === 0 ? t.progressAddFirst : t.progressAddAnother}
+        </div>
+        {/* Aufnahmedatum des nächsten Fotos — ältere Bilder landen damit an der richtigen Stelle */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{t.cheatDate}</span>
+          <input data-photo-date type="date" value={photoDate} max={dateKey(new Date())} onChange={(e) => e.target.value && setPhotoDate(e.target.value)} style={{ ...numInputStyle, flex: 1, padding: "9px 10px" }} />
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
@@ -12504,7 +12526,7 @@ function AvatarCircle({ url, name, size = 40, ring = COLORS.border }) {
   );
 }
 
-function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, rivals, duelSent = null, onDismissPending = () => {}, onShareMine, onShareHistory, onImportText, onRemove, feeds = [], onRemoveFeed, myHistoryCount = 0, challenge = null, myChal = { tr: 0, days: 0 }, onShareChallenge = () => {}, onRemoveChallenge = () => {} }) {
+function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, rivals, duelSent = null, needsReply = false, onDismissPending = () => {}, onShareMine, onShareHistory, onImportText, onRemove, feeds = [], onRemoveFeed, myHistoryCount = 0, challenge = null, myChal = { tr: 0, days: 0 }, onShareChallenge = () => {}, onRemoveChallenge = () => {} }) {
   const [text, setText] = useState("");
   const [msg, setMsg] = useState(null);
   const ageText = (ts) => {
@@ -12562,6 +12584,17 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
               <div style={{ ...small, lineHeight: 1.45, paddingTop: 2 }}>{s}</div>
             </div>
           ))}
+        </Card>
+      )}
+
+      {/* Angefragte Seite: Stand zurückschicken, damit BEIDE das Duell sehen */}
+      {needsReply && (
+        <Card data-duel-reply style={{ marginBottom: 14, border: `1.5px solid ${COLORS.gold}` }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{t.friendsReplyTitle}</div>
+          <div style={{ ...small, lineHeight: 1.45, marginBottom: 10 }}>{t.friendsReplyHint}</div>
+          <button onClick={onShareMine} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+            {t.friendsShareMine}
+          </button>
         </Card>
       )}
 
@@ -14791,6 +14824,8 @@ export default function AsmarFitApp() {
   const [rivals, setRivals] = usePersisted("rivals", []);
   // Nach "Duell senden": Platzhalter in meiner Liste, bis der Antwort-Code des Freundes kommt
   const [duelSent, setDuelSent] = usePersisted("duelSent", null);
+  // Angefragte Seite: solange true, erinnert eine Karte daran, den eigenen Stand zurückzuschicken
+  const [duelNeedsReply, setDuelNeedsReply] = usePersisted("duelNeedsReply", false);
   // ASFIT Premium (6.90/Mt. oder 49.90/Jahr): Status lokal; Abbuchung spaeter via Store-Billing
   const [premium, setPremium] = usePersisted("premium", null);
   // Android-App: Premium zählt nur, wenn es vom Server bestätigt wurde (echter Google-Play-Kauf).
@@ -15043,6 +15078,8 @@ export default function AsmarFitApp() {
   const [waterMl, setWaterMl] = usePersistedDaily("water", 0);
   const [waterLog, setWaterLog] = usePersistedDaily("waterLog", []);
   const [steps, setSteps] = usePersistedDaily("steps", 0);
+  // Echter Aktivitaets-Kalorienverbrauch (heute) aus Apple Health / Health Connect
+  const [healthKcal, setHealthKcal] = usePersistedDaily("healthKcal", 0);
   const [stepsGoal, setStepsGoal] = usePersisted("stepsGoal", 10000);
   const historyMap = useMemo(() => buildHistory(meals, waterMl, steps), [meals, waterMl, steps]);
   const streak = useMemo(() => computeStreaks(historyMap), [historyMap]);
@@ -15191,7 +15228,7 @@ export default function AsmarFitApp() {
         setHealthInfo((h) => ({ ...h, unavailable: true }));
         return setStepsSource("unavailable");
       }
-      const wanted = ["steps", "weight", "workouts"];
+      const wanted = ["steps", "weight", "workouts", "calories"];
       const status = askPermission ? await Health.requestAuthorization({ read: wanted }) : await Health.checkAuthorization({ read: wanted });
       if (!status.readAuthorized.includes("steps")) {
         setHealthInfo((h) => ({ ...h, connected: false, granted: status.readAuthorized || [], unavailable: false }));
@@ -15202,6 +15239,15 @@ export default function AsmarFitApp() {
       const res = await Health.queryAggregated({ dataType: "steps", startDate: start.toISOString(), endDate: new Date().toISOString(), bucket: "day", aggregation: "sum" });
       setSteps(Math.round(res.samples.reduce((sum, x) => sum + (x.value || 0), 0)));
       setStepsSource("health");
+      // Aktivitaets-Kalorien (heute): echter Verbrauch von Uhr/Handy statt der Schritt-Schaetzung
+      if (status.readAuthorized.includes("calories")) {
+        try {
+          const cal = await Health.queryAggregated({ dataType: "calories", startDate: start.toISOString(), endDate: new Date().toISOString(), bucket: "day", aggregation: "sum" });
+          setHealthKcal(Math.round(cal.samples.reduce((sum, x) => sum + (x.value || 0), 0)));
+        } catch {
+          /* Kalorien sind optional — Schritte laufen weiter */
+        }
+      }
       let lastSync = healthInfoRef.current.lastSync;
       if (askPermission || Date.now() - lastExtrasRef.current > 10 * 60000) {
         try {
@@ -15488,6 +15534,7 @@ export default function AsmarFitApp() {
     // Das Duell taucht sofort auch bei mir auf ("gesendet, warte auf Antwort"),
     // nicht erst beim Freund.
     setDuelSent({ ts: Date.now() });
+    setDuelNeedsReply(false); // eigener Stand geht raus — Erinnerung erledigt
     doShare({ t: "duel", id: myId, ts: Date.now(), s: myDuelStats(), b: personalBests, a: await tinyAvatar() }, t.shareTypeDuel);
   };
   // Wochen-Challenge: eigener Stand (laufende Kalenderwoche) als Code
@@ -15550,7 +15597,15 @@ export default function AsmarFitApp() {
       setOverlay("friends");
     } else if (item.t === "duel") {
       setRivals((l) => [...l.filter((r) => r.id !== item.id), { id: item.id, name: item.from || "?", ts: item.ts, stats: item.stats, bests: item.bests, avatar: item.avatar || null }].slice(-20));
-      setDuelSent(null); // Antwort ist da — Platzhalter "Duell gesendet" verschwindet
+      if (duelSent) {
+        // Mein gesendetes Duell wurde beantwortet: Bestätigung feiern
+        setDuelSent(null);
+        flashShare("🎉 " + (item.from || "?") + " " + t.friendsAccepted);
+      } else {
+        // Ich bin die angefragte Seite: erinnern, den eigenen Stand zurückzuschicken,
+        // damit BEIDE das Duell sehen (ohne Server geht das nur über den Rückweg).
+        setDuelNeedsReply(true);
+      }
       setFriendsReturn(null);
       setOverlay("friends");
     } else if (item.t === "chal") {
@@ -15967,7 +16022,7 @@ export default function AsmarFitApp() {
         }
       : () => setOverlay(null);
   } else if (overlay === "friends") {
-    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myAvatar={profile.avatarUrl || null} myStats={myDuelStats()} rivals={rivals} duelSent={duelSent} onDismissPending={() => setDuelSent(null)} onShareMine={shareMyDuel} onShareHistory={shareMyHistory} myHistoryCount={workoutHistory.length} feeds={friendFeeds} onRemoveFeed={(id) => setFriendFeeds((l) => l.filter((f) => f.id !== id))} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} challenge={challenge} myChal={myChallengeProgress(workoutHistory, historyMap)} onShareChallenge={shareMyChallenge} onRemoveChallenge={() => setChallenge(null)} />;
+    content = <FriendsScreen t={t} lang={lang} myName={myName || profile.name || ""} setMyName={setMyName} myAvatar={profile.avatarUrl || null} myStats={myDuelStats()} rivals={rivals} duelSent={duelSent} needsReply={duelNeedsReply} onDismissPending={() => setDuelSent(null)} onShareMine={shareMyDuel} onShareHistory={shareMyHistory} myHistoryCount={workoutHistory.length} feeds={friendFeeds} onRemoveFeed={(id) => setFriendFeeds((l) => l.filter((f) => f.id !== id))} onImportText={importShareText} onRemove={(id) => setRivals((l) => l.filter((r) => r.id !== id))} challenge={challenge} myChal={myChallengeProgress(workoutHistory, historyMap)} onShareChallenge={shareMyChallenge} onRemoveChallenge={() => setChallenge(null)} />;
     topTitle = t.friendsTitle;
     showBack = () => setOverlay(friendsReturn);
   } else if (overlay === "fastfood") {
@@ -16296,6 +16351,7 @@ export default function AsmarFitApp() {
             else if (aiGate("coach")) setOverlay("assistant");
           }}
           steps={steps}
+          healthKcal={healthKcal}
           stepsSource={stepsSource}
           onConnectSteps={() => refreshSteps(true)}
           onSaveSteps={(v) => setSteps(v)}
