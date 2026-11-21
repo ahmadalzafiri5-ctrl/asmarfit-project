@@ -210,7 +210,7 @@ export const MORE_CHAINS = [
 
   /* ---------------- typical restaurants ---------------- */
   {
-    id: "g_pizzeria", name: "Pizzeria / Italiener", emoji: "🍝", color: "#C8442B", type: "world", generic: true,
+    id: "g_pizzeria", name: "Pizzeria / Italian", emoji: "🍝", color: "#C8442B", type: "world", generic: true,
     items: [
       ["margh", "Pizza Margherita (ganze)", "Pizza Margherita (whole)", "main", 800, 32, 100, 30, 1],
       ["salami", "Pizza Salami (ganze)", "Pizza salami (whole)", "main", 950, 40, 100, 42, 1],
@@ -227,7 +227,7 @@ export const MORE_CHAINS = [
     ],
   },
   {
-    id: "g_sushi", name: "Sushi / Japanisch", emoji: "🍣", color: "#2F6EBA", type: "asian", generic: true,
+    id: "g_sushi", name: "Sushi / Japanese", emoji: "🍣", color: "#2F6EBA", type: "asian", generic: true,
     items: [
       ["nigiri", "Nigiri Lachs (2 Stk.)", "Salmon nigiri (2 pcs)", "main", 120, 8, 18, 2, 4, 0.3],
       ["maki", "Maki Lachs (6 Stk.)", "Salmon maki (6 pcs)", "main", 200, 9, 36, 2, 3, 0.5],
@@ -243,7 +243,7 @@ export const MORE_CHAINS = [
     ],
   },
   {
-    id: "g_china", name: "Chinesisch", emoji: "🥢", color: "#C9302C", type: "asian", generic: true,
+    id: "g_china", name: "Chinese", emoji: "🥢", color: "#C9302C", type: "asian", generic: true,
     items: [
       ["friedrice", "Gebratener Reis mit Poulet", "Chicken fried rice", "main", 700, 28, 90, 24, 1],
       ["noodles", "Gebratene Nudeln", "Fried noodles", "main", 750, 25, 100, 28, 1],
@@ -259,7 +259,7 @@ export const MORE_CHAINS = [
     ],
   },
   {
-    id: "g_india", name: "Indisch", emoji: "🍛", color: "#D4801A", type: "asian", generic: true,
+    id: "g_india", name: "Indian", emoji: "🍛", color: "#D4801A", type: "asian", generic: true,
     items: [
       ["butter", "Butter Chicken", "Butter chicken", "main", 550, 35, 20, 36, 1],
       ["tikka", "Chicken Tikka Masala", "Chicken tikka masala", "main", 500, 36, 22, 30, 1],
@@ -290,7 +290,7 @@ export const MORE_CHAINS = [
     ],
   },
   {
-    id: "g_ramen", name: "Ramen / Japanische Küche", emoji: "🍜", color: "#B5651D", type: "asian", generic: true,
+    id: "g_ramen", name: "Ramen / Japanese", emoji: "🍜", color: "#B5651D", type: "asian", generic: true,
     items: [
       ["tonkotsu", "Tonkotsu Ramen", "Tonkotsu ramen", "main", 800, 35, 85, 35, 1],
       ["shoyu", "Shoyu Ramen", "Shoyu ramen", "main", 550, 28, 70, 17, 1],
@@ -304,7 +304,7 @@ export const MORE_CHAINS = [
     ],
   },
   {
-    id: "g_mexico", name: "Mexikanisch (Restaurant)", emoji: "🌮", color: "#2C8A3D", type: "mexican", generic: true,
+    id: "g_mexico", name: "Mexican (restaurant)", emoji: "🌮", color: "#2C8A3D", type: "mexican", generic: true,
     items: [
       ["burrito", "Burrito (Poulet)", "Chicken burrito", "main", 800, 38, 85, 32, 1],
       ["tacos", "Tacos (3 Stk.)", "Tacos (3 pcs)", "main", 600, 30, 55, 28, 1],
@@ -318,7 +318,7 @@ export const MORE_CHAINS = [
     ],
   },
   {
-    id: "g_greek", name: "Griechisch", emoji: "🥙", color: "#1F6FB5", type: "world", generic: true,
+    id: "g_greek", name: "Greek", emoji: "🥙", color: "#1F6FB5", type: "world", generic: true,
     items: [
       ["gyros", "Gyros-Teller mit Reis & Pommes", "Gyros plate with rice & fries", "main", 1100, 45, 100, 55, 1],
       ["souvlaki", "Souvlaki-Spiess (2 Stk.)", "Souvlaki skewers (2 pcs)", "main", 400, 40, 8, 22, 2, 0.6],
@@ -348,7 +348,7 @@ export const MORE_CHAINS = [
     ],
   },
   {
-    id: "g_cafe", name: "Café / Bäckerei", emoji: "🥐", color: "#A0702A", type: "cafe", generic: true,
+    id: "g_cafe", name: "Café / Bakery", emoji: "🥐", color: "#A0702A", type: "cafe", generic: true,
     items: [
       ["cheesesand", "Käse-Sandwich", "Cheese sandwich", "main", 450, 20, 45, 20],
       ["hamtoast", "Schinken-Käse-Toast", "Ham & cheese toastie", "main", 380, 18, 36, 17],
@@ -363,7 +363,7 @@ export const MORE_CHAINS = [
     ],
   },
   {
-    id: "g_brunch", name: "Frühstück / Brunch", emoji: "🍳", color: "#E0A100", type: "cafe", generic: true,
+    id: "g_brunch", name: "Breakfast / Brunch", emoji: "🍳", color: "#E0A100", type: "cafe", generic: true,
     items: [
       ["eggs", "Rührei (3 Eier) mit Toast", "Scrambled eggs (3) with toast", "main", 450, 25, 25, 27],
       ["omelette", "Omelette Schinken & Käse", "Ham & cheese omelette", "main", 500, 32, 6, 38],

@@ -256,30 +256,12 @@ try {
 // die weiteren Sprachen liegen in eigenen Dateien und fallen bei fehlenden
 // Schlüsseln automatisch auf Englisch zurück (siehe t-useMemo).
 const EXTRA_LANGS = { fr: LANG_FR, it: LANG_IT, es: LANG_ES, tr: LANG_TR, pt: LANG_PT, ru: LANG_RU, pl: LANG_PL, nl: LANG_NL, ar: LANG_AR, hi: LANG_HI, id: LANG_ID, ja: LANG_JA, ko: LANG_KO, zh: LANG_ZH };
-const LANG_LIST = [
-  { code: "de", label: "Deutsch" },
-  { code: "en", label: "English" },
-  { code: "fr", label: "Français" },
-  { code: "it", label: "Italiano" },
-  { code: "es", label: "Español" },
-  { code: "tr", label: "Türkçe" },
-  { code: "pt", label: "Português" },
-  { code: "ru", label: "Русский" },
-  { code: "pl", label: "Polski" },
-  { code: "nl", label: "Nederlands" },
-  { code: "ar", label: "العربية" },
-  { code: "hi", label: "हिन्दी" },
-  { code: "id", label: "Bahasa Indonesia" },
-  { code: "ja", label: "日本語" },
-  { code: "ko", label: "한국어" },
-  { code: "zh", label: "中文" },
-];
+// Die App ist einsprachig Englisch (Entscheidung vom 21.11.2026); die Übersetzungs-
+// Infrastruktur bleibt stehen, damit Sprachen später per Eintrag hier zurückkommen können.
+const LANG_LIST = [{ code: "en", label: "English" }];
 // Datums-/Zahlenformate folgen der App-Sprache (nicht nur de/en)
 const localeOf = (lang) => ({ de: "de-DE", en: "en-GB", fr: "fr-FR", it: "it-IT", es: "es-ES", tr: "tr-TR", pt: "pt-BR", ru: "ru-RU", pl: "pl-PL", nl: "nl-NL", ar: "ar", hi: "hi-IN", id: "id-ID", ja: "ja-JP", ko: "ko-KR", zh: "zh-CN" }[String(lang || "en").slice(0, 2)] || "en-GB");
-const detectLang = () => {
-  const c = (typeof navigator !== "undefined" && navigator.language ? navigator.language : "de").slice(0, 2).toLowerCase();
-  return LANG_LIST.some((l) => l.code === c) ? c : "en";
-};
+const detectLang = () => "en";
 
 const STR = {
   en: {
@@ -3778,37 +3760,12 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
       <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 24px 28px", justifyContent: "center" }}>
         <div style={{ textAlign: "center", marginBottom: 30 }}>
           <img src="/icon-192.png" alt="ASFIT" style={{ width: 84, height: 84, borderRadius: 24, display: "block", margin: "0 auto 26px" }} />
-          <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>
-            {({ de: "Welche Sprache sprichst du?", fr: "Quelle langue parles-tu ?", it: "Che lingua parli?", es: "¿Qué idioma hablas?", tr: "Hangi dili konuşuyorsun?" }[lang] || "Which language do you speak?")}
-          </h2>
-          <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "8px 0 0" }}>
-            {({ de: "Die ganze App passt sich deiner Sprache an.", fr: "Toute l'app s'adapte à ta langue.", it: "Tutta l'app si adatta alla tua lingua.", es: "Toda la app se adapta a tu idioma.", tr: "Tüm uygulama diline uyum sağlar." }[lang] || "The whole app adapts to your language.")}
-          </p>
-        </div>
-        {/* Sprache als klare Auswahl-Liste mit Flaggen — jeder Nutzer MUSS hier seine Sprache antippen */}
-        <div data-ob-lang style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
-          {[
-            { code: "de", flag: "🇩🇪", label: "Deutsch" },
-            { code: "en", flag: "🇬🇧", label: "English" },
-            { code: "fr", flag: "🇫🇷", label: "Français" },
-            { code: "it", flag: "🇮🇹", label: "Italiano" },
-            { code: "es", flag: "🇪🇸", label: "Español" },
-            { code: "tr", flag: "🇹🇷", label: "Türkçe" },
-          ].map((l) => (
-            <div
-              key={l.code}
-              data-ob-lang-pick={l.code}
-              onClick={() => setLang(l.code)}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, cursor: "pointer", background: lang === l.code ? COLORS.goldSoft : COLORS.surface, border: `2px solid ${lang === l.code ? COLORS.gold : COLORS.border}` }}
-            >
-              <span style={{ fontSize: 20 }}>{l.flag}</span>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>{l.label}</span>
-            </div>
-          ))}
+          <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>Where do you live?</h2>
+          <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "8px 0 0" }}>Food suggestions and restaurants adapt to your country.</p>
         </div>
         {/* Land gleich beim Start wählbar (für Lebensmittel-Datenbank & Vorschläge); vorbelegt mit dem erkannten Land */}
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6, textAlign: "center" }}>Land · Country</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6, textAlign: "center" }}>Country</div>
           <select
             data-ob-country
             value={country || ""}
@@ -3827,7 +3784,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
           onClick={() => setLangChosen(true)}
           style={{ marginTop: 22, padding: 16, borderRadius: 16, cursor: "pointer", textAlign: "center", background: COLORS.gold, color: COLORS.bg, fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700 }}
         >
-          {({ de: "Weiter", fr: "Continuer", it: "Avanti", es: "Continuar", tr: "Devam" }[lang] || "Continue")}
+          Continue
         </div>
       </div>
     );
@@ -14798,7 +14755,9 @@ export default function AsmarFitApp() {
   useEffect(() => {
     applySection(tab);
   }, [tab]);
-  const [lang, setLang] = usePersisted("lang", detectLang());
+  const [storedLang, setLang] = usePersisted("lang", detectLang());
+  // Nur noch Englisch: eine frueher gespeicherte andere Sprache wird ignoriert
+  const lang = LANG_LIST.some((l) => l.code === storedLang) ? storedLang : "en";
   // Arabisch liest von rechts nach links — das Layout (Flexbox) spiegelt der
   // Browser über dir="rtl" von selbst.
   useEffect(() => {

@@ -15,3 +15,10 @@ frontend/.env.local
 
 # QA-Testkonto mit Passwort, nie committen
 frontend/testkonto-qa.txt
+
+# Kokoro-TTS: lokale Laufzeit und Modelle (zu gross fuers Repo), Hoerproben
+frontend/tools/kokoro-venv/
+frontend/tools/kokoro-models/
+frontend/tools/sample_*.wav
+frontend/tools/probe-*.mp3
+frontend/tools/texts-workout.json
