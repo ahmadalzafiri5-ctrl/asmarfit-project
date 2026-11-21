@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, Children, cloneElement, createContext, useContext } from "react";
+import { useState, useEffect, useMemo, useRef, Children, cloneElement, createContext, useContext, memo } from "react";
 import { Capacitor } from "@capacitor/core";
 import { searchBasics } from "./basics.js";
 import { CHAINS, CAT_KEYS, itemsOf, suggest, sumLines, smallestMeal, customItem, checkCatalog, catalogCounts } from "./fastfood.js";
@@ -1204,6 +1204,7 @@ const STR = {
     friendsPendingTitle: "Duel sent",
     friendsPendingBody: "Waiting for your friend's reply code — paste it below and your duel appears here.",
     friendsAccepted: "accepted your duel — you both see it now! 🎉",
+    coachPlanSaved: "Plan saved — you can find it in the Training tab.",
     friendsReplyTitle: "Send your stats back 🤝",
     friendsReplyHint: "Your friend sees the duel only once you share your stats back — one tap:",
     premiumTitle: "ASFIT Premium",
@@ -2506,6 +2507,7 @@ const STR = {
     friendsPendingTitle: "Duell gesendet",
     friendsPendingBody: "Warte auf den Antwort-Code deines Freundes — füge ihn unten ein, dann erscheint euer Duell hier.",
     friendsAccepted: "hat dein Duell angenommen — ihr seht es jetzt beide! 🎉",
+    coachPlanSaved: "Plan gespeichert — du findest ihn im Training-Tab.",
     friendsReplyTitle: "Schick deinen Stand zurück 🤝",
     friendsReplyHint: "Dein Freund sieht das Duell erst, wenn du deinen Stand zurückschickst — ein Tipp genügt:",
     premiumTitle: "ASFIT Premium",
@@ -8882,7 +8884,23 @@ function ReportAi({ t, lang, kind, content }) {
   );
 }
 
-function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, chips = [] }) {
+// [ASFIT-PLAN]{json}[/ASFIT-PLAN] am Ende einer Coach-Antwort: Plan herauslösen und
+// speichern; im Chat erscheint statt des Blocks eine Bestätigungszeile.
+const ASSIST_PLAN_RE = /\[ASFIT-PLAN\]([\s\S]*?)\[\/ASFIT-PLAN\]/;
+function applyAssistantPlan(text, onSavePlan, okLine) {
+  const m = String(text || "").match(ASSIST_PLAN_RE);
+  if (!m) return text;
+  const clean = String(text).replace(ASSIST_PLAN_RE, "").trim();
+  if (!onSavePlan) return clean;
+  let plan = null;
+  try {
+    plan = JSON.parse(m[1]);
+  } catch {}
+  const saved = plan && onSavePlan(plan);
+  return clean + (saved ? "\n\n✅ " + okLine : "");
+}
+
+function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, chips = [], onSavePlan = null }) {
   const { code: cc } = useCountry();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -8945,14 +8963,15 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
           const { done, value } = await reader.read();
           if (done) break;
           acc += dec.decode(value, { stream: true });
-          const partial = acc;
+          // der Maschinen-Block [ASFIT-PLAN]… soll beim Tippen nie aufblitzen
+          const partial = acc.replace(/\[ASFIT-PLAN\][\s\S]*$/, "").trimEnd();
           setMessages([...next, { role: "assistant", content: partial }]);
         }
-        setMessages([...next, { role: "assistant", content: acc.trim() || "…" }]);
+        setMessages([...next, { role: "assistant", content: applyAssistantPlan(acc.trim(), onSavePlan, t.coachPlanSaved) || "…" }]);
       } else {
         // Älterer Server ohne Streaming: komplette JSON-Antwort wie bisher.
         const data = await res.json();
-        setMessages([...next, { role: "assistant", content: data.reply }]);
+        setMessages([...next, { role: "assistant", content: applyAssistantPlan(data.reply, onSavePlan, t.coachPlanSaved) }]);
       }
     } catch {
       setError(t.serverError);
@@ -9019,7 +9038,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
   );
 }
 
-function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, onUpsell = () => {} }) {
+function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, onUpsell = () => {}, onSavePlan = null }) {
   // Der persönliche Modus (Coach kennt deine Daten) ist Premium; der allgemeine Coach bleibt gratis
   const personal = premium && aiOn;
   return (
@@ -9034,7 +9053,7 @@ function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, 
         </div>
         <Switch checked={personal} onChange={(v) => (premium ? setAiOn(v) : onUpsell())} />
       </div>
-      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).replace("{name}", name || "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} />
+      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).replace("{name}", name || "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} onSavePlan={onSavePlan} />
     </div>
   );
 }
@@ -10739,6 +10758,13 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
   const num = (v) => Math.max(0, Math.round(parseFloat(String(v).replace(",", ".")) || 0));
 
   const [aiLast, setAiLast] = useState(null); // the last AI recipe, so it can be reported
+  const [aiChoices, setAiChoices] = useState([]); // mehrere KI-Vorschläge zur Auswahl
+  const [aiChoiceIdx, setAiChoiceIdx] = useState(0);
+  const applyAiChoice = (r, idx) => {
+    setAiChoiceIdx(idx);
+    setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n"), image: "" });
+    setAiLast(r.name + "\n" + r.ingredients.join("\n") + "\n" + r.kcal + " kcal");
+  };
   const generate = async () => {
     const wish = aiPrompt.trim();
     if (!wish || aiBusy) return;
@@ -10756,8 +10782,9 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
       else if (!res.ok) setAiError(t.assistantError);
       else {
         const r = await res.json();
-        setForm({ name: r.name, category: r.category, kcal: String(r.kcal), protein: String(r.protein), carbs: String(r.carbs), fat: String(r.fat), ingredients: r.ingredients.join("\n"), image: "" });
-        setAiLast(r.name + "\n" + r.ingredients.join("\n") + "\n" + r.kcal + " kcal");
+        const list = Array.isArray(r.recipes) && r.recipes.length ? r.recipes : [r];
+        setAiChoices(list);
+        applyAiChoice(list[0], 0);
       }
     } catch {
       setAiError(t.serverError);
@@ -10854,6 +10881,17 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
               {aiBusy ? t.recipeAiBusy : t.recipeAiGo}
             </button>
             {aiError && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginTop: 8 }}>{aiError}</div>}
+            {/* Mehrere Vorschläge: antippen füllt das Formular mit dem jeweiligen Rezept */}
+            {aiChoices.length > 1 && (
+              <div data-ai-choices style={{ display: "flex", gap: 8, marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
+                {aiChoices.map((c, i) => (
+                  <div key={i} onClick={() => applyAiChoice(c, i)} style={{ flexShrink: 0, maxWidth: 170, padding: "9px 12px", borderRadius: 12, cursor: "pointer", background: aiChoiceIdx === i ? COLORS.goldSoft : COLORS.raised, border: `1.5px solid ${aiChoiceIdx === i ? COLORS.gold : COLORS.border}` }}>
+                    <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: COLORS.dim, marginTop: 2 }}>{c.kcal} kcal · P {c.protein} g</div>
+                  </div>
+                ))}
+              </div>
+            )}
             {aiLast && <ReportAi key={aiLast} t={t} lang={lang} kind="recipe" content={aiLast} />}
           </Card>
 
@@ -11528,15 +11566,16 @@ function MuscleRankCard({ t, workoutHistory }) {
   );
 }
 
-// small body next to an exercise in the list
-function BodyThumb({ ex, small = false }) {
+// small body next to an exercise in the list — memoisiert: die SVG-Körper sind das
+// Teuerste am Bibliotheks-Rendern, und sie ändern sich pro Übung nie
+const BodyThumb = memo(function BodyThumb({ ex, small = false }) {
   const m = exerciseMuscles(ex);
   return (
     <div data-ex-thumb style={{ width: small ? 26 : 34, height: small ? 42 : 54, borderRadius: 8, background: "#0b0c0e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
       <BodyIcon primary={m.primary} secondary={m.secondary} width={small ? 16 : 20} />
     </div>
   );
-}
+}, (a, b) => a.ex.key === b.ex.key && a.small === b.small);
 
 function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests = {}, workoutHistory = [], onQuickLog, favs = [], onToggleFav, rivals = [], meLabel = "", onShareEx }) {
   const [query, setQuery] = useState("");
@@ -11588,6 +11627,19 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
     });
   };
   const results = EXERCISE_LIBRARY.filter((ex) => (muscle === "all" || (muscle === "fav" ? favs.includes(ex.key) : ex.muscle === muscle)) && (gender === "diverse" || gx.showAll || muscle === "fav" || visibleFor(ex.key, gender)) && matchesQuery(ex));
+  // Schnelles Öffnen: erst ein Fenster von Einträgen rendern, der Rest kommt nach,
+  // sobald der Fühler am Listenende sichtbar wird (statt ~200 Zeilen auf einmal).
+  const [visibleCount, setVisibleCount] = useState(40);
+  useEffect(() => setVisibleCount(40), [query, muscle, gx.showAll]);
+  const moreRef = useRef(null);
+  useEffect(() => {
+    const el = moreRef.current;
+    if (!el || visibleCount >= results.length) return undefined;
+    const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && setVisibleCount((c) => c + 60), { rootMargin: "600px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [visibleCount, results.length]);
+  const shown = results.slice(0, visibleCount);
 
   if (selected && mode !== "pick") {
     const isCardio = selected.muscle === "cardio";
@@ -11856,11 +11908,11 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
         <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 24, padding: "0 12px" }}>{t.libNoResults}</div>
       ) : (
       <Card style={{ padding: 4, marginBottom: mode === "pick" ? 16 : 0 }}>
-        {results.map((ex, i) => (
+        {shown.map((ex, i) => (
           <div
             key={ex.key}
             onClick={mode === "pick" ? undefined : () => setSelected(ex)}
-            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < results.length - 1 ? "1px solid " + COLORS.border : "none", cursor: mode === "pick" ? "default" : "pointer" }}
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderBottom: i < shown.length - 1 ? "1px solid " + COLORS.border : "none", cursor: mode === "pick" ? "default" : "pointer" }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
               <BodyThumb ex={ex} />
@@ -11883,6 +11935,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
             )}
           </div>
         ))}
+        {visibleCount < results.length && <div ref={moreRef} style={{ height: 8 }} />}
       </Card>
       )}
 
@@ -15406,6 +15459,42 @@ export default function AsmarFitApp() {
     flashShare(t.quickLogged);
   };
 
+  // Der Coach liefert Uebungsnamen als Text — hier die passendste Bibliotheks-Uebung finden
+  const coachFindExercise = (n) => {
+    const q = String(n || "").toLowerCase().trim();
+    if (!q) return null;
+    let best = null, bestScore = 0;
+    for (const e of EXERCISE_LIBRARY) {
+      const a = e.name.toLowerCase(), b = e.nameDe.toLowerCase();
+      let sc = 0;
+      if (a === q || b === q) sc = 100;
+      else if (a.includes(q) || q.includes(a) || b.includes(q) || q.includes(b)) sc = 50;
+      else {
+        const hit = q.split(/s+/).filter(Boolean).filter((tk) => a.includes(tk) || b.includes(tk)).length;
+        if (hit) sc = hit * 12;
+      }
+      if (sc > bestScore) { bestScore = sc; best = e; }
+    }
+    return bestScore >= 24 ? best : null;
+  };
+  // Vom Coach erstellten Plan direkt uebernehmen (ersetzt den aktuellen Plan)
+  const saveCoachPlan = (plan) => {
+    try {
+      const base = Date.now();
+      const days = (Array.isArray(plan.days) ? plan.days : []).slice(0, 7).map((d, i) => ({
+        id: base + i,
+        name: String((d && d.name) || "Tag " + (i + 1)).slice(0, 40),
+        exercises: ((d && d.exercises) || []).map((x) => coachFindExercise(x && x.name)).filter(Boolean).map((e) => ({ ...e })),
+      })).filter((d) => d.exercises.length);
+      if (!days.length) return false;
+      setPlanName(String(plan.name || "Coach-Plan").slice(0, 60));
+      setPlanDays(days);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const createCustomRecord = ({ name, unit, value, lower, reward }) => {
     setCustomRecords((r) => [...r, { id: Date.now(), name, unit, lower, reward, best: value, history: [{ value, dateISO: new Date().toISOString() }] }]);
   };
@@ -16158,7 +16247,7 @@ export default function AsmarFitApp() {
     topTitle = t.fastTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "assistant") {
-    content = <AssistantScreen t={t} lang={lang} data={aiData} aiOn={aiOn} setAiOn={setAiOn} name={profile.name} premium={premiumActive} onUpsell={() => setAiLimitHit({ kind: "coach", used: 0, limit: 0 })} />;
+    content = <AssistantScreen t={t} lang={lang} data={aiData} aiOn={aiOn} setAiOn={setAiOn} name={profile.name} onSavePlan={saveCoachPlan} premium={premiumActive} onUpsell={() => setAiLimitHit({ kind: "coach", used: 0, limit: 0 })} />;
     topTitle = t.assistantTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "planBuilder") {

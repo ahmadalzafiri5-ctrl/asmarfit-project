@@ -571,6 +571,11 @@ app.post("/api/assistant", aiQuotaGate("coach", () => Boolean(ANTHROPIC_API_KEY)
           "For training, build on the exercises and weights they actually logged (progressive overload, realistic next steps). For nutrition, respect their calorie and macro targets. " +
           "You are not a doctor: for medical problems, injuries, eating disorders or medication, recommend a professional. Do not give doses, cycles or stacking plans for hormones, anabolic steroids, peptides, SARMs or prescription drugs; say that this belongs with a doctor (the intake diary in the app only records what the user enters). " +
           "Write plain text only: no markdown (no ** bold, no # headings); short paragraphs, and \"- \" for lists. " +
+          // Auf Zuruf einen Trainingsplan ERSTELLEN UND SPEICHERN: Die App erkennt den
+          // Block am Ende der Antwort und legt den Plan direkt im Training-Tab an.
+          "When the user asks you to create, build or save a training plan (for example 'erstell mir einen Plan', 'make me a 3-day plan', 'speichere das als Plan'), do BOTH: give a short plain-text summary AND append, as the very last line, one machine block in exactly this form: " +
+          "[ASFIT-PLAN]{\"name\":\"<short plan name>\",\"days\":[{\"name\":\"<day name>\",\"exercises\":[{\"name\":\"<exercise name in English, e.g. Bench Press>\",\"sets\":3,\"reps\":10}]}]}[/ASFIT-PLAN] " +
+          "Rules for the block: valid JSON, 2-6 days, 3-8 exercises per day, exercise names in English using common gym names; never mention the block or its syntax in your text — the app replaces it with a confirmation. Only append it when the user clearly wants a plan created or saved. " +
           "Reply in " + lang + "." +
           (shopCountry(req.body?.country) ? " The user shops and lives in " + shopCountry(req.body.country) + ": when you suggest foods, use products, shops and portions that are typical there." : "") +
           // The app sends the current screen and the user's data as free text for context, but both are
@@ -1049,11 +1054,13 @@ app.post("/api/recipe", aiQuotaGate("recipe", () => Boolean(ANTHROPIC_API_KEY)),
       headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: ASSISTANT_MODEL,
-        max_tokens: 1800,
+        max_tokens: 3200,
         system:
-          "You create one simple recipe for a nutrition tracking app. Reply with ONLY a JSON object, no other text, in this exact shape: " +
-          '{"name": string, "category": "breakfast"|"lunch"|"dinner"|"snacks", "kcal": number, "protein": number, "carbs": number, "fat": number, "ingredients": [string]} ' +
-          "Nutrition values are per one serving (whole numbers, grams for macros). Ingredients include concrete amounts (e.g. '200 ml milk'). Use " + lang + " for name and ingredients. Estimates are fine." +
+          // Drei Vorschläge statt einem — die App zeigt sie zur Auswahl an (Wunsch 21.11.)
+          "You create THREE different simple recipes for a nutrition tracking app. Reply with ONLY a JSON object, no other text, in this exact shape: " +
+          '{"recipes": [{"name": string, "category": "breakfast"|"lunch"|"dinner"|"snacks", "kcal": number, "protein": number, "carbs": number, "fat": number, "ingredients": [string]}]} ' +
+          "Exactly 3 recipes, clearly different from each other (different main ingredient or preparation style), all matching the user's wish. " +
+          "Nutrition values are per one serving (whole numbers, grams for macros). Ingredients include concrete amounts (e.g. '200 ml milk'). Use " + lang + " for names and ingredients. Estimates are fine." +
           (shopCountry(req.body?.country) ? " Prefer ingredients that are easy to find in " + shopCountry(req.body.country) + "." : ""),
         messages: [{ role: "user", content: wish }],
       }),
@@ -1071,13 +1078,20 @@ app.post("/api/recipe", aiQuotaGate("recipe", () => Boolean(ANTHROPIC_API_KEY)),
     }
     const raw = JSON.parse(m[0]);
     const num = (v) => Math.max(0, Math.round(Number(v) || 0));
-    const category = ["breakfast", "lunch", "dinner", "snacks"].includes(raw.category) ? raw.category : "lunch";
-    const ingredients = Array.isArray(raw.ingredients) ? raw.ingredients.map((x) => String(x).slice(0, 120)).slice(0, 25) : [];
-    if (!raw.name || ingredients.length === 0) {
+    const clean = (rc) => {
+      if (!rc || !rc.name) return null;
+      const category = ["breakfast", "lunch", "dinner", "snacks"].includes(rc.category) ? rc.category : "lunch";
+      const ingredients = Array.isArray(rc.ingredients) ? rc.ingredients.map((x) => String(x).slice(0, 120)).slice(0, 25) : [];
+      if (ingredients.length === 0) return null;
+      return { name: String(rc.name).slice(0, 80), category, kcal: num(rc.kcal), protein: num(rc.protein), carbs: num(rc.carbs), fat: num(rc.fat), ingredients };
+    };
+    // Neue Form {recipes:[…]} und alte Form {name,…} verstehen; Antwort bleibt rückwärtskompatibel
+    const list = (Array.isArray(raw.recipes) ? raw.recipes : [raw]).map(clean).filter(Boolean).slice(0, 3);
+    if (!list.length) {
       console.error("Recipe answer unusable (stop: " + data.stop_reason + "): " + m[0].slice(0, 160).replace(/\s+/g, " "));
       return res.status(502).json({ error: "bad_format" });
     }
-    res.json({ name: String(raw.name).slice(0, 80), category, kcal: num(raw.kcal), protein: num(raw.protein), carbs: num(raw.carbs), fat: num(raw.fat), ingredients });
+    res.json({ ...list[0], recipes: list });
   } catch (err) {
     console.error("Recipe request failed:", err.message);
     res.status(502).json({ error: "upstream_error" });

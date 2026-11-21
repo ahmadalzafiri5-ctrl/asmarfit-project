@@ -10,7 +10,9 @@ import dns from "node:dns";
 import net from "node:net";
 
 const MAX_BYTES = 1_500_000;
-const UA = "Mozilla/5.0 (compatible; ASFIT-RecipeImport/1.0)";
+// Realistische Browser-Kennung: viele Rezeptseiten beantworten "compatible;"-Bots mit 403,
+// liefern einem normalen Chrome aber dieselbe öffentliche Seite.
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 export function isPrivateIp(ip) {
   if (net.isIPv4(ip)) {
@@ -132,11 +134,20 @@ export function extractFromHtml(html) {
     }
   }
   const r = recipes[0];
+  // Zubereitungsschritte können Strings, HowToStep-Objekte oder HowToSection-Listen sein
+  const stepText = (st) => {
+    if (!st) return [];
+    if (typeof st === "string") return [decode(st)];
+    if (Array.isArray(st)) return st.flatMap(stepText);
+    if (typeof st === "object") return stepText(st.itemListElement || st.text || st.name || "");
+    return [];
+  };
   const recipe = r
     ? {
         name: decode(r.name),
         yield: Array.isArray(r.recipeYield) ? r.recipeYield.join(" / ") : String(r.recipeYield || ""),
         ingredients: (Array.isArray(r.recipeIngredient) ? r.recipeIngredient : []).map((i) => decode(i)).slice(0, 60),
+        instructions: stepText(r.recipeInstructions).filter(Boolean).slice(0, 25),
         nutrition: r.nutrition && typeof r.nutrition === "object" ? r.nutrition : null,
       }
     : null;
@@ -191,8 +202,10 @@ export async function fetchSourceText(url) {
   if (x.recipe) {
     parts.push("Recipe data: " + x.recipe.name + (x.recipe.yield ? " | yield: " + x.recipe.yield : ""));
     if (x.recipe.ingredients.length) parts.push("Ingredients:\n- " + x.recipe.ingredients.join("\n- "));
+    if (x.recipe.instructions && x.recipe.instructions.length) parts.push("Instructions:\n- " + x.recipe.instructions.join("\n- ").slice(0, 1800));
     if (x.recipe.nutrition) parts.push("Nutrition per serving (from the page): " + JSON.stringify(x.recipe.nutrition).slice(0, 600));
   }
-  if (!x.recipe && x.text) parts.push("Page text: " + x.text.slice(0, 5000));
+  // Seitentext auch mitgeben, wenn die Rezeptdaten dünn sind (z. B. ohne Zutatenliste)
+  if ((!x.recipe || !x.recipe.ingredients.length) && x.text) parts.push("Page text: " + x.text.slice(0, 5000));
   return parts.join("\n").slice(0, 7000);
 }
