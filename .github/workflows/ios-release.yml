@@ -73,7 +73,7 @@ jobs:
         run: |
           NAME="${{ inputs.version_name }}"
           /usr/libexec/PlistBuddy -c "Print" App/Info.plist > /dev/null
-          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0.23};/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0.24};/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = ${GITHUB_RUN_NUMBER};/g" App.xcodeproj/project.pbxproj
           grep -m2 "MARKETING_VERSION\|CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj
 
@@ -113,7 +113,52 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # Erst in eine IPA exportieren (statt Direkt-Upload), damit wir die Entitlements
+          # pruefen koennen — der HealthKit-Anspruch ging sonst unbemerkt verloren.
           cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>export</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_$ASC_KEY_ID.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          IPA=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
+          echo "IPA: $IPA"
+
+          # Entitlements der fertig signierten App ausgeben und HealthKit erzwingen
+          mkdir -p "$RUNNER_TEMP/ipa-check" && cd "$RUNNER_TEMP/ipa-check"
+          unzip -q "$IPA"
+          APP=$(ls -d Payload/*.app | head -1)
+          echo "--- Entitlements der signierten App ---"
+          codesign -d --entitlements :- "$APP" | tee entitlements.txt || true
+          if ! grep -q "com.apple.developer.healthkit" entitlements.txt; then
+            echo "::error::HealthKit-Entitlement FEHLT in der signierten App — Apple Health kann so nie verbinden."
+            exit 1
+          fi
+          echo "HealthKit-Entitlement vorhanden."
+
+      - name: Zu App Store Connect hochladen
+        working-directory: frontend/ios/App
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Zweiter Export mit Direkt-Upload (gleiches Archiv, gleiche Signierung)
+          cat > "$RUNNER_TEMP/upload.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict>
@@ -127,7 +172,7 @@ jobs:
           EOF
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportOptionsPlist "$RUNNER_TEMP/upload.plist" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_$ASC_KEY_ID.p8 \
             -authenticationKeyID "$ASC_KEY_ID" \

@@ -1401,7 +1401,9 @@ const STR = {
     progressAfter: "After",
     progressDeletePhoto: "Delete this photo",
     progressDeleteConfirm: "Delete this progress photo? This can't be undone.",
-    progressTapToCompare: "Tap a photo to compare it as \"after\"",
+    progressPickTwo: "Pick two photos",
+    progressPickAfter: "Now pick the \"after\" photo",
+    progressPickTwoSub: "Tap the photos below: the first one you tap is \"before\", the second is \"after\".",
     progressAddFirst: "Add your first photo",
     progressAddAnother: "Add another photo",
     progressPhotoError: "This photo couldn't be loaded. Try a different one.",
@@ -2706,7 +2708,9 @@ const STR = {
     progressAfter: "Nachher",
     progressDeletePhoto: "Dieses Foto löschen",
     progressDeleteConfirm: "Dieses Fortschrittsfoto löschen? Das kann nicht rückgängig gemacht werden.",
-    progressTapToCompare: "Tippe ein Foto an, um es als „Nachher“ zu vergleichen",
+    progressPickTwo: "Wähle zwei Fotos",
+    progressPickAfter: "Wähle jetzt das „Nachher“-Foto",
+    progressPickTwoSub: "Tippe unten die Fotos an: das erste ist „Vorher“, das zweite „Nachher“.",
     progressAddFirst: "Erstes Foto hinzufügen",
     progressAddAnother: "Weiteres Foto hinzufügen",
     progressPhotoError: "Dieses Foto konnte nicht geladen werden. Probiere ein anderes.",
@@ -6084,15 +6088,18 @@ function PhotoCropModal({ t, src, onCancel, onSave }) {
 function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDeleteWeight, photos, onAddPhoto, onDeletePhoto, measures = [], onAddMeasure = () => {}, onDeleteMeasure = () => {}, weekly = null, onApplyWeekly = () => {}, premium = false, onUpsell = () => {}, phase = null, onSavePhase = () => {} }) {
   const [range, setRange] = useState(3);
   const [slider, setSlider] = useState(50);
-  const [compareId, setCompareId] = useState(null);
-  const [beforeId, setBeforeId] = useState(null); // Vorher frei wählbar (Standard: ältestes Foto)
+  // Vergleich nur über ausdrückliche Auswahl: 1. Tipp = Vorher, 2. Tipp = Nachher (Wunsch 21.11.)
+  const [sel, setSel] = useState([]);
   const [photoDate, setPhotoDate] = useState(() => dateKey(new Date())); // Aufnahmedatum fürs nächste Foto
   const swipeXRef = useRef(null); // Start-X fürs Wischen im Vergleichsbild
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const sorted = [...photos].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-  const before = sorted.find((p) => p.id === beforeId) || sorted[0] || null;
-  const after = sorted.find((p) => p.id === compareId) || sorted[sorted.length - 1] || null;
+  const validSel = sel.filter((id) => sorted.some((p) => p.id === id));
+  const before = validSel.length ? sorted.find((p) => p.id === validSel[0]) : null;
+  const after = validSel.length > 1 ? sorted.find((p) => p.id === validSel[1]) : null;
+  // Tipp auf ein Foto: erst Vorher, dann Nachher; nochmal tippen wählt ab; drittes Foto startet neu
+  const toggleSel = (id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= 2 ? [id] : [...s, id]));
   const fmtDate = (iso) => new Date(iso).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short", year: "numeric" });
 
   const [photoError, setPhotoError] = useState(null);
@@ -6242,68 +6249,75 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={pickPhoto} style={{ display: "none" }} />
         <input ref={galleryRef} type="file" accept="image/*" onChange={pickPhoto} style={{ display: "none" }} />
 
-        {!before ? (
+        {!sorted.length ? (
           <div style={{ height: 220, borderRadius: 14, background: COLORS.raised, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px", gap: 10 }}>
             <Camera size={28} strokeWidth={1.4} color={COLORS.dim} />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, lineHeight: 1.5 }}>{t.progressPhotosEmpty}</span>
           </div>
         ) : (
           <>
-            {/* Wischen (links/rechts) blättert durchs Nachher-Bild — Wunsch 21.11. */}
-            <div
-              onTouchStart={(e) => (swipeXRef.current = e.touches[0].clientX)}
-              onTouchEnd={(e) => {
-                const x0 = swipeXRef.current;
-                swipeXRef.current = null;
-                if (x0 == null || sorted.length < 2) return;
-                const dx = e.changedTouches[0].clientX - x0;
-                if (Math.abs(dx) < 45) return;
-                const curIdx = Math.max(0, sorted.findIndex((p) => p.id === (after ? after.id : sorted[sorted.length - 1].id)));
-                setCompareId(sorted[(curIdx + (dx < 0 ? 1 : -1) + sorted.length) % sorted.length].id);
-              }}
-              style={{ position: "relative", height: 260, borderRadius: 14, overflow: "hidden", background: COLORS.raised, touchAction: "pan-y" }}
-            >
-              <img src={before.dataUrl} alt={t.progressBefore} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-              <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - slider}% 0 0)` }}>
-                <img src={(after || before).dataUrl} alt={t.progressAfter} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
-              <div style={{ position: "absolute", top: 0, bottom: 0, left: `${slider}%`, width: 3, background: "#fff", transform: "translateX(-1.5px)", boxShadow: "0 0 8px rgba(0,0,0,0.5)" }} />
-              <span style={{ position: "absolute", left: 10, top: 10, display: "flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", padding: "5px 10px", borderRadius: 9 }}>
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#8E97A3", flexShrink: 0 }} />
-                {t.progressBefore} · {fmtDate(before.dateISO)}
-              </span>
-              {after && after.id !== before.id && (
-                <span style={{ position: "absolute", right: 10, bottom: 10, display: "flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", padding: "5px 10px", borderRadius: 9 }}>
-                  {t.progressAfter} · {fmtDate(after.dateISO)}
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: COLORS.gold, flexShrink: 0 }} />
-                </span>
-              )}
-            </div>
-            <input type="range" min={0} max={100} value={slider} onChange={(e) => setSlider(Number(e.target.value))} style={{ width: "100%", marginTop: 12, accentColor: COLORS.gold }} />
-
-            {sorted.length < 2 ? (
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10 }}>{t.progressPhotosHint}</div>
+            {before && after ? (
+              <>
+                {/* Wischen (links/rechts) blättert durchs Nachher-Bild */}
+                <div
+                  onTouchStart={(e) => (swipeXRef.current = e.touches[0].clientX)}
+                  onTouchEnd={(e) => {
+                    const x0 = swipeXRef.current;
+                    swipeXRef.current = null;
+                    if (x0 == null) return;
+                    const dx = e.changedTouches[0].clientX - x0;
+                    if (Math.abs(dx) < 45) return;
+                    const others = sorted.filter((p) => p.id !== before.id);
+                    if (others.length < 2) return;
+                    const curIdx = Math.max(0, others.findIndex((p) => p.id === after.id));
+                    setSel([before.id, others[(curIdx + (dx < 0 ? 1 : -1) + others.length) % others.length].id]);
+                  }}
+                  style={{ position: "relative", height: 260, borderRadius: 14, overflow: "hidden", background: COLORS.raised, touchAction: "pan-y" }}
+                >
+                  <img src={before.dataUrl} alt={t.progressBefore} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - slider}% 0 0)` }}>
+                    <img src={after.dataUrl} alt={t.progressAfter} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
+                  <div style={{ position: "absolute", top: 0, bottom: 0, left: `${slider}%`, width: 3, background: "#fff", transform: "translateX(-1.5px)", boxShadow: "0 0 8px rgba(0,0,0,0.5)" }} />
+                  <span style={{ position: "absolute", left: 10, top: 10, display: "flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", padding: "5px 10px", borderRadius: 9 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#8E97A3", flexShrink: 0 }} />
+                    {t.progressBefore} · {fmtDate(before.dateISO)}
+                  </span>
+                  <span style={{ position: "absolute", right: 10, bottom: 10, display: "flex", alignItems: "center", gap: 5, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", padding: "5px 10px", borderRadius: 9 }}>
+                    {t.progressAfter} · {fmtDate(after.dateISO)}
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: COLORS.gold, flexShrink: 0 }} />
+                  </span>
+                </div>
+                <input type="range" min={0} max={100} value={slider} onChange={(e) => setSlider(Number(e.target.value))} style={{ width: "100%", marginTop: 12, accentColor: COLORS.gold }} />
+              </>
             ) : (
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, margin: "10px 0 8px" }}>{t.progressTapToCompare}</div>
+              /* Noch keine zwei Fotos gewählt: klare Anleitung statt Vergleich */
+              <div data-compare-hint style={{ height: 160, borderRadius: 14, background: COLORS.raised, border: `1.5px dashed ${COLORS.border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px", gap: 8 }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text }}>{before ? t.progressPickAfter : t.progressPickTwo}</span>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, lineHeight: 1.5 }}>{t.progressPickTwoSub}</span>
+              </div>
             )}
 
-            <div style={{ display: "flex", gap: 8, marginTop: sorted.length < 2 ? 12 : 0, overflowX: "auto", paddingBottom: 2 }}>
+            {sorted.length < 2 && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginTop: 10 }}>{t.progressPhotosHint}</div>}
+
+            <div style={{ display: "flex", gap: 8, marginTop: 12, overflowX: "auto", paddingBottom: 2 }}>
               {sorted.map((p) => {
-                const isBefore = p.id === before.id;
-                const isAfterSel = (after ? after.id : sorted[sorted.length - 1].id) === p.id;
+                const isBefore = before && p.id === before.id;
+                const isAfterSel = after && p.id === after.id;
                 return (
                 <div key={p.id} style={{ position: "relative", flexShrink: 0, marginTop: 22 }}>
                   <img
                     src={p.dataUrl}
-                    onClick={() => setCompareId(p.id)}
-                    style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: isAfterSel ? `2px solid ${COLORS.gold}` : isBefore ? "2px solid #8E97A3" : `2px solid ${COLORS.border}` }}
+                    data-pick-photo={p.id}
+                    onClick={() => toggleSel(p.id)}
+                    style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: isAfterSel ? `2px solid ${COLORS.gold}` : isBefore ? "2px solid #8E97A3" : `2px solid ${COLORS.border}`, opacity: before && after && !isBefore && !isAfterSel ? 0.55 : 1 }}
                   />
+                  {(isBefore || isAfterSel) && (
+                    <span style={{ position: "absolute", top: -18, left: "50%", transform: "translateX(-50%)", fontFamily: "Sora, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: isBefore ? "#8E97A3" : COLORS.gold, whiteSpace: "nowrap" }}>
+                      {isBefore ? "1 · " + t.progressBefore : "2 · " + t.progressAfter}
+                    </span>
+                  )}
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9.5, color: COLORS.dim, textAlign: "center", marginTop: 3 }}>{new Date(p.dateISO).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short" })}</div>
-                  {/* Vorher/Nachher frei wählbar: grauer Punkt = Vorher, goldener Punkt = Nachher */}
-                  <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 3 }}>
-                    <span data-set-before={p.id} onClick={() => setBeforeId(p.id)} title={t.progressBefore} style={{ width: 12, height: 12, borderRadius: "50%", cursor: "pointer", background: isBefore ? "#8E97A3" : "transparent", border: "2px solid #8E97A3" }} />
-                    <span data-set-after={p.id} onClick={() => setCompareId(p.id)} title={t.progressAfter} style={{ width: 12, height: 12, borderRadius: "50%", cursor: "pointer", background: isAfterSel ? COLORS.gold : "transparent", border: `2px solid ${COLORS.gold}` }} />
-                  </div>
                   <div
                     onClick={() => onDeletePhoto(p.id)}
                     title={t.progressDeletePhoto}
@@ -12250,6 +12264,10 @@ function ConnectionsScreen({ t, info, native, onConnect }) {
         </div>
         {!native && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 12 }}>{t.connWebOnly}</div>}
         {native && info.unavailable && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 12 }}>{t.connUnavailable}</div>}
+        {native && info.lastError && !info.connected && (
+          /* Der echte Fehlertext des Systems — macht "verbinden geht nicht" diagnostizierbar */
+          <div data-health-error style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.coral, marginBottom: 12, wordBreak: "break-word" }}>{info.lastError}</div>
+        )}
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.dim, marginBottom: 6 }}>{t.connData}</div>
         {rows.map((r) => {
           const on = info.granted.includes(r.key);
@@ -15370,7 +15388,10 @@ export default function AsmarFitApp() {
         lastSync = new Date().toISOString();
       }
       setHealthInfo({ connected: true, lastSync, granted, unavailable: false });
-    } catch {
+    } catch (e) {
+      // Der echte Fehlertext wird gespeichert und im Verbinden-Bildschirm angezeigt —
+      // sonst ist "geht nicht" auf dem iPhone nicht diagnostizierbar.
+      setHealthInfo((h) => ({ ...h, lastError: String((e && e.message) || e).slice(0, 200) }));
       setStepsSource("unavailable");
     }
   };
