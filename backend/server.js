@@ -333,6 +333,40 @@ function mergeSearchResults(limit, ...lists) {
   return merged.slice(0, limit);
 }
 
+/* ---------- Essens-Suchbegriffe aus JEDER Sprache verstehen ---------- */
+// Die kuratierte Liste kennt Deutsch/Englisch; alles andere ("elma", "jabłko", "تفاحة")
+// übersetzt ein Mini-Aufruf an Claude Haiku ins Englische, bevor USDA/Open Food Facts
+// gefragt werden. Ergebnis wird gecacht, Fehler fallen leise auf den Originalbegriff zurück.
+const translateCache = new Map(); // begriff -> englisch
+async function translateFoodQuery(q) {
+  const key = q.toLowerCase();
+  if (translateCache.has(key)) return translateCache.get(key);
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 5000);
+    const r = await fetch(ANTHROPIC_API_BASE + "/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: process.env.TRANSLATE_MODEL || "claude-haiku-4-5",
+        max_tokens: 30,
+        messages: [{ role: "user", content: "Translate this food search term to English. Reply with ONLY the English food name, no explanation. If it is already English or not a food, reply with the term unchanged.\n\nTerm: " + q.slice(0, 80) }],
+      }),
+      signal: ctl.signal,
+    }).finally(() => clearTimeout(timer));
+    if (!r.ok) return null;
+    const j = await r.json();
+    const out = (j.content && j.content[0] && j.content[0].text ? j.content[0].text : "").trim().replace(/^["']|["']$/g, "").slice(0, 80);
+    const ok = out && out.toLowerCase() !== key ? out : null;
+    if (translateCache.size > 5000) translateCache.clear();
+    translateCache.set(key, ok);
+    return ok;
+  } catch {
+    return null;
+  }
+}
+
 /* ---------- GET /api/food/search?q=banana&lang=de ---------- */
 app.get("/api/food/search", async (req, res) => {
   const query = (req.query.q || "").trim();
@@ -348,8 +382,17 @@ app.get("/api/food/search", async (req, res) => {
 
   // Typos ("bannane") make USDA / Open Food Facts return junk or nothing, so the
   // text we forward upstream is first repaired against our own food vocabulary.
-  const basics = searchBasics(query, lang);
-  const fixed = correctQuery(query);
+  let basics = searchBasics(query, lang);
+  let fixed = correctQuery(query);
+  // Fremdsprachiger Begriff (keine Treffer, auch nach Tippfehler-Korrektur unbekannt)?
+  // Dann einmal ins Englische übersetzen und damit weitersuchen.
+  if (!basics.length && fixed.toLowerCase() === query.toLowerCase()) {
+    const en = await translateFoodQuery(query);
+    if (en) {
+      fixed = en;
+      basics = searchBasics(en, lang);
+    }
+  }
   const corrected = fixed.toLowerCase() !== query.toLowerCase() ? fixed : null;
   let usda = { results: [], error: null };
   let off = { results: [], error: null };
