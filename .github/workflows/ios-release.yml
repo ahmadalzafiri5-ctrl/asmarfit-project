@@ -73,7 +73,7 @@ jobs:
         run: |
           NAME="${{ inputs.version_name }}"
           /usr/libexec/PlistBuddy -c "Print" App/Info.plist > /dev/null
-          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0.26};/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0.27};/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = ${GITHUB_RUN_NUMBER};/g" App.xcodeproj/project.pbxproj
           grep -m2 "MARKETING_VERSION\|CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj
 
