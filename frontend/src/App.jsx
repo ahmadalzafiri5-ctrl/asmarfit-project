@@ -485,7 +485,7 @@ const STR = {
     intakeCycleEnds: "ends {d}",
     intakeCycleDone: "Cycle finished",
     bloodTitle: "Blood work",
-    bloodName: "Marker (e.g. testosterone)",
+    bloodName: "Marker (e.g. vitamin D)",
     bloodValue: "Value",
     bloodUnit: "Unit",
     bloodAdd: "Add entry",
@@ -1784,7 +1784,7 @@ const STR = {
     intakeCycleEnds: "endet am {d}",
     intakeCycleDone: "Zyklus abgeschlossen",
     bloodTitle: "Blutwerte",
-    bloodName: "Wert (z. B. Testosteron)",
+    bloodName: "Wert (z. B. Vitamin D)",
     bloodValue: "Wert",
     bloodUnit: "Einheit",
     bloodAdd: "Eintragen",
@@ -3713,12 +3713,11 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
   const [vision3Months, setVision3Months] = useState("");
   const [visionWhy, setVisionWhy] = useState("");
   const [stepsGoal, setStepsGoal] = useState(10000);
-  // Wunschfarbe + öffentliches Profil (Nutzername, Bild/Charakter, Sichtbarkeit)
+  // Wunschfarbe + Profil (Nutzername, Profilbild)
   const [accent, setAccent] = useState(savedAccent() || "asfit"); // Standard: ASFIT-Rot (Farbe des App-Icons)
   const [obMode, setObMode] = useState("ai"); // KI-Gespräch startet direkt; "manuell" bleibt als Link im Gespräch
   const [pubAvatar, setPubAvatar] = useState(() => loadPub().avatar);
   const [pubUsername, setPubUsername] = useState(() => loadPub().username);
-  const [pubVis, setPubVis] = useState(() => loadPub().visibility);
   const toggleMoreGoal = (key) => {
     setMoreGoals((g) => (g.includes(key) ? g.filter((x) => x !== key) : [...g, key]));
   };
@@ -3838,7 +3837,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
           const birthY = { d: "1", m: "1", y: String(new Date().getFullYear() - (Number(d.age) || 25)) };
           const kcal = computeKcalGoal({ gender: d.gender, age: Number(d.age) || 25, height: Number(d.height), weight: Number(d.weight), target: Number(d.target), goal: d.goal, targetDate });
           if (accent) saveAccent(accent);
-          savePub({ ...loadPub(), username: (d.name || "").toLowerCase(), avatar: pubAvatar, visibility: pubVis });
+          savePub({ ...loadPub(), username: (d.name || "").toLowerCase(), avatar: pubAvatar });
           onFinish({
             name: d.name || "",
             gender: d.gender || "diverse",
@@ -3945,17 +3944,6 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{soc(lang).username}</div>
               <TextField value={pubUsername} onChange={(v) => setPubUsername(String(v).replace(/[^\w.\-]/g, "").toLowerCase().slice(0, 24))} placeholder={soc(lang).unamePh} />
             </div>
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{soc(lang).vis}</div>
-              <div style={{ display: "flex", background: COLORS.raised, borderRadius: 12, padding: 3 }}>
-                {[{ v: "public", l: soc(lang).visPub }, { v: "private", l: soc(lang).visPriv }].map((o) => (
-                  <div key={o.v} data-ob-vis={o.v} onClick={() => setPubVis(o.v)} style={{ flex: 1, textAlign: "center", padding: "9px 4px", borderRadius: 10, cursor: "pointer", fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: pubVis === o.v ? COLORS.bg : COLORS.dim, background: pubVis === o.v ? COLORS.gold : "transparent" }}>
-                    {o.l}
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 8, lineHeight: 1.5 }}>{soc(lang).visHint}</div>
-            </div>
           </div>
         )}
 
@@ -4046,7 +4034,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
             if (step === LAST_STEP) {
               // Wunschfarbe + öffentliches Profil sichern (bleiben auch ohne Server erhalten)
               if (accent) saveAccent(accent);
-              savePub({ ...loadPub(), username: pubUsername.trim(), avatar: pubAvatar, visibility: pubVis });
+              savePub({ ...loadPub(), username: pubUsername.trim(), avatar: pubAvatar });
             }
             return step === LAST_STEP
               ? onFinish({
@@ -7298,10 +7286,9 @@ function Celebration({ t, data, onClose }) {
     <Confetti />
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(22,26,29,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.bg, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }}>
-        <div style={{ width: 84, height: 84, borderRadius: "50%", background: COLORS.goldSoft, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Laugh size={46} color={COLORS.gold} />
-        </div>
-        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 6 }}>{t.celebrateTitle}</div>
+        {/* Rekord-Feier bewusst mit Emoji — ausdrücklicher Wunsch des Betreibers (21.11.) */}
+        <div style={{ fontSize: 58, lineHeight: 1, marginBottom: 12 }}>🏆</div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 6 }}>{t.celebrateTitle} 🎉</div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, marginBottom: 14 }}>{t.celebrateSub}</div>
         {data.lines.map((l, i) => (
           <div key={i} style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.gold, marginBottom: 4 }}>{l}</div>
@@ -7321,10 +7308,15 @@ function Celebration({ t, data, onClose }) {
   );
 }
 
-function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, customRecords, onCreate, onUpdate }) {
+function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, customRecords, onCreate, onUpdate, onFixBest, onEditCustom, onDeleteCustom }) {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: "", unit: "km", value: "", lower: false, reward: "" });
   const [inputs, setInputs] = useState({});
+  // Rekorde anpassen: Taste am Eintrag öffnet ein Korrektur-Feld (Tippfehler geraderücken oder löschen)
+  const [editKey, setEditKey] = useState(null); // "s:<key>" | "c:<key>" | "r:<id>"
+  const [editVal, setEditVal] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editReward, setEditReward] = useState("");
   const nameOf = (key) => {
     const ex = EXERCISE_LIBRARY.find((e) => e.key === key);
     return ex ? (lang === "de" ? ex.nameDe : ex.name) : key;
@@ -7355,17 +7347,41 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
         ) : (
           <>
             {strength.map((r) => (
-              <div key={r.key} style={rowStyle}>
-                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(r.key)}</span>
-                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold, textAlign: "right" }}>
-                  {fmtNum(r.best)} kg{repsAt(r.key, r.best) ? " × " + repsAt(r.key, r.best) : ""}
-                </span>
+              <div key={r.key}>
+                <div style={rowStyle}>
+                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(r.key)}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold, textAlign: "right" }}>
+                      {fmtNum(r.best)} kg{repsAt(r.key, r.best) ? " × " + repsAt(r.key, r.best) : ""}
+                    </span>
+                    <span data-fix-best={r.key} onClick={() => { setEditKey(editKey === "s:" + r.key ? null : "s:" + r.key); setEditVal(String(r.best)); }} style={{ cursor: "pointer", display: "flex" }}><Pencil size={13} color={COLORS.dim} /></span>
+                  </span>
+                </div>
+                {editKey === "s:" + r.key && (
+                  <div style={{ display: "flex", gap: 8, padding: "8px 0" }}>
+                    <input type="number" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                    <button onClick={() => { const v = parseFloat(String(editVal).replace(",", ".")); if (v >= 0) { onFixBest(r.key, v, "strength"); setEditKey(null); } }} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t.stepsSave}</button>
+                    <button onClick={() => { onFixBest(r.key, 0, "strength"); setEditKey(null); }} style={{ background: COLORS.raised, color: COLORS.coral, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "0 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Trash2 size={14} /></button>
+                  </div>
+                )}
               </div>
             ))}
             {cardio.map((r) => (
-              <div key={r.key} style={rowStyle}>
-                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(r.key)} · {t.cardioLongest}</span>
-                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{fmtNum(r.best)} min</span>
+              <div key={r.key}>
+                <div style={rowStyle}>
+                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: COLORS.text }}>{nameOf(r.key)} · {t.cardioLongest}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{fmtNum(r.best)} min</span>
+                    <span data-fix-cardio={r.key} onClick={() => { setEditKey(editKey === "c:" + r.key ? null : "c:" + r.key); setEditVal(String(r.best)); }} style={{ cursor: "pointer", display: "flex" }}><Pencil size={13} color={COLORS.dim} /></span>
+                  </span>
+                </div>
+                {editKey === "c:" + r.key && (
+                  <div style={{ display: "flex", gap: 8, padding: "8px 0" }}>
+                    <input type="number" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                    <button onClick={() => { const v = parseFloat(String(editVal).replace(",", ".")); if (v >= 0) { onFixBest(r.key, v, "cardio"); setEditKey(null); } }} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t.stepsSave}</button>
+                    <button onClick={() => { onFixBest(r.key, 0, "cardio"); setEditKey(null); }} style={{ background: COLORS.raised, color: COLORS.coral, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "0 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Trash2 size={14} /></button>
+                  </div>
+                )}
               </div>
             ))}
           </>
@@ -7401,8 +7417,24 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
           <Card key={r.id} style={{ marginBottom: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
               <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.text }}>{r.name}</span>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.gold }}>{fmtNum(r.best)} {r.unit}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.gold }}>{fmtNum(r.best)} {r.unit}</span>
+                <span data-edit-record={r.id} onClick={() => { const open = editKey === "r:" + r.id; setEditKey(open ? null : "r:" + r.id); setEditName(r.name); setEditVal(String(r.best)); setEditReward(r.reward || ""); }} style={{ cursor: "pointer", display: "flex" }}><Pencil size={14} color={COLORS.dim} /></span>
+              </span>
             </div>
+            {editKey === "r:" + r.id && (
+              <div style={{ padding: "6px 0 10px" }}>
+                <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t.recordName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
+                <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                  <input type="number" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} placeholder={t.recordValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                  <input value={editReward} onChange={(e) => setEditReward(e.target.value)} placeholder={t.recordReward} style={{ ...numInputStyle, flex: 1.4, minWidth: 0 }} />
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { const v = parseFloat(String(editVal).replace(",", ".")); onEditCustom(r.id, { name: editName.trim() || r.name, best: v > 0 ? v : r.best, reward: editReward.trim() }); setEditKey(null); }} style={{ flex: 1, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "10px 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t.stepsSave}</button>
+                  <button onClick={() => { onDeleteCustom(r.id); setEditKey(null); }} style={{ background: COLORS.raised, color: COLORS.coral, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "0 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t.delete}</button>
+                </div>
+              </div>
+            )}
             {r.reward ? <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 8 }}>{r.reward}</div> : null}
             {pts.length >= 2 && <LineChart points={pts} color={COLORS.gold} unit={r.unit} height={120} />}
             <input value={inputs["rw" + r.id] || ""} onChange={(e) => setInputs({ ...inputs, ["rw" + r.id]: e.target.value })} placeholder={t.recordRewardNow} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginTop: 10 }} />
@@ -7474,12 +7506,12 @@ function WorkoutSummary({ t, lang, summary, onDone, onDifficulty = () => {} }) {
       )}
 
       {prExercises.length > 0 && (
-        <Card style={{ textAlign: "left", marginBottom: 20 }}>
-          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim, marginBottom: 10 }}>{t.newRecords}</div>
+        <Card style={{ textAlign: "left", marginBottom: 20, border: "1px solid " + COLORS.gold, background: COLORS.goldSoft }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.gold, marginBottom: 10 }}>🏆 {t.newRecords}</div>
           {prExercises.map((ex) => (
             <div key={ex.key} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
               <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{ex.name}</span>
-              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{ex.value}</span>
+              <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>{ex.value} 💪</span>
             </div>
           ))}
         </Card>
@@ -9114,7 +9146,6 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
   const camRef = useRef(null);
   const galRef = useRef(null);
   const goal = (ownGoalField ? localGoal : goalText).trim();
-  const adult = Number(profile && profile.age) >= 18;
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, lineHeight: 1.5 };
   const n = (s, k) => String(s).replace("{n}", k);
 
@@ -9134,7 +9165,6 @@ function PotentialPreview({ t, lang, goalText = "", profile, ownGoalField = fals
     if (busy) return;
     if (imageOn && !photo) return setMsg(t.potNeedPhoto);
     if (goal.length < 3) return setMsg(t.potNeedGoal);
-    if (!adult) return setMsg(t.potAdultOnly);
     if (imageOn && !consent) return setMsg(t.potNeedConsent);
     setBusy(true);
     setMsg(null);
@@ -11893,6 +11923,20 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "14px 0 4px" }}>{t.tplOr}</div>
         </div>
       )}
+      {/* Zurück zu den Vorlagen: den angefangenen Entwurf verwerfen und neu auswählen */}
+      {days.length > 0 && (
+        <div
+          data-plan-back
+          onClick={() => {
+            setDays([]);
+            setName("");
+            setSelectedDay(null);
+          }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer", marginBottom: 12 }}
+        >
+          ← {t.tplTitle}
+        </div>
+      )}
       <div style={{ marginBottom: 16 }}>
         <TextField value={name} onChange={setName} placeholder={t.planNamePlaceholder} />
       </div>
@@ -13761,7 +13805,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
         { tint: "teal", icon: Link2, label: t.connSettings, key: "connections" },
         { tint: "teal", icon: Globe, label: t.countryRow, sub: ccSet ? flagOf(ccSet) + " " + ccSetName : t.countryNone2, key: "country" },
         { tint: "teal", icon: Users, label: t.friendsTitle, sub: friendsCount === 1 ? t.setFriendsOne : friendsCount ? t.setFriendsCount.replace("{n}", friendsCount) : t.setFriendsNone, key: "friends" },
-        { tint: "teal", icon: User, label: soc(lang).profTitle, sub: loadPub().visibility === "public" ? soc(lang).visPub : soc(lang).visPriv, key: "publicProfile" },
+        { tint: "teal", icon: User, label: soc(lang).profTitle, sub: loadPub().username || soc(lang).username, key: "publicProfile" },
         ...(!HIDE_INTAKE ? [{ tint: "teal", icon: Pill, label: t.intakeTitle, key: "intake" }] : []),
       ],
     },
@@ -15320,6 +15364,15 @@ export default function AsmarFitApp() {
     setCustomRecords((r) => [...r, { id: Date.now(), name, unit, lower, reward, best: value, history: [{ value, dateISO: new Date().toISOString() }] }]);
   };
 
+  // Rekorde anpassen: Tippfehler korrigieren (neuer Wert) oder Eintrag entfernen (0)
+  const fixBest = (key, value, kind) => {
+    const apply = (b) => { const n = { ...b }; if (value > 0) n[key] = value; else delete n[key]; return n; };
+    if (kind === "cardio") setCardioBests(apply);
+    else setPersonalBests(apply);
+  };
+  const editCustomRecord = (id, patch) => setCustomRecords((all) => all.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const deleteCustomRecord = (id) => setCustomRecords((all) => all.filter((r) => r.id !== id));
+
   const pickMotivation = () => t.motivations[Math.floor(Math.random() * t.motivations.length)];
 
   const updateCustomRecord = (id, value, reward) => {
@@ -15676,8 +15729,16 @@ export default function AsmarFitApp() {
       foodToday: cnt("breakfast") + cnt("lunch") + cnt("dinner") + cnt("snacks") > 0,
       streak: streak.current,
       intake: (intake.subs || []).map((s) => ({ name: s.name, offsets: intakeDueOffsets(s, intake.log || [], Date.now(), 5) })).filter((s) => s.offsets.length),
+      // Geplante Cheat-Tage der nächsten Tage → morgens kommt eine Mitteilung
+      cheats: (() => {
+        const t0 = new Date();
+        t0.setHours(0, 0, 0, 0);
+        return (cheats || [])
+          .map((c) => ({ offset: Math.round((new Date(c.date + "T00:00").getTime() - t0.getTime()) / 86400000) }))
+          .filter((c) => c.offset >= 0 && c.offset < 5);
+      })(),
     };
-  }, [meals, waterMl, profile.waterGoalMl, profile.weight, workoutHistory, weightLog, streak.current, intake, todayStamp()]);
+  }, [meals, waterMl, profile.waterGoalMl, profile.weight, workoutHistory, weightLog, streak.current, intake, cheats, todayStamp()]);
 
   // Harte Paywall: Die App öffnet erst, wenn über "3 Tage gratis testen" das
   // Probeabo gestartet wurde — ohne aktives Abo bleibt der Premium-Screen stehen.
@@ -15780,7 +15841,7 @@ export default function AsmarFitApp() {
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
-  const notifSig = JSON.stringify([notif, lang, todayInfo.meals, Math.floor(todayInfo.waterMl / 250), todayInfo.workoutToday, todayInfo.weighedToday, todayInfo.foodToday, todayInfo.streak, todayInfo.intake, todayStamp(), notifTick]);
+  const notifSig = JSON.stringify([notif, lang, todayInfo.meals, Math.floor(todayInfo.waterMl / 250), todayInfo.workoutToday, todayInfo.weighedToday, todayInfo.foodToday, todayInfo.streak, todayInfo.intake, todayInfo.cheats, todayStamp(), notifTick]);
   useEffect(() => {
     if (!IS_NATIVE_APP || !onboarded) return undefined;
     const timer = setTimeout(async () => {
@@ -15999,7 +16060,7 @@ export default function AsmarFitApp() {
     topTitle = t.historyTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "records") {
-    content = <RecordsScreen t={t} lang={lang} personalBests={personalBests} cardioBests={cardioBests} workoutHistory={workoutHistory} customRecords={customRecords} onCreate={createCustomRecord} onUpdate={updateCustomRecord} />;
+    content = <RecordsScreen t={t} lang={lang} personalBests={personalBests} cardioBests={cardioBests} workoutHistory={workoutHistory} customRecords={customRecords} onCreate={createCustomRecord} onUpdate={updateCustomRecord} onFixBest={fixBest} onEditCustom={editCustomRecord} onDeleteCustom={deleteCustomRecord} />;
     topTitle = t.recordsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "privacy") {

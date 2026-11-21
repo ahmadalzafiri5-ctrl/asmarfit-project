@@ -45,11 +45,12 @@ const TX = {
     water: ["Trink ein Glas Wasser 💧", "Ausreichend Wasser hilft dir beim Training und bei der Konzentration 💧", "Wasser-Pause! Ein paar Schlucke jetzt 🥤"],
     weigh: ["Wiege dich und trag dein Gewicht ein ⚖️", "Kurz auf die Waage, dann bleibt dein Verlauf aktuell ⚖️"],
     train: ["Heute ist Trainingstag 💪 Bist du bereit?", "Zeit fürs Training! Dein Körper wartet 🏋️"],
-    missed: ["Training verpasst? 🏋️ Es ist noch Zeit für eine kurze Einheit.", "Du hast heute noch nicht trainiert. Schon 20 Minuten zählen 💪"],
+    missed: ["Training verpasst? 🏋️ Es ist noch Zeit für eine kurze Einheit.", "Du hast heute noch nicht trainiert. Schon 20 Minuten zählen 💪", "Dein zukünftiges Ich dankt dir für jede Einheit 🙌 Noch ist Zeit!"],
     streakRisk: "Deine Serie von {n} Tagen ist in Gefahr! 🔥 Trag noch eine Mahlzeit ein.",
     streak: "Trag heute noch eine Mahlzeit ein, damit deine Serie weiterläuft 🔥",
     intake: "{name} ist heute fällig 💊",
     comeback: "Wir vermissen dich 👋 Schau kurz rein und trag deinen Tag ein.",
+    cheat: ["Heute ist dein Cheat Day 🎉 Genieß ihn — du hast ihn dir verdient!", "Cheat Day! 🍕 Genießen, eintragen, weitermachen — alles ist eingeplant 😎"],
   },
   en: {
     breakfast: ["Breakfast time 🍳 Log what you eat.", "Good morning! Don't forget to log breakfast 🌅"],
@@ -58,15 +59,18 @@ const TX = {
     water: ["Have a glass of water 💧", "Enough water helps your training and your focus 💧", "Water break! A few sips now 🥤"],
     weigh: ["Step on the scale and log your weight ⚖️", "A quick weigh-in keeps your progress up to date ⚖️"],
     train: ["It's a training day 💪 Ready?", "Time to train! Your body is waiting 🏋️"],
-    missed: ["Missed your workout? 🏋️ There's still time for a short session.", "You haven't trained today. Even 20 minutes count 💪"],
+    missed: ["Missed your workout? 🏋️ There's still time for a short session.", "You haven't trained today. Even 20 minutes count 💪", "Your future self will thank you for every session 🙌 There's still time!"],
     streakRisk: "Your {n}-day streak is at risk! 🔥 Log one more meal.",
     streak: "Log a meal today to keep your streak going 🔥",
     intake: "{name} is due today 💊",
     comeback: "We miss you 👋 Pop in and log your day.",
+    cheat: ["It's your cheat day 🎉 Enjoy it — you've earned it!", "Cheat day! 🍕 Enjoy, log it, keep going — it's all planned in 😎"],
   },
 };
 
-const TITLE = "ASFIT";
+// Titel mit passendem Emoji je Art — wirkt motivierender als nur "ASFIT"
+const TITLE_EMOJI = { breakfast: "🍳", lunch: "🍽️", dinner: "🍝", water: "💧", weigh: "⚖️", train: "💪", missed: "💪", streak: "🔥", intake: "💊", comeback: "👋", cheat: "🎉" };
+const titleOf = (kind) => "ASFIT " + (TITLE_EMOJI[kind] || "💪");
 const pick = (arr, i) => arr[((i % arr.length) + arr.length) % arr.length];
 const startOfDay = (ms) => {
   const d = new Date(ms);
@@ -134,7 +138,7 @@ export function planNotifications({ now, cfg, lang, today, windowDays = 5, max =
   const out = [];
   const start = startOfDay(now);
   const push = (at, kind, body) => {
-    if (at > now + 30000) out.push({ at, kind, title: TITLE, body });
+    if (at > now + 30000) out.push({ at, kind, title: titleOf(kind), body });
   };
   for (let d = 0; d < windowDays; d++) {
     const day = addDays(start, d);
@@ -159,6 +163,8 @@ export function planNotifications({ now, cfg, lang, today, windowDays = 5, max =
       push(atTime(day, c.streak.time), "streak", isToday && today.streak > 0 ? L.streakRisk.replace("{n}", today.streak) : L.streak);
     }
     if (c.intake.on) (today.intake || []).forEach((s) => s.offsets.includes(d) && push(atTime(day, c.intake.time), "intake", L.intake.replace("{name}", s.name)));
+    // Geplante Cheat-Days: morgens eine Mitteilung zum geplanten Tag
+    (today.cheats || []).forEach((ch) => ch.offset === d && push(atTime(day, "09:00"), "cheat", pick(L.cheat, d)));
   }
   if (c.comeback.on) push(atTime(addDays(start, 3), "18:00"), "comeback", L.comeback);
   out.sort((a, b) => a.at - b.at);
