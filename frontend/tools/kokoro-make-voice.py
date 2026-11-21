@@ -16,7 +16,7 @@ MODELS = os.path.join(HERE, "kokoro-models")
 # Sprache -> (Stimme, espeak-Sprachcode). Deutsch nutzt das Martin-Modell, der Rest das Standardmodell.
 VOICES = {
     "de": ("martin", "de"),
-    "en": ("af_heart", "en-us"),
+    "en": ("am_puck", "en-us"),
     "es": ("ef_dora", "es"),
     "fr": ("ff_siwis", "fr-fr"),
     "it": ("if_sara", "it"),
