@@ -10,6 +10,7 @@ import { mountAuth, initAuthDb, authEnabled } from "./auth.js";
 import { mountBilling, billingWebhook } from "./billing.js";
 import { mountPlayBilling } from "./playBilling.js";
 import { mountAiQuota, initAiQuotaDb, aiQuotaGate } from "./aiQuota.js";
+import { mountSync, initSyncDb } from "./sync.js";
 
 // the country the user shops in (ISO code sent by the app) as an English name for AI prompts; null when missing or invalid
 function shopCountry(cc) {
@@ -29,16 +30,18 @@ app.set("trust proxy", 1);
 app.use(cors());
 // Stripe-Webhook braucht den rohen Body (Signaturprüfung) — darum VOR express.json()
 app.post("/api/billing/webhook", express.raw({ type: "application/json" }), billingWebhook());
-app.use(express.json({ limit: "8mb" })); // photo scan sends a downscaled JPEG as base64
+app.use(express.json({ limit: "16mb" })); // Foto-Scan-Bilder und der Konto-Sync-Datensatz // photo scan sends a downscaled JPEG as base64
 
 // Konten (E-Mail/Google/Apple) und Stripe-Abos; ohne DATABASE_URL/Keys bleiben die Routen aus
 mountAuth(app);
 mountBilling(app);
 mountPlayBilling(app);
 mountAiQuota(app); // Stand des KI-Kontingents (GET /api/ai/usage)
+mountSync(app); // Konto-Sync: kompletter App-Stand pro Konto (GET/PUT /api/sync)
 if (authEnabled())
   initAuthDb()
     .then(() => initAiQuotaDb())
+    .then(() => initSyncDb())
     .then(() => console.log("Auth-Datenbank bereit"))
     .catch((e) => console.error("Auth-DB:", e.message));
 

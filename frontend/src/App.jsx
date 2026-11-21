@@ -38,6 +38,7 @@ import LANG_ZH from "./lang-zh.js";
 import { alarmCfg, fastAlarmPlan, fastAlarmsDue, markFired, icsForFast, FAST_NOTIF_END, FAST_NOTIF_SOON } from "./fastAlarm.js";
 import { toCsv, foodRows, bodyRows, workoutRows, csvHeader } from "./exportCsv.js";
 import { NOTIF_KINDS, normalizeNotif, legacyNotif, planNotifications, dueNow, intakeDueOffsets } from "./notifyPlan.js";
+import { pushSync, pullSync, applySync } from "./sync.js";
 import { ACCENTS, applyAccentOverride, saveAccent, savedAccent, AccentPicker, AvatarPicker, PublicProfileScreen, loadPub, savePub, soc, Avatar } from "./social.jsx";
 import { OnboardModePick, AiOnboarding } from "./aiOnboard.jsx";
 import { Health } from "@capgo/capacitor-health";
@@ -870,7 +871,7 @@ const STR = {
     settingsPrivacy: "Privacy",
     settingsSupport: "Ask the AI coach",
     privacyTitle: "Privacy",
-    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight, body measurements, notes, intake diary, photos and settings stay on your device — never uploaded. There is no account and no advertising."},{"h":"Food search and barcode","p":"Search terms, barcodes and — if you pick one, or the app recognises it from your time zone and language — your country are passed through our server to USDA FoodData Central and Open Food Facts, so products from your country come first. The country also goes to the AI features (coach, recipes, weekly plan) so the suggestions fit your shopping."},{"h":"AI features","p":"Photo scan, coach, recipes, recipe import, weekly meal plan and potential preview go through our server to an AI service (Anthropic, USA). Only what you enter for it is sent: for the photo scan the downscaled photo, for the coach your question and — if the switch in settings is on — a summary of your data, for the meal plan your calorie targets, diet and dislikes, for the preview your goal, the time frame, body values and optionally your photo. If the operator has set up an image service (OpenAI or Google), your photo also goes there for the example picture. Our server stores none of it."},{"h":"Health data","p":"On request ASFIT reads steps, weight and workouts of the last days from Health Connect. The values stay on your device. You can revoke access in Health Connect at any time."},{"h":"Sharing","p":"When you share by link or code, the content is inside the link itself. It is not stored on our server; whoever has the link can read it."},{"h":"Server","p":"Our server briefly remembers your IP address to prevent abuse (requests per minute and per day). There are no trackers. The app loads the exercise photos from jsDelivr (a delivery network for open-source files); jsDelivr sees your IP address when it does."}],
+    privacySections: [{"h":"Your entries","p":"Profile, meals, workouts, weight, body measurements, notes, intake diary, photos and settings live on your device. If you sign in with an account, this data is also backed up to our server (linked to your account, transferred encrypted) so signing in on a new phone restores it; without an account nothing is uploaded. There is no advertising."},{"h":"Food search and barcode","p":"Search terms, barcodes and — if you pick one, or the app recognises it from your time zone and language — your country are passed through our server to USDA FoodData Central and Open Food Facts, so products from your country come first. The country also goes to the AI features (coach, recipes, weekly plan) so the suggestions fit your shopping."},{"h":"AI features","p":"Photo scan, coach, recipes, recipe import, weekly meal plan and potential preview go through our server to an AI service (Anthropic, USA). Only what you enter for it is sent: for the photo scan the downscaled photo, for the coach your question and — if the switch in settings is on — a summary of your data, for the meal plan your calorie targets, diet and dislikes, for the preview your goal, the time frame, body values and optionally your photo. If the operator has set up an image service (OpenAI or Google), your photo also goes there for the example picture. Our server stores none of it."},{"h":"Health data","p":"On request ASFIT reads steps, weight and workouts of the last days from Health Connect. The values stay on your device. You can revoke access in Health Connect at any time."},{"h":"Sharing","p":"When you share by link or code, the content is inside the link itself. It is not stored on our server; whoever has the link can read it."},{"h":"Server","p":"Our server briefly remembers your IP address to prevent abuse (requests per minute and per day). There are no trackers. The app loads the exercise photos from jsDelivr (a delivery network for open-source files); jsDelivr sees your IP address when it does."}],
     recordsTitle: "Records",
     recordsCardSub: "Your highest achievements — take the challenge",
     historyTitle: "History",
@@ -1205,6 +1206,7 @@ const STR = {
     friendsPendingBody: "Waiting for your friend's reply code — paste it below and your duel appears here.",
     friendsAccepted: "accepted your duel — you both see it now! 🎉",
     coachPlanSaved: "Plan saved — you can find it in the Training tab.",
+    syncConfirm: "This account already has data saved from another device. Load it onto this phone? (Cancel keeps this phone’s data and updates the account backup instead.)",
     friendsReplyTitle: "Send your stats back 🤝",
     friendsReplyHint: "Your friend sees the duel only once you share your stats back — one tap:",
     premiumTitle: "ASFIT Premium",
@@ -2173,7 +2175,7 @@ const STR = {
     settingsPrivacy: "Datenschutz",
     settingsSupport: "KI-Coach fragen",
     privacyTitle: "Datenschutz",
-    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht, Körpermaße, Notizen, Einnahme-Tagebuch, Fotos und Einstellungen bleiben auf deinem Gerät — nie hochgeladen. Es gibt kein Konto und keine Werbung."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe, Barcodes und — wenn du eins wählst oder die App es aus Zeitzone und Sprache erkennt — dein Land werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet, damit Produkte aus deinem Land zuerst kommen. Das Land geht auch an die KI-Funktionen (Coach, Rezepte, Wochenplan), damit die Vorschläge zu deinem Einkauf passen."},{"h":"KI-Funktionen","p":"Foto-Scan, Coach, Rezepte, Rezept-Import, Wochenplan und Potenzial-Prognose laufen über unseren Server zu einem KI-Dienst (Anthropic, USA). Gesendet wird nur, was du dafür eingibst: beim Foto-Scan das verkleinerte Foto, beim Coach deine Frage und — wenn der Schalter in den Einstellungen an ist — eine Zusammenfassung deiner Daten, beim Wochenplan deine Kalorienziele, Ernährungsform und Abneigungen, bei der Prognose dein Ziel, der Zeitraum, Körperwerte und optional dein Foto. Hat der Betreiber einen Bilddienst eingerichtet (OpenAI oder Google), geht dein Foto für das Beispielbild auch dorthin. Unser Server speichert nichts davon."},{"h":"Gesundheitsdaten","p":"Auf Wunsch liest ASFIT Schritte, Gewicht und Workouts der letzten Tage aus Health Connect. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."},{"h":"Teilen","p":"Beim Teilen per Link oder Code steckt der Inhalt im Link selbst. Er wird nicht auf unserem Server gespeichert; wer den Link hat, kann ihn lesen."},{"h":"Server","p":"Unser Server merkt sich kurz deine IP-Adresse, um Missbrauch zu verhindern (Anfragen pro Minute und Tag). Es gibt keine Tracker. Die Übungsfotos lädt die App von jsDelivr (ein Auslieferungsnetz für Open-Source-Dateien); dabei sieht jsDelivr deine IP-Adresse."}],
+    privacySections: [{"h":"Deine Eingaben","p":"Profil, Mahlzeiten, Workouts, Gewicht, Körpermaße, Notizen, Einnahme-Tagebuch, Fotos und Einstellungen liegen auf deinem Gerät. Meldest du dich mit einem Konto an, werden sie zusätzlich deinem Konto zugeordnet auf unserem Server gesichert (verschlüsselt übertragen), damit sie beim Anmelden auf einem neuen Handy wieder da sind; ohne Konto wird nichts hochgeladen. Es gibt keine Werbung."},{"h":"Lebensmittelsuche und Barcode","p":"Suchbegriffe, Barcodes und — wenn du eins wählst oder die App es aus Zeitzone und Sprache erkennt — dein Land werden über unseren Server an USDA FoodData Central und Open Food Facts weitergeleitet, damit Produkte aus deinem Land zuerst kommen. Das Land geht auch an die KI-Funktionen (Coach, Rezepte, Wochenplan), damit die Vorschläge zu deinem Einkauf passen."},{"h":"KI-Funktionen","p":"Foto-Scan, Coach, Rezepte, Rezept-Import, Wochenplan und Potenzial-Prognose laufen über unseren Server zu einem KI-Dienst (Anthropic, USA). Gesendet wird nur, was du dafür eingibst: beim Foto-Scan das verkleinerte Foto, beim Coach deine Frage und — wenn der Schalter in den Einstellungen an ist — eine Zusammenfassung deiner Daten, beim Wochenplan deine Kalorienziele, Ernährungsform und Abneigungen, bei der Prognose dein Ziel, der Zeitraum, Körperwerte und optional dein Foto. Hat der Betreiber einen Bilddienst eingerichtet (OpenAI oder Google), geht dein Foto für das Beispielbild auch dorthin. Unser Server speichert nichts davon."},{"h":"Gesundheitsdaten","p":"Auf Wunsch liest ASFIT Schritte, Gewicht und Workouts der letzten Tage aus Health Connect. Die Werte bleiben auf deinem Gerät. Du kannst den Zugriff jederzeit in Health Connect widerrufen."},{"h":"Teilen","p":"Beim Teilen per Link oder Code steckt der Inhalt im Link selbst. Er wird nicht auf unserem Server gespeichert; wer den Link hat, kann ihn lesen."},{"h":"Server","p":"Unser Server merkt sich kurz deine IP-Adresse, um Missbrauch zu verhindern (Anfragen pro Minute und Tag). Es gibt keine Tracker. Die Übungsfotos lädt die App von jsDelivr (ein Auslieferungsnetz für Open-Source-Dateien); dabei sieht jsDelivr deine IP-Adresse."}],
     recordsTitle: "Rekorde",
     recordsCardSub: "Deine höchsten Leistungen — nimm die Herausforderung an",
     historyTitle: "Verlauf",
@@ -2508,6 +2510,7 @@ const STR = {
     friendsPendingBody: "Warte auf den Antwort-Code deines Freundes — füge ihn unten ein, dann erscheint euer Duell hier.",
     friendsAccepted: "hat dein Duell angenommen — ihr seht es jetzt beide! 🎉",
     coachPlanSaved: "Plan gespeichert — du findest ihn im Training-Tab.",
+    syncConfirm: "Für dieses Konto gibt es schon gesicherte Daten von einem anderen Gerät. Auf dieses Handy laden? (Abbrechen behält die Daten dieses Handys und aktualisiert stattdessen die Konto-Sicherung.)",
     friendsReplyTitle: "Schick deinen Stand zurück 🤝",
     friendsReplyHint: "Dein Freund sieht das Duell erst, wenn du deinen Stand zurückschickst — ein Tipp genügt:",
     premiumTitle: "ASFIT Premium",
@@ -14927,6 +14930,25 @@ export default function AsmarFitApp() {
   // Konto (E-Mail/Google/Apple): {token, user}. Ein Konto ist Pflicht — "authFallback"
   // greift nur, wenn der Server gar kein Konto-System anbietet (Self-Hosting/offline).
   const [auth, setAuth] = usePersisted("auth", null);
+  // Konto-Sync: Änderungen regelmäßig und beim Verlassen der App zum Konto sichern
+  // (unverändert = kein Netzverkehr; der Abgleich läuft über eine Prüfsumme)
+  useEffect(() => {
+    const token = auth && auth.token;
+    if (!token || !onboarded) return undefined;
+    const h = { Authorization: "Bearer " + token };
+    const push = () => pushSync(API_BASE, h);
+    const t1 = setTimeout(push, 8000);
+    const iv = setInterval(push, 90_000);
+    const onHide = () => {
+      if (document.visibilityState === "hidden") push();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      clearTimeout(t1);
+      clearInterval(iv);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [auth && auth.token, onboarded]);
   const [authSkipped, setAuthSkipped] = usePersisted("authFallback", false);
   const [billingOn, setBillingOn] = useState(false); // Stripe auf dem Server eingerichtet?
   const authHeaders = () => (auth && auth.token ? { Authorization: "Bearer " + auth.token } : {});
@@ -15054,8 +15076,30 @@ export default function AsmarFitApp() {
   // Nach JEDER Anmeldung: Premium aus der Server-Antwort sofort übernehmen (nicht erst beim
   // nächsten App-Start) und auf Android den Play-Status mit dem neuen Konto abgleichen.
   // Wer ein Konto mit gekauftem Abo hat, sieht Premium damit direkt nach dem Login — nie doppelt kaufen.
+  // Konto-Sync nach dem Anmelden: Serverstand holen. Frisches Gerät → Daten übernehmen
+  // und neu laden; haben beide Seiten Daten, entscheidet der Nutzer einmalig.
+  const syncAfterLogin = async (token) => {
+    const h = { Authorization: "Bearer " + token };
+    try {
+      const got = await pullSync(API_BASE, h);
+      if (got.state === "ok") {
+        const localOnboarded = localStorage.getItem("asfit.onboarded") === "true";
+        if (!localOnboarded) {
+          if (applySync(got.data)) return window.location.reload();
+        } else if (window.confirm(t.syncConfirm)) {
+          if (applySync(got.data)) return window.location.reload();
+        } else {
+          pushSync(API_BASE, h); // dieses Gerät gewinnt → Konto-Sicherung aktualisieren
+        }
+      } else if (got.state === "empty") {
+        pushSync(API_BASE, h); // erstes Gerät dieses Kontos: Stand hochladen
+      }
+    } catch {}
+  };
+
   const applyLogin = (a) => {
     setAuth(a);
+    if (a && a.token && !pendingCs) syncAfterLogin(a.token);
     const p = a && a.user && a.user.premium;
     if (p) setPremium({ plan: p.plan, since: Date.now(), renews: p.renews, cancelled: Boolean(p.cancelled), trial: false, src: "server" });
     else setPremium((q) => (q && q.src === "server" ? null : q));
