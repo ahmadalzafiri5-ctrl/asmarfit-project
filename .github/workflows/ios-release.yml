@@ -17,9 +17,13 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: "Versionsname im Store (leer = 1.0)"
+        description: "Versionsname im Store (leer = Standard unten)"
         type: string
         default: ""
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/ios-release.yml"
 
 concurrency:
   group: ios-release
@@ -69,7 +73,7 @@ jobs:
         run: |
           NAME="${{ inputs.version_name }}"
           /usr/libexec/PlistBuddy -c "Print" App/Info.plist > /dev/null
-          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0};/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0.22};/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = ${GITHUB_RUN_NUMBER};/g" App.xcodeproj/project.pbxproj
           grep -m2 "MARKETING_VERSION\|CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj
 
