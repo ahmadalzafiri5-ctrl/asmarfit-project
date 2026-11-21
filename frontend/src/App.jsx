@@ -8717,10 +8717,14 @@ function BarcodeScanScreen({ t, lang, onAdd, onDone, pantry = [], onPantrySave }
     }
   };
 
+  // ML Kit (scanReal) gibt es nur auf Android — auf dem iPhone scheiterte der Aufruf sofort
+  // ("Server"-Fehler statt Kamera). iOS nutzt deshalb den Kamera-Scanner im Web-Modus.
+  const useMlKit = IS_NATIVE_APP && Capacitor.getPlatform() === "android";
+
   // The camera opens as soon as the screen does — no extra tap.
   useEffect(() => {
     aliveRef.current = true;
-    if (IS_NATIVE_APP) scanReal();
+    if (useMlKit) scanReal();
     else scanWeb();
     return () => {
       aliveRef.current = false;
@@ -8742,7 +8746,7 @@ function BarcodeScanScreen({ t, lang, onAdd, onDone, pantry = [], onPantrySave }
     <div style={{ padding: "10px 20px 24px" }}>
       <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginTop: 0, marginBottom: 16 }}>{t.barcodeHint}</p>
       <div style={{ position: "relative", height: 220, borderRadius: 18, background: "linear-gradient(160deg,#1c1d20,#0e0f11)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, overflow: "hidden" }}>
-        {!IS_NATIVE_APP && (
+        {!useMlKit && (
           <video ref={videoRef} muted playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: camOn ? "block" : "none" }} />
         )}
         {!camOn ? <Barcode size={48} strokeWidth={1.2} color={COLORS.dim} /> : null}
@@ -8831,7 +8835,7 @@ function BarcodeScanScreen({ t, lang, onAdd, onDone, pantry = [], onPantrySave }
             </div>
           )}
           {!camOn && status !== "scanning" && (
-            <button onClick={IS_NATIVE_APP ? scanReal : scanWeb} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            <button onClick={useMlKit ? scanReal : scanWeb} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               {status === "idle" ? t.scanBarcode : t.scanAgain}
             </button>
           )}
