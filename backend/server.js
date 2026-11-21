@@ -9,6 +9,7 @@ import { isCountryCode, countryNameFor, offCountryTag } from "./countries.js";
 import { mountAuth, initAuthDb, authEnabled } from "./auth.js";
 import { mountBilling, billingWebhook } from "./billing.js";
 import { mountPlayBilling } from "./playBilling.js";
+import { mountAppleBilling } from "./appleBilling.js";
 import { mountAiQuota, initAiQuotaDb, aiQuotaGate } from "./aiQuota.js";
 import { mountSync, initSyncDb } from "./sync.js";
 
@@ -36,6 +37,7 @@ app.use(express.json({ limit: "16mb" })); // Foto-Scan-Bilder und der Konto-Sync
 mountAuth(app);
 mountBilling(app);
 mountPlayBilling(app);
+mountAppleBilling(app); // Apple-Abos der iOS-App (App Store Server API, siehe appleBilling.js)
 mountAiQuota(app); // Stand des KI-Kontingents (GET /api/ai/usage)
 mountSync(app); // Konto-Sync: kompletter App-Stand pro Konto (GET/PUT /api/sync)
 if (authEnabled())

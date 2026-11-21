@@ -1259,6 +1259,7 @@ const STR = {
     premiumStartTrial: "Unlock Premium now",
     playErr: "The purchase was not completed. Please try again.",
     playPayHint: "Secure payment through Google Play. Cancel anytime in the Play Store.",
+    applePayHint: "Secure payment through the App Store. Cancel anytime in your Apple subscriptions.",
     premiumActive: "Your subscription",
     premiumTrialBadge: "Free trial",
     premiumRenews: "Renews on {d}",
@@ -2571,6 +2572,7 @@ const STR = {
     premiumStartTrial: "Jetzt Premium freischalten",
     playErr: "Der Kauf wurde nicht abgeschlossen. Bitte versuch es noch einmal.",
     playPayHint: "Sichere Zahlung über Google Play. Kündigen jederzeit im Play Store.",
+    applePayHint: "Sichere Zahlung über den App Store. Kündigen jederzeit in deinen Apple-Abos.",
     premiumActive: "Dein Abo",
     premiumTrialBadge: "Kostenlose Testphase",
     premiumRenews: "Verlängert sich am {d}",
@@ -13940,7 +13942,7 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
       </button>
       {buyErr && <div data-premium-buyerr style={{ ...small, fontSize: 12, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{buyErr}</div>}
       {/* Konto kommt NACH der Zahlung — hier ist keine Anmeldung mehr nötig */}
-      {isPlay ? <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.playPayHint}</div> : billing && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.billingPayHint}</div>}
+      {isPlay ? <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{Capacitor.getPlatform() === "ios" ? t.applePayHint : t.playPayHint}</div> : billing && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.billingPayHint}</div>}
     </div>
   );
 }
@@ -15072,10 +15074,10 @@ export default function AsmarFitApp() {
         setAuth((a) => (a ? { ...a, user: d.user } : a));
         if (d.user.premium) setPremium({ plan: d.user.premium.plan, since: Date.now(), renews: d.user.premium.renews, cancelled: d.user.premium.cancelled, trial: false, src: "server" });
         else setPremium((p) => (p && p.src === "server" ? null : p));
-        // Android-App: Google-Play-Abo erneut prüfen (Verlängerung nach der Testphase, Kündigung),
+        // App: Store-Abo erneut prüfen (Verlängerung nach der Testphase, Kündigung),
         // damit der Premium-Status in Konto und App aktuell bleibt.
-        if (IS_NATIVE_APP && Capacitor.getPlatform() === "android") {
-          fetch(API_BASE + "/api/billing/play/refresh", { method: "POST", headers: authHeaders() })
+        if (IS_NATIVE_APP && ["android", "ios"].includes(Capacitor.getPlatform())) {
+          fetch(API_BASE + (Capacitor.getPlatform() === "ios" ? "/api/billing/apple/refresh" : "/api/billing/play/refresh"), { method: "POST", headers: authHeaders() })
             .then((r) => (r.ok ? r.json() : null))
             .then((p) => {
               if (p && p.premium) {
@@ -15111,15 +15113,20 @@ export default function AsmarFitApp() {
       .catch(() => {});
   // KI-Paket kaufen: Android über Google Play (Server prüft bei Google), Web über Stripe, sonst Test-Route des Servers
   const buyAiPack = async () => {
-    const isAndroidApp = IS_NATIVE_APP && Capacitor.getPlatform() === "android";
+    const storePlatform = IS_NATIVE_APP ? Capacitor.getPlatform() : "";
     try {
-      if (isAndroidApp) {
+      if (storePlatform === "android" || storePlatform === "ios") {
+        const isIosStore = storePlatform === "ios";
         const { NativePurchases, PURCHASE_TYPE } = await import("@capgo/native-purchases");
         const pid = (aiUsage && aiUsage.pack && aiUsage.pack.id) || "asfit_ai_pack";
         const tx = await NativePurchases.purchaseProduct({ productIdentifier: pid, productType: PURCHASE_TYPE.INAPP, quantity: 1 });
-        const token = (tx && (tx.purchaseToken || tx.transactionId)) || "";
+        const token = (tx && (isIosStore ? tx.transactionId : tx.purchaseToken || tx.transactionId)) || "";
         if (!token) return t.aiPackErr;
-        const r = await fetch(API_BASE + "/api/billing/play/verify-pack", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ token, productId: pid }) });
+        const r = await fetch(API_BASE + (isIosStore ? "/api/billing/apple/verify-pack" : "/api/billing/play/verify-pack"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify(isIosStore ? { transactionId: token } : { token, productId: pid }),
+        });
         const d = await r.json().catch(() => ({}));
         if (!r.ok || !d.credits) return t.aiPackErr;
         setAiUsage(d);
@@ -15165,12 +15172,18 @@ export default function AsmarFitApp() {
   // schaltet frei — so bleibt kein Kauf unbestätigt liegen.
   const recoverPlayPurchases = async (headers = null) => {
     const h = headers || authHeaders();
+    const isIosStore = Capacitor.getPlatform() === "ios";
     try {
       const { NativePurchases, PURCHASE_TYPE } = await import("@capgo/native-purchases");
       const subs = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.SUBS }).catch(() => null);
       for (const tx of (subs && subs.purchases) || []) {
-        if (!tx || !tx.purchaseToken) continue;
-        const r = await fetch(API_BASE + "/api/billing/play/verify", { method: "POST", headers: { "Content-Type": "application/json", ...h }, body: JSON.stringify({ token: tx.purchaseToken }) });
+        const token = tx && (isIosStore ? tx.transactionId : tx.purchaseToken);
+        if (!token) continue;
+        const r = await fetch(API_BASE + (isIosStore ? "/api/billing/apple/verify" : "/api/billing/play/verify"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...h },
+          body: JSON.stringify(isIosStore ? { transactionId: token } : { token }),
+        });
         const d = await r.json().catch(() => ({}));
         if (r.ok && d.premium) {
           setPremium({ plan: d.premium.plan, since: Date.now(), renews: d.premium.renews, cancelled: Boolean(d.premium.cancelled), trial: Boolean(d.premium.trial), src: "server" });
@@ -15179,8 +15192,13 @@ export default function AsmarFitApp() {
       }
       const packs = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.INAPP }).catch(() => null);
       for (const tx of (packs && packs.purchases) || []) {
-        if (!tx || !tx.purchaseToken) continue;
-        await fetch(API_BASE + "/api/billing/play/verify-pack", { method: "POST", headers: { "Content-Type": "application/json", ...h }, body: JSON.stringify({ token: tx.purchaseToken, productId: tx.productId || tx.productIdentifier || undefined }) }).catch(() => {});
+        const token = tx && (isIosStore ? tx.transactionId : tx.purchaseToken);
+        if (!token) continue;
+        await fetch(API_BASE + (isIosStore ? "/api/billing/apple/verify-pack" : "/api/billing/play/verify-pack"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...h },
+          body: JSON.stringify(isIosStore ? { transactionId: token } : { token: token, productId: tx.productId || tx.productIdentifier || undefined }),
+        }).catch(() => {});
       }
     } catch {}
   };
@@ -15222,9 +15240,9 @@ export default function AsmarFitApp() {
     // Neue Reihenfolge (zahlen -> Konto): Wer sich beim Bezahlen anmeldet und noch
     // kein Abo hat, landet direkt wieder auf der Paywall, um den Kauf abzuschliessen.
     if (!p && onboarded) setOverlay("premium");
-    if (IS_NATIVE_APP && Capacitor.getPlatform() === "android" && a && a.token) {
+    if (IS_NATIVE_APP && ["android", "ios"].includes(Capacitor.getPlatform()) && a && a.token) {
       const h = { Authorization: "Bearer " + a.token };
-      fetch(API_BASE + "/api/billing/play/refresh", { method: "POST", headers: h })
+      fetch(API_BASE + (Capacitor.getPlatform() === "ios" ? "/api/billing/apple/refresh" : "/api/billing/play/refresh"), { method: "POST", headers: h })
         .then((r) => (r.ok ? r.json() : null))
         .then((x) => {
           if (x && x.premium) setPremium({ plan: x.premium.plan, since: Date.now(), renews: x.premium.renews, cancelled: Boolean(x.premium.cancelled), trial: Boolean(x.premium.trial), src: "server" });
@@ -15237,18 +15255,26 @@ export default function AsmarFitApp() {
   // Google und schaltet Premium im Konto frei — erst dann gilt das Abo in der App.
   // Rückgabe: null = ok oder vom Nutzer abgebrochen, sonst ein Fehlertext für die Anzeige.
   const openPlayPurchase = async (plan) => {
+    const isIosStore = Capacitor.getPlatform() === "ios";
     try {
       const { NativePurchases, PURCHASE_TYPE } = await import("@capgo/native-purchases");
-      const tx = await NativePurchases.purchaseProduct({ productIdentifier: "asfit_premium", planIdentifier: plan, productType: PURCHASE_TYPE.SUBS, quantity: 1 });
-      const token = (tx && (tx.purchaseToken || tx.transactionId)) || "";
+      // Apple hat je Laufzeit ein eigenes Produkt; Google ein Produkt mit zwei Basis-Plänen
+      const tx = isIosStore
+        ? await NativePurchases.purchaseProduct({ productIdentifier: plan === "yearly" ? "asfit_premium_yearly" : "asfit_premium_monthly", productType: PURCHASE_TYPE.SUBS, quantity: 1 })
+        : await NativePurchases.purchaseProduct({ productIdentifier: "asfit_premium", planIdentifier: plan, productType: PURCHASE_TYPE.SUBS, quantity: 1 });
+      const token = (tx && (isIosStore ? tx.transactionId : tx.purchaseToken || tx.transactionId)) || "";
       if (!token) return t.playErr;
-      // Kauf VOR dem Konto (neue Reihenfolge): Der Play-Kauf ist durch — jetzt das
+      // Kauf VOR dem Konto (neue Reihenfolge): Der Kauf ist durch — jetzt das
       // Konto anlegen; der Login verknüpft den Kauf automatisch (recoverPlayPurchases).
       if (!auth || !auth.token) {
         setPremium({ plan, since: Date.now(), renews: Date.now() + PREMIUM_PLANS[plan].days * 86400000, cancelled: false, trial: false, src: "play-pending" });
         return null;
       }
-      const r = await fetch(API_BASE + "/api/billing/play/verify", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ token }) });
+      const r = await fetch(API_BASE + (isIosStore ? "/api/billing/apple/verify" : "/api/billing/play/verify"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify(isIosStore ? { transactionId: token } : { token }),
+      });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.premium) return t.playErr;
       setPremium({ plan: d.premium.plan, since: Date.now(), renews: d.premium.renews, cancelled: Boolean(d.premium.cancelled), trial: Boolean(d.premium.trial), src: "server" });
@@ -16498,7 +16524,7 @@ export default function AsmarFitApp() {
     topTitle = t.settingsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "premium") {
-    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} isPlay={IS_NATIVE_APP && Capacitor.getPlatform() === "android"} onPlayPurchase={openPlayPurchase} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} aiUsage={aiUsage} onBuyPack={buyAiPack} packCanBuy={(IS_NATIVE_APP && Capacitor.getPlatform() === "android") || billingPack || !billingOn} packFocus={packFocus} />;
+    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} isPlay={IS_NATIVE_APP && ["android", "ios"].includes(Capacitor.getPlatform())} onPlayPurchase={openPlayPurchase} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} aiUsage={aiUsage} onBuyPack={buyAiPack} packCanBuy={(IS_NATIVE_APP && ["android", "ios"].includes(Capacitor.getPlatform())) || billingPack || !billingOn} packFocus={packFocus} />;
     topTitle = t.premiumTitle;
     // Ohne aktives Abo gibt es kein Zurück — erst das Probeabo starten, dann öffnet die App
     showBack = premiumActive ? () => setOverlay("settings") : null;

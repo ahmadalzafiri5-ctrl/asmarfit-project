@@ -36,6 +36,8 @@ export async function initAuthDb() {
   )`);
   // Google-Play-Kauf-Token des Nutzers (für die erneute Prüfung beim App-Start, siehe playBilling.js)
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS play_token TEXT");
+  // Apple-Original-Transaktions-ID (für die erneute Abo-Prüfung beim App-Start, siehe appleBilling.js)
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS apple_otid TEXT");
   // Geräte, auf denen die Gratis-Testphase schon einmal lief: verhindert, dass man mit einem
   // neuen Konto auf demselben Gerät noch einmal gratis testet (siehe billing.js).
   await pool.query(`CREATE TABLE IF NOT EXISTS trial_devices (
