@@ -205,7 +205,7 @@ export function checkCatalog(chains) {
     const items = c.items.filter(rowOk);
     if (!items.length) continue;
     ids.add(c.id);
-    out.push({ id: c.id, name: c.name, emoji: typeof c.emoji === "string" ? c.emoji : "🍽️", color: /^#[0-9a-fA-F]{6}$/.test(c.color || "") ? c.color : "#8A8A8A", type: typeof c.type === "string" ? c.type : "world", region: c.region || "world", src: c.src || "estimate", generic: c.generic, items });
+    out.push({ id: c.id, name: c.name, emoji: typeof c.emoji === "string" ? c.emoji : "🍽️", color: /^#[0-9a-fA-F]{6}$/.test(c.color || "") ? c.color : "#8A8A8A", type: typeof c.type === "string" ? c.type : "world", region: c.region || "world", countries: Array.isArray(c.countries) ? c.countries.filter((x) => typeof x === "string" && /^[A-Z]{2}$/.test(x)) : undefined, src: c.src || "estimate", generic: c.generic, items });
   }
   return out.length >= 3 ? out : null;
 }

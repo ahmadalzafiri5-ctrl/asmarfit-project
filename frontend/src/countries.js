@@ -70,3 +70,11 @@ export function guessCountry({ timeZone, languages } = {}) {
 const EU = "AL AD AT BY BE BA BG HR CY CZ DK EE FI FR DE GR HU IS IE IT XK LV LI LT LU MT MD MC ME NL MK NO PL PT RO RU SM RS SK SI ES SE CH UA GB VA".split(" ");
 // which group of the fast-food catalog is "at home" in a country
 export const ffRegionFor = (cc) => (EU.includes(cc) ? "EU" : cc === "US" || cc === "CA" || cc === "PR" ? "US" : "world");
+// is this fast-food chain available in the user's country? Own entries and generic cuisines always are;
+// a chain with a country list must name the country, otherwise its region decides.
+export const ffAvailableIn = (c, cc) => {
+  if (!cc || c.mine || c.generic) return true;
+  if (Array.isArray(c.countries) && c.countries.length) return c.countries.includes(cc);
+  const r = c.region || "world";
+  return r === "world" || r === ffRegionFor(cc);
+};

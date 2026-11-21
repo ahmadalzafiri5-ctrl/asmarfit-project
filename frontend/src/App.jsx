@@ -20,7 +20,7 @@ import { speak, stopSpeaking, beep, unlockAudio, holdScreen, playClip, preloadCl
 import { installA11y } from "./a11y.js";
 import { MUSCLE_IDS, RANK_GROUPS, viewFor } from "./anatomy.js";
 import { rankPoints, tierFor, heatFor, TIERS } from "./muscleRank.js";
-import { allCountries, searchCountries, countryName, flagOf, guessCountry, ffRegionFor } from "./countries.js";
+import { allCountries, searchCountries, countryName, flagOf, guessCountry, ffRegionFor, ffAvailableIn } from "./countries.js";
 import LANG_FR from "./lang-fr.js";
 import LANG_IT from "./lang-it.js";
 import LANG_ES from "./lang-es.js";
@@ -1070,10 +1070,9 @@ const STR = {
     ffCat_dessert: "Desserts",
     ffCat_drink: "Drinks",
     ffDisclaimer: "Estimates for Europe (Oct 2026), not the chains' official figures. Portions and recipes may differ.",
-    ffRegion_all: "All regions",
-    ffRegion_EU: "Europe / Switzerland",
-    ffRegion_US: "USA",
-    ffRegion_world: "World cuisines",
+    ffCountryNote: "Showing places available in {country}",
+    ffWorldwide: "Show all",
+    ffWorldwideOn: "Showing all countries",
     ffSrcShort_dataset: "nutrition table",
     ffSrcNote_dataset: "Values from the chain's published US nutrition table (data set 2018). The current menu and other countries can differ.",
     ffCatalogInfo: "Catalog: {c} chains · {i} items",
@@ -1206,6 +1205,8 @@ const STR = {
     friendsPendingBody: "Waiting for your friend's reply code — paste it below and your duel appears here.",
     friendsAccepted: "accepted your duel — you both see it now! 🎉",
     coachPlanSaved: "Plan saved — you can find it in the Training tab.",
+    coachPlanShow: "Show plan in Training",
+    phaseTargetShort: "target",
     syncConfirm: "This account already has data saved from another device. Load it onto this phone? (Cancel keeps this phone’s data and updates the account backup instead.)",
     friendsReplyTitle: "Send your stats back 🤝",
     friendsReplyHint: "Your friend sees the duel only once you share your stats back — one tap:",
@@ -2374,10 +2375,9 @@ const STR = {
     ffCat_dessert: "Desserts",
     ffCat_drink: "Getränke",
     ffDisclaimer: "Richtwerte für Europa (Stand Okt. 2026), nicht die offiziellen Angaben der Ketten. Portionen und Rezepte können abweichen.",
-    ffRegion_all: "Alle Regionen",
-    ffRegion_EU: "Europa / Schweiz",
-    ffRegion_US: "USA",
-    ffRegion_world: "Weltküchen",
+    ffCountryNote: "Zeigt Ketten, die es in {country} gibt",
+    ffWorldwide: "Alle zeigen",
+    ffWorldwideOn: "Zeigt alle Länder",
     ffSrcShort_dataset: "Nährwerttabelle",
     ffSrcNote_dataset: "Werte aus der veröffentlichten US-Nährwerttabelle der Kette (Datensatz 2018). Das aktuelle Menü und andere Länder können abweichen.",
     ffCatalogInfo: "Katalog: {c} Ketten · {i} Artikel",
@@ -2510,6 +2510,8 @@ const STR = {
     friendsPendingBody: "Warte auf den Antwort-Code deines Freundes — füge ihn unten ein, dann erscheint euer Duell hier.",
     friendsAccepted: "hat dein Duell angenommen — ihr seht es jetzt beide! 🎉",
     coachPlanSaved: "Plan gespeichert — du findest ihn im Training-Tab.",
+    coachPlanShow: "Plan im Training ansehen",
+    phaseTargetShort: "Ziel",
     syncConfirm: "Für dieses Konto gibt es schon gesicherte Daten von einem anderen Gerät. Auf dieses Handy laden? (Abbrechen behält die Daten dieses Handys und aktualisiert stattdessen die Konto-Sicherung.)",
     friendsReplyTitle: "Schick deinen Stand zurück 🤝",
     friendsReplyHint: "Dein Freund sieht das Duell erst, wenn du deinen Stand zurückschickst — ein Tipp genügt:",
@@ -3743,7 +3745,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
 
   // Gekürztes Onboarding: nur noch 5 Screens (Willkommen, Geschlecht, Ziel, Zahlen, Fertig).
   // Die Schritt-Nummern bleiben die alten Kennungen; FLOW bestimmt die Reihenfolge.
-  const FLOW = [0, 1, 2, 3, 7, 14, 13];
+  const FLOW = [0, 1, 2, 3, 7, 13]; // Profil-Schritt (14) entfernt — Wunsch 21.11.
   const flowIdx = FLOW.indexOf(step);
   const LAST_STEP = 13;
   // "Überspringen": sinnvolle Standardwerte setzen und weiter — niemand bleibt hängen
@@ -3946,17 +3948,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
           </div>
         )}
 
-        {step === 14 && (
-          <div>
-            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 22, fontWeight: 700, color: COLORS.text, margin: "0 0 6px" }}>{soc(lang).profTitle}</h2>
-            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.dim, margin: "0 0 18px", lineHeight: 1.5 }}>{soc(lang).profSub}</p>
-            <AvatarPicker lang={lang} avatar={pubAvatar} onChange={setPubAvatar} />
-            <div style={{ marginTop: 18 }}>
-              <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 6 }}>{soc(lang).username}</div>
-              <TextField value={pubUsername} onChange={(v) => setPubUsername(String(v).replace(/[^\w.\-]/g, "").toLowerCase().slice(0, 24))} placeholder={soc(lang).unamePh} />
-            </div>
-          </div>
-        )}
+        {/* Profil-Schritt (14) entfernt — „Dein Profil" gibt es nicht mehr (Wunsch 21.11.) */}
 
         {step === 3 && (
           <div>
@@ -4548,7 +4540,8 @@ function FastingScreen({ t, lang }) {
           </Card>
         </>
       )}
-      <div style={{ ...small, fontSize: 11.5, marginTop: 18 }}>{t.fastNote}</div>
+      {/* Ärztlicher Hinweis auf Wunsch des Betreibers entfernt (21.11.) — die allgemeinen
+          Gesundheitshinweise stehen weiterhin in Nutzungsbedingungen und Onboarding */}
     </div>
   );
 }
@@ -5841,7 +5834,8 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
   const trained = Object.keys(personalBests)
     .map((key) => ({ ex: EXERCISE_LIBRARY.find((e) => e.key === key), best: personalBests[key] }))
     .filter((x) => x.ex);
-  const [selectedDayId, setSelectedDayId] = useState(planDays[0]?.id ?? null);
+  // Standard: der Plan-Tag des heutigen Wochentags, sonst der erste
+  const [selectedDayId, setSelectedDayId] = useState(() => (planDays.find((d) => d.wd === new Date().getDay()) || planDays[0])?.id ?? null);
   const hasPlanDays = planName && planDays.length > 0;
   const selectedDay = hasPlanDays ? planDays.find((d) => d.id === selectedDayId) || planDays[0] : null;
   const startFromCard = () => {
@@ -5864,7 +5858,12 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
           {hasPlanDays && planDays.length > 1 && (
             <div style={{ display: "flex", gap: 8, marginTop: 14, overflowX: "auto", paddingBottom: 2 }}>
               {planDays.map((d) => (
-                <Chip key={d.id} label={d.name} active={(selectedDay && selectedDay.id) === d.id} onClick={() => setSelectedDayId(d.id)} />
+                <Chip
+                  key={d.id}
+                  label={(d.wd != null ? wdShort(d.wd, lang) + " · " : "") + d.name + (d.wd === new Date().getDay() ? " ●" : "")}
+                  active={(selectedDay && selectedDay.id) === d.id}
+                  onClick={() => setSelectedDayId(d.id)}
+                />
               ))}
             </div>
           )}
@@ -6131,6 +6130,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
   const [compareId, setCompareId] = useState(null);
   const [beforeId, setBeforeId] = useState(null); // Vorher frei wählbar (Standard: ältestes Foto)
   const [photoDate, setPhotoDate] = useState(() => dateKey(new Date())); // Aufnahmedatum fürs nächste Foto
+  const swipeXRef = useRef(null); // Start-X fürs Wischen im Vergleichsbild
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const sorted = [...photos].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
@@ -6292,7 +6292,20 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
           </div>
         ) : (
           <>
-            <div style={{ position: "relative", height: 260, borderRadius: 14, overflow: "hidden", background: COLORS.raised }}>
+            {/* Wischen (links/rechts) blättert durchs Nachher-Bild — Wunsch 21.11. */}
+            <div
+              onTouchStart={(e) => (swipeXRef.current = e.touches[0].clientX)}
+              onTouchEnd={(e) => {
+                const x0 = swipeXRef.current;
+                swipeXRef.current = null;
+                if (x0 == null || sorted.length < 2) return;
+                const dx = e.changedTouches[0].clientX - x0;
+                if (Math.abs(dx) < 45) return;
+                const curIdx = Math.max(0, sorted.findIndex((p) => p.id === (after ? after.id : sorted[sorted.length - 1].id)));
+                setCompareId(sorted[(curIdx + (dx < 0 ? 1 : -1) + sorted.length) % sorted.length].id);
+              }}
+              style={{ position: "relative", height: 260, borderRadius: 14, overflow: "hidden", background: COLORS.raised, touchAction: "pan-y" }}
+            >
               <img src={before.dataUrl} alt={t.progressBefore} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
               <div style={{ position: "absolute", inset: 0, clipPath: `inset(0 ${100 - slider}% 0 0)` }}>
                 <img src={(after || before).dataUrl} alt={t.progressAfter} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -8892,23 +8905,24 @@ function ReportAi({ t, lang, kind, content }) {
 const ASSIST_PLAN_RE = /\[ASFIT-PLAN\]([\s\S]*?)\[\/ASFIT-PLAN\]/;
 function applyAssistantPlan(text, onSavePlan, okLine) {
   const m = String(text || "").match(ASSIST_PLAN_RE);
-  if (!m) return text;
+  if (!m) return { text, saved: false };
   const clean = String(text).replace(ASSIST_PLAN_RE, "").trim();
-  if (!onSavePlan) return clean;
+  if (!onSavePlan) return { text: clean, saved: false };
   let plan = null;
   try {
     plan = JSON.parse(m[1]);
   } catch {}
-  const saved = plan && onSavePlan(plan);
-  return clean + (saved ? "\n\n✅ " + okLine : "");
+  const saved = Boolean(plan && onSavePlan(plan));
+  return { text: clean + (saved ? "\n\n✅ " + okLine : ""), saved };
 }
 
-function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, chips = [], onSavePlan = null }) {
+function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, chips = [], onSavePlan = null, onShowPlan = null }) {
   const { code: cc } = useCountry();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false); // answer takes long: the free server is probably waking up
+  const [planJustSaved, setPlanJustSaved] = useState(false); // zeigt den "Plan ansehen"-Knopf
   const [error, setError] = useState(null);
   const endRef = useRef(null);
 
@@ -8970,11 +8984,15 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
           const partial = acc.replace(/\[ASFIT-PLAN\][\s\S]*$/, "").trimEnd();
           setMessages([...next, { role: "assistant", content: partial }]);
         }
-        setMessages([...next, { role: "assistant", content: applyAssistantPlan(acc.trim(), onSavePlan, t.coachPlanSaved) || "…" }]);
+        const done1 = applyAssistantPlan(acc.trim(), onSavePlan, t.coachPlanSaved);
+        if (done1.saved) setPlanJustSaved(true);
+        setMessages([...next, { role: "assistant", content: done1.text || "…" }]);
       } else {
         // Älterer Server ohne Streaming: komplette JSON-Antwort wie bisher.
         const data = await res.json();
-        setMessages([...next, { role: "assistant", content: applyAssistantPlan(data.reply, onSavePlan, t.coachPlanSaved) }]);
+        const done2 = applyAssistantPlan(data.reply, onSavePlan, t.coachPlanSaved);
+        if (done2.saved) setPlanJustSaved(true);
+        setMessages([...next, { role: "assistant", content: done2.text }]);
       }
     } catch {
       setError(t.serverError);
@@ -9023,6 +9041,12 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
         {messages.map(bubble)}
         {busy && <div data-ai-busy={slow ? "waking" : "thinking"} style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginBottom: 10 }}>{slow ? t.searchWaking : t.assistantThinking}</div>}
         {error && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.coral, marginBottom: 10 }}>{error}</div>}
+        {/* Vom Coach gespeicherter Plan: ein Tipp führt direkt ins Training */}
+        {planJustSaved && onShowPlan && (
+          <button data-show-coach-plan onClick={onShowPlan} style={{ display: "block", margin: "0 0 10px", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+            {t.coachPlanShow}
+          </button>
+        )}
         <div ref={endRef} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10, position: "sticky", bottom: 0, background: COLORS.bg, paddingTop: 8 }}>
@@ -9041,7 +9065,7 @@ function AssistantChat({ t, lang, context, hello, minHeight = 620, data = null, 
   );
 }
 
-function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, onUpsell = () => {}, onSavePlan = null }) {
+function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, onUpsell = () => {}, onSavePlan = null, onShowPlan = null }) {
   // Der persönliche Modus (Coach kennt deine Daten) ist Premium; der allgemeine Coach bleibt gratis
   const personal = premium && aiOn;
   return (
@@ -9056,7 +9080,7 @@ function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, 
         </div>
         <Switch checked={personal} onChange={(v) => (premium ? setAiOn(v) : onUpsell())} />
       </div>
-      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).replace("{name}", name || "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} onSavePlan={onSavePlan} />
+      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).replace("{name}", name || "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} onSavePlan={onSavePlan} onShowPlan={onShowPlan} />
     </div>
   );
 }
@@ -9819,7 +9843,6 @@ function useFastFoodCatalog() {
   }, []);
   return cat;
 }
-const FF_REGIONS = ["EU", "US", "world"];
 
 function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProtein, proteinTarget, onLog }) {
   const last = data.last;
@@ -9831,7 +9854,7 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
   const [step, setStep] = useState("chain"); // chain -> budget -> result (menu = add items, reachable from budget and result)
   const [cq, setCq] = useState("");
   const [ctype, setCtype] = useState("all");
-  const [cregion, setCregion] = useState("all");
+  const [ffWorldwide, setFfWorldwide] = useState(false); // false = only chains that exist in the user's country
   const [addQ, setAddQ] = useState("");
   const [addAll, setAddAll] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -9926,9 +9949,8 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
   if (step === "chain") {
     const q = cq.trim().toLowerCase();
     const types = ["all", ...(data.mine && data.mine.length ? ["mine"] : []), ...Array.from(new Set(catalog.chains.map((c) => c.type)))];
-    const regions = FF_REGIONS.filter((r) => catalog.chains.some((c) => (c.region || "world") === r));
     const shown = allChains
-      .filter((c) => (ctype === "all" || (ctype === "mine" ? c.mine : c.type === ctype)) && (cregion === "all" || c.mine || (c.region || "world") === cregion) && (!q || c.name.toLowerCase().includes(q)))
+      .filter((c) => (ctype === "all" || (ctype === "mine" ? c.mine : c.type === ctype)) && (ffWorldwide || ffAvailableIn(c, ccFF)) && (!q || c.name.toLowerCase().includes(q)))
       .sort((a, b) => (b.id === last ? 1 : 0) - (a.id === last ? 1 : 0) || ((a.mine || (a.region || "world") === homeRegion) ? 0 : 1) - ((b.mine || (b.region || "world") === homeRegion) ? 0 : 1));
     const create = () => {
       const name = newName.trim().slice(0, 40);
@@ -9951,11 +9973,14 @@ function FastFoodScreen({ t, lang, data, setData, goalKcal, eatenKcal, eatenProt
           <Search size={16} color={COLORS.dim} />
           <input data-chain-search value={cq} onChange={(e) => setCq(e.target.value)} placeholder={t.ffSearchChain} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14 }} />
         </div>
-        {regions.length > 1 && (
-          <div data-chain-regions style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 8, paddingBottom: 2 }}>
-            {["all", ...regions].map((k) => (
-              <Chip key={k} label={k === "all" ? t.ffRegion_all : t["ffRegion_" + k]} active={cregion === k} onClick={() => setCregion(k)} />
-            ))}
+        {ccFF && (
+          <div data-chain-country style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ ...small, fontSize: 12 }}>
+              {flagOf(ccFF)} {t.ffCountryNote.replace("{country}", countryName(ccFF, lang))}
+            </span>
+            <span data-ff-worldwide onClick={() => setFfWorldwide((v) => !v)} style={{ marginLeft: "auto", fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, color: ffWorldwide ? COLORS.gold : COLORS.dim, cursor: "pointer", whiteSpace: "nowrap" }}>
+              {ffWorldwide ? "🌍 " + t.ffWorldwideOn : t.ffWorldwide}
+            </span>
           </div>
         )}
         <div data-chain-types style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 14, paddingBottom: 2 }}>
@@ -11953,6 +11978,10 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
 
 /* ---------------- Plan builder ---------------- */
 
+// Wochentage Mo..So (JS-getDay-Nummern) + lokalisierte Kurznamen für die Plan-Tage
+const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const wdShort = (wd, lang) => new Date(2026, 10, 1 + wd).toLocaleDateString(localeOf(lang), { weekday: "short" }).replace(/.$/, "");
+
 function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSelectedDay, onOpenLibraryForDay, onSave }) {
   const [dayInput, setDayInput] = useState("");
   const [saved, setSaved] = useState(false);
@@ -12057,6 +12086,22 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
                     style={{ cursor: "pointer" }}
                   />
                 </div>
+              </div>
+              {/* Wochentag für diesen Plan-Tag wählen (nochmal tippen = abwählen) */}
+              <div data-day-weekdays style={{ display: "flex", gap: 6, margin: "2px 0 10px", flexWrap: "wrap" }}>
+                {WEEKDAY_ORDER.map((wd) => (
+                  <span
+                    key={wd}
+                    data-wd={wd}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDays(days.map((x) => (x.id === d.id ? { ...x, wd: x.wd === wd ? null : wd } : x)));
+                    }}
+                    style={{ width: 34, height: 28, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Sora, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer", color: d.wd === wd ? COLORS.bg : COLORS.dim, background: d.wd === wd ? COLORS.gold : COLORS.raised, border: `1px solid ${d.wd === wd ? COLORS.gold : COLORS.border}` }}
+                  >
+                    {wdShort(wd, lang)}
+                  </span>
+                ))}
               </div>
               {d.exercises.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -12274,7 +12319,7 @@ function ConnectionsScreen({ t, info, native, onConnect }) {
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 6 }}>{t.connOthersTitle}</div>
         <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, lineHeight: 1.5 }}>{!native ? t.connOthersWeb : isIos ? t.connOthersIos : t.connOthersAndroid}</div>
       </Card>
-      {!isIos && <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, lineHeight: 1.5 }}>{t.connIosNote}</div>}
+      {/* Hinweis entfernt: die iPhone-App existiert inzwischen (TestFlight seit 20.11.26) */}
     </div>
   );
 }
@@ -13000,7 +13045,8 @@ function PhaseCard({ t, premium = false, onUpsell = () => {}, phase, onSave, wei
     );
   const labels = { cut: t.obGoalCut, bulk: t.obGoalBulk, maint: t.obGoalMaintain };
   if (!phase) {
-    const valid = Number(weeks) >= 2 && Number(weeks) <= 52 && (type === "maint" || Number(target) > 30) && latest != null;
+    const targetNum = parseFloat(String(target).replace(",", ".")); // "77,5" vom iOS-Ziffernblock nicht als NaN speichern
+    const valid = Number(weeks) >= 2 && Number(weeks) <= 52 && (type === "maint" || targetNum > 30) && latest != null;
     return (
       <Card data-phase-setup style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -13028,7 +13074,7 @@ function PhaseCard({ t, premium = false, onUpsell = () => {}, phase, onSave, wei
         <button
           data-phase-start
           disabled={!valid}
-          onClick={() => onSave({ type, start: Date.now(), weeks: Number(weeks), startKg: latest, targetKg: type === "maint" ? latest : Number(target) })}
+          onClick={() => onSave({ type, start: Date.now(), weeks: Number(weeks), startKg: latest, targetKg: type === "maint" ? latest : Math.round(targetNum * 10) / 10 })}
           style={{ width: "100%", marginTop: 12, opacity: valid ? 1 : 0.5, background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: valid ? "pointer" : "default" }}
         >
           {t.phaseStart}
@@ -13040,7 +13086,8 @@ function PhaseCard({ t, premium = false, onUpsell = () => {}, phase, onSave, wei
   const elapsedD = Math.max(0, (Date.now() - phase.start) / 86400000);
   const prog = Math.min(1, elapsedD / totalDays);
   const week = Math.min(phase.weeks, Math.floor(elapsedD / 7) + 1);
-  const planKg = Math.round((phase.startKg + (phase.targetKg - phase.startKg) * prog) * 10) / 10;
+  const phaseTarget = Number(phase.targetKg) || phase.startKg; // heilt früher kaputt gespeicherte Phasen (NaN)
+  const planKg = Math.round((phase.startKg + (phaseTarget - phase.startKg) * prog) * 10) / 10;
   const delta = latest != null ? Math.round((latest - planKg) * 10) / 10 : null;
   // Richtung stimmt? (Cut: unter Plan ist ok, Bulk: über Plan ist ok, Erhaltung: ±1 kg)
   const dirGood = delta != null && (phase.type === "cut" ? delta <= 0 : phase.type === "bulk" ? delta >= 0 : Math.abs(delta) <= 1);
@@ -13064,6 +13111,9 @@ function PhaseCard({ t, premium = false, onUpsell = () => {}, phase, onSave, wei
         </div>
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.teal }}>
           {planKg} kg <span style={{ ...small, fontWeight: 400 }}>{t.phasePlan}</span>
+        </div>
+        <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.gold }}>
+          {phaseTarget} kg <span style={{ ...small, fontWeight: 400 }}>{t.phaseTargetShort}</span>
         </div>
       </div>
       <div style={{ ...small, marginTop: 8, lineHeight: 1.45 }}>{hint}</div>
@@ -13894,7 +13944,6 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
         { tint: "teal", icon: Link2, label: t.connSettings, key: "connections" },
         { tint: "teal", icon: Globe, label: t.countryRow, sub: ccSet ? flagOf(ccSet) + " " + ccSetName : t.countryNone2, key: "country" },
         { tint: "teal", icon: Users, label: t.friendsTitle, sub: friendsCount === 1 ? t.setFriendsOne : friendsCount ? t.setFriendsCount.replace("{n}", friendsCount) : t.setFriendsNone, key: "friends" },
-        { tint: "teal", icon: User, label: soc(lang).profTitle, sub: loadPub().username || soc(lang).username, key: "publicProfile" },
         ...(!HIDE_INTAKE ? [{ tint: "teal", icon: Pill, label: t.intakeTitle, key: "intake" }] : []),
       ],
     },
@@ -15327,8 +15376,14 @@ export default function AsmarFitApp() {
       }
       const wanted = ["steps", "weight", "workouts", "calories"];
       const status = askPermission ? await Health.requestAuthorization({ read: wanted }) : await Health.checkAuthorization({ read: wanted });
-      if (!status.readAuthorized.includes("steps")) {
-        setHealthInfo((h) => ({ ...h, connected: false, granted: status.readAuthorized || [], unavailable: false }));
+      let granted = status.readAuthorized || [];
+      // iOS/HealthKit verrät Lese-Rechte grundsätzlich nicht zuverlässig: Nach der
+      // Freigabe-Anfrage (oder wenn der Dialog schon einmal gezeigt wurde) wird
+      // schlicht gelesen — verweigerte Werte kommen dann einfach leer zurück.
+      const iosHealth = Capacitor.getPlatform() === "ios";
+      if (iosHealth && (askPermission || healthInfoRef.current.connected)) granted = wanted;
+      if (!granted.includes("steps")) {
+        setHealthInfo((h) => ({ ...h, connected: false, granted, unavailable: false }));
         return setStepsSource("connect");
       }
       const start = new Date();
@@ -15337,7 +15392,7 @@ export default function AsmarFitApp() {
       setSteps(Math.round(res.samples.reduce((sum, x) => sum + (x.value || 0), 0)));
       setStepsSource("health");
       // Aktivitaets-Kalorien (heute): echter Verbrauch von Uhr/Handy statt der Schritt-Schaetzung
-      if (status.readAuthorized.includes("calories")) {
+      if (granted.includes("calories")) {
         try {
           const cal = await Health.queryAggregated({ dataType: "calories", startDate: start.toISOString(), endDate: new Date().toISOString(), bucket: "day", aggregation: "sum" });
           setHealthKcal(Math.round(cal.samples.reduce((sum, x) => sum + (x.value || 0), 0)));
@@ -15348,14 +15403,14 @@ export default function AsmarFitApp() {
       let lastSync = healthInfoRef.current.lastSync;
       if (askPermission || Date.now() - lastExtrasRef.current > 10 * 60000) {
         try {
-          await syncExtras(status.readAuthorized);
+          await syncExtras(granted);
         } catch {
           /* weight/workouts are optional — steps keep working */
         }
         lastExtrasRef.current = Date.now();
         lastSync = new Date().toISOString();
       }
-      setHealthInfo({ connected: true, lastSync, granted: status.readAuthorized, unavailable: false });
+      setHealthInfo({ connected: true, lastSync, granted, unavailable: false });
     } catch {
       setStepsSource("unavailable");
     }
@@ -16291,7 +16346,7 @@ export default function AsmarFitApp() {
     topTitle = t.fastTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "assistant") {
-    content = <AssistantScreen t={t} lang={lang} data={aiData} aiOn={aiOn} setAiOn={setAiOn} name={profile.name} onSavePlan={saveCoachPlan} premium={premiumActive} onUpsell={() => setAiLimitHit({ kind: "coach", used: 0, limit: 0 })} />;
+    content = <AssistantScreen t={t} lang={lang} data={aiData} aiOn={aiOn} setAiOn={setAiOn} name={profile.name} onSavePlan={saveCoachPlan} onShowPlan={() => { setOverlay(null); setTab("training"); }} premium={premiumActive} onUpsell={() => setAiLimitHit({ kind: "coach", used: 0, limit: 0 })} />;
     topTitle = t.assistantTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "planBuilder") {
@@ -16313,6 +16368,9 @@ export default function AsmarFitApp() {
         onSave={(name) => {
           setPlanName(name);
           setPlanDays(pbDays);
+          // Gewählte Wochentage des Plans in die Trainings-Erinnerungen übernehmen
+          const wds = [...new Set(pbDays.map((d) => d.wd).filter((w) => w != null))];
+          if (wds.length) setNotif((n) => ({ ...n, days: wds }));
           setTimeout(() => {
             setOverlay(null);
             setPbName("");
@@ -16412,10 +16470,7 @@ export default function AsmarFitApp() {
     content = <GoalsSettings t={t} lang={lang} profile={profile} stepsGoal={stepsGoal} onSave={saveGoals} premium={premiumActive} onUpsell={() => setOverlay("premium")} />;
     topTitle = t.setGoalsRow;
     showBack = () => setOverlay("settings");
-  } else if (overlay === "publicProfile") {
-    content = <PublicProfileScreen lang={lang} />;
-    topTitle = soc(lang).profTitle;
-    showBack = () => setOverlay("settings");
+
   } else if (overlay === "settingsDisplay") {
     content = <DisplaySettings t={t} lang={lang} setLang={setLang} display={{ appearance, setAppearance, colorTheme, setColorTheme, textSize, setTextSize, intro: introOn, setIntro: setIntroOn, season: seasonMode, setSeason: setSeasonMode, ampel: ampelOn, setAmpel: setAmpelOn }} />;
     topTitle = t.setDisplayRow;
@@ -16665,7 +16720,7 @@ export default function AsmarFitApp() {
               onBack={showBack}
               onSettings={!showBack ? () => setOverlay("settings") : null}
               accent={!overlay ? COLORS.section : null}
-              onProfile={!showBack ? () => setOverlay("publicProfile") : null}
+              onProfile={!showBack ? () => setOverlay("settings") : null}
               alertCount={openReminders}
               profileName={profile.name}
             />

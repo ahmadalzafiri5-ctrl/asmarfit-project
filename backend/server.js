@@ -388,8 +388,11 @@ const assistantHits = new Map();
 // "Potential preview": a photo of the user plus a goal -> an honest forecast (Claude) and, when an image service is
 // configured on the server, an example picture of how the same person could look after N months of consistent work.
 // The image service is optional: IMAGE_PROVIDER=openai|gemini, IMAGE_API_KEY, optional IMAGE_MODEL / IMAGE_API_BASE.
-const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "").toLowerCase();
-const IMAGE_API_KEY = process.env.IMAGE_API_KEY;
+// Ohne eigene IMAGE_*-Konfiguration nutzt das Beispielbild automatisch den vorhandenen
+// OpenAI-Schlüssel (OPENAI_API_KEY, seit dem Live-Gespräch ohnehin gesetzt) — damit
+// funktioniert "Dein Potenzial" mit Bild ohne weitere Einrichtung.
+const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || (process.env.OPENAI_API_KEY ? "openai" : "")).toLowerCase();
+const IMAGE_API_KEY = process.env.IMAGE_API_KEY || (IMAGE_PROVIDER === "openai" ? process.env.OPENAI_API_KEY : undefined);
 const IMAGE_ENABLED = Boolean(IMAGE_API_KEY) && (IMAGE_PROVIDER === "openai" || IMAGE_PROVIDER === "gemini");
 const IMAGE_MODEL = process.env.IMAGE_MODEL || (IMAGE_PROVIDER === "gemini" ? "gemini-2.5-flash-image" : "gpt-image-1");
 const IMAGE_API_BASE = process.env.IMAGE_API_BASE || (IMAGE_PROVIDER === "gemini" ? "https://generativelanguage.googleapis.com" : "https://api.openai.com");

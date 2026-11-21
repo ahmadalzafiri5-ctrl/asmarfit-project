@@ -139,6 +139,8 @@ export function cleanChain(c) {
     color: /^#[0-9a-f]{6}$/i.test(c.color || "") ? c.color : "#8A8A8A",
     type: TYPES.includes(c.type) ? c.type : "world",
     region: REGIONS.includes(c.region) ? c.region : "world",
+    // optional: in which countries the chain actually exists (ISO codes); without the list the region decides
+    ...(Array.isArray(c.countries) && c.countries.length ? { countries: c.countries.filter((x) => /^[A-Z]{2}$/.test(String(x))).slice(0, 80) } : {}),
     src: SRCS.includes(c.src) ? c.src : "estimate",
     ...(c.generic ? { generic: true } : {}),
     ...(Number.isFinite(c.pos) ? { pos: c.pos } : {}),
