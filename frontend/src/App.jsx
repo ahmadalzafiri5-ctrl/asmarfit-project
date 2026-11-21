@@ -49,6 +49,7 @@ import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning
 import {
   Home,
   UtensilsCrossed,
+  CheckCircle2,
   Dumbbell,
   TrendingUp,
   TrendingDown,
@@ -857,6 +858,11 @@ const STR = {
     recordsTitle: "Records",
     recordsCardSub: "Your highest achievements — take the challenge",
     historyTitle: "History",
+    weekScheduleTitle: "Weekly schedule",
+    weekScheduleSub: "For each weekday, pick what you train — or rest.",
+    weekRest: "Rest",
+    trainHistAll: "Show all",
+    setsLabel: "sets",
     streakCelebrateTitle: "days in a row!",
     streakMsg3: "Three days in a row — the start of a habit.",
     streakMsg7: "A full week! That's a real habit now.",
@@ -2164,6 +2170,11 @@ const STR = {
     recordsTitle: "Rekorde",
     recordsCardSub: "Deine höchsten Leistungen — nimm die Herausforderung an",
     historyTitle: "Verlauf",
+    weekScheduleTitle: "Wochenplan",
+    weekScheduleSub: "Wähle für jeden Wochentag, was du trainierst — oder Pause.",
+    weekRest: "Pause",
+    trainHistAll: "Alle anzeigen",
+    setsLabel: "Sätze",
     streakCelebrateTitle: "Tage in Folge!",
     streakMsg3: "Drei Tage am Stück — der Anfang einer Gewohnheit.",
     streakMsg7: "Eine ganze Woche! Das ist jetzt eine echte Gewohnheit.",
@@ -5788,7 +5799,7 @@ function TrainTile({ icon: Icon, label, onClick }) {
   );
 }
 
-function TrainingScreen({ t, lang, planName, planDays = [], personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout, onSharePlan, onOpenFriends, onOpenQuick = () => {} }) {
+function TrainingScreen({ t, lang, planName, planDays = [], personalBests, workoutHistory, onStartWorkout, onOpenPlanBuilder, onOpenLibrary, onOpenRecords, activeWorkout, onSharePlan, onOpenFriends, onOpenQuick = () => {}, onOpenHistory = () => {} }) {
   const timed = workoutHistory.filter((w) => w.durationSec > 0);
   const avgSessionSec = timed.length ? Math.round(timed.reduce((s, w) => s + w.durationSec, 0) / timed.length) : null;
   const totalVolume = Math.round(workoutHistory.reduce((s, w) => s + w.volumeKg, 0));
@@ -5796,7 +5807,7 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
     .map((key) => ({ ex: EXERCISE_LIBRARY.find((e) => e.key === key), best: personalBests[key] }))
     .filter((x) => x.ex);
   // Standard: der Plan-Tag des heutigen Wochentags, sonst der erste
-  const [selectedDayId, setSelectedDayId] = useState(() => (planDays.find((d) => d.wd === new Date().getDay()) || planDays[0])?.id ?? null);
+  const [selectedDayId, setSelectedDayId] = useState(() => (planDays.find((d) => wdsOf(d).includes(new Date().getDay())) || planDays[0])?.id ?? null);
   const hasPlanDays = planName && planDays.length > 0;
   const selectedDay = hasPlanDays ? planDays.find((d) => d.id === selectedDayId) || planDays[0] : null;
   const startFromCard = () => {
@@ -5821,7 +5832,7 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
               {planDays.map((d) => (
                 <Chip
                   key={d.id}
-                  label={(d.wd != null ? wdShort(d.wd, lang) + " · " : "") + d.name + (d.wd === new Date().getDay() ? " ●" : "")}
+                  label={(wdsOf(d).length ? wdsOf(d).sort((a, b) => WEEKDAY_ORDER.indexOf(a) - WEEKDAY_ORDER.indexOf(b)).map((w) => wdShort(w, lang)).join("/") + " · " : "") + d.name + (wdsOf(d).includes(new Date().getDay()) ? " ●" : "")}
                   active={(selectedDay && selectedDay.id) === d.id}
                   onClick={() => setSelectedDayId(d.id)}
                 />
@@ -5887,6 +5898,32 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
         <TrainTile icon={Trophy} label={t.recordsTitle} onClick={onOpenRecords} />
         <TrainTile icon={Users} label={t.friendsTitle} onClick={onOpenFriends} />
       </div>
+
+      {/* Abgeschlossene Trainings direkt im Training-Tab sichtbar — Wunsch 21.11. */}
+      {workoutHistory.length > 0 && (
+        <div data-train-history>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+            <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.dim }}>{t.historyTitle}</span>
+            <span onClick={onOpenHistory} style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>{t.trainHistAll}</span>
+          </div>
+          <Card style={{ padding: 4, marginBottom: 18 }}>
+            {workoutHistory.slice(-4).reverse().map((w, i, arr) => (
+              <div key={w.dateISO + i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "12px 12px", borderBottom: i < arr.length - 1 ? `1px solid ${COLORS.border}` : "none" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 600, color: COLORS.text }}>
+                    {new Date(w.dateISO).toLocaleDateString(localeOf(lang), { weekday: "short", day: "numeric", month: "short" })}
+                    {w.imported ? " · " + (w.source || "Health") : ""}
+                  </div>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
+                    {[w.durationSec > 0 ? Math.round(w.durationSec / 60) + " min" : null, w.volumeKg > 0 ? Math.round(w.volumeKg) + " kg" : null, w.burnedKcal > 0 ? Math.round(w.burnedKcal) + " kcal" : null, (w.sets || []).length ? (w.sets || []).length + " " + t.setsLabel : null].filter(Boolean).join(" · ") || "—"}
+                  </div>
+                </div>
+                <CheckCircle2 size={16} color={COLORS.gold} style={{ flexShrink: 0 }} />
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
 
       {trained.length > 0 && (
         <>
@@ -11952,6 +11989,9 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
 // Wochentage Mo..So (JS-getDay-Nummern) + lokalisierte Kurznamen für die Plan-Tage
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 const wdShort = (wd, lang) => new Date(2026, 10, 1 + wd).toLocaleDateString(localeOf(lang), { weekday: "short" }).replace(/.$/, "");
+const wdLong = (wd, lang) => new Date(2026, 10, 1 + wd).toLocaleDateString(localeOf(lang), { weekday: "long" });
+// Ein Plan-Tag kann auf mehreren Wochentagen liegen (z. B. Push Mo+Do); alte Pläne hatten nur d.wd
+const wdsOf = (d) => (Array.isArray(d.wds) ? d.wds : d.wd != null ? [d.wd] : []);
 
 function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSelectedDay, onOpenLibraryForDay, onSave }) {
   const [dayInput, setDayInput] = useState("");
@@ -12058,22 +12098,9 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
                   />
                 </div>
               </div>
-              {/* Wochentag für diesen Plan-Tag wählen (nochmal tippen = abwählen) */}
-              <div data-day-weekdays style={{ display: "flex", gap: 6, margin: "2px 0 10px", flexWrap: "wrap" }}>
-                {WEEKDAY_ORDER.map((wd) => (
-                  <span
-                    key={wd}
-                    data-wd={wd}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDays(days.map((x) => (x.id === d.id ? { ...x, wd: x.wd === wd ? null : wd } : x)));
-                    }}
-                    style={{ width: 34, height: 28, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Sora, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer", color: d.wd === wd ? COLORS.bg : COLORS.dim, background: d.wd === wd ? COLORS.gold : COLORS.raised, border: `1px solid ${d.wd === wd ? COLORS.gold : COLORS.border}` }}
-                  >
-                    {wdShort(wd, lang)}
-                  </span>
-                ))}
-              </div>
+              {wdsOf(d).length > 0 && (
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.gold, margin: "0 0 8px" }}>{wdsOf(d).sort((a, b) => WEEKDAY_ORDER.indexOf(a) - WEEKDAY_ORDER.indexOf(b)).map((w) => wdShort(w, lang)).join(" · ")}</div>
+              )}
               {d.exercises.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {d.exercises.map((ex, i) => (
@@ -12094,6 +12121,48 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Wochenplan: pro Wochentag wählen, was trainiert wird (oder Pause) — Wunsch 21.11. */}
+      {days.length > 0 && (
+        <Card data-week-schedule style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{t.weekScheduleTitle}</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, marginBottom: 12, lineHeight: 1.45 }}>{t.weekScheduleSub}</div>
+          {WEEKDAY_ORDER.map((wd) => {
+            const owner = days.find((x) => wdsOf(x).includes(wd)) || null;
+            const assign = (dayId) =>
+              setDays(
+                days.map((x) => {
+                  const cur = wdsOf(x).filter((w) => w !== wd);
+                  return { ...x, wd: undefined, wds: x.id === dayId ? [...cur, wd] : cur };
+                })
+              );
+            return (
+              <div key={wd} data-week-row={wd} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderTop: `1px solid ${COLORS.border}` }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: new Date().getDay() === wd ? COLORS.gold : COLORS.text, width: 38, flexShrink: 0 }}>{wdShort(wd, lang)}</span>
+                <div style={{ display: "flex", gap: 6, overflowX: "auto", flex: 1 }}>
+                  <span
+                    data-wd-rest
+                    onClick={() => assign(null)}
+                    style={{ flexShrink: 0, padding: "5px 11px", borderRadius: 999, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, cursor: "pointer", color: !owner ? COLORS.bg : COLORS.dim, background: !owner ? COLORS.dim : COLORS.raised, border: `1px solid ${!owner ? COLORS.dim : COLORS.border}` }}
+                  >
+                    {t.weekRest}
+                  </span>
+                  {days.map((x) => (
+                    <span
+                      key={x.id}
+                      data-wd-day={x.id}
+                      onClick={() => assign(x.id)}
+                      style={{ flexShrink: 0, padding: "5px 11px", borderRadius: 999, fontFamily: "Sora, sans-serif", fontSize: 11.5, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: owner && owner.id === x.id ? COLORS.bg : COLORS.text, background: owner && owner.id === x.id ? COLORS.gold : COLORS.raised, border: `1px solid ${owner && owner.id === x.id ? COLORS.gold : COLORS.border}` }}
+                    >
+                      {x.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </Card>
       )}
 
       {days.length > 0 && days.every((d) => d.exercises.length === 0) && (
@@ -16349,7 +16418,7 @@ export default function AsmarFitApp() {
           setPlanName(name);
           setPlanDays(pbDays);
           // Gewählte Wochentage des Plans in die Trainings-Erinnerungen übernehmen
-          const wds = [...new Set(pbDays.map((d) => d.wd).filter((w) => w != null))];
+          const wds = [...new Set(pbDays.flatMap((d) => wdsOf(d)))];
           if (wds.length) setNotif((n) => ({ ...n, days: wds }));
           setTimeout(() => {
             setOverlay(null);
@@ -16599,6 +16668,7 @@ export default function AsmarFitApp() {
             setOverlay("quickWorkout");
           }}
           onOpenRecords={() => setOverlay("records")}
+          onOpenHistory={() => setOverlay("history")}
           onOpenLibrary={() => {
             setLibraryReturnTo("main");
             setOverlay("exerciseLibrary");
