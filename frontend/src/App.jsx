@@ -6136,7 +6136,20 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
   const before = validSel.length ? sorted.find((p) => p.id === validSel[0]) : null;
   const after = validSel.length > 1 ? sorted.find((p) => p.id === validSel[1]) : null;
   // Tipp auf ein Foto: erst Vorher, dann Nachher; nochmal tippen wählt ab; drittes Foto startet neu
-  const toggleSel = (id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= 2 ? [id] : [...s, id]));
+  const compareRef = useRef(null);
+  const toggleSel = (id) =>
+    setSel((s) => {
+      if (s.includes(id)) return s.filter((x) => x !== id);
+      const next = s.length >= 2 ? [id] : [...s, id];
+      if (next.length === 2) {
+        // Immer das ältere Foto als "Vorher": die Reihenfolge stimmt damit von selbst
+        const dateOf = (pid) => Date.parse((sorted.find((p) => p.id === pid) || {}).dateISO || 0);
+        next.sort((a, b) => dateOf(a) - dateOf(b));
+        // Der fertige Vergleich springt sofort ins Bild — klare Bestätigung der Auswahl
+        setTimeout(() => compareRef.current && compareRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
+      }
+      return next;
+    });
   const fmtDate = (iso) => new Date(iso).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short", year: "numeric" });
 
   const [photoError, setPhotoError] = useState(null);
@@ -6297,6 +6310,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
               <>
                 {/* Wischen (links/rechts) blättert durchs Nachher-Bild */}
                 <div
+                  ref={compareRef}
                   onTouchStart={(e) => (swipeXRef.current = e.touches[0].clientX)}
                   onTouchEnd={(e) => {
                     const x0 = swipeXRef.current;
@@ -6342,18 +6356,16 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
                 const isBefore = before && p.id === before.id;
                 const isAfterSel = after && p.id === after.id;
                 return (
-                <div key={p.id} style={{ position: "relative", flexShrink: 0, marginTop: 22 }}>
-                  <img
-                    src={p.dataUrl}
-                    data-pick-photo={p.id}
-                    onClick={() => toggleSel(p.id)}
-                    style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: isAfterSel ? `2px solid ${COLORS.gold}` : isBefore ? "2px solid #8E97A3" : `2px solid ${COLORS.border}`, opacity: before && after && !isBefore && !isAfterSel ? 0.55 : 1 }}
-                  />
-                  {(isBefore || isAfterSel) && (
-                    <span style={{ position: "absolute", top: -18, left: "50%", transform: "translateX(-50%)", fontFamily: "Sora, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: isBefore ? "#8E97A3" : COLORS.gold, whiteSpace: "nowrap" }}>
-                      {isBefore ? "1 · " + t.progressBefore : "2 · " + t.progressAfter}
-                    </span>
-                  )}
+                <div key={p.id} style={{ position: "relative", flexShrink: 0, marginTop: 10 }}>
+                  <div onClick={() => toggleSel(p.id)} data-pick-photo={p.id} style={{ position: "relative", width: 62, height: 80, borderRadius: 10, overflow: "hidden", cursor: "pointer", border: isAfterSel ? `3px solid ${COLORS.gold}` : isBefore ? "3px solid #8E97A3" : `2px solid ${COLORS.border}`, opacity: before && after && !isBefore && !isAfterSel ? 0.5 : 1 }}>
+                    <img src={p.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    {(isBefore || isAfterSel) && (
+                      /* Deutliches Band direkt im Bild: sofort erkennbar, was Vorher und was Nachher ist */
+                      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, textAlign: "center", padding: "3px 0", fontFamily: "Sora, sans-serif", fontSize: 8.5, fontWeight: 800, letterSpacing: 0.4, textTransform: "uppercase", color: "#fff", background: isBefore ? "rgba(110,118,130,0.92)" : COLORS.gold + "F2" }}>
+                        {isBefore ? t.progressBefore : t.progressAfter}
+                      </div>
+                    )}
+                  </div>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9.5, color: COLORS.dim, textAlign: "center", marginTop: 3 }}>{new Date(p.dateISO).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short" })}</div>
                   <div
                     onClick={() => onDeletePhoto(p.id)}
