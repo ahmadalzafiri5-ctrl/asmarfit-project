@@ -134,7 +134,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-# Build-Trigger: Release 1.0.24 am 21.11.2026 (Fotovergleich-Zweierwahl, Health-Fehlertext)
+# Build-Trigger: Release 1.0.25 am 21.11.2026 (Wochenplan je Wochentag, Trainings-Verlauf)
 
 
 
