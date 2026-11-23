@@ -13812,7 +13812,6 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
           <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{f}</span>
         </div>
       ))}
-      <div style={{ ...small, fontSize: 11.5, marginTop: 12, lineHeight: 1.45 }}>{t.premiumFree}</div>
     </Card>
   );
 

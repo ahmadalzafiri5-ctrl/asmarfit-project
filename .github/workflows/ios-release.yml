@@ -184,3 +184,4 @@ jobs:
           echo "Hochgeladen — der Build erscheint in App Store Connect unter TestFlight (Verarbeitung dauert 5-30 Min)."
 
 # Build-Trigger: 1.0.29 mit Bezahl-Pflichtangaben (Wiederherstellen, AGB/Datenschutz, Verlaengerungshinweis) 23.11.2026
+# Build-Trigger: 1.0.29 ohne irrefuehrenden Gratis-Hinweis 23.11.2026
