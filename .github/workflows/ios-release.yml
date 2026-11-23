@@ -185,3 +185,4 @@ jobs:
 
 # Build-Trigger: 1.0.29 mit Bezahl-Pflichtangaben (Wiederherstellen, AGB/Datenschutz, Verlaengerungshinweis) 23.11.2026
 # Build-Trigger: 1.0.29 ohne irrefuehrenden Gratis-Hinweis 23.11.2026
+# Build-Trigger: 1.0.29 Store-Paywall ohne Zyklus-Zeile 23.11.2026

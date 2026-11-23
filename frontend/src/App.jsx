@@ -13806,7 +13806,8 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
   const features = (
     <Card style={{ marginBottom: 14 }}>
       <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>{t.premiumFeatTitle}</div>
-      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4, t.premiumFeat7, t.premiumFeat8, t.premiumFeat9, t.premiumFeat5, t.premiumFeat6].map((f, i) => (
+      {/* Store-Builds (VITE_INTAKE_SAFE): den Zyklus-/Blutwert-Punkt nicht bewerben (App-Store-Richtlinie 1.4.3) */}
+      {[t.premiumFeat1, t.premiumFeat2, t.premiumFeat3, t.premiumFeat4, t.premiumFeat7, t.premiumFeat8, t.premiumFeat9, ...(import.meta.env.VITE_INTAKE_SAFE === "1" ? [] : [t.premiumFeat5]), t.premiumFeat6].map((f, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 8 ? 9 : 0 }}>
           <Check size={15} color={COLORS.gold} style={{ flexShrink: 0 }} />
           <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13.5, color: COLORS.text }}>{f}</span>
