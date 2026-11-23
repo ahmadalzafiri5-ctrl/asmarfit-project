@@ -1260,6 +1260,11 @@ const STR = {
     playErr: "The purchase was not completed. Please try again.",
     playPayHint: "Secure payment through Google Play. Cancel anytime in the Play Store.",
     applePayHint: "Secure payment through the App Store. Cancel anytime in your Apple subscriptions.",
+    premiumAutoRenew: "Subscriptions renew automatically at the price shown unless cancelled at least 24 hours before the end of the current period. Payment is charged to your store account. Manage or cancel anytime in your account settings.",
+    premiumRestore: "Restore purchases",
+    restoreDone: "Purchases restored — Premium is active.",
+    restoreNone: "No active purchase found for this account.",
+    restoreNeedsLogin: "Sign in first so we can link your purchase to your account.",
     premiumActive: "Your subscription",
     premiumTrialBadge: "Free trial",
     premiumRenews: "Renews on {d}",
@@ -2573,6 +2578,11 @@ const STR = {
     playErr: "Der Kauf wurde nicht abgeschlossen. Bitte versuch es noch einmal.",
     playPayHint: "Sichere Zahlung über Google Play. Kündigen jederzeit im Play Store.",
     applePayHint: "Sichere Zahlung über den App Store. Kündigen jederzeit in deinen Apple-Abos.",
+    premiumAutoRenew: "Abos verlängern sich automatisch zum angezeigten Preis, sofern sie nicht mindestens 24 Stunden vor Ende der laufenden Periode gekündigt werden. Die Zahlung erfolgt über dein Store-Konto. Verwalten oder kündigen jederzeit in den Kontoeinstellungen.",
+    premiumRestore: "Käufe wiederherstellen",
+    restoreDone: "Käufe wiederhergestellt — Premium ist aktiv.",
+    restoreNone: "Für dieses Konto wurde kein aktiver Kauf gefunden.",
+    restoreNeedsLogin: "Melde dich zuerst an, damit wir deinen Kauf mit deinem Konto verknüpfen können.",
     premiumActive: "Dein Abo",
     premiumTrialBadge: "Kostenlose Testphase",
     premiumRenews: "Verlängert sich am {d}",
@@ -4067,7 +4077,7 @@ function Onboarding({ t, lang, setLang, onFinish, country = null, onPickCountry 
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{legal === "terms" ? t.setTermsRow : t.settingsPrivacy}</div>
           </div>
           <div style={{ flex: 1, minHeight: 0 }}>
-            <LegalPageScreen src={legal === "terms" ? "/terms.html" : "/privacypolicy.html"} />
+            <LegalPageScreen src={legal === "terms" ? "/terms.html#en" : "/privacypolicy.html#en"} />
           </div>
         </div>
       )}
@@ -13752,7 +13762,17 @@ function AiQuotaCard({ t, usage, onBuy, canBuy, buying = false, err = null, focu
   );
 }
 
-function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = false, isPlay = false, onPlayPurchase = async () => null, onCheckout = () => {}, onPortal = () => {}, onGoLogin = () => {}, aiUsage = null, onBuyPack = async () => null, packCanBuy = false, packFocus = false }) {
+function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = false, isPlay = false, onPlayPurchase = async () => null, onRestore = async () => null, onCheckout = () => {}, onPortal = () => {}, onGoLogin = () => {}, aiUsage = null, onBuyPack = async () => null, packCanBuy = false, packFocus = false }) {
+  const [legal, setLegal] = useState(null); // "terms" | "privacy" — Pflichtlinks am Bezahl-Bildschirm (App-Store-Richtlinie 3.1.2)
+  const [restoring, setRestoring] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState(null);
+  const restore = async () => {
+    if (restoring) return;
+    setRestoring(true);
+    setRestoreMsg(null);
+    setRestoreMsg(await onRestore());
+    setRestoring(false);
+  };
   const [packBuying, setPackBuying] = useState(false);
   const [packErr, setPackErr] = useState(null);
   const buyPack = async () => {
@@ -13943,6 +13963,31 @@ function PremiumScreen({ t, lang, premium, onChange, billing = false, authed = f
       {buyErr && <div data-premium-buyerr style={{ ...small, fontSize: 12, marginTop: 8, textAlign: "center", color: COLORS.coral }}>{buyErr}</div>}
       {/* Konto kommt NACH der Zahlung — hier ist keine Anmeldung mehr nötig */}
       {isPlay ? <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{Capacitor.getPlatform() === "ios" ? t.applePayHint : t.playPayHint}</div> : billing && <div style={{ ...small, fontSize: 11.5, marginTop: 8, textAlign: "center" }}>{t.billingPayHint}</div>}
+      {/* Pflichtangaben für Store-Abos: Verlängerung, Käufe wiederherstellen, AGB + Datenschutz */}
+      <div data-premium-autorenew style={{ ...small, fontSize: 10.5, marginTop: 10, textAlign: "center", lineHeight: 1.5 }}>{t.premiumAutoRenew}</div>
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "6px 14px", marginTop: 10, ...small, fontSize: 11.5 }}>
+        {isPlay && (
+          <span data-premium-restore onClick={restore} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>
+            {restoring ? t.authBusy : t.premiumRestore}
+          </span>
+        )}
+        <span data-premium-terms onClick={() => setLegal("terms")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.setTermsRow}</span>
+        <span data-premium-privacy onClick={() => setLegal("privacy")} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer" }}>{t.settingsPrivacy}</span>
+      </div>
+      {restoreMsg && <div data-premium-restoremsg style={{ ...small, fontSize: 12, marginTop: 8, textAlign: "center" }}>{restoreMsg}</div>}
+      {legal && (
+        <div data-premium-legal={legal} style={{ position: "fixed", inset: 0, zIndex: 1200, background: COLORS.bg, display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid " + COLORS.border }}>
+            <div onClick={() => setLegal(null)} style={{ cursor: "pointer", display: "flex" }}>
+              <X size={20} color={COLORS.text} />
+            </div>
+            <div style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: COLORS.text }}>{legal === "terms" ? t.setTermsRow : t.settingsPrivacy}</div>
+          </div>
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <LegalPageScreen src={legal === "terms" ? "/terms.html#en" : "/privacypolicy.html#en"} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -15173,6 +15218,7 @@ export default function AsmarFitApp() {
   const recoverPlayPurchases = async (headers = null) => {
     const h = headers || authHeaders();
     const isIosStore = Capacitor.getPlatform() === "ios";
+    let found = false;
     try {
       const { NativePurchases, PURCHASE_TYPE } = await import("@capgo/native-purchases");
       const subs = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.SUBS }).catch(() => null);
@@ -15187,6 +15233,7 @@ export default function AsmarFitApp() {
         const d = await r.json().catch(() => ({}));
         if (r.ok && d.premium) {
           setPremium({ plan: d.premium.plan, since: Date.now(), renews: d.premium.renews, cancelled: Boolean(d.premium.cancelled), trial: Boolean(d.premium.trial), src: "server" });
+          found = true;
           break;
         }
       }
@@ -15201,6 +15248,15 @@ export default function AsmarFitApp() {
         }).catch(() => {});
       }
     } catch {}
+    return found;
+  };
+  // Knopf "Käufe wiederherstellen" am Bezahl-Bildschirm (Apple-Pflicht): Store-Käufe erneut beim Server prüfen
+  const restorePurchases = async () => {
+    if (!auth || !auth.token) {
+      setOverlay("account");
+      return t.restoreNeedsLogin;
+    }
+    return (await recoverPlayPurchases()) ? t.restoreDone : t.restoreNone;
   };
   // Nach JEDER Anmeldung: Premium aus der Server-Antwort sofort übernehmen (nicht erst beim
   // nächsten App-Start) und auf Android den Play-Status mit dem neuen Konto abgleichen.
@@ -16402,7 +16458,7 @@ export default function AsmarFitApp() {
     topTitle = t.privacyTitle;
     showBack = () => setOverlay("settings");
   } else if (overlay === "terms") {
-    content = <LegalPageScreen src="/terms.html" />;
+    content = <LegalPageScreen src="/terms.html#en" />;
     topTitle = t.setTermsRow;
     showBack = () => setOverlay("settings");
   } else if (overlay === "impressum") {
@@ -16524,7 +16580,7 @@ export default function AsmarFitApp() {
     topTitle = t.settingsTitle;
     showBack = () => setOverlay(null);
   } else if (overlay === "premium") {
-    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} isPlay={IS_NATIVE_APP && ["android", "ios"].includes(Capacitor.getPlatform())} onPlayPurchase={openPlayPurchase} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} aiUsage={aiUsage} onBuyPack={buyAiPack} packCanBuy={(IS_NATIVE_APP && ["android", "ios"].includes(Capacitor.getPlatform())) || billingPack || !billingOn} packFocus={packFocus} />;
+    content = <PremiumScreen t={t} lang={lang} premium={premium} onChange={setPremium} billing={billingOn} authed={Boolean(auth)} isPlay={IS_NATIVE_APP && ["android", "ios"].includes(Capacitor.getPlatform())} onPlayPurchase={openPlayPurchase} onRestore={restorePurchases} onCheckout={openCheckout} onPortal={openPortal} onGoLogin={() => setOverlay("account")} aiUsage={aiUsage} onBuyPack={buyAiPack} packCanBuy={(IS_NATIVE_APP && ["android", "ios"].includes(Capacitor.getPlatform())) || billingPack || !billingOn} packFocus={packFocus} />;
     topTitle = t.premiumTitle;
     // Ohne aktives Abo gibt es kein Zurück — erst das Probeabo starten, dann öffnet die App
     showBack = premiumActive ? () => setOverlay("settings") : null;

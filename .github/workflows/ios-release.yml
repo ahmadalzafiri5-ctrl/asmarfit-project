@@ -182,3 +182,5 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
           echo "Hochgeladen — der Build erscheint in App Store Connect unter TestFlight (Verarbeitung dauert 5-30 Min)."
+
+# Build-Trigger: 1.0.29 mit Bezahl-Pflichtangaben (Wiederherstellen, AGB/Datenschutz, Verlaengerungshinweis) 23.11.2026
