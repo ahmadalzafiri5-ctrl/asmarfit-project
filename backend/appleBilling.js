@@ -47,7 +47,9 @@ async function appleGet(path) {
     const r = await fetch(host + path, { headers: { authorization: "Bearer " + jwt } });
     if (r.ok) return r.json();
     last = r;
-    if (r.status !== 404) break; // nur "nicht gefunden" rechtfertigt den Sandbox-Versuch
+    // Sandbox auch bei 401 versuchen: Solange die App nicht live ist, lehnt die Produktion jede Anfrage
+    // mit 401 ab — TestFlight- und App-Review-Käufe existieren aber nur in der Sandbox.
+    if (r.status !== 404 && r.status !== 401) break;
   }
   const txt = last ? await last.text().catch(() => "") : "";
   const err = new Error("apple_" + (last ? last.status : 0) + " " + txt.replace(/\s+/g, " ").slice(0, 300));
