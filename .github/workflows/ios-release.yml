@@ -73,7 +73,7 @@ jobs:
         run: |
           NAME="${{ inputs.version_name }}"
           /usr/libexec/PlistBuddy -c "Print" App/Info.plist > /dev/null
-          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0.29};/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${NAME:-1.0.30};/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = ${GITHUB_RUN_NUMBER};/g" App.xcodeproj/project.pbxproj
           grep -m2 "MARKETING_VERSION\|CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj
 
@@ -187,3 +187,4 @@ jobs:
 # Build-Trigger: 1.0.29 ohne irrefuehrenden Gratis-Hinweis 23.11.2026
 # Build-Trigger: 1.0.29 Store-Paywall ohne Zyklus-Zeile 23.11.2026
 # Build-Trigger: 1.0.29 erneut (GitHub-Mac-Kapazitaet) 23.11.2026
+# Build-Trigger: 1.0.30 Kurz-Workouts nur Signaltoene, grosses REST-Label 24.11.2026

@@ -542,8 +542,8 @@ const STR = {
     quickNoGear: "No equipment",
     quickChair: "You need a chair",
     quickRounds: "{n} rounds",
-    quickIntro: "Guided with timer, voice and beeps. Warm up briefly first and stop if something hurts.",
-    quickVoice: "Voice & beeps",
+    quickIntro: "Guided with a timer and sound signals: two high tones = next exercise, one low tone = rest. Warm up briefly first and stop if something hurts.",
+    quickVoice: "Sound signals",
     quickStart: "Let's go",
     quickReady: "Get ready",
     quickMove: "Move {n} of {m}",
@@ -1860,8 +1860,8 @@ const STR = {
     quickNoGear: "Ohne Geräte",
     quickChair: "Du brauchst einen Stuhl",
     quickRounds: "{n} Runden",
-    quickIntro: "Geführt mit Zeitmesser, Ansage und Signalton. Wärm dich kurz auf und hör auf, wenn etwas wehtut.",
-    quickVoice: "Ansage & Ton",
+    quickIntro: "Geführt mit Zeitmesser und Signaltönen: zwei helle Töne = nächste Übung, ein tiefer Ton = Pause. Wärm dich kurz auf und hör auf, wenn etwas wehtut.",
+    quickVoice: "Signaltöne",
     quickStart: "Los geht's",
     quickReady: "Mach dich bereit",
     quickMove: "Übung {n} von {m}",
@@ -5450,22 +5450,9 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const tl = useMemo(() => buildTimeline(preset), [preset]);
   const [phase, setPhase] = useState("intro"); // intro | run | done
   const [voiceOn, setVoiceOn] = usePersisted("quickVoice", true);
-  // announcements: the recorded voice of the app language (OpenAI-TTS clips shipped with the app) when there is a clip for the line,
-  // otherwise the phone's own voice reads the text
-  const said = useRef(0);
-  const announce = (id, text) => {
-    const my = ++said.current;
-    playClip(lang, id).then((played) => {
-      if (!played && my === said.current) speak(text, lang);
-    });
-  };
-  const clipId = (x) => x.kind + "_" + x.key;
-  // Schon im Vorschau-Screen ALLES vorladen: sämtliche Sprach-Clips des Workouts
-  // (menschliche Stimme startet ohne Verzögerung) und alle Übungs-Demos (kein
-  // Hängen beim Übungswechsel).
+  // Schon im Vorschau-Screen alle Übungs-Demos vorladen (kein Hängen beim Übungswechsel).
   useEffect(() => {
     if (phase !== "intro") return;
-    if (voiceOn) warmClips(lang, [...new Set(tl.map(clipId)), "half", "done"]);
     prefetchGifs([...new Set(tl.map((x) => gifSrc(x.key)))]);
   }, [phase, voiceOn, lang, presetKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [startedAt, setStartedAt] = useState(0);
@@ -5517,9 +5504,11 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
   const finish = (seconds, partial) => {
     const kcal = burnKcal(preset.met, weightKg || 70, activeMinutes(seconds));
     releaseWake();
+    // Keine Sprachansage mehr (Wunsch 24.11.): am Ende nur eine kurze Ton-Folge
     if (voiceOn && !partial) {
-      announce("done", t.quickSayDone);
-      beep(1000, 500);
+      beep(880, 160);
+      setTimeout(() => beep(1175, 160), 200);
+      setTimeout(() => beep(1568, 420), 400);
     } else stopSpeaking();
     setResult({ seconds: Math.round(seconds), kcal, partial });
     setPhase("done");
@@ -5537,11 +5526,12 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
     const m = mem.current;
     if (m.idx !== loc.i) {
       m.idx = loc.i;
+      // Nur Töne, keine Stimme: neue Übung = zwei helle Töne, Pause = ein tiefer langer Ton
       if (voiceOn) {
-        const nm = nameOfKey(seg.key);
-        announce(clipId(seg), (seg.kind === "ready" ? t.quickSayReady : seg.kind === "work" ? t.quickSayWork : t.quickSayRest).replace("{name}", nm));
-        if (seg.kind === "work") beep(1100, 300);
-        preloadClips(lang, [tl[loc.i + 1], tl[loc.i + 2]].filter(Boolean).map(clipId).concat(["half", "done"])); // the next lines are ready the moment they are needed
+        if (seg.kind === "work") {
+          beep(1175, 180);
+          setTimeout(() => beep(1568, 320), 230);
+        } else if (seg.kind === "rest") beep(523, 450);
       }
       // die Demos der nächsten Übungen parallel vorladen — der Wechsel ruckelt nie
       prefetchGifs([tl[loc.i + 1], tl[loc.i + 2]].filter(Boolean).map((x) => gifSrc(x.key)));
@@ -5551,16 +5541,11 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
       m.beeped[loc.i + ":" + sec] = true;
       beep(660, 100);
     }
-    if (voiceOn && seg.kind === "work" && seg.sec >= 40 && !m.half[loc.i] && loc.into >= seg.sec / 2) {
-      m.half[loc.i] = true;
-      announce("half", t.quickSayHalf);
-    }
   });
 
   const start = () => {
     unlockAudio();
     // alle Clips des Workouts fertig dekodieren — jede Ansage startet sofort und menschlich
-    if (voiceOn) preloadClips(lang, [...new Set(tl.map(clipId)), "half", "done"]);
     mem.current = { idx: -1, beeped: {}, half: {} };
     setPausedAt(null);
     setPausedMs(0);
@@ -5669,7 +5654,8 @@ function QuickWorkoutScreen({ t, lang, presetKey, weightKg, onLog, onClose }) {
         <div data-quick-progress style={{ height: "100%", width: Math.min(100, (el / totalSec(tl)) * 100) + "%", background: COLORS.gold, borderRadius: 3 }} />
       </div>
       <div style={{ textAlign: "center" }}>
-        <div data-quick-label style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: 0.4, color }}>{label}</div>
+        {/* Phase gross und in Grossbuchstaben: REST / Übung x von y — auf Distanz lesbar (Wunsch 24.11.) */}
+        <div data-quick-label style={{ fontFamily: "Sora, sans-serif", fontSize: seg.kind === "rest" ? 40 : 26, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase", color, lineHeight: 1.1 }}>{label}</div>
         <div style={{ position: "relative", width: 176, height: 176, margin: "10px auto 8px" }}>
           <svg width="176" height="176" viewBox="0 0 176 176">
             <circle cx="88" cy="88" r={R} stroke={COLORS.raised} strokeWidth="10" fill="none" />
