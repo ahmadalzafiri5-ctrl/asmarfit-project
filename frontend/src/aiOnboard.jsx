@@ -677,7 +677,7 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
         fetch(API_BASE + "/api/ai/realtime-session", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ lang: l2 }),
+          body: JSON.stringify({ lang: l2, caps: ["set_language"] }),
         }),
         navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }),
       ]);
@@ -686,7 +686,7 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
         if (!fellRef.current) fallback();
         return;
       }
-      const { client_secret, model } = await sRes.json();
+      const { client_secret, model, instructionsTemplate } = await sRes.json();
       const pc = new RTCPeerConnection();
       const audioEl = new Audio();
       audioEl.autoplay = true;
@@ -736,6 +736,14 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
             applyField(args.field, args.value);
             try {
               dc.send(JSON.stringify({ type: "conversation.item.create", item: { type: "function_call_output", call_id: ev.item.call_id, output: JSON.stringify({ ok: true }) } }));
+              dc.send(JSON.stringify({ type: "response.create" }));
+            } catch {}
+          } else if (ev.item.name === "set_language") {
+            // Sprachwechsel auf Wunsch: Anweisungen in der neuen Sprache neu setzen, dann weitersprechen
+            const newLang = String(args.language || "").replace(/[^A-Za-zÀ-ɏ -]/g, "").slice(0, 30) || "English";
+            try {
+              if (instructionsTemplate) dc.send(JSON.stringify({ type: "session.update", session: { type: "realtime", instructions: instructionsTemplate.split("{{LANG}}").join(newLang) } }));
+              dc.send(JSON.stringify({ type: "conversation.item.create", item: { type: "function_call_output", call_id: ev.item.call_id, output: JSON.stringify({ ok: true, language: newLang, note: "From now on speak only " + newLang + ". Briefly confirm in " + newLang + " and continue where you left off." }) } }));
               dc.send(JSON.stringify({ type: "response.create" }));
             } catch {}
           } else if (ev.item.name === "finish") {
