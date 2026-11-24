@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   testflight:
-    runs-on: macos-15
+    runs-on: macos-15-intel  # arm64-Macs bei GitHub oft ueberlastet ("not acquired by Runner")
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
@@ -188,3 +188,4 @@ jobs:
 # Build-Trigger: 1.0.29 Store-Paywall ohne Zyklus-Zeile 23.11.2026
 # Build-Trigger: 1.0.29 erneut (GitHub-Mac-Kapazitaet) 23.11.2026
 # Build-Trigger: 1.0.30 Kurz-Workouts nur Signaltoene, grosses REST-Label 24.11.2026
+# Build-Trigger: 1.0.30 inkl. Sprachwechsel-Werkzeug, Intel-Runner 24.11.2026
