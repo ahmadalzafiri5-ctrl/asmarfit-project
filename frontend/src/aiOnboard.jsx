@@ -555,6 +555,43 @@ const firstNumber = (s) => {
   return m ? Number(m[0]) : null;
 };
 
+// Nennt jemand im Ersatz-Onboarding mehrere Angaben in einem Satz, werden die noch leeren Felder
+// gleich mit ausgefüllt — die App fragt dann nur noch, was wirklich fehlt.
+const fillExtras = (text, d, skip) => {
+  const x = " " + String(text).toLowerCase().replace(/(\d),(\d)/g, "$1.$2") + " ";
+  const empty = (k) => k !== skip && (d[k] == null || d[k] === "");
+  if (empty("goal")) {
+    if (/abneh|verlier|lose|weniger|schlank/.test(x)) d.goal = "cut";
+    else if (/muskel|muscle|aufbau|build|masse/.test(x)) d.goal = "bulk";
+    else if (/halten|maintain|bleib/.test(x)) d.goal = "maintain";
+  }
+  if (empty("gender")) {
+    if (/\b(male|man|mann|männlich)\b/.test(x) && !/female|weiblich/.test(x)) d.gender = "male";
+    else if (/\b(female|woman|frau|weiblich)\b/.test(x)) d.gender = "female";
+  }
+  if (empty("name")) {
+    const m = String(text).match(/(?:my name is|i am|i'm|ich heisse|ich heiße|mein name ist|ich bin)\s+([A-Za-zÀ-ÿ]{2,20})/i);
+    if (m && !/^(male|female|\d)/i.test(m[1]) && !/^(männlich|weiblich|ein|eine)$/i.test(m[1])) d.name = m[1].charAt(0).toUpperCase() + m[1].slice(1);
+  }
+  if (empty("age")) {
+    const m = x.match(/(\d{1,2})\s*(?:years|year|yrs|y\/o|jahre|jahr|j\.)/);
+    if (m) d.age = Number(m[1]);
+  }
+  if (empty("height")) {
+    const m = x.match(/(\d{3}(?:\.\d)?)\s*cm/) || x.match(/\b(1\.\d{2})\s*m\b/);
+    if (m) d.height = Number(m[1]) < 3 ? Math.round(Number(m[1]) * 100) : Math.round(Number(m[1]));
+  }
+  // Kilo-Angaben: eine nach "target/ziel/auf/to" ist das Zielgewicht, die andere das aktuelle Gewicht
+  const kgs = [...x.matchAll(/(\d{2,3}(?:\.\d)?)\s*(?:kg|kilo)/g)].map((m) => ({ v: Number(m[1]), at: m.index }));
+  for (const k of kgs) {
+    const before = x.slice(Math.max(0, k.at - 25), k.at);
+    const isTarget = /target|ziel|goal|auf |down to|reach|erreichen|möchte|want/.test(before);
+    if (isTarget && empty("target")) d.target = k.v;
+    else if (!isTarget && empty("weight")) d.weight = k.v;
+  }
+  return d;
+};
+
 // Auswahl-Screen: KI-Gespräch oder manuelles Formular
 export function OnboardModePick({ lang, onPick }) {
   const t = aiT(lang);
@@ -631,6 +668,7 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
     onFallback();
   };
 
+  const replyAfterDoneRef = useRef(false);
   const applyField = (field, value) => {
     const d = { ...dataRef.current };
     const v = String(value == null ? "" : value).trim();
@@ -645,6 +683,7 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
       const n = parseFloat(v.replace(",", "."));
       if (Number.isFinite(n)) {
         if (field === "height") d.height = n < 3 ? Math.round(n * 100) : Math.round(n);
+        else if (field === "weight" || field === "target") d[field] = Math.round(n * 10) / 10;
         else d[field] = Math.round(n);
       }
     }
@@ -721,6 +760,7 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
           return;
         }
         const t = ev.type || "";
+        if (import.meta.env.DEV) (window.__rtLog = window.__rtLog || []).push(t + (ev.item && ev.item.type === "function_call" && t === "response.output_item.done" ? " " + ev.item.name + " " + ev.item.arguments : "") + (ev.error ? " ERR " + JSON.stringify(ev.error) : "") + (t === "response.done" ? " " + (ev.response && ev.response.status) : "") + (t === "response.output_audio_transcript.done" ? " SAY: " + ev.transcript : ""));
         // OpenAI meldet einen Fehler (z. B. Guthaben leer) oder bricht die Antwort ab: nicht stumm bleiben,
         // sondern sofort auf das Clip-Onboarding wechseln
         const errCode = (ev.error && (ev.error.code || ev.error.type)) || (ev.response && ev.response.status_details && ev.response.status_details.error && (ev.response.status_details.error.code || ev.response.status_details.error.type)) || "";
@@ -728,6 +768,13 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
         if (!doneRef.current && ((t === "error" && fatal) || (t === "response.done" && ev.response && ev.response.status === "failed"))) {
           fallback();
           return;
+        }
+        // Antwort mit Werkzeug-Aufrufen ist fertig: jetzt EINMAL weitersprechen lassen
+        if (t === "response.done" && replyAfterDoneRef.current && !doneRef.current) {
+          replyAfterDoneRef.current = false;
+          try {
+            dc.send(JSON.stringify({ type: "response.create" }));
+          } catch {}
         }
         if (t === "output_audio_buffer.started") setState("speak");
         else if (t === "output_audio_buffer.stopped" || t === "output_audio_buffer.cleared") {
@@ -744,15 +791,17 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
             applyField(args.field, args.value);
             try {
               dc.send(JSON.stringify({ type: "conversation.item.create", item: { type: "function_call_output", call_id: ev.item.call_id, output: JSON.stringify({ ok: true }) } }));
-              dc.send(JSON.stringify({ type: "response.create" }));
             } catch {}
+            // Nennt der Nutzer mehrere Angaben in einem Satz, kommen mehrere Aufrufe in EINER Antwort —
+            // weitergesprochen wird erst, wenn diese Antwort fertig ist (sonst lehnt OpenAI ab / Werte gehen verloren)
+            replyAfterDoneRef.current = true;
           } else if (ev.item.name === "set_language") {
             // Sprachwechsel auf Wunsch: Anweisungen in der neuen Sprache neu setzen, dann weitersprechen
             const newLang = String(args.language || "").replace(/[^A-Za-zÀ-ɏ -]/g, "").slice(0, 30) || "English";
             try {
               if (instructionsTemplate) dc.send(JSON.stringify({ type: "session.update", session: { type: "realtime", instructions: instructionsTemplate.split("{{LANG}}").join(newLang) } }));
               dc.send(JSON.stringify({ type: "conversation.item.create", item: { type: "function_call_output", call_id: ev.item.call_id, output: JSON.stringify({ ok: true, language: newLang, note: "From now on speak only " + newLang + ". Briefly confirm in " + newLang + " and continue where you left off." }) } }));
-              dc.send(JSON.stringify({ type: "response.create" }));
+              replyAfterDoneRef.current = true;
             } catch {}
           } else if (ev.item.name === "finish") {
             try {
@@ -1117,12 +1166,12 @@ function AiVoiceOnboarding({ lang, onDone, onManual }) {
       if (s === "height") d.height = n < 3 ? Math.round(n * 100) : n;
       if (s === "target") d.target = n;
     }
+    fillExtras(text, d, s);
     dataRef.current = d;
     setData(d);
     failsRef.current = 0;
     setFails(0);
-    const i = ORDER.indexOf(s);
-    const nx = ORDER[i + 1];
+    const nx = ORDER.find((k) => d[k] == null || d[k] === "");
     if (!nx) {
       stepRef.current = "final";
       setStep("final");
@@ -1255,8 +1304,7 @@ function AiChatOnboarding({ lang, onDone, onManual }) {
   const QUESTION = { name: t.qName, gender: t.qGender, age: t.qAge, weight: t.qWeight, height: t.qHeight, target: t.qTarget };
   const ORDER = ["goal", "name", "gender", "age", "weight", "height", "target"];
   const next = (cur, d) => {
-    const i = ORDER.indexOf(cur);
-    const nx = ORDER[i + 1];
+    const nx = ORDER.find((k) => d[k] == null || d[k] === "");
     if (!nx) {
       setStep("preview");
       say(t.final(d.name || ""));
@@ -1306,6 +1354,7 @@ function AiChatOnboarding({ lang, onDone, onManual }) {
       if (step === "height") d.height = n < 3 ? Math.round(n * 100) : n; // "1,80" -> 180
       if (step === "target") d.target = n;
     }
+    fillExtras(text, d, step);
     setData(d);
     next(step, d);
   };
@@ -1398,6 +1447,19 @@ const LockGlyph = ({ size = 22 }) => (
   </svg>
 );
 
+// Dieselbe Rechnung wie computeKcalGoal in App.jsx (Mifflin-St Jeor x 1.3, Ziel in 12 Wochen),
+// damit die Vorschau genau die Zahl zeigt, die danach im Profil steht.
+const previewKcal = (d) => {
+  const w = Number(d.weight) || 70;
+  const bmr = 10 * w + 6.25 * (Number(d.height) || 170) - 5 * (Number(d.age) || 30) + (d.gender === "female" ? -161 : 5);
+  const diff = d.target && d.weight ? Number(d.target) - w : 0;
+  const cl = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  let adj = 0;
+  if (d.goal === "cut") adj = -cl(diff < 0 ? (Math.abs(diff) * 7700) / 84 : 400, 250, 1000);
+  else if (d.goal === "bulk") adj = cl(diff > 0 ? (diff * 7700) / 84 : 350, 200, 700);
+  return Math.round(Math.max(d.gender === "female" ? 1200 : 1500, bmr * 1.3 + adj) / 10) * 10;
+};
+
 function CensoredPreview({ lang, data, onUnlock }) {
   const t = aiT(lang);
   const demoKeys = ["pushup", "squat", "plank"].filter((k) => gifFor(k));
@@ -1422,7 +1484,7 @@ function CensoredPreview({ lang, data, onUnlock }) {
         <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: C.dim, marginBottom: 8 }}>{t.lockKcal}</div>
         <div style={blurBox}>
           {lockBadge}
-          <div style={{ ...blurred, fontFamily: "Sora, sans-serif", fontSize: 40, fontWeight: 800, color: C.gold, textAlign: "center", padding: "6px 0" }}>2480 kcal</div>
+          <div style={{ ...blurred, fontFamily: "Sora, sans-serif", fontSize: 40, fontWeight: 800, color: C.gold, textAlign: "center", padding: "6px 0" }}>{previewKcal(data || {})} kcal</div>
         </div>
       </div>
 
@@ -1431,7 +1493,10 @@ function CensoredPreview({ lang, data, onUnlock }) {
         <div style={blurBox}>
           {lockBadge}
           <div style={blurred}>
-            {["Montag — Push: Brust, Schultern, Trizeps", "Mittwoch — Pull: Rücken, Bizeps", "Freitag — Beine & Core", "Täglich — Protein-Ziel & Schritte"].map((l) => (
+            {(String(lang).slice(0, 2) === "de"
+              ? ["Montag — Push: Brust, Schultern, Trizeps", "Mittwoch — Pull: Rücken, Bizeps", "Freitag — Beine & Core", "Täglich — Protein-Ziel & Schritte"]
+              : ["Monday — Push: chest, shoulders, triceps", "Wednesday — Pull: back, biceps", "Friday — Legs & core", "Daily — protein target & steps"]
+            ).map((l) => (
               <div key={l} style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: C.text, padding: "7px 0", borderBottom: `1px solid ${C.border}` }}>{l}</div>
             ))}
           </div>
