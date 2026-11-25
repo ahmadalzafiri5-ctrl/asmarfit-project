@@ -261,6 +261,11 @@ const EXTRA_LANGS = { fr: LANG_FR, it: LANG_IT, es: LANG_ES, tr: LANG_TR, pt: LA
 // Infrastruktur bleibt stehen, damit Sprachen später per Eintrag hier zurückkommen können.
 const LANG_LIST = [{ code: "en", label: "English" }];
 // Datums-/Zahlenformate folgen der App-Sprache (nicht nur de/en)
+// Dezimaltrennzeichen nach App-Sprache (nicht nach Geräte-Region): Englisch 0.7, Deutsch 0,7
+let CUR_LANG = "en";
+const COMMA_LANGS = new Set(["de", "fr", "it", "es", "tr", "pt", "ru", "pl", "nl", "id"]);
+const dec = (v) => (COMMA_LANGS.has(String(CUR_LANG).slice(0, 2)) ? String(v).replace(".", ",") : String(v));
+const numFmt = (v) => Number(v || 0).toLocaleString(localeOf(CUR_LANG));
 const localeOf = (lang) => ({ de: "de-DE", en: "en-GB", fr: "fr-FR", it: "it-IT", es: "es-ES", tr: "tr-TR", pt: "pt-BR", ru: "ru-RU", pl: "pl-PL", nl: "nl-NL", ar: "ar", hi: "hi-IN", id: "id-ID", ja: "ja-JP", ko: "ko-KR", zh: "zh-CN" }[String(lang || "en").slice(0, 2)] || "en-GB");
 const detectLang = () => "en";
 
@@ -4181,14 +4186,14 @@ function weeklyRecs(t, review) {
   if (review.workouts < 3) recs.push(t.warTrain.replace("{n}", review.workouts));
   else recs.push(t.warTrainGood.replace("{n}", review.workouts));
   if (review.tracked >= 4 && review.proteinDays < 5) recs.push(t.warProtein.replace("{n}", review.proteinDays));
-  if (review.avgSteps > 0 && review.avgSteps < 8000) recs.push(t.warSteps.replace("{n}", review.avgSteps.toLocaleString()));
+  if (review.avgSteps > 0 && review.avgSteps < 8000) recs.push(t.warSteps.replace("{n}", numFmt(review.avgSteps)));
   return recs.slice(0, 3);
 }
 
 function WeeklyReviewCard({ t, review, mode = "home", onApply, onDone, premium = false, onUpsell = () => {} }) {
   const s = review.suggestion;
   const w = review.slopePerWeek;
-  const f1 = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",");
+  const f1 = (v) => dec(Math.round(v * 10) / 10);
   const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + f1(Math.abs(n));
   const raw = t["wr_" + s.type + "_" + s.group] || t["wr_" + s.type] || "";
   const text = raw.replace("{n}", Math.abs(s.delta || 0)).replace("{w}", w === null ? "" : f1(Math.abs(w))).replace("{a}", review.avgKcal).replace("{g}", review.kcalGoal);
@@ -4296,7 +4301,7 @@ function MeasuresCard({ t, lang, measures, onAdd, onDelete, rangeDays }) {
   const latest = all.length ? all[all.length - 1] : null;
   const first = all.length > 1 ? all[0] : null;
   const fmtDate = (iso) => new Date(iso).toLocaleDateString(localeOf(lang), { day: "numeric", month: "short", year: "numeric" });
-  const fmt = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",");
+  const fmt = (v) => dec(Math.round(v * 10) / 10);
   const save = () => {
     const v = parseFloat(val.replace(",", "."));
     if (v > 0 && v < (k === "fat" ? 75 : 300)) {
@@ -4962,7 +4967,7 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
               <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>{weekWorkouts}× {t.duelTrainings}</span>
               {weekDelta !== null && (
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.teal }}>
-                  {weekDelta > 0 ? "+" : ""}{String(weekDelta).replace(".", ",")} kg
+                  {weekDelta > 0 ? "+" : ""}{dec(weekDelta)} kg
                 </span>
               )}
             </div>
@@ -5981,7 +5986,7 @@ function LineChart({ points, color, height = 140, unit = "" }) {
   const gradId = "fade-" + color.replace(/[^a-z0-9]/gi, "");
   const maxIdx = points.lastIndexOf(max);
   const minIdx = points.indexOf(min);
-  const fmtV = (v) => (Math.round(v * 10) / 10).toString().replace(".", ",") + (unit ? " " + unit : "");
+  const fmtV = (v) => dec(Math.round(v * 10) / 10) + (unit ? " " + unit : "");
   const anchorFor = (x) => (x < 40 ? "start" : x > w - 40 ? "end" : "middle");
   const marker = (idx, c, above) => (
     <g key={idx + "-" + c}>
@@ -6435,7 +6440,7 @@ const MOODS = {
   2: { icon: Frown, color: "#F0954A" },
   3: { icon: Meh, color: "#E0B12F" },
   4: { icon: Smile, color: "#63C46A" },
-  5: { icon: Laugh, color: COLORS.gold },
+  5: { icon: Laugh, color: "#1FB57A" },
 };
 
 function MoodFace({ mood, size = 20 }) {
@@ -6928,7 +6933,7 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
                 <div data-suggest onClick={() => useSuggestion(ei, sug)} style={{ display: "flex", alignItems: "center", gap: 8, background: COLORS.goldSoft, border: "1px solid " + COLORS.gold, borderRadius: 12, padding: "8px 12px", margin: "-2px 0 12px", cursor: "pointer" }}>
                   <Lightbulb size={15} color={COLORS.gold} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text }}>{t.suggestToday}: {sug.weight > 0 ? String(sug.weight).replace(".", ",") + " kg × " : ""}{sug.reps}</div>
+                    <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text }}>{t.suggestToday}: {sug.weight > 0 ? dec(sug.weight) + " kg × " : ""}{sug.reps}</div>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 1 }}>{sug.weight === 0 ? t.suggestBody : t["suggest_" + sug.kind]}</div>
                   </div>
                   <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 700, color: COLORS.gold, whiteSpace: "nowrap" }}>+ {t.suggestUse}</span>
@@ -7394,7 +7399,7 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
   };
   const strength = Object.keys(personalBests).map((k) => ({ key: k, best: personalBests[k] }));
   const cardio = Object.keys(cardioBests).map((k) => ({ key: k, best: cardioBests[k] }));
-  const fmtNum = (v) => (Math.round(v * 100) / 100).toString().replace(".", ",");
+  const fmtNum = (v) => dec(Math.round(v * 100) / 100);
   const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid " + COLORS.border };
 
   const create = () => {
@@ -7959,7 +7964,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
                 <span onClick={onOpenMyMeals} style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 600, color: COLORS.gold, cursor: "pointer" }}>+ {t.myMealSave}</span>
               </div>
               {myMeals.length === 0 ? (
-                <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 12 }}>{t.searchTypeMore}</div>
+                <div style={{ textAlign: "center", color: COLORS.dim, fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 12 }}>{t.myMealsEmpty}</div>
               ) : (
                 <Card style={{ padding: 4, maxHeight: 300, overflowY: "auto" }}>
                   {myMeals.map((m, i) => (
@@ -9111,7 +9116,7 @@ function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, 
         </div>
         <Switch checked={personal} onChange={(v) => (premium ? setAiOn(v) : onUpsell())} />
       </div>
-      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).replace(name ? "{name}" : /s*{name}/, name || "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} onSavePlan={onSavePlan} onShowPlan={onShowPlan} />
+      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).split(name ? "{name}" : " {name}").join(name || "").replace("{name}", "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} onSavePlan={onSavePlan} onShowPlan={onShowPlan} />
     </div>
   );
 }
@@ -9605,8 +9610,8 @@ function StepsCard({ t, steps, source, weightKg, goal, onSaveGoal, onConnect, on
           <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.stepsTitle}</span>
         </div>
         <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text, whiteSpace: "nowrap" }}>
-          {steps.toLocaleString()}
-          <span onClick={() => { setGoalInput(String(goal)); setEditingGoal(!editingGoal); }} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer", textDecoration: "underline dotted" }}> / {goal.toLocaleString()}</span>
+          {numFmt(steps)}
+          <span onClick={() => { setGoalInput(String(goal)); setEditingGoal(!editingGoal); }} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer", textDecoration: "underline dotted" }}> / {numFmt(goal)}</span>
         </span>
       </div>
       {editingGoal && (
@@ -10762,7 +10767,7 @@ function CheatScreen({ t, cheats, onAdd, onDelete, onUpdate = () => {}, premium 
                 {t.cheatComp.replace("{a}", comp)}
               </div>
               <div style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, fontWeight: 700, color: COLORS.dim, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 7 }}>{t.cheatTipsTitle}</div>
-              {[t.cheatTip1.replace("{p}", proteinTarget > 0 ? Math.round(proteinTarget) : 150), t.cheatTip2.replace("{s}", compSteps.toLocaleString()), t.cheatTip3].map((tip, i) => (
+              {[t.cheatTip1.replace("{p}", proteinTarget > 0 ? Math.round(proteinTarget) : 150), t.cheatTip2.replace("{s}", numFmt(compSteps)), t.cheatTip3].map((tip, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: i < 2 ? 6 : 0 }}>
                   <span style={{ color: COLORS.gold, fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 12.5 }}>•</span>
                   <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.text, lineHeight: 1.45 }}>{tip}</span>
@@ -12641,7 +12646,7 @@ function ShareImportModal({ t, lang, item, onImport, onClose }) {
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, margin: "14px 0 8px" }}>{t.sharePortions}</div>
             <div data-portions style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {[0.5, 1, 1.5, 2, 3].map((p) => (
-                <Chip key={p} label={String(p).replace(".", ",") + "×"} active={portions === p} onClick={() => setPortions(p)} />
+                <Chip key={p} label={dec(p) + "×"} active={portions === p} onClick={() => setPortions(p)} />
               ))}
             </div>
           </>
@@ -14044,7 +14049,7 @@ function useAppVersionLabel(t) {
     import("@capacitor/app").then(({ App }) => App.getInfo()).then((i) => { if (alive && i && i.version) setVer(i.version); }).catch(() => {});
     return () => { alive = false; };
   }, []);
-  return ver ? t.setVersion.replace(/1.0$/, ver) : t.setVersion;
+  return ver ? t.setVersion.replace(/1\.0$/, ver) : t.setVersion;
 }
 
 function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang = "de", setLang, appearance = "dark", setAppearance, friendsCount = 0, premium = null, account = null }) {
@@ -14934,6 +14939,7 @@ export default function AsmarFitApp() {
   const [storedLang, setLang] = usePersisted("lang", detectLang());
   // Nur noch Englisch: eine frueher gespeicherte andere Sprache wird ignoriert
   const lang = LANG_LIST.some((l) => l.code === storedLang) ? storedLang : "en";
+  CUR_LANG = lang;
   // Arabisch liest von rechts nach links — das Layout (Flexbox) spiegelt der
   // Browser über dir="rtl" von selbst.
   useEffect(() => {
@@ -15648,7 +15654,9 @@ export default function AsmarFitApp() {
   const quickLogExercise = ({ setLog, cardio }) => finishWorkout({ durationSec: 0, volumeKg: setLog.reduce((sum, l) => sum + l.weight * l.reps, 0), setLog, cardio }, false);
 
   const addWeight = (kg) => {
-    setWeightLog((l) => [...l, { dateISO: new Date().toISOString(), kg }]);
+    // pro Tag ein Wert: erneutes Wiegen am selben Tag ersetzt den alten Eintrag (wie bei den Körpermassen)
+    const day = new Date().toLocaleDateString("sv");
+    setWeightLog((l) => [...l.filter((w) => new Date(w.dateISO).toLocaleDateString("sv") !== day), { dateISO: new Date().toISOString(), kg }]);
     setProfile((p) => ({ ...p, weight: kg }));
   };
   const addMeasure = (key, value) => {
@@ -15930,7 +15938,7 @@ export default function AsmarFitApp() {
     f === 1 ? s : String(s).replace(/^(\d+(?:[.,]\d+)?)/, (m) => {
       const v = parseFloat(m.replace(",", ".")) * f;
       const r = Math.round(v * 10) / 10;
-      return String(Number.isInteger(r) ? r : r.toFixed(1)).replace(".", ",");
+      return dec(Number.isInteger(r) ? r : r.toFixed(1));
     });
   const applyShare = (item, slot, portions = 1) => {
     if (item.t === "plan") {
