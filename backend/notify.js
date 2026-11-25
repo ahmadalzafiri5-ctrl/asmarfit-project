@@ -62,6 +62,12 @@ export function buildMessage(kind, fields = {}) {
     const src = f.source ? ", Quelle " + f.source : "";
     return { subject: "ASFIT: KI-Paket gekauft", text: "🧩 KI-Paket gekauft: user " + who(f) + src };
   }
+  if (kind === "openai_down") {
+    return { subject: "ASFIT: OpenAI-Guthaben leer — Live-Coach pausiert", text: "⚠️ OpenAI meldet: " + (f.reason || "Fehler") + ". Das Sprach-Onboarding läuft automatisch mit Clips weiter. Bitte Guthaben aufladen: https://platform.openai.com/settings/organization/billing/overview" };
+  }
+  if (kind === "openai_up") {
+    return { subject: "ASFIT: OpenAI wieder bereit — Live-Coach aktiv", text: "✅ OpenAI funktioniert wieder. Das Sprach-Onboarding nutzt wieder den Live-Coach." };
+  }
   return { subject: "ASFIT: " + kind, text: "ℹ️ " + kind + (Object.keys(f).length ? " " + JSON.stringify(f) : "") };
 }
 

@@ -12,6 +12,7 @@ import { mountPlayBilling } from "./playBilling.js";
 import { mountAppleBilling } from "./appleBilling.js";
 import { mountAiQuota, initAiQuotaDb, aiQuotaGate } from "./aiQuota.js";
 import { mountSync, initSyncDb } from "./sync.js";
+import { notifyAdmin } from "./notify.js";
 
 // the country the user shops in (ISO code sent by the app) as an English name for AI prompts; null when missing or invalid
 function shopCountry(cc) {
@@ -491,6 +492,40 @@ setInterval(() => {
 }, 10 * 60_000).unref();
 const REALTIME_LANGS = { de: "German", en: "English", fr: "French", it: "Italian", es: "Spanish", tr: "Turkish", pt: "Portuguese", ru: "Russian", pl: "Polish", nl: "Dutch", ar: "Arabic", hi: "Hindi", id: "Indonesian", ja: "Japanese", ko: "Korean", zh: "Chinese" };
 
+// Prüfung alle 10 Minuten, ob das OpenAI-Konto noch funktioniert (winzige Embedding-Anfrage, Bruchteile
+// eines Rappens). Ist das Guthaben leer, nimmt die App automatisch das Clip-Onboarding statt stumm zu
+// bleiben, und der Betreiber bekommt eine Nachricht. Kommt das Guthaben zurück, schaltet es sich selbst wieder an.
+const openaiHealth = { down: false, reason: "", checkedAt: 0 };
+async function checkOpenAI() {
+  if (!OPENAI_API_KEY) return;
+  try {
+    const r = await fetch(OPENAI_API_BASE + "/v1/embeddings", {
+      method: "POST",
+      headers: { authorization: "Bearer " + OPENAI_API_KEY, "content-type": "application/json" },
+      body: JSON.stringify({ model: "text-embedding-3-small", input: "ping" }),
+    });
+    const j = await r.json().catch(() => ({}));
+    const code = (j.error && (j.error.code || j.error.type)) || "";
+    const broke = !r.ok && /quota|credit|billing|invalid_api_key/i.test(String(code));
+    if (broke && !openaiHealth.down) {
+      openaiHealth.down = true;
+      openaiHealth.reason = String(code);
+      console.error("OpenAI-Prüfung: ausgefallen (" + code + ") — Live-Onboarding pausiert");
+      notifyAdmin("openai_down", { reason: String(code) }).catch(() => {});
+    } else if (r.ok && openaiHealth.down) {
+      openaiHealth.down = false;
+      openaiHealth.reason = "";
+      console.log("OpenAI-Prüfung: wieder in Ordnung — Live-Onboarding aktiv");
+      notifyAdmin("openai_up", {}).catch(() => {});
+    }
+    openaiHealth.checkedAt = Date.now();
+  } catch (e) {
+    console.error("OpenAI-Prüfung:", e.message); // Netzwerkfehler ändern den Zustand nicht
+  }
+}
+setTimeout(checkOpenAI, 15000);
+setInterval(checkOpenAI, 10 * 60 * 1000);
+
 // Anweisungen für das Live-Sprach-Onboarding — als Funktion, damit die App sie beim Sprachwechsel
 // (Werkzeug set_language) mit der neuen Sprache erneut setzen kann.
 function realtimeInstructions(language, canSwitch = true) {
@@ -513,8 +548,8 @@ function realtimeInstructions(language, canSwitch = true) {
 
 app.post("/api/ai/realtime-session", async (req, res) => {
   if (!OPENAI_API_KEY) return res.status(503).json({ error: "not_configured" });
-  // Not-Schalter (z. B. OpenAI-Guthaben leer): 503 -> die App nimmt automatisch das Clip-Onboarding
-  if (process.env.REALTIME_DISABLED === "1") return res.status(503).json({ error: "disabled" });
+  // Not-Schalter (von Hand oder automatisch, wenn OpenAI kein Guthaben mehr hat): 503 -> die App nimmt das Clip-Onboarding
+  if (process.env.REALTIME_DISABLED === "1" || openaiHealth.down) return res.status(503).json({ error: "disabled" });
   const ip = req.ip || "?";
   const now = Date.now();
   const b = realtimeHour.get(ip) || { t0: now, n: 0 };
