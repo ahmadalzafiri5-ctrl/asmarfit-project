@@ -863,6 +863,7 @@ const STR = {
     weekRest: "Rest",
     trainHistAll: "Show all",
     setsLabel: "sets",
+    setSingular: "set",
     streakCelebrateTitle: "days in a row!",
     streakMsg3: "Three days in a row — the start of a habit.",
     streakMsg7: "A full week! That's a real habit now.",
@@ -1309,6 +1310,8 @@ const STR = {
     billingManage: "Manage payment method & card",
     billingNeedLogin: "Sign in first — Premium is linked to your account.",
     friendsName: "Your name (how friends see you)",
+    friendsNamePh: "e.g. Alex",
+    friendsNameNeeded: "Enter your name first so your friend knows who is challenging them.",
     friendsShareMine: "Send duel",
     friendsShareHistory: "Share my training history",
     friendsFeeds: "Training of my friends",
@@ -1347,6 +1350,7 @@ const STR = {
     intakeHomeSubNone: "Pick a substance from the list and enter the amount",
     intakeDisclaimer: "A plain diary for your own entries. No recommendation and no medical advice. Talk about anything you take, and your blood work, with a doctor. The data stays on your phone only.",
     intakeIntro: "Add what you take and log when you took or injected it. The app shows what is due and suggests the next injection site.",
+    intakeIntroSafe: "Add the supplements you take and log when you took them. The app shows what is due next.",
     intakeNew: "New substance",
     intakeChange: "Edit",
     intakeName: "Name",
@@ -1470,7 +1474,7 @@ const STR = {
     setWaterGoal: "Water goal (ml)",
     setWaterDefault: "Default for your weight:",
     remTime: "Time",
-    remNoteWeb: "On iPhone and in the browser the app cannot send notifications while it is closed. Here it shows on the home screen what is still open. Notifications with the app closed work in the installed Android app.",
+    remNoteWeb: "In the browser the app cannot send notifications while it is closed. Here it shows on the home screen what is still open. Notifications with the app closed work in the installed app (iPhone and Android).",
     remNoteNative: "The notifications also arrive while the app is closed. They are planned again whenever you open the app or log something, so a missed-workout message only comes if it is true.",
     remPermWarn: "Notifications are turned off for ASFIT on this phone, so the reminders cannot arrive. Allow them and the reminders will work.",
     remPermBtn: "Allow notifications",
@@ -2181,6 +2185,7 @@ const STR = {
     weekRest: "Pause",
     trainHistAll: "Alle anzeigen",
     setsLabel: "Sätze",
+    setSingular: "Satz",
     streakCelebrateTitle: "Tage in Folge!",
     streakMsg3: "Drei Tage am Stück — der Anfang einer Gewohnheit.",
     streakMsg7: "Eine ganze Woche! Das ist jetzt eine echte Gewohnheit.",
@@ -2627,6 +2632,8 @@ const STR = {
     billingManage: "Zahlungsmittel & Karte verwalten",
     billingNeedLogin: "Melde dich zuerst an — Premium hängt an deinem Konto.",
     friendsName: "Dein Name (so sehen dich Freunde)",
+    friendsNamePh: "z. B. Alex",
+    friendsNameNeeded: "Gib zuerst deinen Namen ein, damit dein Freund weiss, wer ihn herausfordert.",
     friendsShareMine: "Duell senden",
     friendsShareHistory: "Meinen Trainingsverlauf teilen",
     friendsFeeds: "Training meiner Freunde",
@@ -2665,6 +2672,7 @@ const STR = {
     intakeHomeSubNone: "Stoff aus der Liste wählen und Menge eintragen",
     intakeDisclaimer: "Reines Tagebuch für deine eigenen Einträge. Keine Empfehlung und keine medizinische Beratung. Sprich Einnahmen und Blutwerte mit einer Ärztin oder einem Arzt ab. Die Daten bleiben nur auf deinem Handy.",
     intakeIntro: "Lege an, was du nimmst, und trage ein, wann du es genommen oder gespritzt hast. Die App zeigt dir, was fällig ist, und schlägt die nächste Injektionsstelle vor.",
+    intakeIntroSafe: "Lege die Nahrungsergänzungen an, die du nimmst, und trage ein, wann du sie genommen hast. Die App zeigt dir, was als Nächstes fällig ist.",
     intakeNew: "Neue Substanz",
     intakeChange: "Ändern",
     intakeName: "Name",
@@ -2788,7 +2796,7 @@ const STR = {
     setWaterGoal: "Wasserziel (ml)",
     setWaterDefault: "Standard für dein Gewicht:",
     remTime: "Uhrzeit",
-    remNoteWeb: "Auf dem iPhone und im Browser kann die App bei geschlossener App keine Nachrichten schicken. Hier zeigt sie dir auf der Startseite, was noch offen ist. Nachrichten bei geschlossener App gibt es in der installierten Android-App.",
+    remNoteWeb: "Im Browser kann die App bei geschlossener App keine Nachrichten schicken. Hier zeigt sie dir auf der Startseite, was noch offen ist. Nachrichten bei geschlossener App gibt es in der installierten App (iPhone und Android).",
     remNoteNative: "Die Nachrichten kommen auch bei geschlossener App. Sie werden jedes Mal neu geplant, wenn du die App öffnest oder etwas einträgst, damit \"Training verpasst\" nur kommt, wenn es stimmt.",
     remPermWarn: "Benachrichtigungen sind für ASFIT auf diesem Handy ausgeschaltet – die Erinnerungen können so nicht ankommen. Erlaube sie, dann funktionieren die Erinnerungen.",
     remPermBtn: "Benachrichtigungen erlauben",
@@ -3432,7 +3440,8 @@ function TextField({ value, onChange, placeholder, type = "text" }) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      type={type}
+      type={type === "number" ? "text" : type}
+      inputMode={type === "number" ? "decimal" : undefined}
       style={{ width: "100%", background: COLORS.raised, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "12px 14px", color: COLORS.text, fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none" }}
     />
   );
@@ -3446,7 +3455,7 @@ function TopBar({ title, lang, setLang, onBack, onSettings, accent = null, onPro
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 8px", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
         {onBack && (
-          <div onClick={onBack} style={{ cursor: "pointer", flexShrink: 0 }}>
+          <div onClick={onBack} style={{ cursor: "pointer", flexShrink: 0, padding: 11, margin: -11, display: "flex" }}>
             <ChevronLeft size={22} color={COLORS.text} />
           </div>
         )}
@@ -4313,7 +4322,7 @@ function MeasuresCard({ t, lang, measures, onAdd, onDelete, rangeDays }) {
           ))}
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <input data-measure-input type="number" inputMode="decimal" value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") save(); }} placeholder={t.measuresPh + " (" + kind.unit + ")"} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+          <input data-measure-input type="text" inputMode="decimal" value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") save(); }} placeholder={t.measuresPh + " (" + kind.unit + ")"} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
           <button data-measure-save onClick={save} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             {t.saveWeight}
           </button>
@@ -4895,7 +4904,7 @@ function HomeScreen({ trainingActive = false, planLabel = "", t, profile, meals,
         {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} /> : null}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.text, lineHeight: 1.2 }}>
-            {hour < 11 ? t.greetingPrefix : hour < 17 ? t.greetingDay : t.greetingEvening}, {profile.name}
+            {hour < 11 ? t.greetingPrefix : hour < 17 ? t.greetingDay : t.greetingEvening}{profile.name ? ", " + profile.name : ""}
           </div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim, marginTop: 3, textTransform: "capitalize" }}>
             {dateLabel}
@@ -5332,7 +5341,7 @@ function NutritionScreen({ t, lang, meals, macroTargets, myMeals, cheats, histor
               <div onClick={() => setEditing((e) => ({ ...e, grams: Math.max(5, Math.round(e.grams) - 10) }))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <Minus size={14} color={COLORS.text} />
               </div>
-              <input type="number" inputMode="decimal" value={editing.grams || ""} onChange={(e) => setEditing((x) => ({ ...x, grams: Math.max(0, Math.min(5000, Number(e.target.value) || 0)) }))} style={{ ...numInputStyle, width: 100, textAlign: "center", fontWeight: 700 }} />
+              <input type="text" inputMode="decimal" value={editing.grams || ""} onChange={(e) => setEditing((x) => ({ ...x, grams: Math.max(0, Math.min(5000, Number(e.target.value) || 0)) }))} style={{ ...numInputStyle, width: 100, textAlign: "center", fontWeight: 700 }} />
               <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{viewMeals[editing.slot][editing.idx]?.unit || "g"}</span>
               <div onClick={() => setEditing((e) => ({ ...e, grams: Math.min(5000, Math.round(e.grams) + 10) }))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <Plus size={14} color={COLORS.text} />
@@ -5823,7 +5832,7 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
         <Card style={{ marginBottom: 14, background: COLORS.raised, padding: "18px 16px" }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.text }}>{planName || t.freeWorkout}</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim, marginTop: 4, lineHeight: 1.4 }}>
-            {selectedDay ? selectedDay.name + " · " + selectedDay.exercises.length + " " + (selectedDay.exercises.length === 1 ? t.exerciseSingular : t.exercises) : t.freeWorkoutSub}
+            {selectedDay ? selectedDay.name + " · " + selectedDay.exercises.length + " " + exWord(t, selectedDay.exercises.length) : t.freeWorkoutSub}
           </div>
           {hasPlanDays && planDays.length > 1 && (
             <div style={{ display: "flex", gap: 8, marginTop: 14, overflowX: "auto", paddingBottom: 2 }}>
@@ -5913,7 +5922,7 @@ function TrainingScreen({ t, lang, planName, planDays = [], personalBests, worko
                     {w.imported ? " · " + (w.source || "Health") : ""}
                   </div>
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim, marginTop: 2 }}>
-                    {[w.durationSec > 0 ? Math.round(w.durationSec / 60) + " min" : null, w.volumeKg > 0 ? Math.round(w.volumeKg) + " kg" : null, w.burnedKcal > 0 ? Math.round(w.burnedKcal) + " kcal" : null, (w.sets || []).length ? (w.sets || []).length + " " + t.setsLabel : null].filter(Boolean).join(" · ") || "—"}
+                    {[w.durationSec > 0 ? Math.round(w.durationSec / 60) + " min" : null, w.volumeKg > 0 ? Math.round(w.volumeKg) + " kg" : null, w.burnedKcal > 0 ? Math.round(w.burnedKcal) + " kcal" : null, (w.sets || []).length ? (w.sets || []).length + " " + ((w.sets || []).length === 1 && t.setSingular ? t.setSingular : t.setsLabel) : null].filter(Boolean).join(" · ") || "—"}
                   </div>
                 </div>
                 <CheckCircle2 size={16} color={COLORS.gold} style={{ flexShrink: 0 }} />
@@ -6225,7 +6234,7 @@ function ProgressScreen({ t, lang, weightLog, workoutHistory, onAddWeight, onDel
           )}
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <input type="number" inputMode="decimal" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder={t.weightInputPlaceholder} style={{ ...numInputStyle, flex: 1 }} />
+          <input type="text" inputMode="decimal" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder={t.weightInputPlaceholder} style={{ ...numInputStyle, flex: 1 }} />
           <button onClick={saveWeight} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             {t.saveWeight}
           </button>
@@ -6539,15 +6548,15 @@ function NoteComposer({ t, onSave }) {
       </div>
 
       <button
-        disabled={!category || !text.trim()}
+        disabled={!text.trim()}
         onClick={() =>
           onSave({
-            type: category,
+            type: category || 3,
             text: text.trim(),
             mood,
           })
         }
-        style={{ width: "100%", background: !category || !text.trim() ? COLORS.raised : COLORS.gold, color: !category || !text.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: !category || !text.trim() ? "default" : "pointer" }}
+        style={{ width: "100%", background: !text.trim() ? COLORS.raised : COLORS.gold, color: !text.trim() ? COLORS.dim : COLORS.bg, border: "none", borderRadius: 14, padding: "14px 18px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14.5, cursor: !category || !text.trim() ? "default" : "pointer" }}
       >
         {t.saveNote}
       </button>
@@ -6944,11 +6953,11 @@ function WorkoutSession({ t, lang, startedAt, pausedAt = null, pausedMs = 0, onT
                 </div>
               );
             })()}
-            {en.cardio && <input type="number" inputMode="decimal" min="0" value={en.minutes} onChange={(e) => updateMinutes(ei, e.target.value)} placeholder={t.minutesLabel} style={numInputStyle} />}
+            {en.cardio && <input type="text" inputMode="decimal" min="0" value={en.minutes} onChange={(e) => updateMinutes(ei, e.target.value)} placeholder={t.minutesLabel} style={numInputStyle} />}
             {(en.sets || []).map((s, si) => (
               <div key={si} style={{ display: "grid", gridTemplateColumns: "22px 1fr 1fr 30px 24px", gap: 8, alignItems: "center", marginBottom: 8, opacity: s.done ? 0.6 : 1 }}>
                 <span style={{ fontFamily: "Sora, sans-serif", fontSize: 12.5, color: COLORS.dim }}>{si + 1}</span>
-                <input type="number" inputMode="decimal" min="0" value={s.weight} onChange={(e) => updateSet(ei, si, "weight", e.target.value)} placeholder="kg" style={numInputStyle} />
+                <input type="text" inputMode="decimal" min="0" value={s.weight} onChange={(e) => updateSet(ei, si, "weight", e.target.value)} placeholder="kg" style={numInputStyle} />
                 <input type="number" inputMode="numeric" min="0" value={s.reps} onChange={(e) => updateSet(ei, si, "reps", e.target.value)} placeholder={t.reps} style={numInputStyle} />
                 <div onClick={() => toggleDone(ei, si)} style={{ width: 30, height: 30, borderRadius: 9, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: s.done ? COLORS.gold : COLORS.raised, border: "1px solid " + (s.done ? COLORS.gold : COLORS.border) }}>
                   <Check size={15} color={s.done ? COLORS.bg : COLORS.dim} />
@@ -7417,7 +7426,7 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
                 </div>
                 {editKey === "s:" + r.key && (
                   <div style={{ display: "flex", gap: 8, padding: "8px 0" }}>
-                    <input type="number" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                    <input type="text" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
                     <button onClick={() => { const v = parseFloat(String(editVal).replace(",", ".")); if (v >= 0) { onFixBest(r.key, v, "strength"); setEditKey(null); } }} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t.stepsSave}</button>
                     <button onClick={() => { onFixBest(r.key, 0, "strength"); setEditKey(null); }} style={{ background: COLORS.raised, color: COLORS.coral, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "0 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Trash2 size={14} /></button>
                   </div>
@@ -7435,7 +7444,7 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
                 </div>
                 {editKey === "c:" + r.key && (
                   <div style={{ display: "flex", gap: 8, padding: "8px 0" }}>
-                    <input type="number" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                    <input type="text" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
                     <button onClick={() => { const v = parseFloat(String(editVal).replace(",", ".")); if (v >= 0) { onFixBest(r.key, v, "cardio"); setEditKey(null); } }} style={{ background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 10, padding: "0 14px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t.stepsSave}</button>
                     <button onClick={() => { onFixBest(r.key, 0, "cardio"); setEditKey(null); }} style={{ background: COLORS.raised, color: COLORS.coral, border: "1px solid " + COLORS.border, borderRadius: 10, padding: "0 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Trash2 size={14} /></button>
                   </div>
@@ -7455,7 +7464,7 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
         <Card style={{ marginBottom: 12 }}>
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t.recordName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <input type="number" inputMode="decimal" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={t.recordValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+            <input type="text" inputMode="decimal" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={t.recordValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
             <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder={t.recordUnit} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
           </div>
           <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
@@ -7484,7 +7493,7 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
               <div style={{ padding: "6px 0 10px" }}>
                 <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t.recordName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
                 <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                  <input type="number" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} placeholder={t.recordValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                  <input type="text" inputMode="decimal" value={editVal} onChange={(e) => setEditVal(e.target.value)} placeholder={t.recordValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
                   <input value={editReward} onChange={(e) => setEditReward(e.target.value)} placeholder={t.recordReward} style={{ ...numInputStyle, flex: 1.4, minWidth: 0 }} />
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
@@ -7497,7 +7506,7 @@ function RecordsScreen({ t, lang, personalBests, cardioBests, workoutHistory, cu
             {pts.length >= 2 && <LineChart points={pts} color={COLORS.gold} unit={r.unit} height={120} />}
             <input value={inputs["rw" + r.id] || ""} onChange={(e) => setInputs({ ...inputs, ["rw" + r.id]: e.target.value })} placeholder={t.recordRewardNow} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginTop: 10 }} />
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <input type="number" inputMode="decimal" value={inputs[r.id] || ""} onChange={(e) => setInputs({ ...inputs, [r.id]: e.target.value })} placeholder={t.recordNewValue + " (" + r.unit + ")"} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+              <input type="text" inputMode="decimal" value={inputs[r.id] || ""} onChange={(e) => setInputs({ ...inputs, [r.id]: e.target.value })} placeholder={t.recordNewValue + " (" + r.unit + ")"} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
               <button
                 onClick={() => {
                   const v = parseFloat(String(inputs[r.id] || "").replace(",", "."));
@@ -8042,7 +8051,7 @@ function FoodSearchScreen({ t, lang, onAdd, onOpenBarcode, onOpenPhoto, myMeals 
             <div onClick={() => setGrams((g) => Math.max(5, Math.round(g) - 10))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               <Minus size={14} color={COLORS.text} />
             </div>
-            <input type="number" inputMode="decimal" value={grams || ""} onChange={(e) => setGrams(Math.max(0, Math.min(5000, Number(e.target.value) || 0)))} style={{ ...numInputStyle, width: 90, textAlign: "center", fontWeight: 700 }} />
+            <input type="text" inputMode="decimal" value={grams || ""} onChange={(e) => setGrams(Math.max(0, Math.min(5000, Number(e.target.value) || 0)))} style={{ ...numInputStyle, width: 90, textAlign: "center", fontWeight: 700 }} />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>{unit}</span>
             <div onClick={() => setGrams((g) => Math.min(5000, Math.round(g) + 10))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               <Plus size={14} color={COLORS.text} />
@@ -8771,7 +8780,7 @@ function BarcodeScanScreen({ t, lang, onAdd, onDone, pantry = [], onPantrySave }
             <div onClick={() => setGrams((g) => Math.max(5, Math.round(g) - 10))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               <Minus size={14} color={COLORS.text} />
             </div>
-            <input type="number" inputMode="decimal" value={grams || ""} onChange={(e) => setGrams(Math.max(0, Math.min(5000, Number(e.target.value) || 0)))} style={{ ...numInputStyle, width: 90, textAlign: "center", fontWeight: 700 }} />
+            <input type="text" inputMode="decimal" value={grams || ""} onChange={(e) => setGrams(Math.max(0, Math.min(5000, Number(e.target.value) || 0)))} style={{ ...numInputStyle, width: 90, textAlign: "center", fontWeight: 700 }} />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: COLORS.dim }}>g</span>
             <div onClick={() => setGrams((g) => Math.min(5000, Math.round(g) + 10))} style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.raised, border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               <Plus size={14} color={COLORS.text} />
@@ -9102,7 +9111,7 @@ function AssistantScreen({ t, lang, data, aiOn, setAiOn, name, premium = false, 
         </div>
         <Switch checked={personal} onChange={(v) => (premium ? setAiOn(v) : onUpsell())} />
       </div>
-      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).replace("{name}", name || "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} onSavePlan={onSavePlan} onShowPlan={onShowPlan} />
+      <AssistantChat t={t} lang={lang} hello={(personal ? t.assistantHelloData : t.assistantHello).replace(name ? "{name}" : /s*{name}/, name || "")} data={personal ? data : null} chips={personal ? t.assistantChips : t.assistantChipsPlain} onSavePlan={onSavePlan} onShowPlan={onShowPlan} />
     </div>
   );
 }
@@ -9553,7 +9562,7 @@ function PhotoScanScreen({ t, lang, onAdd, onDone }) {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <input type="number" inputMode="decimal" min="0" value={it.gramsStr} onChange={(e) => setItemGrams(i, e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", padding: "8px 6px", textAlign: "right" }} />
+                <input type="text" inputMode="decimal" min="0" value={it.gramsStr} onChange={(e) => setItemGrams(i, e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", padding: "8px 6px", textAlign: "right" }} />
                 <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: COLORS.dim, minWidth: 14 }}>{it.unit}</span>
               </div>
               <div onClick={() => removeItem(i)} title={t.photoRemoveItem} style={{ cursor: "pointer", display: "flex", justifyContent: "center" }}>
@@ -9596,8 +9605,8 @@ function StepsCard({ t, steps, source, weightKg, goal, onSaveGoal, onConnect, on
           <span style={{ fontFamily: "Sora, sans-serif", fontSize: 15, fontWeight: 600, color: COLORS.text }}>{t.stepsTitle}</span>
         </div>
         <span style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text, whiteSpace: "nowrap" }}>
-          {steps.toLocaleString("de-DE")}
-          <span onClick={() => { setGoalInput(String(goal)); setEditingGoal(!editingGoal); }} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer", textDecoration: "underline dotted" }}> / {goal.toLocaleString("de-DE")}</span>
+          {steps.toLocaleString()}
+          <span onClick={() => { setGoalInput(String(goal)); setEditingGoal(!editingGoal); }} style={{ color: COLORS.gold, fontWeight: 600, cursor: "pointer", textDecoration: "underline dotted" }}> / {goal.toLocaleString()}</span>
         </span>
       </div>
       {editingGoal && (
@@ -9768,7 +9777,7 @@ function FastFoodMenu({ t, lang, chain, items, onAdd, onDelete, onDeleteChain, o
           <div data-world-sel style={{ marginTop: 6, padding: 12, background: COLORS.raised, borderRadius: 12 }}>
             <div style={{ fontFamily: "Sora, sans-serif", fontSize: 13.5, fontWeight: 700, color: COLORS.text, marginBottom: 8 }}>{sel.name}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <input data-grams type="number" inputMode="decimal" value={grams} onChange={(e) => setGrams(Math.max(0, Math.min(3000, Number(e.target.value) || 0)))} style={{ ...numInputStyle, width: 100, textAlign: "center" }} />
+              <input data-grams type="text" inputMode="decimal" value={grams} onChange={(e) => setGrams(Math.max(0, Math.min(3000, Number(e.target.value) || 0)))} style={{ ...numInputStyle, width: 100, textAlign: "center" }} />
               <span style={small}>{sel.unit === "ml" ? "ml" : "g"} · {t.ffPortion}</span>
             </div>
             <div style={{ ...small, marginBottom: 10 }}>{scaled.kcal} kcal · {t.protein} {scaled.protein} g · {t.carbs} {scaled.carbs} g · {t.fat} {scaled.fat} g</div>
@@ -10483,7 +10492,7 @@ function PantryScreen({ t, lang, pantry, initialSlot, openId, onAddTo, onCreateF
                             <div onClick={() => setAmount(it, g - pantryStep(g))} style={box}>
                               <Minus size={13} color={COLORS.text} />
                             </div>
-                            <input type="number" inputMode="decimal" value={g || ""} onChange={(e) => setAmount(it, Number(e.target.value) || 0)} style={{ ...numInputStyle, width: 58, textAlign: "center", fontWeight: 700, padding: "7px 4px" }} />
+                            <input type="text" inputMode="decimal" value={g || ""} onChange={(e) => setAmount(it, Number(e.target.value) || 0)} style={{ ...numInputStyle, width: 58, textAlign: "center", fontWeight: 700, padding: "7px 4px" }} />
                             <span style={{ ...small, width: 14 }}>{unit}</span>
                             <div onClick={() => setAmount(it, g + pantryStep(g))} style={box}>
                               <Plus size={13} color={COLORS.text} />
@@ -10587,7 +10596,7 @@ function MyMealsScreen({ t, myMeals, onSave, onDelete, onAddTo, initialSlot = "s
     setF({ name: "", kcal: "", protein: "", carbs: "", fat: "" });
   };
   const field = (k, label) => (
-    <input type="number" inputMode="decimal" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} placeholder={label} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+    <input type="text" inputMode="decimal" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} placeholder={label} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
   );
   return (
     <div style={{ padding: "0 20px 24px" }}>
@@ -10901,7 +10910,7 @@ function RecipesScreen({ t, lang, onAdd, onDone, customRecipes = [], onSaveRecip
   };
 
   const smallInput = (k, label) => (
-    <input type="number" inputMode="decimal" value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} placeholder={label} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+    <input type="text" inputMode="decimal" value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} placeholder={label} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
   );
 
   return (
@@ -11444,6 +11453,8 @@ function exerciseMuscles(ex) {
 
 // ---------- Anatomy: the 3D muscle body (anatomy3d.js, loaded on demand) and small still pictures of it ----------
 const isDE = (t) => t === STR.de;
+// "5 exercises" mitten im Satz klein (Deutsch bleibt gross), "1 exercise" im Singular
+const exWord = (t, n) => (n === 1 ? (isDE(t) ? t.exerciseSingular : t.exerciseSingular.toLowerCase()) : isDE(t) ? t.exercises : t.exercises.toLowerCase());
 const statesFor = (primary = [], secondary = []) => {
   const s = {};
   secondary.forEach((m) => (s[m] = 2));
@@ -11904,7 +11915,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
         <Card style={{ marginBottom: 14 }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 12 }}>{t.exerciseLogTitle}</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <input type="number" inputMode="decimal" min="0" value={wInput} onChange={(e) => setWInput(e.target.value)} placeholder={isCardio ? t.minutesLabel : "kg"} style={{ ...numInputStyle, flex: 1 }} />
+            <input type="text" inputMode="decimal" min="0" value={wInput} onChange={(e) => setWInput(e.target.value)} placeholder={isCardio ? t.minutesLabel : "kg"} style={{ ...numInputStyle, flex: 1 }} />
             {!isCardio && <input type="number" inputMode="numeric" min="0" value={rInput} onChange={(e) => setRInput(e.target.value)} placeholder={t.reps} style={{ ...numInputStyle, flex: 1 }} />}
           </div>
           <button onClick={save} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
@@ -12002,7 +12013,7 @@ function ExerciseLibrary({ t, lang, mode, onAdd, onFinishPicking, personalBests 
 
 // Wochentage Mo..So (JS-getDay-Nummern) + lokalisierte Kurznamen für die Plan-Tage
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
-const wdShort = (wd, lang) => new Date(2026, 10, 1 + wd).toLocaleDateString(localeOf(lang), { weekday: "short" }).replace(/.$/, "");
+const wdShort = (wd, lang) => new Date(2026, 10, 1 + wd).toLocaleDateString(localeOf(lang), { weekday: "short" }).replace(/\.$/, "");
 const wdLong = (wd, lang) => new Date(2026, 10, 1 + wd).toLocaleDateString(localeOf(lang), { weekday: "long" });
 // Ein Plan-Tag kann auf mehreren Wochentagen liegen (z. B. Push Mo+Do); alte Pläne hatten nur d.wd
 const wdsOf = (d) => (Array.isArray(d.wds) ? d.wds : d.wd != null ? [d.wd] : []);
@@ -12041,8 +12052,11 @@ function PlanBuilder({ t, lang, name, setName, days, setDays, selectedDay, setSe
                 data-template={p.id}
                 onClick={() => {
                   const b = buildFromTemplate(p, lang, EXERCISE_LIBRARY);
+                  // Vorlagen gleich sinnvoll auf die Woche verteilen (mit Ruhetagen dazwischen)
+                  const SPREAD = { 1: [1], 2: [1, 4], 3: [1, 3, 5], 4: [1, 2, 4, 5], 5: [1, 2, 3, 4, 5], 6: [1, 2, 3, 4, 5, 6] };
+                  const spread = SPREAD[b.days.length] || [];
                   setName(b.name);
-                  setDays(b.days);
+                  setDays(b.days.map((d, i) => (spread[i] != null ? { ...d, wd: undefined, wds: [spread[i]] } : d)));
                   setSelectedDay(null);
                 }}
                 style={{ background: COLORS.surface, border: "1px solid " + COLORS.border, borderRadius: 14, padding: "12px 14px", marginBottom: 8, cursor: "pointer" }}
@@ -12589,7 +12603,7 @@ function ShareImportModal({ t, lang, item, onImport, onClose }) {
   ];
   const typeLabel = { plan: t.shareTypePlan, meal: t.shareTypeMeal, day: t.shareTypeDay, recipe: t.shareTypeRecipe, pantry: t.shareTypePantry, duel: t.shareTypeDuel, ex: t.shareTypeEx, hist: t.shareTypeHist, chal: t.shareTypeChal }[item.t];
   let lines = [];
-  if (item.t === "plan") lines = [item.name, ...item.days.map((d) => d.name + " · " + d.exercises.length + " " + t.exercises)];
+  if (item.t === "plan") lines = [item.name, ...item.days.map((d) => d.name + " · " + d.exercises.length + " " + exWord(t, d.exercises.length))];
   else if (item.t === "meal") lines = [item.title || t.shareTypeMeal, item.items.length + " " + t.pantryItemMany + " · " + sumKcal(item.items) + " kcal"];
   else if (item.t === "day") {
     const all = Object.values(item.slots).flat();
@@ -12700,6 +12714,15 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
     } else setMsg(t.friendsBadCode);
   };
   const small = { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: COLORS.dim };
+  // ohne Namen sieht der Freund nur "?" — darum vor dem Teilen nach dem Namen fragen
+  const [nameMissing, setNameMissing] = useState(false);
+  const needName = () => {
+    if (String(myName || "").trim()) return false;
+    setNameMissing(true);
+    const el = document.querySelector("[data-my-name]");
+    if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.focus(); }
+    return true;
+  };
   return (
     <div style={{ padding: "0 20px 28px" }}>
       <div style={{ ...small, lineHeight: 1.5, marginBottom: 14 }}>{t.friendsIntro}</div>
@@ -12710,7 +12733,8 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
           <AvatarCircle url={myAvatar} name={myName || t.duelYou} size={52} ring={COLORS.gold} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ ...small, fontSize: 11.5, marginBottom: 4 }}>{t.friendsName}</div>
-            <input value={myName} onChange={(e) => setMyName(e.target.value.slice(0, 30))} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+            <input data-my-name value={myName} placeholder={t.friendsNamePh || ""} onChange={(e) => { setMyName(e.target.value.slice(0, 30)); setNameMissing(false); }} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", border: nameMissing ? "1.5px solid " + COLORS.coral : numInputStyle.border }} />
+            {nameMissing && <div style={{ ...small, fontSize: 11.5, color: COLORS.coral, marginTop: 4 }}>{t.friendsNameNeeded}</div>}
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
@@ -12725,10 +12749,10 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
             </div>
           ))}
         </div>
-        <button onClick={onShareMine} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+        <button onClick={() => (needName() ? null : onShareMine())} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
           {t.friendsShareMine}
         </button>
-        <button data-share-history onClick={onShareHistory} disabled={!myHistoryCount} style={{ width: "100%", marginTop: 8, background: COLORS.raised, color: myHistoryCount ? COLORS.gold : COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: myHistoryCount ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+        <button data-share-history onClick={() => (needName() ? null : onShareHistory())} disabled={!myHistoryCount} style={{ width: "100%", marginTop: 8, background: COLORS.raised, color: myHistoryCount ? COLORS.gold : COLORS.dim, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: myHistoryCount ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
           <Share2 size={14} /> {t.friendsShareHistory}{myHistoryCount ? " (" + Math.min(10, myHistoryCount) + ")" : ""}
         </button>
       </Card>
@@ -12751,7 +12775,7 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
         <Card data-duel-reply style={{ marginBottom: 14, border: `1.5px solid ${COLORS.gold}` }}>
           <div style={{ fontFamily: "Sora, sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{t.friendsReplyTitle}</div>
           <div style={{ ...small, lineHeight: 1.45, marginBottom: 10 }}>{t.friendsReplyHint}</div>
-          <button onClick={onShareMine} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <button onClick={() => (needName() ? null : onShareMine())} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             {t.friendsShareMine}
           </button>
         </Card>
@@ -12802,7 +12826,7 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
             )
           )}
         </div>
-        <button data-share-challenge onClick={onShareChallenge} style={{ width: "100%", background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+        <button data-share-challenge onClick={() => (needName() ? null : onShareChallenge())} style={{ width: "100%", background: COLORS.raised, color: COLORS.gold, border: "1px solid " + COLORS.border, borderRadius: 12, padding: "11px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 13.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
           <Share2 size={14} /> {t.chalShare}
         </button>
         {challenge && (
@@ -12962,8 +12986,11 @@ function FriendsScreen({ t, lang, myName, setMyName, myAvatar = null, myStats, r
 
 // ---------- Intake log ("Einnahme-Tagebuch"): what was taken / injected when, with site rotation ----------
 // A plain diary of the user's own entries: no recommendations and no dosing advice.
+// Store-Builds (VITE_INTAKE_SAFE=1): keine Spritzen-Einträge und keine Injektionsstellen — nur ein Tagebuch
+// für frei verkäufliche Mittel (App-Store-Richtlinie 1.4.3 / Google-Play-Richtlinie zu Drogen)
+const INTAKE_SAFE = import.meta.env.VITE_INTAKE_SAFE === "1";
 const INTAKE_ROUTES = [
-  { k: "inject", de: "Spritze", en: "Injection" },
+  ...(INTAKE_SAFE ? [] : [{ k: "inject", de: "Spritze", en: "Injection" }]),
   { k: "oral", de: "Tabletten / Kapseln", en: "Tablets / capsules" },
   { k: "powder", de: "Pulver / Getränk", en: "Powder / drink" },
   { k: "gel", de: "Gel / Creme", en: "Gel / cream" },
@@ -13124,7 +13151,7 @@ function PhaseCard({ t, premium = false, onUpsell = () => {}, phase, onSave, wei
           {type !== "maint" && (
             <div style={{ flex: 1 }}>
               <div style={{ ...small, marginBottom: 5 }}>{t.setTargetWeight}</div>
-              <input data-phase-target type="number" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+              <input data-phase-target type="text" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
             </div>
           )}
         </div>
@@ -13245,7 +13272,7 @@ function IntakeScreen({ t, lang, data, setData, premium = false, onUpsell = () =
   const [editing, setEditing] = useState(null); // "new" | substance id
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [fromList, setFromList] = useState(false);
-  const emptySub = { name: "", route: "inject", dose: "", unit: "mg", schedType: "interval", days: 7, weekdays: [1], cycleStart: "", cycleWeeks: "" };
+  const emptySub = { name: "", route: INTAKE_SAFE ? "oral" : "inject", dose: "", unit: "mg", schedType: "interval", days: 7, weekdays: [1], cycleStart: "", cycleWeeks: "" };
   const [sf, setSf] = useState(emptySub);
   const [edit, setEdit] = useState(false);
   const [sure, setSure] = useState(null);
@@ -13346,7 +13373,7 @@ function IntakeScreen({ t, lang, data, setData, premium = false, onUpsell = () =
 
       {subs.length === 0 && editing === null && (
         <Card style={{ marginBottom: 14 }}>
-          <div style={{ ...small, lineHeight: 1.5, marginBottom: 12 }}>{t.intakeIntro}</div>
+          <div style={{ ...small, lineHeight: 1.5, marginBottom: 12 }}>{INTAKE_SAFE ? t.intakeIntroSafe : t.intakeIntro}</div>
           <button onClick={startNew} style={{ width: "100%", background: COLORS.gold, color: COLORS.bg, border: "none", borderRadius: 12, padding: "12px 16px", fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             + {t.intakeNew}
           </button>
@@ -13404,7 +13431,7 @@ function IntakeScreen({ t, lang, data, setData, premium = false, onUpsell = () =
             {logging === s.id ? (
               <div style={{ marginTop: 12, padding: 12, background: COLORS.raised, borderRadius: 12 }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-                  <input type="number" inputMode="decimal" value={lf.dose} onChange={(e) => setLf({ ...lf, dose: e.target.value })} placeholder={t.intakeDose} style={{ ...numInputStyle, width: 110 }} />
+                  <input type="text" inputMode="decimal" value={lf.dose} onChange={(e) => setLf({ ...lf, dose: e.target.value })} placeholder={t.intakeDose} style={{ ...numInputStyle, width: 110 }} />
                   <span style={small}>{s.unit}</span>
                 </div>
                 <input type="datetime-local" value={lf.when} onChange={(e) => setLf({ ...lf, when: e.target.value })} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />
@@ -13507,7 +13534,7 @@ function IntakeScreen({ t, lang, data, setData, premium = false, onUpsell = () =
             ))}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-            <input type="number" inputMode="decimal" value={sf.dose} onChange={(e) => setSf({ ...sf, dose: e.target.value })} placeholder={t.intakeDose} style={{ ...numInputStyle, width: 110 }} />
+            <input type="text" inputMode="decimal" value={sf.dose} onChange={(e) => setSf({ ...sf, dose: e.target.value })} placeholder={t.intakeDose} style={{ ...numInputStyle, width: 110 }} />
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {INTAKE_UNITS.map((u) => (
                 <Chip key={u} label={u} active={sf.unit === u} onClick={() => setSf({ ...sf, unit: u })} />
@@ -13605,7 +13632,7 @@ function IntakeScreen({ t, lang, data, setData, premium = false, onUpsell = () =
               <Card style={{ marginBottom: 10 }}>
                 <input data-blood-name value={bf.name} onChange={(e) => setBf({ ...bf, name: e.target.value.slice(0, 40) })} placeholder={t.bloodName} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />
                 <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                  <input data-blood-value type="number" inputMode="decimal" value={bf.value} onChange={(e) => setBf({ ...bf, value: e.target.value })} placeholder={t.bloodValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
+                  <input data-blood-value type="text" inputMode="decimal" value={bf.value} onChange={(e) => setBf({ ...bf, value: e.target.value })} placeholder={t.bloodValue} style={{ ...numInputStyle, flex: 1, minWidth: 0 }} />
                   <input data-blood-unit value={bf.unit} onChange={(e) => setBf({ ...bf, unit: e.target.value.slice(0, 12) })} placeholder={t.bloodUnit} style={{ ...numInputStyle, width: 90 }} />
                   <input data-blood-date type="date" value={bf.date} onChange={(e) => setBf({ ...bf, date: e.target.value })} style={{ ...numInputStyle, width: 140 }} />
                 </div>
@@ -14008,7 +14035,20 @@ function AccountScreen({ t, auth, onAuthed, onLogout, onDelete }) {
   );
 }
 
+function useAppVersionLabel(t) {
+  // echte Store-Version (z. B. 1.0.30) statt fest "1.0"
+  const [ver, setVer] = useState("");
+  useEffect(() => {
+    if (!IS_NATIVE_APP) return;
+    let alive = true;
+    import("@capacitor/app").then(({ App }) => App.getInfo()).then((i) => { if (alive && i && i.version) setVer(i.version); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  return ver ? t.setVersion.replace(/1.0$/, ver) : t.setVersion;
+}
+
 function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang = "de", setLang, appearance = "dark", setAppearance, friendsCount = 0, premium = null, account = null }) {
+  const versionLabel = useAppVersionLabel(t);
   const { code: ccSet, name: ccSetName } = useCountry();
   const remOn = NOTIF_KINDS.filter((k) => reminders[k] && reminders[k].on).length;
   const [q, setQ] = useState("");
@@ -14047,7 +14087,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
         { icon: MessageCircle, label: t.settingsSupport, key: "assistant" },
         { icon: HelpCircle, label: t.setHelpRow, key: "settingsHelp" },
         { icon: Share2, label: t.setShareRow, sub: shareMsg, onClick: onShare },
-        { icon: Info, label: t.setAboutRow, sub: t.setVersion, key: "settingsAbout" },
+        { icon: Info, label: t.setAboutRow, sub: versionLabel, key: "settingsAbout" },
       ],
     },
     {
@@ -14088,8 +14128,8 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
           <ChevronLeft size={16} color={COLORS.dim} style={{ transform: "rotate(180deg)", flexShrink: 0 }} />
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-          {stat(profile.weight + " kg", t.setWeightLabel)}
-          {stat(profile.height + " cm", t.setHeightLabel)}
+          {stat(profile.weight ? profile.weight + " kg" : "–", t.setWeightLabel)}
+          {stat(profile.height ? profile.height + " cm" : "–", t.setHeightLabel)}
           {stat(profile.kcalGoal, "kcal / " + t.setDayLabel)}
         </div>
       </Card>
@@ -14134,7 +14174,7 @@ function SettingsScreen({ t, profile, reminders, onNav, onShare, shareMsg, lang 
         )
       )}
 
-      <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{t.setVersion}</div>
+      <div style={{ textAlign: "center", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: COLORS.dim }}>{versionLabel}</div>
     </div>
   );
 }
@@ -14258,7 +14298,7 @@ function GoalsSettings({ t, lang, profile, stepsGoal, onSave, premium = false, o
         ))}
       </div>
       <SettingsLabel>{t.setTargetWeight}</SettingsLabel>
-      <input type="number" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
+      <input type="text" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box" }} />
       <SettingsLabel>{t.setTargetDate}</SettingsLabel>
       <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ ...numInputStyle, width: "100%", boxSizing: "border-box", colorScheme: "dark" }} />
 
