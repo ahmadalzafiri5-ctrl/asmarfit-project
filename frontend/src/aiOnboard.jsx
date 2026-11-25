@@ -721,6 +721,14 @@ function LiveVoiceOnboarding({ lang, onDone, onManual, onFallback }) {
           return;
         }
         const t = ev.type || "";
+        // OpenAI meldet einen Fehler (z. B. Guthaben leer) oder bricht die Antwort ab: nicht stumm bleiben,
+        // sondern sofort auf das Clip-Onboarding wechseln
+        const errCode = (ev.error && (ev.error.code || ev.error.type)) || (ev.response && ev.response.status_details && ev.response.status_details.error && (ev.response.status_details.error.code || ev.response.status_details.error.type)) || "";
+        const fatal = /quota|credit|billing|api_key|session_expired|authentication|server_error|rate_limit/i.test(String(errCode));
+        if (!doneRef.current && ((t === "error" && fatal) || (t === "response.done" && ev.response && ev.response.status === "failed"))) {
+          fallback();
+          return;
+        }
         if (t === "output_audio_buffer.started") setState("speak");
         else if (t === "output_audio_buffer.stopped" || t === "output_audio_buffer.cleared") {
           if (doneRef.current) setTimeout(goPreview, 400);

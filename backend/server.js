@@ -513,6 +513,8 @@ function realtimeInstructions(language, canSwitch = true) {
 
 app.post("/api/ai/realtime-session", async (req, res) => {
   if (!OPENAI_API_KEY) return res.status(503).json({ error: "not_configured" });
+  // Not-Schalter (z. B. OpenAI-Guthaben leer): 503 -> die App nimmt automatisch das Clip-Onboarding
+  if (process.env.REALTIME_DISABLED === "1") return res.status(503).json({ error: "disabled" });
   const ip = req.ip || "?";
   const now = Date.now();
   const b = realtimeHour.get(ip) || { t0: now, n: 0 };
